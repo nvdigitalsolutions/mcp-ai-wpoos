@@ -1,7 +1,10 @@
 # NV oOS Settings Storage Context
 
 > **GSD Context File** — Load this when working on settings, credentials, import/export, or admin save flow.
-> Last reviewed: November 15, 2026 (v1.2.21).
+> Last reviewed: November 26, 2026 (v1.2.24).
+> **New in v1.2.24 (upload sessions, memory provenance, file identity):** `nvoos_upload_sessions` backs resumable uploads over tus core (one row per session, resumable across requests). `nvoos_memories` gains one **nullable JSON `metadata` column with no default** — a record with no provenance stores `NULL` rather than `{}`, and it reads back as an empty array so a caller never has to tell absent from empty; the vocabulary is deliberately open (Zep `valid_at`/`invalid_at`, mem0 `metadata`, a toolkit capture policy) because a column per concept would be a migration per concept. A **package-only install** gets the five file-identity columns (`tenant_id`, `visibility`, `slug`, `checksum`, `metadata`) through a second adapter migration — they had landed only in the app skeleton, so Testbench threw on the first `store()`. Retention on the Laravel side is reported from a **trigger**, not from creation.
+> **New in v1.2.23 (new tables + the file visibility rule):** new storage lands in `nvoos_budgets` (`window`, `limit`, assistant scope), `nvoos_tool_flag_overrides` (addition-only), `nvoos_tool_quotas`/`nvoos_tool_quota_usage`, `nvoos_professions` (estate overlay), `nvoos_security_events`, `nvoos_magic_login_tokens`, the JIT provisioning tables, `users.auth0_subject` + `users.chat_profile`, machine approval columns on `nvoos_approvals`, and `tenant_id` on `nvoos_token_usage`, its daily rollup, `nvoos_harness_trace_records`, `nvoos_activity_events` and `nvoos_files`. **`nvoos_files` gains `visibility` and `slug`**: visibility is a **column, not a disk name**, so repointing `oos.files.disks` cannot reclassify existing files; the basename is a ULID and the extension comes from the sniffed type, so a caller's filename is never a path. The root security key is stored as a **hash** in the settings surface (`Hash::check`, a legacy plaintext value re-hashes in place) and is never rendered. The worker-related config keys are `oos.files.disks` and `oos.files.limits`.
+> **New in v1.2.22 (two-layer settings, one writer):** on the Laravel runtime every ported field declares an **owner** — `operator` (deployment config: endpoints, credentials, infrastructure, posture inputs) or `tenant` (the estate's policy). `forSurface()` projects a value for a panel, `writableFor()` decides who may save it, `/admin` renders operator keys disabled and `/ops` omits tenant keys. A field's *surface name* is canonical: `SettingsStore::getApiBaseUrl()` reads the key the settings page writes (`gemini_base_url`, not `gemini_api_base_url`), with a `$legacyMap` fallback for rows written under the old name — `bin/check-endpoint-wiring.php` proves catalogue and adapters agree in both directions. Toolkit settings round-trip through `WP_MCP_AI_Toolkit_Settings_Base::stored_options()`; a page that prints a literal default instead of the stored value silently overwrites it on the next save.
 > **New in v1.2.21 (remote sites, harness traces, MCP app tokens):** `nvoos_remote_sites` stores `config` (JSON, non-secret) beside `credentials` (sealed JSON, one `Crypt` ciphertext per field); no read returns a credential (uniform mask + `has_credentials`), `credentialsFor()` is the only opener, and `config` may not hold a secret. Harness traces land in `nvoos_harness_trace_records` per assistant with a 10–200 run retention policy (`TracePolicy`); `NullTraceStore` is the no-storage default. MCP app tokens/`oauth_data` are sealed behind the app key and are never written by the console's eight-field whitelist. Assistant MCP apps keep the Pro shape (`_wp_mcp_ai_mcp_apps`, 10-app ceiling) on both runtimes.
 >
 > **New in v1.2.20 (Laravel storage + toolkit records):** the Laravel runtime now ships migrations for **eight `nvoos_*` tables** that previously existed only in the dev database — `nvoos_schedules`, `nvoos_schedule_runs`, `nvoos_triggers`, `nvoos_approvals`, `nvoos_files`, `nvoos_posts`, `nvoos_security_snapshots`, `nvoos_toolkit_records` — plus `users`, `teams`, `team_members`, `nvoos_meta`, `personal_access_tokens`, sessions/cache/jobs. `nvoos_toolkit_records` is one table for every manifest family (created by dbDelta when the schema-version option moves). The **Paper Store** is a shared on-disk JSON contract (`{root}/{collection}/{id}.json`, atomic write, store-owned stamps), not a DB table. The profession catalogue is cached under a **version key** (`catalogueVersion()`), so a bump invalidates it without a manual purge. Toolkit settings are manifest-declared and stored per family, not as ad-hoc options.
@@ -79,6 +82,47 @@ The `WP_MCP_AI_Settings_Dashboard` class orchestrates a 7-step save:
 
 ---
 
+## Adding a Field to a Sub-Tabbed Section
+
+A section that defines `get_subtab_groups()` renders and saves **only** the keys
+named in the active group's `fields` array:
+
+- `render()` iterates `$subtab_groups[ $active_subtab ]['fields']` and calls
+  `render_field()` for those keys only.
+- `sanitize_with_subtabs()` whitelists submitted input to the same list, so an
+  unregistered key is dropped on save.
+
+Declaring a field in `get_fields()` alone therefore makes it **invisible and
+unsaveable** — with no PHP error and no PHPCS finding, because both methods are
+individually valid. A field needs both registrations:
+
+```php
+public function get_fields() {
+	return array(
+		'my_field' => array( /* ... */ ),      // 1. definition.
+	);
+}
+
+protected function get_subtab_groups() {
+	return array(
+		'behavior' => array(
+			'fields' => array( 'my_field' ),   // 2. registration.
+		),
+	);
+}
+```
+
+`.github/scripts/check-settings-field-registration.php` enforces this for every
+sub-tabbed section (base and Pro) in the `settings-field-registration` CI job.
+Pre-existing offenders are baselined in
+`.github/scripts/settings-field-registration.txt`; registering one makes its
+baseline line stale, so the gate forces the line's removal.
+
+Sections **without** `get_subtab_groups()` are unaffected: `sanitize_fields()`
+accepts every declared field, so they need the definition only.
+
+---
+
 ## Migration
 
 A one-time activation migration moves existing credentials from the old single option to the split:
@@ -112,6 +156,7 @@ wp_mcp_ai_migrate_credentials_to_split()
 | Writing API key to `wp_mcp_ai_settings` | Write to `wp_mcp_ai_credentials` |
 | Forgetting to clear credentials cache | Clear both: `wp_cache_delete( OPTION_NAME, 'options' )` AND `wp_cache_delete( CREDENTIALS_OPTION_NAME, 'options' )` |
 | Assuming single-option storage in hooks | Both options fire `updated_option` — listen for both if subscribing |
+| Adding a field only to `get_fields()` in a sub-tabbed section | Also list the key in `get_subtab_groups()[…]['fields']` — otherwise it renders nowhere and is dropped on save. The `settings-field-registration` CI gate catches this. |
 
 ---
 

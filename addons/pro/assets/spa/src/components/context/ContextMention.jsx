@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ContextMention — @-mention popover with grouped results.
  * Zed equivalent: @-mention autocomplete.

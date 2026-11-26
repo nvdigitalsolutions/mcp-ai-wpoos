@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { test, expect, type Page } from '@playwright/test';
 
 /**
@@ -156,6 +157,47 @@ test.describe('T0 console smoke — Laravel runtime', () => {
     expect(laravelRequests).toContain('/api/v1/features');
   });
 
+  test('sends the selected estate on console API requests only', async ({ page }) => {
+    // 149 §21: `ResolveApiTenant` resolves one estate per request from
+    // `X-Tenant-Id` and 409s a multi-estate caller that sends nothing. The
+    // identity endpoints are excluded on purpose — the picker validates a
+    // stored id against the server's own answer.
+    const scopedTenants: string[] = [];
+    const identityRequests: string[] = [];
+
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (!url.pathname.startsWith('/api/v1/')) {
+        return;
+      }
+      const tenant = request.headers()['x-tenant-id'];
+      if (url.pathname.startsWith('/api/v1/session/')) {
+        if (tenant) {
+          identityRequests.push(`${request.method()} ${url.pathname}`);
+        }
+        return;
+      }
+      if (tenant) {
+        scopedTenants.push(tenant);
+      }
+    });
+
+    await visit(page, '/#/');
+    await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible();
+
+    const stored = await page.evaluate(() =>
+      window.localStorage.getItem('nvoos-console.tenant'),
+    );
+    expect(stored, 'the estate selection must be persisted for the next boot').toBeTruthy();
+
+    expect(scopedTenants.length, 'scoped requests observed').toBeGreaterThan(0);
+    expect(new Set(scopedTenants), 'every scoped request uses the stored estate').toEqual(
+      new Set([stored]),
+    );
+
+    expect(identityRequests, 'identity endpoints never carry a selector').toEqual([]);
+  });
+
   test('shows the T0 nav items the session is allowed to reach', async ({ page }) => {
     await visit(page, '/#/');
 
@@ -175,5 +217,23 @@ test.describe('T0 console smoke — Laravel runtime', () => {
     for (const label of ['Chat', 'Tools', 'Operations', 'Diagnostics', 'Settings']) {
       await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible();
     }
+  });
+
+  test('serves the backend profile as a runtime stamp, not a build artifact', async ({
+    request,
+  }) => {
+    // One prebuilt bundle serves both runtimes: the proxy adds a same-origin
+    // external script to index.html and answers it from NVOOS_BACKEND, so the
+    // client profile can change with an env var instead of a rebuild. External
+    // (not inline) keeps a future strict `script-src 'self'` CSP workable.
+    const html = await (await request.get('/')).text();
+    expect(html).toContain('/app-config.js');
+
+    const config = await request.get('/app-config.js');
+    expect(config.status()).toBe(200);
+    expect(config.headers()['content-type']).toContain('text/javascript');
+    expect(config.headers()['cache-control']).toContain('no-cache');
+    // The e2e proxy runs with NVOOS_BACKEND=laravel (playwright.config.ts).
+    expect(await config.text()).toContain('window.__NVOOS_BACKEND__="laravel"');
   });
 });

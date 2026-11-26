@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // deploy-config.ts — the generated deploy pipeline (Proposal 096 Phase 3.3).
 //
@@ -55,6 +56,101 @@ export function assertRuntime( runtime: unknown ): asserts runtime is DeployRunt
 	if ( typeof runtime !== 'string' || ! DEPLOY_RUNTIMES.includes( runtime as DeployRuntime ) ) {
 		throw new Error( `Invalid deploy runtime "${ String( runtime ) }" — use static or managed.` );
 	}
+}
+
+/**
+ * The slice of a site profile the runtime requirement depends on.
+ *
+ * Structural rather than the full `ForgeProfile`, so tests can exercise the
+ * gate without building a complete profile.
+ */
+export interface RuntimeProfile {
+	deploy?: { runtime?: unknown; manage?: boolean };
+	forms?: { delivery?: string; fallback?: string };
+}
+
+/** A derived runtime plus the reason, so refusals can name the feature. */
+export interface RuntimeRequirement {
+	runtime: DeployRuntime;
+	reason: string;
+}
+
+/**
+ * The runtime a profile's own configuration requires (Proposal 135).
+ *
+ * Derived, never declared: a site that names a managed-only feature must not be
+ * emitted as a static tree. `scaffold.ts` enforced the `direct` form case
+ * inline; this is the single source of truth so the emitter, the CLI and the
+ * generated workflow cannot disagree.
+ *
+ * Precedence is most-restrictive first:
+ * 1. `deploy.runtime: "managed"` — explicit.
+ * 2. `deploy.manage: true` — `/manage` is a server-rendered surface.
+ * 3. `forms.delivery: "direct"` — the provider key lives on the server.
+ * 4. `forms.fallback: "direct"` — re-delivery needs the same runtime.
+ *
+ * Everything else (including `forms.delivery: "bridge"`, which POSTs from the
+ * browser to WordPress, and `eca.booking.mode: "external"`) is static-safe.
+ *
+ * @param profile Site profile (or any object with the relevant keys).
+ * @return The required runtime and a human-readable reason.
+ */
+export function requiredRuntime( profile: RuntimeProfile ): RuntimeRequirement {
+	assertRuntime( profile.deploy?.runtime );
+
+	if ( profile.deploy?.runtime === 'managed' ) {
+		return { runtime: 'managed', reason: 'deploy.runtime is "managed"' };
+	}
+
+	if ( profile.deploy?.manage === true ) {
+		return {
+			runtime: 'managed',
+			reason: 'deploy.manage serves /manage from the managed runtime (a static tree has no server routes)',
+		};
+	}
+
+	if ( profile.forms?.delivery === 'direct' ) {
+		return {
+			runtime: 'managed',
+			reason: 'forms.delivery "direct" sends from the managed runtime (the provider key never reaches the client)',
+		};
+	}
+
+	if ( profile.forms?.fallback === 'direct' ) {
+		return {
+			runtime: 'managed',
+			reason: 'forms.fallback "direct" re-delivers from the managed runtime',
+		};
+	}
+
+	return { runtime: 'static', reason: 'no managed-only feature is configured' };
+}
+
+/**
+ * Resolve the runtime to emit, refusing a static tree for a managed profile.
+ *
+ * `managed` is a superset of `static`, so an explicit `managed` is always
+ * allowed. The reverse is refused: a static artifact published for a managed
+ * Velocity app boots nothing, which is the failure this gate exists to prevent.
+ *
+ * @param profile   Site profile.
+ * @param requested Runtime from the CLI/emitter (defaults to the requirement).
+ * @return The runtime to emit.
+ * @throws When the profile requires `managed` and static was requested.
+ */
+export function resolveRuntime( profile: RuntimeProfile, requested?: unknown ): DeployRuntime {
+	assertRuntime( requested );
+
+	const required = requiredRuntime( profile );
+
+	if ( required.runtime === 'managed' && requested !== 'managed' ) {
+		throw new Error(
+			`This profile requires the managed runtime: ${ required.reason }. ` +
+				`Refusing to emit "${ String( requested ?? 'static' ) }". Re-run with --runtime managed.`
+		);
+	}
+
+	return requested === 'managed' ? 'managed' : required.runtime;
 }
 
 /**

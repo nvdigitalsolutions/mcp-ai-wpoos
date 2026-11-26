@@ -190,6 +190,22 @@ A `composer.json` minimum:
 
 Plus `composer install`, commit `composer.lock`, gitignore `vendor/`, ship `vendor/` inside release ZIPs.
 
+**Retrofitting laziness onto an existing require-chain — three traps:**
+
+- **`exclude-from-classmap` wins.** Any directory listed there can never be
+autoloaded, so guarding its `require_once` with a `class_exists()` check changes
+nothing. Retrofitting laziness to those files needs them in the classmap first.
+- **`class_exists( $class, false )` asks the wrong question.** It answers "is it
+loaded *already*?" — on the first (and only) pass nothing is, so every guarded
+require still fires and the migration is a silent no-op. Ask the loader instead
+(`Composer\Autoload\ClassLoader::findFile()`), and skip the require only when the
+resolved path is the same file.
+- **Verify with a behavioural oracle, not file counts.** Compare hook count and a
+hook-name digest, registered REST routes, post types and taxonomies before and
+after. Files that define a class *and* register a hook at top level vanish
+silently when skipped — a real case lost 20 hooks for a 103-file saving, which is
+why the change was reverted rather than excused.
+
 ### 3. `Requires Plugins` since 6.5 — use it, but understand the limits
 
 Add the dependency at the plugin header level:

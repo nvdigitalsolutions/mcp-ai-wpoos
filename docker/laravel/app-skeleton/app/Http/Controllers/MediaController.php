@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -30,7 +31,7 @@ class MediaController
         $search = trim((string) $request->query('search', ''));
         $mediaType = trim((string) $request->query('media_type', ''));
 
-        $query = DB::table('nvoos_files');
+        $query = DB::table('nvoos_files')->where('tenant_id', TenantContext::current());
 
         if ($search !== '') {
             $query->where('filename', 'like', '%'.$search.'%');
@@ -59,7 +60,7 @@ class MediaController
 
     public function show(int $id): JsonResponse
     {
-        $row = DB::table('nvoos_files')->find($id);
+        $row = $this->find($id);
 
         return $row === null
             ? $this->invalidId()
@@ -86,7 +87,12 @@ class MediaController
                 'tmp_name' => (string) $file->getRealPath(),
                 'error' => (int) $file->getError(),
             ],
-            ['user_id' => $request->user()?->getAuthIdentifier()],
+            [
+                'user_id' => $request->user()?->getAuthIdentifier(),
+                // The estate this library belongs to. Passed by the caller rather
+                // than read inside the adapter, which has no app context (§109).
+                'tenant_id' => TenantContext::current(),
+            ],
         );
 
         if (! ($result['success'] ?? false)) {
@@ -97,7 +103,7 @@ class MediaController
             ], 422);
         }
 
-        $row = DB::table('nvoos_files')->find((int) $result['attachment_id']);
+        $row = $this->find((int) $result['attachment_id']);
 
         $alt = $request->input('alt_text');
         if (is_string($alt) && $row !== null) {
@@ -106,7 +112,7 @@ class MediaController
                 'updated_at' => now(),
             ]);
 
-            $row = DB::table('nvoos_files')->find((int) $row->id);
+            $row = $this->find((int) $row->id);
         }
 
         return response()->json($this->record($row), 201);
@@ -121,7 +127,7 @@ class MediaController
      */
     public function update(int $id, Request $request): JsonResponse
     {
-        $row = DB::table('nvoos_files')->find($id);
+        $row = $this->find($id);
 
         if ($row === null) {
             return $this->invalidId();
@@ -145,14 +151,39 @@ class MediaController
             ], 400);
         }
 
-        DB::table('nvoos_files')->where('id', $id)->update([
-            // `ConvertEmptyStringsToNull` turns `""` into null, which is the
-            // framework's way of saying "clear it"; both spellings land here.
-            'alt_text' => is_string($alt) ? mb_substr(trim($alt), 0, 500) : '',
-            'updated_at' => now(),
-        ]);
+        DB::table('nvoos_files')
+            ->where('id', $id)
+            ->where('tenant_id', TenantContext::current())
+            ->update([
+                // `ConvertEmptyStringsToNull` turns `""` into null, which is the
+                // framework's way of saying "clear it"; both spellings land here.
+                'alt_text' => is_string($alt) ? mb_substr(trim($alt), 0, 500) : '',
+                'updated_at' => now(),
+            ]);
 
-        return response()->json($this->record(DB::table('nvoos_files')->find($id)));
+        return response()->json($this->record($this->find($id)));
+    }
+
+    /**
+     * The media slug — Proposal 162 §162.8.
+     *
+     * A column, not a derivation. WordPress keeps `post_name` separate from
+     * `post_title` and makes it unique per site; deriving it here meant a change
+     * to how the file registry sanitises a *display* name silently moved every
+     * slug, which is how `slug: Pixel` reached this endpoint.
+     *
+     * Rows written before the column existed have no slug and fall back to the
+     * filename stem — what this endpoint used to do for every row. They are not
+     * backfilled: a backfill would have to invent uniqueness across rows that
+     * never had any, and guessing is worse than a documented fallback.
+     */
+    private function slugOf(object $row): string
+    {
+        $slug = trim((string) ($row->slug ?? ''));
+
+        return '' !== $slug
+            ? $slug
+            : pathinfo((string) ($row->filename ?? ''), PATHINFO_FILENAME);
     }
 
     /**
@@ -170,7 +201,7 @@ class MediaController
         return [
             'id' => (int) $row->id,
             'date' => $created?->format('Y-m-d\TH:i:s'),
-            'slug' => pathinfo($filename, PATHINFO_FILENAME),
+            'slug' => $this->slugOf($row),
             'type' => 'attachment',
             'title' => ['rendered' => $filename],
             'caption' => ['rendered' => ''],
@@ -242,5 +273,21 @@ class MediaController
             'message' => 'Invalid media ID.',
             'data' => ['status' => 404],
         ], 404);
+    }
+
+    /**
+     * One file, if it belongs to the current estate.
+     *
+     * A foreign id answers 404 through the normal missing-row path rather than
+     * 403: telling a caller that a file exists but is not theirs discloses the
+     * other estate's library size — the same rule §41 applied to approvals, and
+     * the reason the scope lives in one helper rather than at three call sites.
+     */
+    private function find(int $id): ?object
+    {
+        return DB::table('nvoos_files')
+            ->where('tenant_id', TenantContext::current())
+            ->where('id', $id)
+            ->first();
     }
 }

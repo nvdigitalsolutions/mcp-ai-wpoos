@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Laravel\Sanctum\Sanctum;
 use Nvoos\Core\Domain\Contract\TraceStoreInterface;
 use Nvoos\Core\Domain\Service\Harness\HarnessProfile;
 use Nvoos\Laravel\Adapter\DatabaseTraceStore;
@@ -23,6 +26,14 @@ class HarnessTraceStoreTest extends TestCase
     use RefreshDatabase;
 
     private const ASSISTANT = 7;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['sanctum.stateful' => ['localhost', '127.0.0.1']]);
+        $this->withHeader('Referer', 'http://localhost');
+    }
 
     private function store(): TraceStoreInterface
     {
@@ -157,5 +168,51 @@ class HarnessTraceStoreTest extends TestCase
         $this->assertSame(0, $this->store()->prune(404, 10));
         $this->assertSame(0, $this->store()->prune(0, 10));
         $this->assertDatabaseCount(DatabaseTraceStore::TABLE, 1);
+    }
+
+    public function test_a_record_is_stamped_with_the_assistants_estate(): void
+    {
+        Tenant::query()->create(array(
+            'id' => 'estate-a',
+            'name' => 'Estate A',
+            'slug' => 'estate-a',
+        ));
+
+        Sanctum::actingAs(User::factory()->admin()->inEstate('estate-a', 'owner')->create());
+
+        $assistantId = (int) $this->postJson('/api/v1/assistants', array(
+            'title' => 'Traced assistant',
+            'system_prompt' => 'Be brief.',
+            'provider' => 'openai',
+            'model' => 'gpt-4o-mini',
+        ))->assertCreated()->json('id');
+
+        $this->assertTrue($this->store()->append($assistantId, 'run-estate', 'run.jsonl', array('type' => 'start')));
+
+        $this->assertSame(
+            'estate-a',
+            (string) DB::table(DatabaseTraceStore::TABLE)->where('run_id', 'run-estate')->value('tenant_id'),
+            'The estate is read from the assistant, never from the caller.'
+        );
+    }
+
+    public function test_the_assistant_table_name_is_read_from_the_oos_namespace(): void
+    {
+        // The package merges `config/nvoos.php` under `oos`, so a key read as
+        // `nvoos.*` would be dead and the store would silently fall back to the
+        // hardcoded default. This pins the namespace, not the value.
+        $this->assertSame('assistants', config('oos.assistants_table'));
+    }
+
+    public function test_an_unknown_assistant_falls_back_to_the_default_estate(): void
+    {
+        // A trace must not invent an estate it cannot evidence, so a missing
+        // assistant row is `default` — the same rule the token rows follow.
+        $this->assertTrue($this->store()->append(9999, 'run-orphan', 'run.jsonl', array('type' => 'start')));
+
+        $this->assertSame(
+            Tenant::DEFAULT_ID,
+            (string) DB::table(DatabaseTraceStore::TABLE)->where('run_id', 'run-orphan')->value('tenant_id')
+        );
     }
 }

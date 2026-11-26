@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { describe, expect, it } from 'vitest';
 import { formatPrice, resolveCurrency } from '../../src/lib/commerce/money';
 

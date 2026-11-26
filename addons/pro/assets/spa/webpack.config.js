@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 const defaultConfig = require('@wordpress/scripts/config/webpack.config');
 const path = require('path');
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // capture.ts — the screenshot contract (Proposal 118 §2).
 //

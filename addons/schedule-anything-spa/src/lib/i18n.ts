@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * i18n bootstrap — re-exports @wordpress/i18n for app-wide use.
  *

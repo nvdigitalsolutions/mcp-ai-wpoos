@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Site Detail Page — app-specific info, toolkit status, live provisioning.
  *

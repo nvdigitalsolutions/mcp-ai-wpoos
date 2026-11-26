@@ -49,7 +49,23 @@ idempotency bookkeeping the SPA's presets/toolkits REST endpoints consume.
   `WP_MCP_AI_Pro_Schedule_REST_Controller` (shared capability seam
   `wp_mcp_ai_pro_schedule_rest_capability`).
 
-## Context
+## Tests
+
+- `addons/pro/tests/test-schedule-presets-rest.php` — `Test_SA_Presets_REST`:
+  catalogue integrity, search / toolkit filter / pagination, deterministic
+  install keys, override whitelisting, the permission matrix, and install
+  replay idempotency.
+- `addons/schedule-anything-platform/tests/test-toolkit-manager.php` — the
+  platform-side `SA_Toolkit_Manager` flag map this adapter reads.
+- `docker/laravel/app-skeleton/tests/Feature/SchedulePresetsTest.php` — the
+  Laravel runtime's mirror of the same catalogue and install key, drift-checked
+  in CI.
+
+```bash
+vendor/bin/phpunit addons/pro/tests/test-schedule-presets-rest.php
+```
+
+## Also Load
 
 Load `.context/tool-registry.md` (Pro REST conventions) and
 `.context/security-checklist.md` (canonical envelope, two-gate sanitisation)

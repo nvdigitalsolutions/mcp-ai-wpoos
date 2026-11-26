@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Typed reader for the `window.NVOOS_CHAT_SPA` global localized by the
  * shortcode/block PHP renderer.

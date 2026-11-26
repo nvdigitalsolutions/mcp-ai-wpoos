@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Model Store — Tracks the currently selected AI model across the SPA.
  */

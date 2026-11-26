@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // media.ts — the runtime media-origin rules (Proposal 139).
 //
@@ -25,6 +26,9 @@ export type MediaEnv = Record<string, string | undefined>;
 /** A WordPress-owned asset path (`/wp-content/…`, `/wp-includes/…`). */
 const WP_ASSET_PATH = /^\/(?:wp-content|wp-includes)\//i;
 
+/** The uploads prefix the managed `/media/*` proxy maps (mirrors proxyMediaPath). */
+const WP_UPLOADS_PREFIX = '/wp-content/uploads/';
+
 /** `import.meta.env` is a getter object — accept it as a plain record. */
 function readEnv( env?: MediaEnv ): MediaEnv {
 	return env ?? ( import.meta.env as unknown as MediaEnv );
@@ -36,13 +40,31 @@ function manifestUrl(): string {
 }
 
 /**
+ * Whether the profile declares the CMS gone (`content.source: materialized`).
+ *
+ * A materialized site's content comes from the committed snapshot, so there is
+ * no origin to download from — or to repair stale paths to.
+ */
+export function materializedContent(): boolean {
+	return ( manifest as unknown as { contentSource?: string } ).contentSource === 'materialized';
+}
+
+/**
  * The CMS origin (no trailing slash). `WP_SITE_URL` wins, mirroring the
  * content layer and astro.config.mjs.
  *
  * @param env Environment record (defaults to `import.meta.env`).
- * @returns The CMS origin, or `''` when unknown.
+ * @returns The CMS origin, or `''` when unknown (or when the CMS is gone).
  */
 export function cmsOrigin( env?: MediaEnv ): string {
+	// A materialized profile has NO CMS. Keeping the old origin would authorize
+	// Astro to download images from a host that is about to 404 — and the build
+	// dies on FailedToFetchRemoteImageDimensions. With no origin, SmartImage
+	// falls back to a plain <img> and the post-build localizer mirrors the
+	// committed snapshot (media.snapshot) instead.
+	if ( materializedContent() ) {
+		return '';
+	}
 	const raw = ( readEnv( env ).WP_SITE_URL ?? manifestUrl() ?? '' ).trim();
 	return raw ? raw.replace( /\/+$/, '' ) : '';
 }
@@ -143,6 +165,99 @@ export function repairMediaUrl( url: string | undefined, env?: MediaEnv ): strin
 		return url;
 	}
 	return `${ cms.origin }${ parsed.pathname }${ parsed.search }`;
+}
+
+/**
+ * A per-scaffold cache token for the proxied media path.
+ *
+ * The scaffold rewrites `nvoos.json` on every CI run, so `generatedAt` is a new
+ * value per deploy and needs no env plumbing — this module is also imported by
+ * client scripts, where `process.env` does not exist.
+ *
+ * @returns Digits only, or `''` when the manifest carries no stamp.
+ */
+function cacheBustToken(): string {
+	const stamp = ( manifest as unknown as { generatedAt?: string } ).generatedAt ?? '';
+	return stamp.replace( /\D/g, '' ).slice( 0, 14 );
+}
+
+/**
+ * The same-origin URL a visitor should load for a CMS asset (Proposal 139).
+ *
+ * A managed build serves `/media/<uploads path>` from the CMS server-to-server,
+ * so emitting an upload through it keeps media same-origin. This is the RUNTIME
+ * counterpart of the localizer's rewrite: the localizer edits the PRERENDERED
+ * HTML on disk, but a page rendered per request (the 404, any future SSR route)
+ * never passes through it — so the template has to ask for the proxied path
+ * itself (2026-11-26: the 404 page hotlinked the CMS logo and its icon sheet
+ * while every prerendered page carried `/media/...`).
+ *
+ * Non-uploads, and every static-tier build, come back as the repaired URL — a
+ * static artifact must never grow a `/media/` reference nothing serves.
+ *
+ * A MATERIALIZED build is the other exception, for the same reason: it has no
+ * CMS to proxy to. Its uploads are mirrored into `dist/media/<hashed>` by the
+ * post-build localizer, and only the localizer knows that name — so the template
+ * hands it the CMS URL untouched. Rewriting first would name a path nothing
+ * serves AND hide the URL from the localizer's report, which is the only source
+ * structured data is repaired from (virtuallyjamaica, 2026-11-26: three
+ * documents shipped a `/wp-content/` logo in JSON-LD beside a 503'ing
+ * `/media/2018/11/...` `<img>`).
+ *
+ * The proxy form carries a per-build `?v=` stamp. That path is the CMS's own,
+ * not content-hashed, and a CDN keeps it for as long as the CMS says — often a
+ * year — so a proxy fix could never reach a visitor that cached the broken
+ * answer (eca, 2026-11-26: the corrected logo stayed a 0-byte edge HIT with a
+ * year left to run, on a shared zone that is not ours to purge). A new stamp
+ * per build makes every deploy a fresh cache key.
+ *
+ * @param url Candidate asset URL.
+ * @param env Environment record (defaults to `import.meta.env`).
+ * @returns The `/media/<path>?v=<build>` form for an upload on a managed
+ *          CMS-backed build, else the repaired URL.
+ */
+export function mediaUrl( url: string | undefined, env?: MediaEnv ): string | undefined {
+	const repaired = repairMediaUrl( url, env );
+	// No CMS, no proxy: a materialized build's media comes from the mirror.
+	if ( ! repaired || materializedContent() || ! managedRuntime() ) {
+		return repaired;
+	}
+	let parsed: URL;
+	try {
+		parsed = new URL( repaired );
+	} catch {
+		return repaired;
+	}
+	if ( parsed.protocol !== 'http:' && parsed.protocol !== 'https:' ) {
+		return repaired;
+	}
+	const path = parsed.pathname;
+	if ( ! path.toLowerCase().startsWith( WP_UPLOADS_PREFIX ) ) {
+		return repaired;
+	}
+	const rest = path.slice( WP_UPLOADS_PREFIX.length );
+	if ( ! rest ) {
+		return repaired;
+	}
+	const token = cacheBustToken();
+	if ( ! token ) {
+		return `/media/${ rest }${ parsed.search }`;
+	}
+	const params = new URLSearchParams( parsed.search );
+	params.set( 'v', token );
+	return `/media/${ rest }?${ params.toString() }`;
+}
+
+/**
+ * Whether this build's manifest declares the managed runtime.
+ *
+ * The localizer resolves its mode from the same field, so the template and the
+ * post-build pass agree on which tier this project is.
+ *
+ * @returns True when `nvoos.json` says `runtime: "managed"`.
+ */
+function managedRuntime(): boolean {
+	return ( manifest as unknown as { runtime?: string } ).runtime === 'managed';
 }
 
 /**

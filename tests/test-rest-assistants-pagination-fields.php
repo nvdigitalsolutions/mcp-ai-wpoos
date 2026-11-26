@@ -90,7 +90,7 @@ class WP_MCP_AI_REST_Assistants_Pagination_Fields_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * per_page limits the number of items in the response body.
+	 * Per_page limits the number of items in the response body.
 	 */
 	public function test_per_page_limits_items_returned() {
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );
@@ -196,7 +196,7 @@ class WP_MCP_AI_REST_Assistants_Pagination_Fields_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * id is always included even if not explicitly listed in _fields.
+	 * Id is always included even if not explicitly listed in _fields.
 	 */
 	public function test_fields_param_always_includes_id() {
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );

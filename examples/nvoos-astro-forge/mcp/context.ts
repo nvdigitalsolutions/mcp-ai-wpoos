@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // context.ts — per-request ambient context for nvoos-astro-forge MCP tool
 // handlers (Proposal 096 Phase 4; the 095 hardening pattern). Tool code

@@ -1,0 +1,696 @@
+{
+	"url": "https://nysianproductions.com",
+	"name": "NYSIAN",
+	"frontPage": "home",
+	"collections": [
+		{
+			"slug": "posts",
+			"restBase": "wp/v2/posts",
+			"fields": [
+				"id",
+				"date_gmt",
+				"modified_gmt",
+				"title",
+				"slug",
+				"link",
+				"content",
+				"excerpt",
+				"rank_math_title",
+				"rank_math_description",
+				"rank_math_canonical_url",
+				"rank_math_robots",
+				"rank_math_facebook_title",
+				"rank_math_facebook_description",
+				"rank_math_facebook_image",
+				"rank_math_twitter_title",
+				"rank_math_twitter_description",
+				"rank_math_twitter_image",
+				"yoast_head_json"
+			],
+			"embed": true,
+			"kind": "post",
+			"optional": true
+		},
+		{
+			"slug": "pages",
+			"restBase": "wp/v2/pages",
+			"fields": [
+				"id",
+				"date_gmt",
+				"modified_gmt",
+				"title",
+				"slug",
+				"link",
+				"content",
+				"excerpt",
+				"rank_math_title",
+				"rank_math_description",
+				"rank_math_canonical_url",
+				"rank_math_robots",
+				"rank_math_facebook_title",
+				"rank_math_facebook_description",
+				"rank_math_facebook_image",
+				"rank_math_twitter_title",
+				"rank_math_twitter_description",
+				"rank_math_twitter_image",
+				"yoast_head_json"
+			],
+			"embed": true,
+			"kind": "page",
+			"optional": false,
+			"exclude": [
+				"sample-page"
+			]
+		}
+	],
+	"seo": {
+		"description": "NYSIAN"
+	},
+	"design": {
+		"mode": "rebuild",
+		"source": {
+			"url": "https://nysianproductions.com",
+			"analyzedAt": "2026-11-20T12:20:50.440Z"
+		},
+		"concept": "cool accent over light neutrals, eicons display / 400 body, compact spacing rhythm.",
+		"palette": {
+			"roles": {
+				"accent": "#ffffff",
+				"accent-alt": "#54595f",
+				"text": "#ffffff",
+				"custom-kadence1": "#2b6cb0",
+				"custom-kadence2": "#215387",
+				"custom-kadence3": "#1a202c",
+				"custom-kadence4": "#2d3748",
+				"custom-kadence5": "#4a5568",
+				"custom-kadence6": "#718096",
+				"custom-kadence7": "#edf2f7",
+				"custom-kadence8": "#f7fafc",
+				"custom-kadence9": "#ffffff",
+				"surface": "#000000",
+				"field.border": "#edf2f7"
+			},
+			"unassigned": [
+				"#000000",
+				"#69727d",
+				"#d9534f",
+				"#090c10",
+				"#ff6900",
+				"#333333",
+				"#5cb85c",
+				"#32373c",
+				"#e5e7eb",
+				"#cf2e2e",
+				"#fcb900",
+				"#0693e3"
+			],
+			"confidence": {
+				"accent": "high",
+				"accent-alt": "high",
+				"text": "high",
+				"custom-kadence1": "high",
+				"custom-kadence2": "high",
+				"custom-kadence3": "high",
+				"custom-kadence4": "high",
+				"custom-kadence5": "high",
+				"custom-kadence6": "high",
+				"custom-kadence7": "high",
+				"custom-kadence8": "high",
+				"custom-kadence9": "high",
+				"surface": "medium",
+				"field.border": "medium"
+			}
+		},
+		"typography": {
+			"display": "betm",
+			"body": "betm",
+			"scalePx": [
+				12,
+				17,
+				30,
+				35,
+				45,
+				78
+			]
+		},
+		"spacing": {
+			"scalePx": [
+				1,
+				4,
+				10,
+				16,
+				30,
+				60,
+				100
+			]
+		},
+		"radii": {
+			"valuesPx": [
+				2,
+				3,
+				4,
+				5,
+				6
+			]
+		},
+		"shadows": {
+			"count": 48
+		},
+		"components": {
+			"header": 58,
+			"footer": 23,
+			"nav": 15
+		},
+		"modes": {
+			"dark": "off",
+			"contrast": "auto"
+		},
+		"sections": [
+			{
+				"id": "9d2e299",
+				"kind": "hero",
+				"bgColor": "#000000",
+				"padding": "0",
+				"measure": "350px",
+				"paddingX": "10px",
+				"minHeight": {
+					"desktop": "680px",
+					"tablet": "680px",
+					"mobile": "560px"
+				},
+				"centered": true
+			}
+		],
+		"bandSource": "sections",
+		"outline": [
+			{
+				"id": "9d2e299",
+				"kind": "hero",
+				"via": "elementor"
+			}
+		],
+		"builder": "elementor",
+		"chrome": {
+			"nav": [
+				{
+					"label": "Projects",
+					"href": "/projects/"
+				},
+				{
+					"label": "Contact",
+					"href": "/contact/"
+				}
+			],
+			"favicon": "https://nysianproductions.com/wp-content/uploads/2021/12/cropped-android-chrome-512x512-1-32x32.png",
+			"iconCss": "https://nysianproductions.com/wp-content/plugins/elementor/assets/lib/eicons/css/elementor-icons.min.css?ver=5.54.0",
+			"geometry": {
+				"wide": {
+					"measure": 1290,
+					"padX": 20
+				},
+				"desktop": {
+					"measure": 1290,
+					"padX": 20
+				},
+				"tablet": {
+					"padX": 20
+				},
+				"mobile": {
+					"padX": 20
+				}
+			},
+			"navStyle": {
+				"size": "20px",
+				"weight": "400",
+				"transform": "uppercase"
+			},
+			"navInk": "#ffffff",
+			"headerBg": "#000000",
+			"headerInk": "#ffffff",
+			"headerTransparent": false,
+			"footerBg": "#000000",
+			"footerInk": "#ffffff",
+			"footerBarBg": "#000000",
+			"footerBarInk": "#ffffff",
+			"copyright": "Copyright © 2026 Nysian Productions.  All rights reserved",
+			"chromeSize": "17px"
+		},
+		"behavior": {
+			"headerSticky": false,
+			"entries": []
+		},
+		"adaptation": {
+			"keep": [
+				"The palette roles, type pairing, and spacing rhythm — the design language, not the pixels.",
+				"Component vocabulary hints (buttons, cards, nav) as a checklist, not as markup."
+			],
+			"replace": [
+				"All copy, imagery, logos, and distinctive artwork with the customer's own content.",
+				"Fonts with licensed equivalents unless the source font is verifiably self-hostable."
+			],
+			"remix": [
+				"Shift the accent hue by roughly 10 degrees and pick the customer's own brand neutrals — visibly theirs, not a copy.",
+				"Let the customer's real content (products, posts, pages) drive the layout; apply the language to it."
+			],
+			"licensingNote": "Inspired-by analysis: no source CSS, HTML, copy, or assets were copied. Verify the source license before any closer adaptation.",
+			"attribution": [
+				"Source: https://nysianproductions.com"
+			]
+		}
+	},
+	"inventory": {
+		"shape": "multi-page",
+		"navAnchors": [],
+		"navPages": [
+			"/contact/",
+			"/projects/"
+		],
+		"covered": [
+			"/",
+			"/contact/",
+			"/projects/",
+			"/sample-page/",
+			"/wedidntknowhy/"
+		],
+		"excluded": [],
+		"missing": [
+			"/xmlrpc.php/"
+		],
+		"danglingAnchors": [],
+		"analyzedAt": "2026-11-20T12:20:55.808Z"
+	},
+	"vocabulary": {
+		"widgetRoles": {},
+		"blockRoles": {},
+		"unknownWidgets": [
+			"cover__inner-container",
+			"gallery",
+			"latest-posts",
+			"post-template",
+			"pullquote",
+			"rank-math-related-posts",
+			"term-template"
+		],
+		"unknownBlocks": [],
+		"analyzedAt": "2026-11-20T12:20:57.226Z"
+	},
+	"animations": {
+		"facts": [],
+		"libraries": [],
+		"keyframes": {
+			"a": [
+				{
+					"offset": "0%",
+					"declarations": {
+						"transform": "rotate(0deg)"
+					}
+				},
+				{
+					"offset": "to",
+					"declarations": {
+						"transform": "rotate(359deg)"
+					}
+				}
+			],
+			"eicon-spin": [
+				{
+					"offset": "0%",
+					"declarations": {
+						"transform": "rotate(0deg)"
+					}
+				},
+				{
+					"offset": "to",
+					"declarations": {
+						"transform": "rotate(359deg)"
+					}
+				}
+			]
+		},
+		"counts": {},
+		"video": 0,
+		"smil": 0
+	},
+	"geometry": {
+		"9d2e299": {
+			"desktop": {
+				"height": 680,
+				"width": 1440,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 680,
+				"width": 834,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 560,
+				"width": 390,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		}
+	},
+	"bandFacts": {
+		"9d2e299": {
+			"containerWidth": 1440,
+			"headings": {
+				"h1": {
+					"size": "78px",
+					"weight": "100",
+					"lineHeight": "78px",
+					"letterSpacing": "1px",
+					"transform": "none",
+					"align": "end",
+					"family": "betm",
+					"color": "rgb(255, 255, 255)",
+					"maxWidth": "none",
+					"marginTop": "0px",
+					"marginBottom": "0px"
+				},
+				"h2": {
+					"size": "35px",
+					"weight": "400",
+					"lineHeight": "35px",
+					"letterSpacing": "normal",
+					"transform": "none",
+					"align": "end",
+					"family": "betm",
+					"color": "rgb(255, 255, 255)",
+					"maxWidth": "none",
+					"marginTop": "0px",
+					"marginBottom": "0px"
+				}
+			},
+			"centeredContent": true,
+			"box": {
+				"elementor-container": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 545px 0px 545px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 242px 0px 242px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 20px 0px 20px"
+				},
+				"elementor-column-gap-default": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 545px 0px 545px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 242px 0px 242px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 20px 0px 20px"
+				},
+				"elementor-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-col-100": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-top-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-element-a672e41": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-wrap": {
+					"base": "padding:10px 10px 10px 10px;margin:0px 0px 100px 0px"
+				},
+				"elementor-element-populated": {
+					"base": "padding:10px 10px 10px 10px;margin:0px 0px 100px 0px"
+				},
+				"elementor-element-507609e": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 1px 0px"
+				},
+				"elementor-widget": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-widget-heading": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-widget-container": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-heading-title": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-size-default": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-c753bc0": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				}
+			},
+			"classes": [
+				"elementor-col-100",
+				"elementor-column",
+				"elementor-column-gap-default",
+				"elementor-container",
+				"elementor-element",
+				"elementor-element-507609e",
+				"elementor-element-9d2e299",
+				"elementor-element-a672e41",
+				"elementor-element-c753bc0",
+				"elementor-element-populated",
+				"elementor-heading-title",
+				"elementor-section",
+				"elementor-section-boxed",
+				"elementor-section-height-default",
+				"elementor-section-height-min-height",
+				"elementor-section-items-middle",
+				"elementor-size-default",
+				"elementor-top-column",
+				"elementor-top-section",
+				"elementor-widget",
+				"elementor-widget-container",
+				"elementor-widget-heading",
+				"elementor-widget-wrap"
+			],
+			"interactions": [
+				{
+					"tag": "a",
+					"classes": [],
+					"count": 1,
+					"base": "cursor:pointer;color:rgb(255, 255, 255);text-decoration-line:none",
+					"transition": "0.1s linear"
+				}
+			]
+		}
+	},
+	"pageBackground": "rgb(0, 0, 0)",
+	"stickyHeader": {
+		"sticky": false
+	},
+	"pageBands": {
+		"projects": {
+			"url": "https://nysianproductions.com/projects/",
+			"builder": "elementor",
+			"sections": [
+				{
+					"id": "eb3afbb",
+					"kind": "text",
+					"bgColor": "#000000",
+					"measure": "650px",
+					"paddingX": "10px",
+					"minHeight": {
+						"desktop": "680px",
+						"tablet": "680px",
+						"mobile": "560px"
+					},
+					"centered": true
+				}
+			],
+			"geometry": {},
+			"bandFacts": {}
+		},
+		"contact": {
+			"url": "https://nysianproductions.com/contact/",
+			"builder": "elementor",
+			"sections": [
+				{
+					"id": "e84715b",
+					"kind": "text",
+					"bgColor": "#000000",
+					"measure": "650px",
+					"paddingX": "10px",
+					"minHeight": {
+						"desktop": "680px",
+						"tablet": "680px",
+						"mobile": "560px"
+					},
+					"centered": true
+				}
+			],
+			"geometry": {},
+			"bandFacts": {}
+		},
+		"wedidntknowhy": {
+			"url": "https://nysianproductions.com/wedidntknowhy/",
+			"builder": "elementor",
+			"sections": [
+				{
+					"id": "e2c18bc",
+					"kind": "text",
+					"bgColor": "#ffffff"
+				}
+			],
+			"geometry": {},
+			"bandFacts": {}
+		}
+	},
+	"text": {
+		"capturedAt": "2026-11-20T12:22:23.233Z",
+		"url": "https://nysianproductions.com",
+		"page": "skip to content nysian projects contact nysian film & art productions copyright © 2026 nysian productions. all rights reserved",
+		"sections": [
+			{
+				"id": "9d2e299",
+				"text": "nysian film & art productions"
+			}
+		],
+		"skipped": []
+	},
+	"colors": {
+		"light": {
+			"body": {
+				"background": "#000000",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 1
+					}
+				]
+			},
+			"header": {
+				"background": "#000000",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 1
+					}
+				]
+			},
+			"footer": {
+				"background": "#000000",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 1
+					}
+				]
+			}
+		},
+		"dark": {
+			"body": {
+				"background": "#000000",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 1
+					}
+				]
+			},
+			"header": {
+				"background": "#000000",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 1
+					}
+				]
+			},
+			"footer": {
+				"background": "#000000",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 1
+					}
+				]
+			}
+		}
+	},
+	"tracking": {
+		"trackers": [
+			{
+				"vendor": "cloudflare-web-analytics",
+				"category": "analytics",
+				"enabled": false,
+				"ids": {},
+				"detectedBy": [
+					"probe:request:static.cloudflareinsights.com"
+				],
+				"confidence": "low",
+				"detectedVia": "probe",
+				"notes": [
+					"Vendor detected but no public id could be extracted — confirm it against the source before enabling.",
+					"Cookieless analytics is still consent-gated in the EEA; the UK DUAA 2025 exception is narrow. Promote to exempt only with a documented legal basis."
+				]
+			}
+		],
+		"consent": {
+			"mode": "none",
+			"default": "denied",
+			"strategy": "basic",
+			"waitForUpdate": 500,
+			"gpc": true
+		},
+		"delivery": {
+			"mode": "deferred"
+		},
+		"csp": {
+			"hosts": []
+		},
+		"analyzedAt": "2026-11-20T12:22:31.646Z",
+		"pagesAnalyzed": [
+			"https://nysianproductions.com",
+			"https://nysianproductions.com/contact/",
+			"https://nysianproductions.com/projects/"
+		]
+	},
+	"shape": "multi-page",
+	"tokens": {
+		"surface": "#000000",
+		"surface-alt": "#000000",
+		"ink": "#ffffff",
+		"muted": "#ffffff",
+		"line": "#333333",
+		"line-strong": "#666666",
+		"accent": "#ffffff",
+		"accent-ink": "#000000",
+		"font": "'betm', Helvetica, Arial, sans-serif",
+		"font-display": "'betm', Helvetica, Arial, sans-serif",
+		"font-heading": "'betm', Helvetica, Arial, sans-serif",
+		"measure": "1250px",
+		"radius": "0px",
+		"radius-sm": "0px",
+		"radius-lg": "0px",
+		"scale-h1": "78px",
+		"scale-h2": "35px",
+		"scale-h3": "45px",
+		"scale-h4": "30px",
+		"scale-body": "17px",
+		"scale-small": "12px"
+	},
+	"locked": {
+		"at": "2026-11-20T13:36:38.387Z",
+		"by": "NV Digital",
+		"reason": "Hand-built measured page layer over the forge pipeline (per-page compositions the design renderer cannot express)"
+	}
+}

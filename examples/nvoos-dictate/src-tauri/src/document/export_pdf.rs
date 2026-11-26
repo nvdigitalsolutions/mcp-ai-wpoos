@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Searchable-PDF export (Proposal 109 M4, D10): rebuild the source PDF
 //! with each page as a raster image plus an invisible ISO-32000 text layer
 //! (`3 Tr` render mode), so Ctrl+F/selection work. This is the honest v1:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Model download registry: pinned model sources, SHA-256 verification,
 //! progress reporting, atomic install.
 //!
@@ -394,7 +395,11 @@ fn install_archive(tmp: &Path, models_dir: &Path, id: &str) -> AppResult<PathBuf
 /// Remove `dest` (if present) and rename `staging` into place, retrying on
 /// transient Windows sharing violations (the classic orphaned-`.download`
 /// root cause). Bounded retries; the last I/O error is surfaced.
-#[cfg(feature = "parakeet")]
+///
+/// Shared by both sherpa-onnx engines: the installer that calls this is gated
+/// on `any(parakeet, fastconformer)`, so these helpers must be too — gating
+/// them on `parakeet` alone broke `--features fastconformer`.
+#[cfg(any(feature = "parakeet", feature = "fastconformer"))]
 fn replace_dir(staging: &Path, dest: &Path) -> AppResult<()> {
     let mut last: std::io::Error = std::io::Error::other("swap did not run");
     for attempt in 0..5 {
@@ -419,7 +424,7 @@ fn replace_dir(staging: &Path, dest: &Path) -> AppResult<()> {
 }
 
 /// 50ms * 2^attempt backoff for the dir-swap retry.
-#[cfg(feature = "parakeet")]
+#[cfg(any(feature = "parakeet", feature = "fastconformer"))]
 fn replace_dir_backoff(attempt: usize) -> std::time::Duration {
     std::time::Duration::from_millis(50 * (1u64 << attempt.min(4)))
 }
@@ -598,7 +603,7 @@ mod tests {
     /// The sherpa-onnx archive layout: a top-level dir named after the model
     /// id containing `tokens.txt` etc. Extraction must preserve it so the
     /// engine finds files at `models_dir/{id}/…`.
-    #[cfg(feature = "parakeet")]
+    #[cfg(any(feature = "parakeet", feature = "fastconformer"))]
     #[test]
     fn extract_tar_bz2_preserves_top_level_dir() {
         use std::io::Write;
@@ -640,7 +645,7 @@ mod tests {
     /// read-only (archive metadata) used to fail with "creating or
     /// truncating a file requires write or append access". The staging swap
     /// + attribute cleanup must replace the tree regardless.
-    #[cfg(feature = "parakeet")]
+    #[cfg(any(feature = "parakeet", feature = "fastconformer"))]
     #[test]
     fn reinstall_over_readonly_previous_install_succeeds() {
         use std::io::Write;
@@ -702,7 +707,7 @@ mod tests {
     /// tree over an already-present destination dir (the state a completed
     /// download leaves when the resident engine or a stale handle held the
     /// old install), and must leave the destination fully replaced.
-    #[cfg(feature = "parakeet")]
+    #[cfg(any(feature = "parakeet", feature = "fastconformer"))]
     #[test]
     fn replace_dir_overwrites_existing_destination() {
         let dir = std::env::temp_dir().join(format!("nvoos-dictate-swap-{}", std::process::id()));

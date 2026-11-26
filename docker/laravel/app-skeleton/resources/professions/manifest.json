@@ -1,0 +1,12 @@
+{
+    "catalogue_version": "sha256:a7433732b76ab505",
+    "catalogue_licence": "LicenseRef-Proprietary",
+    "licence_file": "LICENCE.md",
+    "generated_by": "bin/sync-professions.php",
+    "source": "includes/knowledge-base/professions",
+    "professions": 260,
+    "files": 12,
+    "excluded": [
+        "pro-*.json"
+    ]
+}

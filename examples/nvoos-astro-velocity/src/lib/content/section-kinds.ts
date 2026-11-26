@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // section-kinds.ts — the `data-section` vocabulary for this storefront.
 //
@@ -25,6 +26,8 @@ export const SECTION_KINDS = [
 	'hero',
 	/** image — a single figure. */
 	'image',
+	/** model-3d — a poster-first 3D product viewer (the `model3d` type). */
+	'model-3d',
 	/** testimonial — quote + attribution. */
 	'testimonial',
 	/** faq — accordion of question/answer pairs. */
@@ -61,6 +64,7 @@ export function isSectionKind(value: unknown): value is SectionKind {
 export const BLOCK_TYPE_TO_KIND = {
 	hero: 'hero',
 	image: 'image',
+	model3d: 'model-3d',
 	testimonial: 'testimonial',
 	faq: 'faq',
 	stat: 'stats',

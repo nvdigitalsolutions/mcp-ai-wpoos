@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Bootstrap Service — Initial data loader for SPA.
  *

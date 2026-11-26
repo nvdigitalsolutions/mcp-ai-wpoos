@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // scaffold-tracking.test.ts — the generated tracking module + env lines
 // (Proposal 130 §3.4).
@@ -82,6 +83,54 @@ describe( 'renderTrackingGenerated', () => {
 		expect( out ).toContain( 'enabled: false,' );
 		expect( out ).toContain( 'vendors: [],' );
 		expect( out ).toContain( "mode: 'none'" );
+	} );
+} );
+
+describe( 'renderTrackingGenerated — consent-exempt beacons', () => {
+	function withTracker( vendor: string, consentExempt: boolean, spa?: boolean ): SiteProfile {
+		return {
+			url: 'https://example.com',
+			collections: [],
+			tracking: {
+				trackers: [
+					{
+						vendor,
+						category: 'analytics',
+						enabled: true,
+						ids: { token: '39a0cc5c9636420d99495209b1e494a8' },
+						detectedBy: [ 'operator' ],
+						confidence: 'high',
+						...( consentExempt ? { consentExempt: true } : {} ),
+					},
+				],
+				consent: { mode: 'none', default: 'denied', strategy: 'basic', gpc: true },
+				...( spa === undefined ? {} : { spa } ),
+				delivery: { mode: 'deferred' },
+				csp: { hosts: [] },
+			},
+		};
+	}
+
+	it( 'marks a cookieless vendor and carries the operator exemption', () => {
+		const out = renderTrackingGenerated( withTracker( 'cloudflare-web-analytics', true ) );
+		expect( out ).toContain( "'cloudflare-web-analytics'" );
+		expect( out ).toContain( 'cookieless: true' );
+		expect( out ).toContain( 'consentExempt: true' );
+	} );
+
+	it( 'never exempts a vendor that sets cookies', () => {
+		// A GA4 tag behind no decision is a compliance bug — the flag is dropped
+		// at generation time, so nothing downstream can re-enable it.
+		const out = renderTrackingGenerated( withTracker( 'google-analytics-4', true ) );
+		expect( out ).not.toContain( 'consentExempt: true' );
+		expect( out ).not.toContain( 'cookieless: true' );
+	} );
+
+	it( 'pins SPA measurement off unless the profile asks for it', () => {
+		// The beacon's default SPA mode patches the History API; a static MPA
+		// gains nothing from it and would double-count if a router were added.
+		expect( renderTrackingGenerated( withTracker( 'cloudflare-web-analytics', true ) ) ).toContain( 'spa: false,' );
+		expect( renderTrackingGenerated( withTracker( 'cloudflare-web-analytics', true, true ) ) ).toContain( 'spa: true,' );
 	} );
 } );
 

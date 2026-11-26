@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // bands.test.ts — the vendor-agnostic sectioner.
 //
@@ -395,5 +396,54 @@ describe( 'band ids are STRUCTURAL (dynamic copy must never renumber a band)', (
 		const ids = extractBandsFromHtml( build( 'x' ) ).bands.map( ( band ) => band.id );
 		expect( ids ).toHaveLength( 2 );
 		expect( new Set( ids ).size ).toBe( ids.length );
+	} );
+} );
+
+describe( 'Elementor flexbox containers (eca.directory)', () => {
+	// Elementor ≥3.16 renders CONTAINERS instead of top sections: the band is
+	// `.e-con.e-parent`, its columns are `.e-con.e-child` inside `.e-con-inner`,
+	// and nothing carries `elementor-top-section`. Before the adapter learned
+	// the container names a 110-widget home page yielded zero adapter bands.
+	const html = page( `
+		<header data-elementor-type="header" class="elementor elementor-86 elementor-location-header">
+			<div class="elementor-element elementor-element-aaaa111 e-flex e-con-boxed e-con e-parent">
+				<div class="e-con-inner">
+					<div class="elementor-element elementor-element-bbbb222 e-con-full e-flex e-con e-child"><p>${ LONG }</p></div>
+				</div>
+			</div>
+		</header>
+		<main>
+			<div class="elementor-element elementor-element-cccc333 e-flex e-con-boxed e-con e-parent" style="background-color:#27104a;padding:80px 20px">
+				<div class="e-con-inner">
+					<div class="elementor-element elementor-element-dddd444 e-con-full e-flex e-con e-child" style="--width:60%"><h2>Why ECA</h2><p>${ LONG }</p></div>
+					<div class="elementor-element elementor-element-eeee555 e-con-full e-flex e-con e-child" style="--width:40%"><img src="/x.jpg" alt=""></div>
+				</div>
+			</div>
+			<div class="elementor-element elementor-element-ffff666 e-flex e-con-boxed e-con e-parent">
+				<div class="e-con-inner">
+					<div class="elementor-element elementor-element-1111222 e-con-full e-flex e-con e-child"><p>${ LONG }</p></div>
+					<div class="elementor-element elementor-element-2222333 e-con-full e-flex e-con e-child"><p>${ LONG }</p></div>
+					<div class="elementor-element elementor-element-3333444 e-con-full e-flex e-con e-child"><p>${ LONG }</p></div>
+				</div>
+			</div>
+		</main>` );
+
+	it( 'reads top-level containers as bands and nested containers as content', () => {
+		const { bands, adapter } = extractBandsFromHtml( html );
+		expect( adapter ).toBe( 'elementor' );
+		// The header's container is CHROME, not page content: Elementor renders
+		// the header template into the homepage but the REST page body the build
+		// consumes excludes it, so counting it shifted every positional audit.
+		expect( bands ).toHaveLength( 2 );
+		expect( bands.some( ( band ) => band.domId === 'aaaa111' ) ).toBe( false );
+	} );
+
+	it( 'reads the container surface and its child columns', () => {
+		const { bands } = extractBandsFromHtml( html );
+		expect( bands[ 0 ].bgColor ).toBe( '#27104a' );
+		expect( bands[ 0 ].paddingX ).toBe( '20px' );
+		// A `--width` share is the container's only inline column signal.
+		expect( bands[ 0 ].columns ).toEqual( [ { width: 60 }, { width: 40 } ] );
+		expect( bands[ 1 ].columns ).toEqual( [ { width: 33.33 }, { width: 33.33 }, { width: 33.33 } ] );
 	} );
 } );

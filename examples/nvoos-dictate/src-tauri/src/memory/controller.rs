@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Memory controller (Proposal 127, M2): the resident worker and the
 //! ask/retrieve surface.
 //!

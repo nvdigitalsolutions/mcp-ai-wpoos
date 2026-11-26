@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for the builder → REST payload contract (Phase 4 of Proposal 081).
  */

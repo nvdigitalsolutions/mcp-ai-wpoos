@@ -135,7 +135,12 @@ class Test_Higgsfield_Request_Tools extends WP_UnitTestCase {
 			function () {
 				return array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'status' => 'in_progress', 'request_id' => 'req-1' ) ),
+					'body'     => wp_json_encode(
+						array(
+							'status'     => 'in_progress',
+							'request_id' => 'req-1',
+						)
+					),
 				);
 			},
 			10,

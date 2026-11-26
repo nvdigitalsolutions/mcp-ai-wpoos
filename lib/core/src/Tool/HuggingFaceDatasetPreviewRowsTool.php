@@ -13,6 +13,15 @@ namespace Nvoos\Core\Tool;
 
 class HuggingFaceDatasetPreviewRowsTool extends AbstractHuggingFaceTool
 {
+    /**
+     * The datasets-server endpoint this tool calls.
+     *
+     * Public because the dataset browser derives its catalogue from it:
+     * one declaration, two readers, and an endpoint change cannot leave
+     * the page describing a route that no longer exists.
+     */
+    public const ENDPOINT = '/first-rows';
+
     public function getSlug(): string
     {
         return 'huggingface_dataset_preview_rows';
@@ -62,7 +71,7 @@ class HuggingFaceDatasetPreviewRowsTool extends AbstractHuggingFaceTool
         }
         try {
             $data = $this->apiGet(
-                '/first-rows',
+                self::ENDPOINT,
                 array(
                     'dataset' => $dataset,
                     'config'  => $this->stringParam($arguments, 'config', 'default'),

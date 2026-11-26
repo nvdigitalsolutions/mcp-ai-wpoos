@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // class-audit.ts — which class names in the rebuilt bands match NO rule?
 //

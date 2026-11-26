@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * ESLint flat config — NV oOS Docs Hub.
  *

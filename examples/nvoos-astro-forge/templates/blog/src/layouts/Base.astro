@@ -1,5 +1,10 @@
 ---
+// SPDX-License-Identifier: MIT
 import '../styles/global.css';
+/* The source builder's recovered per-element rules (element-css.ts). Loaded
+ * AFTER global.css so a measured element box out-ranks the class-convention
+ * shim, exactly as the vendor stylesheet did on the source. */
+import '../styles/elements.generated.css';
 import manifest from '../../nvoos.json';
 import { useCopy } from '../copy/index.ts';
 import ThemeToggle from '../components/ThemeToggle.astro';
@@ -7,13 +12,15 @@ import Tracking from '../components/Tracking.astro';
 import ConsentBanner from '../components/ConsentBanner.astro';
 import BuilderAccordion from '../components/BuilderAccordion.astro';
 import BuilderCarousel from '../components/BuilderCarousel.astro';
+import BuilderLightbox from '../components/BuilderLightbox.astro';
 import { generatedPolicy } from '../lib/theme/policy.generated.ts';
 import { chrome } from '../lib/chrome.generated.ts';
+import { footerLineSegments } from '../forge/footer-line.ts';
 import { behaviors } from '../lib/behaviors.generated.ts';
 import { hasInfiniteMotion } from '../lib/animations.generated.ts';
 import { webFonts } from '../lib/design.generated.ts';
 import { canonicalFontFamily } from '../lib/fonts.ts';
-import { repairMediaUrl } from '../lib/media.ts';
+import { mediaUrl, repairMediaUrl } from '../lib/media.ts';
 import { composeDocumentTitle } from '../lib/seo.ts';
 
 /**
@@ -30,9 +37,12 @@ const SOCIAL_PATHS: Record<string, string> = {
 	instagram: 'M12 2.6c-2.6 0-2.9 0-3.9.1-1 0-1.7.2-2.3.4-.6.3-1.2.6-1.7 1.1-.5.5-.8 1-1.1 1.7-.2.6-.4 1.3-.4 2.3-.1 1-.1 1.3-.1 3.9s0 2.9.1 3.9c0 1 .2 1.7.4 2.3.3.6.6 1.2 1.1 1.7.5.5 1 .8 1.7 1.1.6.2 1.3.4 2.3.4 1 .1 1.3.1 3.9.1s2.9 0 3.9-.1c1 0 1.7-.2 2.3-.4.6-.3 1.2-.6 1.7-1.1.5-.5.8-1 1.1-1.7.2-.6.4-1.3.4-2.3.1-1 .1-1.3.1-3.9s0-2.9-.1-3.9c0-1-.2-1.7-.4-2.3a4.7 4.7 0 0 0-1.1-1.7 4.7 4.7 0 0 0-1.7-1.1c-.6-.2-1.3-.4-2.3-.4-1-.1-1.3-.1-3.9-.1zm0 4.6a4.8 4.8 0 1 0 0 9.6 4.8 4.8 0 0 0 0-9.6zm0 7.9a3.1 3.1 0 1 1 0-6.2 3.1 3.1 0 0 1 0 6.2zm6.1-8.1a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0z',
 };
 
-/** The network a source icon class names (`fab fa-facebook-f` → facebook). */
-const socialNetwork = ( icon?: string ): string | undefined => {
-	const match = icon?.match( /fa-(facebook|twitter|youtube|linkedin|instagram)/i );
+/** The network a source icon class OR badge LABEL names (`fab fa-facebook-f` →
+ * facebook; `aria-label="Facebook"` → facebook). A Kadence-style footer ships
+ * an inline <svg> badge with no icon class at all, so an icon-only match fell
+ * through to the text fallback and printed the label inside the round badge. */
+const socialNetwork = ( icon?: string, label?: string ): string | undefined => {
+	const match = `${ icon ?? '' } ${ label ?? '' }`.match( /(facebook|twitter|youtube|linkedin|instagram)/i );
 	return match ? match[ 1 ].toLowerCase() : undefined;
 };
 
@@ -95,7 +105,7 @@ const ogTitle = meta.ogTitle ?? fullTitle;
 const ogDescription = meta.ogDescription ?? pageDescription;
 const ogType = meta.ogType ?? 'website';
 const ogSiteName = meta.ogSiteName ?? siteTitle;
-const socialImage = ogImage ?? meta.ogImage ?? meta.twitterImage;
+const socialImage = ogImage ?? meta.ogImage ?? meta.twitterImage ?? ( manifest.seoImage || undefined );
 const twitterCard = meta.twitterCard ?? (socialImage ? 'summary_large_image' : 'summary');
 const twitterTitle = meta.twitterTitle ?? ogTitle;
 const twitterDescription = meta.twitterDescription ?? ogDescription;
@@ -196,6 +206,19 @@ const chromeVars = [
 	chrome?.footerBarInk && `--forge-footer-bar-ink:${chrome.footerBarInk}`,
 	chrome?.footerBg && `--forge-footer-bg:${chrome.footerBg}`,
 	chrome?.footerInk && `--forge-footer-ink:${chrome.footerInk}`,
+	// The measured social BADGE box — a builder's filled style is a rounded
+	// SQUARE, and the template's default circle reads as a different component.
+	chrome?.footerBrand?.social?.size && `--forge-footer-social-size:${chrome.footerBrand.social.size}`,
+	chrome?.footerBrand?.social?.radius && `--forge-footer-social-radius:${chrome.footerBrand.social.radius}`,
+	chrome?.footerBrand?.social?.bg && `--forge-footer-social-bg:${chrome.footerBrand.social.bg}`,
+	chrome?.footerBrand?.social?.ink && `--forge-footer-social-ink:${chrome.footerBrand.social.ink}`,
+	// The measured © row type + alignment (the template renders footer blocks as
+	// left-aligned body copy).
+	chrome?.footerBrand?.text?.size && `--forge-footer-text-size:${chrome.footerBrand.text.size}`,
+	chrome?.footerBrand?.text?.weight && `--forge-footer-text-weight:${chrome.footerBrand.text.weight}`,
+	chrome?.footerBrand?.text?.ink && `--forge-footer-text-ink:${chrome.footerBrand.text.ink}`,
+	chrome?.footerBrand?.text?.linkInk && `--forge-footer-text-link:${chrome.footerBrand.text.linkInk}`,
+	chrome?.footerBrand?.text?.align && `--forge-footer-text-align:${chrome.footerBrand.text.align}`,
 	// The measured sticky header (analyze --geometry): the pinned background/ink
 	// and the shrinking header's two heights. Absent → the header keeps its
 	// resting appearance when pinned.
@@ -296,7 +319,44 @@ const logoOverrides = ([
 const footerLogoCss = logoBaseHeight
 	? [`${footerLogoSelector}{height:${logoBaseHeight}}`, ...logoOverrides].join('\n')
 	: '';
-const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(Boolean).join('\n');
+// The HEADER mark's rendered height (measured per viewport with the header's
+// box). The template's `2.5rem` is a default, not a fact: this source's mark is
+// 260×97 inside a 125px bar, and a pinned 40px rendered it 2.4× too small
+// (krishandramikasavethe.world, 2026-11-19).
+const headerLogoHeight = (box?: { logoHeight?: string }) =>
+	box?.logoHeight && /^\d+px$/.test(box.logoHeight) ? box.logoHeight : undefined;
+const headerLogoSelector = '.site-header .brand-logo';
+const headerLogoBase = headerLogoHeight(chrome?.geometry?.wide ?? chrome?.geometry?.desktop);
+const headerLogoOverrides = ([
+	['1199px', chrome?.geometry?.tablet],
+	['767px', chrome?.geometry?.mobile],
+] as const)
+	.filter(([, box]) => box && headerLogoHeight(box) && headerLogoHeight(box) !== headerLogoBase)
+	.map(([width, box]) => `@media (max-width:${width}){${headerLogoSelector}{height:${headerLogoHeight(box)}}}`);
+const headerLogoCss = headerLogoBase
+	? [`${headerLogoSelector}{height:${headerLogoBase}}`, ...headerLogoOverrides].join('\n')
+	: '';
+const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss, headerLogoCss].filter(Boolean).join('\n');
+// Where the mark STATION sits. A source that centres its logo cannot be
+// reproduced by the template’s `space-between` row — that leaves the mark at
+// the left edge, under the disclosure (monicarajiv: 273×74 centred in 1425px,
+// rendered 147×40 hard left, 2026-11-19). The STYLESHEET owns the layout; this
+// only decides whether it engages.
+const headerLogoAlign = chrome?.geometry?.desktop?.logoAlign ?? chrome?.geometry?.wide?.logoAlign;
+const headerLogoCentre = headerLogoAlign === 'center';
+// The header’s trailing icon links. The source draws them with the vendor
+// `fl-icons` font, which never ships, so it is re-drawn as an inline glyph.
+// Its href is Cloudflare’s `/cdn-cgi/l/email-protection#…`, which is not a
+// usable destination — the address the topbar already prints is.
+const topbarEmail = (chrome?.topbar ?? [])
+	.map((line) => /[^@\s]+@[^@\s]+\.[a-z]{2,}/i.exec(line ?? '')?.[0])
+	.find(Boolean);
+const headerActions = (chrome?.headerActions ?? [])
+	.map((action) => {
+		const guarded = /\/cdn-cgi\/l\/email-protection/.test(action.href ?? '');
+		return { ...action, href: guarded && topbarEmail ? `mailto:${topbarEmail}` : action.href };
+	})
+	.filter((action) => Boolean(action.href));
 ---
 
 <!doctype html>
@@ -316,7 +376,7 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 		<link rel="describedby" href="/llms.txt" />
 		{markdownHref && <link rel="alternate" type="text/markdown" href={markdownHref} />}
 		{hasFeed && <link rel="alternate" type="application/rss+xml" title={siteTitle} href="/feed.xml" />}
-		{chrome?.favicon && <link rel="icon" href={chrome.favicon} />}
+		{chrome?.favicon && <link rel="icon" href={mediaUrl(chrome.favicon)} />}
 		{chrome?.iconCss && <link rel="stylesheet" href={repairMediaUrl(chrome.iconCss)} media="all" />}
 		{/* The brand-icon sheet (FontAwesome) — draws the footer socials' source
 		 * glyph classes for networks the rebuild has no inline path for. */}
@@ -445,6 +505,10 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 					'site-topbar',
 					chrome.topbarAlign === 'end' && 'site-topbar--end',
 					chrome.topbarAlign === 'center' && 'site-topbar--center',
+					/* Exactly two items and no measured alignment: every builder that
+					 * ships a topbar puts the first item left and the last one right
+					 * (Flatsome's `.header-top` is flex-left + flex-right). */
+					! chrome.topbarAlign && chrome.topbar?.length === 2 && 'site-topbar--split',
 					chrome.topbarItems && chrome.topbarItems.some((item) => item.icon) && 'site-topbar--icons',
 				]}
 			>
@@ -484,7 +548,7 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 				</div>
 			</div>
 		)}
-		<header class:list={['site-header', behaviors.headerSticky && 'site-header--sticky', behaviors.headerPosition === 'fixed' && 'site-header--float', chrome?.headerBg && 'site-header--themed', chrome?.headerTransparent && 'site-header--overlay', (behaviors.headerRestHeight || behaviors.headerPinnedHeight) && 'site-header--sized', (behaviors.headerPinnedBg || behaviors.headerPinnedHeight) && 'site-header--pinned']}>
+		<header class:list={['site-header', headerLogoCentre && 'site-header--brand-center', behaviors.headerSticky && 'site-header--sticky', behaviors.headerPosition === 'fixed' && 'site-header--float', chrome?.headerBg && 'site-header--themed', chrome?.headerTransparent && 'site-header--overlay', (behaviors.headerRestHeight || behaviors.headerPinnedHeight) && 'site-header--sized', (behaviors.headerPinnedBg || behaviors.headerPinnedHeight) && 'site-header--pinned']}>
 			{/*
 			 * The BOX (P4). The source constrains its brand/nav row to a container
 			 * (jayainc: 1670px, 35px gutters; virtuallyjamaica: Bootstrap's 1170px,
@@ -495,7 +559,7 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 			<div class="site-header-inner">
 			<div class="brand-block">
 				<a class="brand" href="/">
-					{chrome?.logo?.src ? <img class="brand-logo" src={chrome.logo.src} alt={chrome.logo.alt ?? siteTitle} /> : siteTitle}
+					{chrome?.logo?.src ? <img class="brand-logo" src={mediaUrl(chrome.logo.src)} alt={chrome.logo.alt ?? siteTitle} /> : siteTitle}
 				</a>
 				{chrome?.tagline && <p class="brand-tagline">{chrome.tagline}</p>}
 			</div>
@@ -530,7 +594,11 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 				<nav id="site-nav" aria-label={copy.nav.primaryLabel}>
 				{chrome?.nav && chrome.nav.length > 0 ? (
 					chrome.nav.map((item) => (
-						<a href={item.href}>{item.label}</a>
+						<>
+							<a href={item.href}>
+								{item.label}
+							</a>{' '}
+						</>
 					))
 				) : navAnchors.length > 0 ? (
 					/*
@@ -551,7 +619,44 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 				)}
 			</nav>
 		</div>
+			{/* The actions cell is a FLEX SLOT: with `space-between`, an empty one
+			 * splits brand | nav | (nothing) and centres the nav instead of
+			 * right-aligning it. Render it only when it has something to show. */}
+			{(hasInfiniteMotion || chrome?.call || chrome?.themeToggle || headerActions.length > 0) && (
 			<div class="header-actions">
+				{headerActions.map((action) =>
+					action.text ? (
+						/* A labelled pill: the source's own primary control. Its fill, ink
+						 * and box are MEASURED chrome facts, so they ride the inline style
+						 * rather than a template colour. */
+						<a
+							class:list={['header-cta', action.hideMobile && 'header-cta--hide-mobile']}
+							href={action.href}
+							style={[
+								action.fill && `background:${action.fill}`,
+								action.ink && `color:${action.ink}`,
+								action.style?.padding && `padding:${action.style.padding}`,
+								action.style?.radius && `border-radius:${action.style.radius}`,
+								action.style?.size && `font-size:${action.style.size}`,
+								action.style?.weight && `font-weight:${action.style.weight}`,
+							]
+								.filter(Boolean)
+								.join(';')}
+						>
+							{action.text}
+						</a>
+					) : (
+						<a class="header-icon" href={action.href} aria-label={action.label} title={action.label}>
+							{action.icon === 'envelop' || action.icon === 'mail' ? (
+								<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+									<path d="M2 5.5A2.5 2.5 0 0 1 4.5 3h15A2.5 2.5 0 0 1 22 5.5v13a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 2 18.5v-13Zm2.2-.5 7.8 6.05L19.8 5H4.2ZM20 6.8l-7.4 5.74a1 1 0 0 1-1.2 0L4 6.8v11.7c0 .28.22.5.5.5h15a.5.5 0 0 0 .5-.5V6.8Z" />
+								</svg>
+							) : (
+								<span>{action.label}</span>
+							)}
+						</a>
+					)
+				)}
 				{/*
 				 * WCAG 2.2.2: an infinite rebuilt animation ships only when this
 				 * control exists. A checkbox is the no-JS pause affordance; CSS
@@ -576,12 +681,21 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 				 */}
 				{chrome?.themeToggle && <ThemeToggle />}
 			</div>
+			)}
 		</div>
 		</header>
 		<main class="site-main" id="main">
 			<slot />
 		</main>
 		<footer class:list={['site-footer', (chrome?.footerBg || chrome?.footerBarBg) && 'site-footer--themed']}>
+			{/* The sub-footer is a REAL strip only when it has something in it. An
+			 * empty one still carried its 24px padding, so a site with a copyright
+			 * and nothing else rendered a 48px blank band between the page and the
+			 * bar (krishandramikasavethe.world live build, 2026-11-19: footer 139px
+			 * against the source's 63px). */}
+			{((chrome?.social && chrome.social.length > 0) ||
+				Boolean(chrome?.footerLogo?.src) ||
+				(chrome?.footerBlocks && chrome.footerBlocks.length > 0)) && (
 			<div class="site-footer-sub">
 				<div class="site-footer-sub-inner">
 					{/*
@@ -597,14 +711,17 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 							{chrome?.social && chrome.social.length > 0 && (
 								<ul class="site-social">
 									{chrome.social.map((link) => {
-										const network = socialNetwork(link.icon);
+										const network = socialNetwork(link.icon, link.label);
 										const path = network ? SOCIAL_PATHS[network] : undefined;
 										return (
 											<li>
 												<a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label ?? network ?? 'Social link'}>
 													{path ? (
 														<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
-															<path fill="currentColor" d={path} />
+															{/* `evenodd` is what carves the glyph's inner marks (Instagram's
+															 * camera ring and lens, YouTube's play triangle). Without it the
+															 * nested subpaths fill solid and Instagram renders as a blob. */}
+															<path fill="currentColor" fill-rule="evenodd" d={path} />
 														</svg>
 													) : chrome?.socialIconCss && link.icon ? (
 														/* No inline glyph for this network — draw the SOURCE's own icon
@@ -641,7 +758,15 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 									)}
 									{block.title && <h3>{block.title}</h3>}
 									{block.items.map((item) => (
-										<p>{item}</p>
+										<p>
+											{footerLineSegments(item, chrome?.footerLinks).map((segment) =>
+												segment.href ? (
+													<a href={segment.href}>{segment.text}</a>
+												) : (
+													segment.text
+												)
+											)}
+										</p>
 									))}
 								</div>
 							))}
@@ -649,6 +774,7 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 					)}
 				</div>
 			</div>
+			)}
 			<div class="site-footer-bar">
 				<div class="site-footer-bar-inner">
 					{chrome?.copyright ? (
@@ -668,6 +794,9 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 		{/* A measured builder carousel keeps its per-view WIDTH from CSS; this adds
 			the source's dot control, which only its slider JS could render. */}
 		<BuilderCarousel />
+		{/* The source's gallery links opened a vendor lightbox; this restores the
+			viewer on the markup's own terms (a native <dialog>, no dependency). */}
+		<BuilderLightbox />
 		{/* The mobile nav disclosure (APG disclosure pattern). Progressive
 				enhancement: JS-off leaves the nav inline at every width, which is why
 				the stylesheet hides nothing until `data-collapsed` is set here. */}

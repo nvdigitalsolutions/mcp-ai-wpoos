@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * usePortability — Hook for assistant export/import flows.
  */

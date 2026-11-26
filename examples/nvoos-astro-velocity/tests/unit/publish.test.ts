@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // publish.test.ts — Proposal 104 §2.1: the single publication predicate
 // (astro-theme-cactus "filter everywhere" rule).
 import { describe, expect, it } from 'vitest';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * DropdownMenu — Radix DropdownMenu primitives with shadcn styling.
  */

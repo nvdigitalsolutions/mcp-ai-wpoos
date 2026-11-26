@@ -95,6 +95,9 @@ class WP_MCP_AI_Elementor_Output_Buffering_Test extends WP_UnitTestCase {
 				// Constructor logic.
 			}
 
+			/**
+			 * Method used to exercise output buffering.
+			 */
 			public function test_method() {
 				return 'test value';
 			}

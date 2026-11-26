@@ -9,15 +9,23 @@
  */
 
 /**
+ * Chat continuation store tests.
+ *
  * @group continuation
  */
 class Test_Chat_Continuation_Store extends WP_UnitTestCase {
 
+	/**
+	 * Reset the continuation store state.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		WP_MCP_AI_Chat_Continuation_Store::reset_for_tests();
 	}
 
+	/**
+	 * Reset the continuation store state after each test.
+	 */
 	public function tearDown(): void {
 		WP_MCP_AI_Chat_Continuation_Store::reset_for_tests();
 		parent::tearDown();
@@ -42,7 +50,10 @@ class Test_Chat_Continuation_Store extends WP_UnitTestCase {
 				'model'           => 'gpt-4o-mini',
 				'options'         => array( 'temperature' => 0.7 ),
 				'messages'        => array(
-					array( 'role' => 'user', 'content' => 'Make a video.' ),
+					array(
+						'role'    => 'user',
+						'content' => 'Make a video.',
+					),
 					array(
 						'role'       => 'assistant',
 						'tool_calls' => array( array( 'id' => 'call_abc' ) ),
@@ -99,11 +110,17 @@ class Test_Chat_Continuation_Store extends WP_UnitTestCase {
 
 		WP_MCP_AI_Chat_Continuation_Store::store(
 			'job_a',
-			array( 'chat_session_id' => $session, 'messages' => array() )
+			array(
+				'chat_session_id' => $session,
+				'messages'        => array(),
+			)
 		);
 		WP_MCP_AI_Chat_Continuation_Store::store(
 			'job_b',
-			array( 'chat_session_id' => $session, 'messages' => array() )
+			array(
+				'chat_session_id' => $session,
+				'messages'        => array(),
+			)
 		);
 
 		$jobs = WP_MCP_AI_Chat_Continuation_Store::get_jobs_for_session( $session );
@@ -111,13 +128,16 @@ class Test_Chat_Continuation_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * delete() should remove the row and clean the indices.
+	 * Delete() should remove the row and clean the indices.
 	 */
 	public function test_delete_removes_row_and_index() {
 		$session = 'sess_' . wp_generate_uuid4();
 		WP_MCP_AI_Chat_Continuation_Store::store(
 			'job_del',
-			array( 'chat_session_id' => $session, 'messages' => array() )
+			array(
+				'chat_session_id' => $session,
+				'messages'        => array(),
+			)
 		);
 
 		$this->assertNotNull( WP_MCP_AI_Chat_Continuation_Store::get( 'job_del' ) );
@@ -195,7 +215,10 @@ class Test_Chat_Continuation_Store extends WP_UnitTestCase {
 
 		$huge = array();
 		for ( $i = 0; $i < 50; $i++ ) {
-			$huge[] = array( 'role' => 'user', 'content' => str_repeat( 'A', 50 ) );
+			$huge[] = array(
+				'role'    => 'user',
+				'content' => str_repeat( 'A', 50 ),
+			);
 		}
 
 		$result = WP_MCP_AI_Chat_Continuation_Store::store(
@@ -212,7 +235,7 @@ class Test_Chat_Continuation_Store extends WP_UnitTestCase {
 	}
 
 	/**
-	 * generate_session_id() produces non-empty IDs and runs the filter.
+	 * Generate_session_id() produces non-empty IDs and runs the filter.
 	 */
 	public function test_generate_session_id_runs_filter() {
 		$called = false;
@@ -242,7 +265,10 @@ class Test_Chat_Continuation_Store extends WP_UnitTestCase {
 		add_action(
 			'wp_mcp_ai_chat_continuation_stored',
 			function ( $job_id, $payload ) use ( &$captured ) {
-				$captured = array( 'job_id' => $job_id, 'payload' => $payload );
+				$captured = array(
+					'job_id'  => $job_id,
+					'payload' => $payload,
+				);
 			},
 			10,
 			2
@@ -275,9 +301,27 @@ class Test_Chat_Continuation_Store extends WP_UnitTestCase {
 		);
 
 		$session = 'sess_cap';
-		WP_MCP_AI_Chat_Continuation_Store::store( 'job_p_1', array( 'chat_session_id' => $session, 'messages' => array() ) );
-		WP_MCP_AI_Chat_Continuation_Store::store( 'job_p_2', array( 'chat_session_id' => $session, 'messages' => array() ) );
-		WP_MCP_AI_Chat_Continuation_Store::store( 'job_p_3', array( 'chat_session_id' => $session, 'messages' => array() ) );
+		WP_MCP_AI_Chat_Continuation_Store::store(
+			'job_p_1',
+			array(
+				'chat_session_id' => $session,
+				'messages'        => array(),
+			)
+		);
+		WP_MCP_AI_Chat_Continuation_Store::store(
+			'job_p_2',
+			array(
+				'chat_session_id' => $session,
+				'messages'        => array(),
+			)
+		);
+		WP_MCP_AI_Chat_Continuation_Store::store(
+			'job_p_3',
+			array(
+				'chat_session_id' => $session,
+				'messages'        => array(),
+			)
+		);
 
 		$remaining = WP_MCP_AI_Chat_Continuation_Store::get_jobs_for_session( $session );
 		$this->assertCount( 2, $remaining );

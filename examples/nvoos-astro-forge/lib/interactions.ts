@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Interaction-state measurement — hover, focus, focus-visible and active.
  *
@@ -42,6 +43,7 @@
 
 import type { Page } from 'playwright';
 import type { ForgeInteractionChildFact, ForgeInteractionFact } from './types.ts';
+import { gateContextOptions } from './gate.ts';
 import { loadChromium } from './geometry.ts';
 
 /** The band heights and type are measured at this viewport; states match it. */
@@ -104,8 +106,12 @@ const PROBED_PROPERTIES = [
  * rules: a builder button is `inline-block` (virtuallyjamaica's `.btn`), and
  * rendered `inline` its 2px border and vertical padding reserve no space, so
  * the box overlapped the neighbouring line instead of boxing the label.
+ *
+ * `lineHeight` rides along for the same reason: with the border restored but
+ * the source's line box missing, an outline button rendered 41px against the
+ * source's 43px (monicarajiv, 2026-11-19).
  */
-const REST_LAYOUT_PROPERTIES = [ 'display', 'fontSize' ] as const;
+const REST_LAYOUT_PROPERTIES = [ 'display', 'fontSize', 'lineHeight' ] as const;
 
 /** camelCase → kebab-case, for emitting a measured property as CSS. */
 function kebab( property: string ): string {
@@ -522,6 +528,10 @@ const REST_PAINT_PROPERTIES = [
 	'textTransform',
 	'display',
 	'fontSize',
+	// The label’s line box: with the border restored but the source’s
+	// line-height missing, an outline button rendered 41px against 43px
+	// (monicarajiv, 2026-11-19).
+	'lineHeight',
 ] as const;
 
 /** Border sides, emitted as a shorthand only when the side is actually drawn. */
@@ -874,10 +884,10 @@ export async function measureInteractions(
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
-		const context = await browser.newContext( {
+		const context = await browser.newContext( gateContextOptions( {
 			deviceScaleFactor: 1,
 			reducedMotion: 'no-preference',
-		} );
+		} ) );
 		const page = await context.newPage();
 		await page.setViewportSize( { ...INTERACTION_VIEWPORT } );
 		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );

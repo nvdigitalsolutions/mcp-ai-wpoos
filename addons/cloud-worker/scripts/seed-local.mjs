@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Local dev seed script — creates a wallet + connect token in the local D1
  * database without needing Stripe.

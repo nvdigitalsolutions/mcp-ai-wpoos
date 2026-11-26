@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // tokens.test.ts — ADS generator + drift gate (Proposal 095). Regenerates
 // from src/tokens/*.json and asserts the committed artifacts are current
 // and carry the expected light/dark/brand blocks + legacy-compatible values.

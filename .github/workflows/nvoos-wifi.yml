@@ -1,0 +1,212 @@
+name: NV oOS WiFi
+
+# Proposal 150, T-0.12 — the gate that makes the addon's portability claim real.
+#
+# The addon exists because the same domain code must serve the WordPress plugin
+# *and* the Laravel runtime. That is an architectural claim, and an unenforced
+# architectural claim decays. Three jobs hold it:
+#
+#   portability — no dependencies at all. Proves the portable layers are
+#                 WordPress-free and that a second host produces identical bytes.
+#   static      — the addon's own phpcs, including the four WPMCPAI tool sniffs
+#                 that the astro-bridge template does not carry.
+#   unit        — the domain suite with NO WordPress bootstrap (see
+#                 addons/nvoos-wifi/phpunit.unit.xml).
+#
+# The purity gate is run with `--only=addons/nvoos-wifi` so a pre-existing
+# advisory finding in an unrelated core layer cannot fail this job. `--strict` is
+# scoped by that filter too: it is a no-op today (all three addon layers are
+# already strict) but it fails the build if anyone later demotes one to advisory.
+
+on:
+  push:
+    branches: [ main, alpha-working ]
+    paths:
+      - 'addons/nvoos-wifi/**'
+      - 'bin/check-domain-purity.php'
+      - 'bin/check-wifi-host-adapters.php'
+      - 'phpcs/WPMCPAI/**'
+      - 'docker/laravel/app-skeleton/app/Wifi/**'
+      - 'docker/laravel/app-skeleton/app/Http/Controllers/Wifi/**'
+      - 'docker/laravel/app-skeleton/app/Providers/WifiServiceProvider.php'
+      - 'docker/laravel/app-skeleton/config/wifi.php'
+      - 'docker/laravel/app-skeleton/tests/Feature/WifiKpisTest.php'
+      - 'docker/laravel/app-skeleton/tests/fixtures/wifi/**'
+      - '.github/workflows/nvoos-wifi.yml'
+  pull_request:
+    paths:
+      - 'addons/nvoos-wifi/**'
+      - 'bin/check-domain-purity.php'
+      - 'bin/check-wifi-host-adapters.php'
+      - 'phpcs/WPMCPAI/**'
+      - 'docker/laravel/app-skeleton/app/Wifi/**'
+      - 'docker/laravel/app-skeleton/app/Http/Controllers/Wifi/**'
+      - 'docker/laravel/app-skeleton/app/Providers/WifiServiceProvider.php'
+      - 'docker/laravel/app-skeleton/config/wifi.php'
+      - 'docker/laravel/app-skeleton/tests/Feature/WifiKpisTest.php'
+      - 'docker/laravel/app-skeleton/tests/fixtures/wifi/**'
+      - '.github/workflows/nvoos-wifi.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  portability:
+    name: Portability (strict, no dependencies)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # 8.1 is the addon's declared floor (the WordPress host's), not the
+      # Laravel runtime's 8.2. If the portable layers use 8.2-only syntax the
+      # WordPress host breaks, so the floor is the one that matters here.
+      - name: Set up PHP 8.1
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+
+      - name: Strict purity gate for the addon layers
+        # Fails on any WordPress symbol, global or I/O call in Domain/, Services/
+        # or Interfaces/. Exits 1 (not 0) if --only matches no layer, so a typo
+        # here can never degrade into a silently passing job.
+        run: php bin/check-domain-purity.php --only=addons/nvoos-wifi --strict
+
+      - name: Domain checks without WordPress
+        # Plain PHP, no PHPUnit, no vendor/. If this step can run at all, the
+        # domain is host-agnostic in the strongest sense available.
+        run: php addons/nvoos-wifi/tests/standalone-domain-checks.php
+
+      - name: Laravel host adapter conformance and payload parity
+        # Verifies App\Wifi\* satisfy the ports and that the Laravel host
+        # produces the committed fixture byte for byte — without Docker. Called
+        # directly rather than via `composer run quality:wifi-host` so this job
+        # needs no Composer install at all (the alias exists for human use).
+        run: php bin/check-wifi-host-adapters.php
+
+      - name: Both runtimes pin the same parity fixture
+        # The fixtures are deliberately duplicated (one copy per runtime) so a
+        # portable-service change fails both suites. This step makes sure the two
+        # copies have not drifted from each other.
+        run: |
+          diff -u \
+            addons/nvoos-wifi/tests/fixtures/kpis-venue-1-window-1.json \
+            docker/laravel/app-skeleton/tests/fixtures/wifi/kpis-venue-1-window-1.json
+
+      - name: Lint every addon PHP file
+        run: |
+          fail=0
+          for file in $(find addons/nvoos-wifi -name '*.php' -type f); do
+            php -l "$file" >/dev/null || fail=1
+          done
+          exit "$fail"
+
+  static:
+    name: Addon phpcs (incl. WPMCPAI tool sniffs)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Addon ruleset resolves its custom sniffs
+        # A relative <rule ref> that does not resolve is a silent no-op in PHPCS:
+        # the standard loads, the sniffs never fire, and the job passes. Assert
+        # the four files exist before trusting the run below.
+        run: |
+          for sniff in \
+            phpcs/WPMCPAI/Sniffs/Tools/CanonicalReturnEnvelopeSniff.php \
+            phpcs/WPMCPAI/Sniffs/Tools/SanitizeAtEntrySniff.php \
+            phpcs/WPMCPAI/Sniffs/Tools/ToolDescriptionGuidanceSniff.php \
+            phpcs/WPMCPAI/Sniffs/Decisions/ScopeDeclaredSniff.php
+          do
+            test -f "$sniff" || { echo "Missing sniff: $sniff"; exit 1; }
+          done
+
+      - name: phpcs
+        # Scoped to production code, matching the nvoos-astro-bridge invocation in
+        # php-linting.yml. `tests/` is deliberately excluded: the harnesses there
+        # define several test doubles in one file and print to stdout, so the
+        # one-object-per-file and escape-output sniffs do not apply to them.
+        run: |
+          vendor/bin/phpcs --standard=addons/nvoos-wifi/phpcs.xml.dist \
+            addons/nvoos-wifi/includes \
+            addons/nvoos-wifi/nvoos-wifi.php \
+            addons/nvoos-wifi/uninstall.php
+
+  unit:
+    name: Domain unit suite (no WordPress)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        # 8.2, not the addon's 8.1 floor: the repo's dev dependencies (PHPUnit
+        # 11.5 and the sebastian/* tree) require >=8.2, so `composer install`
+        # fails outright on 8.1. The 8.1 floor is proven by the `portability`
+        # job, which needs no Composer at all.
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Assert the unit config has no WordPress bootstrap
+        # The absence of a bootstrap is the whole point: with one, a WP_* symbol
+        # would resolve in the domain tests and the guarantee would be an
+        # illusion. Fail loudly if someone adds it.
+        run: |
+          if grep -q 'bootstrap=' addons/nvoos-wifi/phpunit.unit.xml; then
+            echo "addons/nvoos-wifi/phpunit.unit.xml must not declare a bootstrap."
+            exit 1
+          fi
+
+      - name: Run the domain suite
+        run: vendor/bin/phpunit -c addons/nvoos-wifi/phpunit.unit.xml

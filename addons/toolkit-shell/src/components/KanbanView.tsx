@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Kanban view — groups rows of a Resource into columns by a
  * manifest-declared `group_by` field.

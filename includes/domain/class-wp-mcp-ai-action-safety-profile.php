@@ -538,7 +538,7 @@ class WP_MCP_AI_Action_Safety_Profile {
 			case 'helpful_within_bounds':
 				return __( 'Action is helpful and within acceptable risk bounds.', 'mcp-ai-wpoos' );
 			case 'helpful_permanent':
-				return __( 'Action is helpful but permanently irreversible — blocked.', 'mcp-ai-wpoos' );
+				return __( 'Action is helpful but permanently irreversible — requires human approval.', 'mcp-ai-wpoos' );
 			case 'helpful_needs_approval':
 				return __( 'Action is helpful but high-risk — requires human approval.', 'mcp-ai-wpoos' );
 			case 'essential_needs_approval':

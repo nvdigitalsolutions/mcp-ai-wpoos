@@ -1,4 +1,5 @@
 ---
+// SPDX-License-Identifier: MIT
 // DesignRenderer — the semantic renderer (Proposal 114 §3.2/§3.4, themed by
 // 117 §2).
 //
@@ -21,9 +22,13 @@ import { bandSpacing, bandSource, pageBackground, sections as sectionThemes, typ
 import { behaviors, type ScrollBehaviorEntry } from '../../lib/behaviors.generated.ts';
 import { animationCss } from '../../lib/animations.generated.ts';
 import { classifyBody } from '../../lib/classify.ts';
+import { hoverComponentVars } from '../../forge/hover-vars.ts';
 import { wrapperAnchor } from '../../lib/anchor.ts';
+import { titleEchoItems, mediaLane } from '../../lib/band-copy.ts';
 import { parallaxBandCss } from '../../lib/motion.ts';
+import { laneTracks } from '../../lib/lane-tracks.ts';
 import Cta from './Cta.astro';
+import BandBody from './BandBody.astro';
 import Catalog from './Catalog.astro';
 import Comparison from './Comparison.astro';
 import FeatureGrid from './FeatureGrid.astro';
@@ -67,10 +72,17 @@ interface Props {
 	 * measured on this page, so its heights/padding/typography are its own.
 	 */
 	bandThemes?: SectionTheme[];
+	/**
+	 * This body IS the page's document outline (the front page) — no article
+	 * heading sits above the bands. The FIRST band may then render the source's
+	 * `h1` as an `h1`; everywhere else a band h1 maps down to `h2` so a post page
+	 * cannot gain a second one (see lib/title-tag.ts).
+	 */
+	pageHeading?: boolean;
 }
 
-const { html = '', wireframeSections, bandGeometry = false, bandThemes } = Astro.props;
-const sections: SemanticSection[] = wireframeSections
+const { html = '', wireframeSections, bandGeometry = false, bandThemes, pageHeading = false } = Astro.props;
+const rawSections: SemanticSection[] = wireframeSections
 	? wireframeSections.map( ( w ) => w.section )
 	: classifyBody( html );
 const columnsFor = ( index: number, theme?: SectionTheme ): Record< string, number > | undefined => {
@@ -86,6 +98,14 @@ const columnsFor = ( index: number, theme?: SectionTheme ): Record< string, numb
 	if ( count < 2 ) {
 		return undefined;
 	}
+	// A STACK of full-width lanes is not a row. `laneTracks` simulates the
+	// source's flex wrap and answers 1 for [100, 100]; a grid of two would lay
+	// the lanes beside themselves and move the copy 319px left (eca.directory's
+	// about-us CTA, 2026-11-25).
+	const measuredTracks = laneTracks( theme?.columns ?? [], 'desktop' );
+	if ( measuredTracks !== undefined && measuredTracks < 2 ) {
+		return undefined;
+	}
 	return { desktop: count, tablet: count >= 3 ? 2 : count, mobile: 1 };
 };
 /**
@@ -97,6 +117,23 @@ const columnsFor = ( index: number, theme?: SectionTheme ): Record< string, numb
  * defaults instead of the source's own surfaces (virtuallyjamaica's red hero).
  */
 const themeFor = ( section: SemanticSection, index: number ): SectionTheme | undefined => {
+	const theme = themeAt( section, index );
+	if ( ! pageHeading || index !== 0 ) {
+		return theme;
+	}
+	// The classifier's level is the fallback: an outline profile has no measured
+	// `titleLevel`, and the band is still the page's own headline.
+	const level = theme?.type?.titleLevel ?? ( section.slots.titleLevel === 1 ? 'h1' : undefined );
+	if ( level !== 'h1' ) {
+		return theme;
+	}
+	return {
+		...( theme ?? { theme: 'alt' as SectionTheme[ 'theme' ] } ),
+		type: { ...( theme?.type ?? {} ), titleLevel: 'h1', allowH1: true },
+	} as SectionTheme;
+};
+/** The measured source theme for a band, before the page-heading policy. */
+const themeAt = ( section: SemanticSection, index: number ): SectionTheme | undefined => {
 	// The page's OWN measured list wins: its bands were measured on this page,
 	// so position is the identity and every fact applies as-is.
 	if ( bandThemes ) {
@@ -125,6 +162,22 @@ const themeFor = ( section: SemanticSection, index: number ): SectionTheme | und
 		overlay: positional.overlay,
 	};
 };
+// The measured EYEBROW must not also render as body copy. The classifier reads
+// tag level alone, so a band with a label heading above its title demotes the
+// label into `slots.body` (and the rebuild printed it UNDER the title at body
+// size). The browser measurement knows which line is the label; drop that exact
+// line here, once, so every component benefits without its own filter.
+const sections: SemanticSection[] = rawSections.map( ( section, index ) => {
+	const eyebrow = themeFor( section, index )?.eyebrow?.text?.trim();
+	const body = section.slots.body;
+	if ( ! eyebrow || ! body || body.length === 0 ) {
+		return section;
+	}
+	const filtered = body.filter( ( line ) => line.trim() !== eyebrow );
+	return filtered.length === body.length
+		? section
+		: { ...section, slots: { ...section.slots, body: filtered } };
+} );
 /** ALL source behaviors for a section. A band can be BOTH parallax and reveal
  * (jayainc's about band is); the old single `find` returned whichever entry came
  * first, so a reveal-first band silently lost its parallax class and range. */
@@ -193,6 +246,11 @@ const sectionHasContent = ( section: SemanticSection ): boolean => {
 			( body && body.length > 0 ) ||
 			( items && items.length > 0 ) ||
 			( media && media.length > 0 ) ||
+			// A RAW slice is content: the fidelity guard demotes a band whose
+			// classified slots would drop its words (`kind: 'text'` + `html`
+			// with empty slots), and treating that as empty skipped the band's
+			// measured min-height and padding.
+			section.html ||
 			// Proposal 136 structured slots — a kind is content too.
 			( section.pricing?.plans.length ?? 0 ) > 0 ||
 			( section.stats?.items.length ?? 0 ) > 0 ||
@@ -203,7 +261,226 @@ const sectionHasContent = ( section: SemanticSection ): boolean => {
 	);
 };
 
-const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string | undefined => {
+/**
+ * The page's DOMINANT measured body size (see `wrapStyle`'s fallback).
+ * A band without a paragraph of its own still inherits the source's body size,
+ * and `em`-sized children resolve against it.
+ */
+/** A CSS `font-family` value for one measured family name. A single-token
+ * name may go in bare; anything with a space needs quoting (`Dancing Script`). */
+const cssFamily = ( family: string ): string => {
+	const name = family.trim();
+	return /\s/.test( name ) ? `"${ name.replace( /"/g, '' ) }"` : name;
+};
+
+const pageBodySize = ( () => {
+	const counts = new Map< string, number >();
+	sections.forEach( ( section, index ) => {
+		const size = themeFor( section, index )?.type?.body?.size;
+		if ( size ) {
+			counts.set( size, ( counts.get( size ) ?? 0 ) + 1 );
+		}
+	} );
+	return [ ...counts.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] )[ 0 ]?.[ 0 ];
+} )();
+
+/**
+ * The larger of a `padding` shorthand's two SIDE values, in px.
+ *
+ * Only px is read: every band-padding fact is emitted in px, and a `rem`/`%`
+ * value would otherwise be parsed as its bare number (1rem → 1).
+ */
+const bandSidePadding = ( shorthand: string | undefined ): number => {
+	if ( ! shorthand ) {
+		return 0;
+	}
+	const values = shorthand.trim().split( /\s+/ );
+	if ( ! values.every( ( value ) => /^-?\d+(?:\.\d+)?px$/.test( value ) ) ) {
+		return 0;
+	}
+	const numbers = values.map( ( value ) => Number.parseFloat( value ) );
+	// 1 → all sides; 2 → vertical/horizontal; 3 → top/horizontal/bottom;
+	// 4 → top/right/bottom/left.
+	const horizontal = numbers.length === 1 ? numbers[ 0 ] : numbers[ 1 ];
+	const left = numbers.length >= 4 ? numbers[ 3 ] : horizontal;
+	return Math.max( 0, horizontal ?? 0, left ?? 0 );
+};
+
+/**
+ * The band's measured PICTURE, taken from the element facts.
+ *
+ * `collectSlots` reads `<img src>`, and a builder paints a hero photo as a
+ * `background-image` on a spacer div — so a split hero arrived with an EMPTY
+ * media column and rendered only copy (eca.directory, 2026-11-24). The element
+ * pass already recorded every painted element's URL and height; the tallest is
+ * the picture, the shorter ones are its decorative blobs and shapes. One image
+ * beats a pile of ornaments the rebuild cannot position (their absolute offsets
+ * live in the vendor sheet that never ships).
+ */
+const mediaFromElementFacts = ( theme: SectionTheme | undefined ): Array< { src: string; alt: string } > | undefined => {
+	const painted = ( theme?.elements ?? [] )
+		.map( ( element ) => {
+			const match = /background-image:\s*url\(\s*["']?([^"')]+)["']?\s*\)/i.exec( element.bg ?? '' );
+			if ( ! match ) {
+				return undefined;
+			}
+			const height = typeof element.height === 'number' ? element.height : element.height?.desktop ?? 0;
+			return { src: match[ 1 ], height };
+		} )
+		.filter( ( entry ): entry is { src: string; height: number } => Boolean( entry?.src ) )
+		.sort( ( a, b ) => b.height - a.height );
+	return painted.length > 0 ? [ { src: painted[ 0 ].src, alt: '' } ] : undefined;
+};
+
+/** Any `property:` prefix — the shape that makes a value a DECLARATION. */
+const CSS_DECLARATION_RE = /^[a-z-]+\s*:/i;
+
+/**
+ * A band's background fact, as a CSS declaration.
+ *
+ * `bg` is usually a VALUE (`#fff`, `linear-gradient(…)`). The per-page pass also
+ * records some surfaces as a full DECLARATION, and prefixing those produced
+ * `background:background-image:url(…)` — invalid CSS, silently dropped, so the
+ * band rendered flat. eca.directory's about-us "Why choose" band lost its blob
+ * photo this way.
+ *
+ * A `background-image`/`background` declaration is passed through verbatim. A
+ * bare `background-color:` declaration is NOT trusted as a BAND surface: the
+ * page pass also hoists a lane's slab, and painting the whole band with one
+ * lane's colour is worse than leaving it — colours arrive via `bgColor`.
+ */
+/**
+ * The band image's BOX, as declarations.
+ *
+ * Elementor always declares all three beside the URL; the extracted value wins.
+ * When a band states none, `cover` / `no-repeat` / `center` is the sane band
+ * default — the CSS initial values paint a pattern at NATIVE scale, which is
+ * how eca.directory's dot pattern became a checkerboard over two bands
+ * (2026-11-25).
+ */
+const backgroundBox = ( theme: SectionTheme ): string[] => [
+	`background-size:${ theme.bgSize ?? 'cover' }`,
+	`background-repeat:${ theme.bgRepeat ?? 'no-repeat' }`,
+	`background-position:${ theme.bgPosition ?? 'center' }`,
+];
+
+/**
+ * The band image's LAYER (`bgLayerOpacity`).
+ *
+ * Elementor paints a band image on a `::before` layer faded by
+ * `--overlay-opacity` (0.05 on eca.directory's hero, 0.2 on its stats band,
+ * blended `lighten`). Painting the image on the band itself shows it at full
+ * strength over the copy. A layer band keeps the image OUT of `wrapStyle` and
+ * gets a scoped `::before` here instead; the band's own colour stays on the
+ * wrap, which is the order the source paints.
+ */
+const bandLayerCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		if ( ! id || ! theme?.bgImage || theme.bgLayerOpacity === undefined ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const blend = theme.bgBlendMode ? `;mix-blend-mode:${ theme.bgBlendMode }` : '';
+		return (
+			`${ scoped }{position:relative;isolation:isolate}` +
+			`${ scoped }::before{content:"";position:absolute;inset:0;background-color:transparent;background-image:url('${ theme.bgImage }');${ backgroundBox( theme ).join( ';' ) };opacity:${ theme.bgLayerOpacity }${ blend };pointer-events:none;z-index:0}` +
+			`${ scoped }>*{position:relative;z-index:1}`
+		);
+	} )
+	.join( '' );
+
+function bandBackground( value: string ): string | undefined {
+	const trimmed = value.trim();
+	if ( trimmed === '' ) {
+		return undefined;
+	}
+	if ( /^background(?:-image)?\s*:/i.test( trimmed ) ) {
+		return trimmed;
+	}
+	if ( CSS_DECLARATION_RE.test( trimmed ) ) {
+		return undefined;
+	}
+	return `background:${ trimmed }`;
+}
+
+/**
+ * Is a background fact a LIGHT surface?
+ *
+ * Only used to decide whether a hero keeps the template's white ink (the photo
+ * assumption) or takes its measured body ink. Unparseable values say no, so an
+ * unknown surface keeps the old behaviour.
+ */
+const lightSurface = ( value?: string ): boolean => {
+	if ( ! value ) {
+		return false;
+	}
+	const text = value.trim();
+	const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec( text );
+	const rgb = /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i.exec( text );
+	let r: number;
+	let g: number;
+	let b: number;
+	if ( hex ) {
+		const digits = hex[ 1 ].length === 3 ? hex[ 1 ].replace( /(.)/g, '$1$1' ) : hex[ 1 ];
+		r = parseInt( digits.slice( 0, 2 ), 16 );
+		g = parseInt( digits.slice( 2, 4 ), 16 );
+		b = parseInt( digits.slice( 4, 6 ), 16 );
+	} else if ( rgb ) {
+		r = Number( rgb[ 1 ] );
+		g = Number( rgb[ 2 ] );
+		b = Number( rgb[ 3 ] );
+	} else {
+		return false;
+	}
+	return 0.299 * r + 0.587 * g + 0.114 * b > 140;
+};
+
+/**
+ * A LIGHT hero's measured ink.
+ *
+ * `.ds-section-wrap--hero > *` paints the whole band white because the template
+ * assumes a PHOTO hero. On a measured LIGHT band with no overlay that is
+ * unreadable (eca.directory about-us: #747474 body on #F7F7F7). A scoped rule on
+ * the paragraphs beats inheritance without touching the shared template CSS
+ * (which is drift-tracked). Hero-only on purpose: a card band manages its own
+ * ink.
+ */
+const bandInkCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const ink = theme?.type?.body?.color;
+		if ( ! id || ! ink || theme?.theme !== 'hero' || theme?.overlay || ! lightSurface( theme?.bg ) ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		// `!important` on purpose: the hero template paints the subtree white through
+		// a class rule, and this is the one measurement that must beat it. Scoped to
+		// the band and only for a MEASURED light hero with no overlay.
+		return `${ scoped } p,${ scoped } li,${ scoped } span{color:${ ink }!important}`;
+	} )
+	.join( '' );
+
+/**
+ * A two-lane band's measured RATIO as the grid token.
+ *
+ * `--ds-split-ratio` feeds `.ds-hero-split` AND `.ds-band-split`; a split hero
+ * needs the same fact as any other split band. It used to be emitted only past
+ * the hero branch's early return, so every split hero fell back to `1fr 1fr`:
+ * eca.directory's about-us copy lane measured 624px against the source's 811 and
+ * wrapped its lede one line longer (2026-11-25).
+ */
+const splitRatio = ( theme: SectionTheme | undefined ): string | undefined => {
+	const lanes = theme?.columns ?? [];
+	if ( lanes.length !== 2 || ! lanes[ 0 ].width || ! lanes[ 1 ].width ) {
+		return undefined;
+	}
+	return `--ds-split-ratio:minmax(0,${ lanes[ 0 ].width / 100 }fr) minmax(0,${ lanes[ 1 ].width / 100 }fr)`;
+};
+
+const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true, bodyFallback?: string, desktopCols?: number, collapsed = false ): string | undefined => {
 	if ( ! theme ) {
 		return undefined;
 	}
@@ -229,6 +506,17 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 		if ( typeof theme.padding === 'string' ) {
 			parts.push( `padding:${ theme.padding }` );
 		}
+		// The band's own side padding, as a number of its own. The mobile floor
+		// below tops the gutter up to `--forge-space` for a band whose source
+		// gutter is ZERO, but a band that already carries 30px of its own must
+		// not get a 46px gutter (eca.directory's day pages: build 298px of copy
+		// against the source's 330, 2026-11-24). Subtracting this from the floor
+		// keeps the phone fix and kills the double gutter.
+		const shorthand = typeof theme.padding === 'string' ? theme.padding : theme.padding.desktop;
+		const horizontal = bandSidePadding( shorthand );
+		if ( horizontal > 0 ) {
+			parts.push( `--ds-band-pad-x:${ horizontal }px` );
+		}
 		// The source declares the band's rhythm — suppress the template's
 		// default section padding so the bands meet their neighbors flush
 		// (124 §5, the continuous flow).
@@ -253,12 +541,49 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 	// BEFORE the hero's early return below, because the hero band is exactly the
 	// one a source height pins (virtuallyjamaica's full-screen contact band).
 	// A per-device map is emitted as scoped CSS; only a plain value goes inline.
-	if ( theme.minHeight && typeof theme.minHeight === 'string' ) {
+	if ( theme.minHeight && typeof theme.minHeight === 'string' && ! collapsed ) {
 		parts.push( `min-height:${ theme.minHeight }` );
+		// The same floor on the SECTION, for the bands whose row IS the band
+		// (see `.ds-section-wrap:has(.ds-card--surface)` in global.css). A floor on
+		// the wrap cannot reach them: a column flex item does not grow into a
+		// `min-height`-only parent, so the measured height showed as dead space
+		// under the slabs.
+		parts.push( `--ds-min-h:${ theme.minHeight }` );
 	}
 	// The band's measured typography (see bandTypeCss below): the components that
 	// render a `ds-title` size from the source's own heading, not the token scale.
 	// A source band whose title is 35px must not render at the template's h1.
+	// The source's BODY size, for the containers that size their own children in
+	// `em` (Flatsome's `.button` is .97em of the column, which inherits the body
+	// size). Heading/paragraph rules cannot carry it: they set `p`/`hN`, not the
+	// wrapper a button sits in.
+	//
+	// A band with no paragraph of its own (a button row, a photo band) still
+	// inherits the source's body size, so fall back to the page's dominant
+	// measured size — without it `.button` resolved .97 × 13px = 12.6px where
+	// the source renders 17.23px.
+	if ( theme.type?.body?.size || bodyFallback ) {
+		parts.push( `--ds-body-size:${ theme.type?.body?.size ?? bodyFallback }` );
+	}
+	// The band's PANEL surface (a source slab the content sits on) — the item
+	// group paints it; the CSS reads the vars so no inline background is needed.
+	if ( theme.panel ) {
+		parts.push( `--ds-panel-bg:${ theme.panel.bg }`, `--ds-panel-ink:${ theme.panel.ink }` );
+		// A slab that fills only PART of the band carries its own box; the band's
+		// heading is centred ON it, not on the viewport. The alignment rides a
+		// modifier class (see the wrap's class list), not a var: CSS cannot branch
+		// on a custom property's presence.
+		if ( theme.panel.width ) {
+			parts.push( `--ds-panel-width:${ theme.panel.width }` );
+		}
+	}
+	// The band’s own DISPLAY face. A source can put a script accent beside a
+	// sans heading in the same band (monicarajiv: Karma h1 + Dancing Script
+	// `alt-font` h3), so the family rides the band’s title and the per-level
+	// `bandTypeCss` rules carry the rest.
+	if ( theme.type?.title?.family ) {
+		parts.push( `--ds-title-font:${ cssFamily( theme.type.title.family ) }` );
+	}
 	if ( theme.type?.title ) {
 		const title = theme.type.title;
 		if ( title.size ) {
@@ -275,6 +600,19 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 		}
 		if ( title.mobile?.lineHeight && title.mobile.lineHeight !== 'normal' ) {
 			parts.push( `--ds-title-lh-sm:${ title.mobile.lineHeight }` );
+		}
+		// The measured SIZE the source paints below the desktop range. The template
+		// shrinks a headline with a hard-coded `clamp()` floor (1.5rem / 1.75rem),
+		// which is a guess about the source: monicarajiv's band title is 22.2px on
+		// desktop and 16px on a phone, so the floor painted 22.2px — a phone headline
+		// 39% larger than the source's (2026-11-21). A measured size is not an anchor
+		// for that clamp, it IS the value at that device, so global.css overrides the
+		// clamp outright when these are present.
+		if ( title.tablet?.size ) {
+			parts.push( `--ds-title-size-md:${ title.tablet.size }` );
+		}
+		if ( title.mobile?.size ) {
+			parts.push( `--ds-title-size-sm:${ title.mobile.size }` );
 		}
 		if ( title.letterSpacing && title.letterSpacing !== 'normal' ) {
 			parts.push( `--ds-title-ls:${ title.letterSpacing }` );
@@ -323,22 +661,64 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 	if ( theme.centered === false ) {
 		parts.push( '--ds-hero-justify:flex-start' );
 	}
+	// A CENTRED band is centred ACROSS the band, not down it. The wrap is a column
+	// flex, so `.ds-section-wrap--centered{justify-content:center}` also centres
+	// the block axis and pushed the copy down by half the leftover min-height
+	// (eca.directory's FAQ band: 40px of dead space, 2026-11-25). The section's
+	// own auto margins already centre it across; only a full-height band is
+	// centred on the block axis.
+	if ( theme.centered === true && ! theme.fullViewport ) {
+		parts.push( 'justify-content:flex-start' );
+	}
 	if ( theme.theme === 'hero' ) {
-		if ( theme.bgImage ) {
+		if ( theme.bgImage && theme.bgLayerOpacity === undefined ) {
 			parts.push( `background-image:url('${ theme.bgImage }')` );
+			parts.push( ...backgroundBox( theme ) );
+		}
+		// A hero's ink is only white because the template assumes a PHOTO band.
+		// When the source band is LIGHT and carries no overlay, the measured body
+		// ink wins (eca.directory about-us: #747474 on #F7F7F7).
+		const measuredInk = theme.type?.body?.color;
+		if ( ! theme.overlay && lightSurface( theme.bg ) ) {
+			parts.push( '--ds-overlay:transparent' );
+			if ( measuredInk ) {
+				parts.push( `--ds-hero-ink:${ measuredInk }` );
+			}
 		}
 		// A color alongside the photo is the source's UNDERLAY (invisible
-		// beneath an opaque image) — never paint it over the photo.
-		if ( theme.bg && ! theme.bgImage ) {
+		// beneath an opaque image) — never paint it over the photo. On a LAYER
+		// band the image is a faded `::before`, so the colour IS the base and
+		// must be painted.
+		if (
+			theme.bg &&
+			! CSS_DECLARATION_RE.test( theme.bg ) &&
+			( ! theme.bgImage || theme.bgLayerOpacity !== undefined )
+		) {
 			parts.push( `background-color:${ theme.bg }` );
 		}
 		if ( theme.overlay ) {
 			parts.push( `--ds-overlay:${ theme.overlay }` );
 		}
+		// A split hero's lane ratio — the hero branch returns below, so the
+		// shared emission further down never runs for exactly the bands that
+		// need it most.
+		const heroRatio = splitRatio( theme );
+		if ( heroRatio ) {
+			parts.push( heroRatio );
+		}
 		return parts.length > 0 ? parts.join( ';' ) : undefined;
 	}
 	if ( theme.bg ) {
-		parts.push( `background:${ theme.bg }` );
+		const declaration = bandBackground( theme.bg );
+		const isImage = declaration ? /background(?:-image)?\s*:/i.test( declaration ) : false;
+		// A LAYER image is emitted by `bandLayerCss` instead — painting it here
+		// would put the full-strength image under the copy as well.
+		if ( declaration && ! ( isImage && theme.bgLayerOpacity !== undefined ) ) {
+			parts.push( declaration );
+			if ( isImage ) {
+				parts.push( ...backgroundBox( theme ) );
+			}
+		}
 	}
 	// Section-level pull facts (124 §4): negative margins overlap the
 	// neighbor band; z-index stacks the overlap.
@@ -431,11 +811,32 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 	// Exactly two: `--ds-split-ratio` feeds a two-lane grid (`.ds-hero-split`).
 	// A three-lane band (services is 3/4/5) used to inherit a truncated
 	// first-two-fr ratio here, which then applied 25/33 to a two-lane grid.
-	if ( columns.length === 2 && columns[ 0 ].width && columns[ 1 ].width ) {
-		parts.push( `--ds-split-ratio:minmax(0,${ columns[ 0 ].width / 100 }fr) minmax(0,${ columns[ 1 ].width / 100 }fr)` );
+	const ratio = splitRatio( theme );
+	if ( ratio ) {
+		parts.push( ratio );
 	}
 	if ( columns.some( ( column ) => column.reverseMobile ) ) {
 		parts.push( '--ds-icon-media-order:2' );
+	}
+	// The lane RATIOS, when the source's row is not an equal split. A services row
+	// of 432 / 432 / 571 is not `repeat(3, 1fr)` — that renders 469 / 469 / 469
+	// with a 16px seam, while the source's slabs butt together. The measured widths
+	// become the track sizes and the source's flush gutter becomes gap 0. Guarded
+	// on the grid actually rendering that many lanes: a two-lane fact must never
+	// hand a three-card grid two tracks (the third card would wrap onto its own
+	// row).
+	if ( columns.length >= 2 && ( desktopCols === undefined || desktopCols === columns.length ) ) {
+		const widths = columns.map( ( column ) => column.width ?? 0 );
+		const total = widths.reduce( ( sum, width ) => sum + width, 0 );
+		const spread = Math.max( ...widths ) - Math.min( ...widths );
+		if ( total > 0 && widths.every( ( width ) => width > 0 ) && spread > 0.5 ) {
+			parts.push(
+				`--ds-cols-template-desktop:${ widths
+					.map( ( width ) => `minmax(0,${ Math.round( width * 10 ) / 10 }fr)` )
+					.join( ' ' ) }`
+			);
+			parts.push( '--ds-card-gap:0px' );
+		}
 	}
 	return parts.length > 0 ? parts.join( ';' ) : undefined;
 };
@@ -472,6 +873,21 @@ const boxEdge = (
 	return expanded[ [ 'top', 'right', 'bottom', 'left' ].indexOf( side ) ];
 };
 
+// A feature-grid band whose EVERY card is the band's own sub-heading renders no
+// grid at all (see `titleEchoItems`). The source's measured height then floors
+// nothing: eca.directory's updates band held 478px for three lines of copy once
+// its one placeholder post was dropped.
+const foldsAway = ( section: SemanticSection, theme: SectionTheme | undefined ): boolean => {
+	if ( section.kind !== 'feature-grid' || theme?.catalog ) {
+		return false;
+	}
+	const items = section.slots?.items ?? [];
+	if ( items.length === 0 ) {
+		return false;
+	}
+	return titleEchoItems( items, section.slots?.title, theme, theme?.columns ).length === items.length;
+};
+
 // The per-device half of every band margin AND padding — emitted once, scoped
 // by section id. A padding scoped to a device range needs the same CSS
 // treatment as a scoped pull: an inline value would outrank the media queries.
@@ -490,7 +906,9 @@ const responsiveBandCss = sections
 			responsiveDeviceCss( id, 'margin-top', theme?.marginTop ) +
 			responsiveDeviceCss( id, 'margin-bottom', theme?.marginBottom ) +
 			responsiveDeviceCss( id, 'padding', theme?.padding ) +
-			responsiveDeviceCss( id, 'min-height', theme?.minHeight ) +
+			// A band whose grid folded away sizes to its copy, not to the source's
+			// height (see `foldsAway`).
+			( foldsAway( section, theme ) ? '' : responsiveDeviceCss( id, 'min-height', theme?.minHeight ) ) +
 			responsiveDeviceCss( id, '--ds-measure', theme?.measure ) +
 			responsiveDeviceCss( id, '--ds-pad-x', theme?.paddingX ) +
 			responsiveDeviceCss( id, '--ds-icon-row-pad-top', theme?.iconRowStyle?.padTop ) +
@@ -514,11 +932,40 @@ const responsiveBandCss = sections
  * Scoped to the wrap (`[data-section-id]`) and emitted after global.css, so it
  * outranks the template's own prose defaults.
  */
-const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string; marginTop?: string; marginBottom?: string }, options: { weight?: boolean } = {} ): string =>
+/**
+ * A px `line-height` measured beside a px `font-size` is a RATIO in disguise, and
+ * emitting it as px freezes the leading at the measured level. Flatsome's
+ * `.section-title-main` sets `font-size:1.3em`, so the source's `h3` leading of
+ * 1.6 painted 46.176px on the 28.86px span, while the rebuilt span inherited the
+ * frozen 35.52px — a ratio of 1.23, and the section title rendered 15px short
+ * (monicarajiv, 2026-11-20). The source's own leading is unitless, so the
+ * inherited value must be too.
+ *
+ * A device override can carry `lineHeight` with no `size` (the diff emits only
+ * what changed); that value is px on the element itself and passes through.
+ */
+const leadingRatio = ( size?: string, lineHeight?: string ): string | undefined => {
+	if ( ! lineHeight ) {
+		return undefined;
+	}
+	const sizePx = size ? /^(-?[\d.]+)px$/.exec( size.trim() ) : null;
+	const linePx = /^(-?[\d.]+)px$/.exec( lineHeight.trim() );
+	if ( ! sizePx || ! linePx ) {
+		return lineHeight;
+	}
+	const ratio = Number( linePx[ 1 ] ) / Number( sizePx[ 1 ] );
+	return Number.isFinite( ratio ) && ratio > 0 ? String( Math.round( ratio * 10000 ) / 10000 ) : lineHeight;
+};
+
+const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; family?: string; color?: string; marginTop?: string; marginBottom?: string }, options: { weight?: boolean } = {} ): string =>
 	[
 		fact.size && `font-size:${ fact.size }`,
+		// The FAMILY is deliberately NOT emitted per level: a band can hold a
+		// Dancing Script `h3.alt-font` beside a Karma `h3`, and one fact cannot
+		// describe both — the class carries the accent, the display role carries
+		// the rest (see `.post-body :where(h1…h6)` in global.css).
 		options.weight !== false && fact.weight && `font-weight:${ fact.weight }`,
-		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ fact.lineHeight }`,
+		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ leadingRatio( fact.size, fact.lineHeight ) }`,
 		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
 		fact.transform && fact.transform !== 'none' && `text-transform:${ fact.transform }`,
 		// The measured heading/paragraph RHYTHM. An unclassed heading has no class
@@ -545,11 +992,11 @@ const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: 
 
 /** A device override, emitted verbatim — `diffTypeFact` already trimmed it to the
  * properties the source changes, so a reset back to `left` must survive. */
-const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string; marginTop?: string; marginBottom?: string } ): string =>
+const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; family?: string; color?: string; marginTop?: string; marginBottom?: string } ): string =>
 	[
 		fact.size && `font-size:${ fact.size }`,
 		fact.weight && `font-weight:${ fact.weight }`,
-		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ fact.lineHeight }`,
+		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ leadingRatio( fact.size, fact.lineHeight ) }`,
 		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
 		fact.transform && fact.transform !== 'none' && `text-transform:${ fact.transform }`,
 		fact.align && `text-align:${ fact.align }`,
@@ -593,11 +1040,30 @@ const bandTypeCss = sections
 		};
 		for ( const [ tag, fact ] of Object.entries( type.headings ?? {} ) ) {
 			rules.push( ...withDevices( tag, fact ) );
+			// A MEASURED heading ink must outrank the template's PANEL rule
+			// (`.ds-section-wrap--panel .ds-grid .ds-card :is(h3,h4,h5)`, 0,3,1),
+			// which paints every card heading in the panel's derived ink. On a white
+			// slab the source's own card titles are purple — eca.directory measured
+			// `#27104a` on them and the panel repainted all of them `#111111`
+			// (ΔE00 22.9, 2026-11-24). Scoping through the wrap raises this to 0,4,1
+			// without `!important`, so a hover/focus state can still win.
+			if ( fact.color ) {
+				rules.push( `${ scoped }.ds-section-wrap .ds-grid .ds-card ${ tag }{color:${ fact.color }}` );
+			}
 		}
 		if ( type.body ) {
 			// Body copy keeps its size and rhythm; a weight on every paragraph would
 			// also hit emphasized inline copy.
 			rules.push( ...withDevices( 'p', type.body, { weight: false } ) );
+		}
+		if ( theme.cardInk ) {
+			// The band's CARDS paint their copy in the ink measured ON the card
+			// (`cardInkFor`). The template's blanket `.ds-section .ds-card p` rule is
+			// (0,2,1) and outranks the band's `p` rule above, so without this the card
+			// copy falls back to the `muted` token — a different grey from the source's.
+			// A card that paints its OWN measured surface is excluded: it derives its
+			// ink from that surface (`--ds-card-surface-ink`).
+			rules.push( `${ scoped } .ds-card:not(.ds-card--surface) p{color:${ theme.cardInk }}` );
 		}
 		return rules.join( '' );
 	} )
@@ -694,6 +1160,14 @@ const bandUtilityCss = sections
  *
  * The path's `:nth-child()` segments give these rules a high specificity, so a
  * deep path outranks the arrangement shim without `!important`.
+ *
+ * The path is measured relative to the SOURCE band root, and the rebuild nests
+ * that root exactly one level inside `.post-body`, so the rule is ANCHORED to a
+ * direct child of the post body. Without the anchor the leading
+ * `div:nth-child(2)` is a DESCENDANT selector: it also matched a `.text-box`'s
+ * own first `<div>` and the banner's link overlay, so the band's surface (and
+ * its pinned height) was painted over the hero photo and the whole page
+ * flattened to one solid colour.
  */
 const bandElementCss = sections
 	.map( ( section, index ) => {
@@ -703,18 +1177,46 @@ const bandElementCss = sections
 			return '';
 		}
 		const scoped = `[data-section-id="${ id }"]`;
+		// The path starts at the SOURCE band root's children, and the raw band
+		// nests that root exactly one level inside `.post-body`. Anchoring it to a
+		// direct child keeps the leading `div:nth-child(2)` a CHILD selector; as a
+		// bare descendant selector it also matched a `.text-box`'s own first `<div>`
+		// and the banner's link overlay, so the band's surface (and its pinned
+		// height) was painted over the hero photo.
+		const anchored = `${ scoped } .post-body > * > `;
 		return theme.elements
 			.map( ( element ) => {
 				const heights =
 					typeof element.height === 'number' ? { desktop: element.height } : ( element.height ?? {} );
+				const widths =
+					typeof element.width === 'number' ? { desktop: element.width } : ( element.width ?? {} );
 				const base: string[] = [];
 				if ( element.bg ) {
 					base.push( element.bg );
 				}
+				// A translucent VEIL (Flatsome's `.overlay`) is its own fact: it sits ON
+				// the surface rather than replacing it, so it never hides the photo.
+				if ( element.veil ) {
+					base.push( element.veil );
+				}
 				if ( element.fg ) {
 					base.push( `color:${ element.fg }` );
 				}
+				// The measured WIDTH first: it is what gives a builder image its box at
+				// all (the markup carries `width="1"`, and the vendor rule that sized
+				// the wrapper is keyed by an id the source re-issues). A path survives.
+				if ( widths.desktop ) {
+					base.push( `width:${ widths.desktop }px` );
+				}
 				if ( heights.desktop ) {
+					// The `--ds-col-min-h` bridge rides with the floor. A centred band's
+					// wrapper rule out-ranks this path on specificity and re-states
+					// `min-height: var(--ds-col-min-h, 0)`, so a pinned stage landed at 0
+					// (both banners of a two-column band collapsed and their photos
+					// disappeared). Publishing the same value on the measured element makes
+					// that rule resolve to it, and the subtree reset below stops the
+					// property inheriting a floor onto nested wrappers.
+					base.push( `--ds-col-min-h:${ heights.desktop }px` );
 					base.push( `min-height:${ heights.desktop }px` );
 					// A pinned stage must beat the generic in-column banner fallback:
 					// `aspect-ratio` resolves the used height from the WIDTH, and a larger
@@ -723,8 +1225,18 @@ const bandElementCss = sections
 					base.push( 'aspect-ratio:auto' );
 				}
 				const rules: string[] = [];
+				// The Flatsome media convention rides WITH the measured width, never
+				// globally: the markup carries `width="1"`, so `.img-inner img{width:100%}`
+				// is what makes the image visible at all — but applied to an UNSIZED
+				// wrapper it would blow a 1px image up to the band width.
+				if ( widths.desktop ) {
+					rules.push( `${ anchored }${ element.path } .img-inner > img{width:100%;height:auto}` );
+				}
 				if ( base.length > 0 ) {
-					rules.push( `${ scoped } ${ element.path }{${ base.join( ';' ) }}` );
+					rules.push( `${ anchored }${ element.path }{${ base.join( ';' ) }}` );
+					if ( heights.desktop ) {
+						rules.push( `${ anchored }${ element.path } > *{--ds-col-min-h:initial}` );
+					}
 				}
 				// The card's ink must reach its TEXT, not just the box: the band's
 				// measured heading rule sets `color` on `h1…h6` directly, which
@@ -739,17 +1251,27 @@ const bandElementCss = sections
 				// base/hover rules instead, inheriting the card ink they sit in.
 				if ( element.fg ) {
 					rules.push(
-						`${ scoped } ${ element.path } :is(h1, h2, h3, h4, h5, h6, p, li, span){color:${ element.fg }}`
+						`${ anchored }${ element.path } :is(h1, h2, h3, h4, h5, h6, p, li, span){color:${ element.fg }}`
 					);
 				}
 				if ( heights.tablet ) {
 					rules.push(
-						`@media (min-width: 768px) and (max-width: 1024px){${ scoped } ${ element.path }{min-height:${ heights.tablet }px}}`
+						`@media (min-width: 768px) and (max-width: 1024px){${ anchored }${ element.path }{--ds-col-min-h:${ heights.tablet }px;min-height:${ heights.tablet }px}}`
 					);
 				}
 				if ( heights.mobile ) {
 					rules.push(
-						`@media (max-width: 767px){${ scoped } ${ element.path }{min-height:${ heights.mobile }px}}`
+						`@media (max-width: 767px){${ anchored }${ element.path }{--ds-col-min-h:${ heights.mobile }px;min-height:${ heights.mobile }px}}`
+					);
+				}
+				if ( widths.tablet ) {
+					rules.push(
+						`@media (min-width: 768px) and (max-width: 1024px){${ anchored }${ element.path }{width:${ widths.tablet }px}}`
+					);
+				}
+				if ( widths.mobile ) {
+					rules.push(
+						`@media (max-width: 767px){${ anchored }${ element.path }{width:${ widths.mobile }px}}`
 					);
 				}
 				return rules.join( '' );
@@ -757,6 +1279,21 @@ const bandElementCss = sections
 			.join( '' );
 	} )
 	.join( '' );
+
+/**
+ * A POSITIONAL column fact (`col:nth-child(2)`) names a lane by its INDEX, and
+ * the emitted scope is a DESCENDANT selector: `[data-section-id] .col:nth-child(2)`
+ * also matches the second column of every NESTED row — a card grid drawn inside
+ * the band's own lane. The outer lane's measured floor and inner padding then
+ * land on cards that never had them: monicarajiv's accommodation band has three
+ * card lanes that each took the 900px-wide first lane's 572px `min-height` and
+ * its 49px inner padding, and a 2298px band rendered 3418px (2026-11-20).
+ *
+ * A lane is never nested inside another lane, so `:not(.col .col)` excludes
+ * exactly the nested grid. A CLASS-keyed fact needs no guard: it names itself.
+ */
+const columnLane = ( name: string ): string =>
+	name.startsWith( 'col:nth-child(' ) ? `${ name }:not(.col .col)` : name;
 
 const bandBoxCss = sections
 	.map( ( section, index ) => {
@@ -805,7 +1342,24 @@ const bandBoxCss = sections
 					return rules.join( '' );
 				} )
 				.join( '' );
-		return `${ emit( theme.box, '' ) }${ emit( theme.media, 'img' ) }`;
+		// The column INNER padding: the same map, pointed one level in.
+		const innerCss = Object.entries( theme.columnInner ?? {} )
+			.map( ( [ name, fact ] ) => {
+				const selectors = `${ scoped } .post-body .${ columnLane( name ) } > .col-inner, ${ scoped } .${ columnLane( name ) } > .col-inner`;
+				const rules: string[] = [];
+				if ( fact.base ) {
+					rules.push( `${ selectors }{${ fact.base }}` );
+				}
+				if ( fact.tablet ) {
+					rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selectors }{${ fact.tablet }}}` );
+				}
+				if ( fact.mobile ) {
+					rules.push( `@media (max-width: 767px){${ selectors }{${ fact.mobile }}}` );
+				}
+				return rules.join( '' );
+			} )
+			.join( '' );
+		return `${ emit( theme.box, '' ) }${ emit( theme.media, 'img' ) }${ innerCss }`;
 	} )
 	.join( '' );
 
@@ -834,7 +1388,7 @@ const bandColumnCss = sections
 				// The `.post-body` form outranks the builder shim's photo-panel
 				// `min-height` clamp (equal specificity today, order-dependent); the
 				// plain form keeps a non-passthrough band working.
-				const selector = `${ scoped } .post-body .${ name }, ${ scoped } .${ name }`;
+				const selector = `${ scoped } .post-body .${ columnLane( name ) }, ${ scoped } .${ columnLane( name ) }`;
 				const rules: string[] = [];
 				if ( fact.base ) {
 					rules.push( `${ selector }{${ fact.base }}` );
@@ -850,6 +1404,256 @@ const bandColumnCss = sections
 			.join( '' );
 	} )
 	.join( '' );
+
+// A measured structure the SOURCE hides on a device end. The vendor class that
+// says so (`elementor-hidden-mobile`) survives sanitisation but the stylesheet
+// that gave it meaning never ships, so the rebuild showed eca.directory's matrix
+// as a squeezed table at 390px where the source shows nothing.
+const bandStructureCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const entries = theme?.structure ?? [];
+		if ( ! id || entries.length === 0 ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const rules: string[] = [];
+		for ( const entry of entries ) {
+			const hidden = entry.data?.hiddenAt ?? [];
+			if ( entry.type !== 'comparison' || hidden.length === 0 ) {
+				continue;
+			}
+			const selector = `${ scoped } [data-structure="comparison"]`;
+			if ( hidden.includes( 'tablet' ) ) {
+				rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selector }{display:none}}` );
+			}
+			if ( hidden.includes( 'mobile' ) ) {
+				rules.push( `@media (max-width: 767px){${ selector }{display:none}}` );
+			}
+		}
+		return rules.join( '' );
+	} )
+	.join( '' );
+
+/**
+ * The band's measured LANE visibility (`design.sections[].columns[].hidden*`).
+ *
+ * A builder hides a whole lane per device (`elementor-hidden-mobile`). The class
+ * survives sanitisation but the vendor stylesheet that gave it meaning never
+ * ships — so the rebuild showed a lane the source hides. Hide by POSITION: the
+ * rebuilt cards follow the source's document order, so lane i is the grid's i-th
+ * child. Never reorder — the hidden lane still occupies its slot in the source's
+ * reading order (and in the DOM, for crawlers).
+ *
+ * The breakpoints match `bandStructureCss` (and the structure gate): tablet is
+ * 768–1024, mobile is <= 767, desktop is >= 1025.
+ */
+const bandLaneCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const lanes = theme?.columns ?? [];
+		if ( ! id || lanes.length < 2 ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const rules: string[] = [];
+		lanes.forEach( ( lane, laneIndex ) => {
+			const selector = `${ scoped } .ds-grid > :nth-child(${ laneIndex + 1 })`;
+			if ( lane.hiddenDesktop ) {
+				rules.push( `@media (min-width: 1025px){${ selector }{display:none}}` );
+			}
+			if ( lane.hiddenTablet ) {
+				rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selector }{display:none}}` );
+			}
+			if ( lane.hiddenMobile ) {
+				rules.push( `@media (max-width: 767px){${ selector }{display:none}}` );
+			}
+		} );
+		// The same lanes also state a per-device WIDTH. Elementor wraps a row when
+		// the running total passes 100%, so the faithful grid fact is the first
+		// row's TRACK COUNT — not a per-lane width, which would fight the grid
+		// (see `lib/lane-tracks.ts`). Emitted as a property rather than a custom
+		// property because `columnsFor` writes its count INLINE, which no stylesheet
+		// rule could outrank.
+		(
+			[
+				[ 'desktop', '(min-width: 1025px)' ],
+				[ 'tablet', '(min-width: 768px) and (max-width: 1024px)' ],
+				[ 'mobile', '(max-width: 767px)' ],
+			] as const
+		).forEach( ( [ device, media ] ) => {
+			const tracks = laneTracks( lanes, device );
+			if ( tracks === undefined ) {
+				return;
+			}
+			rules.push( `@media ${ media }{${ scoped } .ds-grid{grid-template-columns:repeat(${ tracks },minmax(0,1fr))}}` );
+		} );
+		return rules.join( '' );
+	} )
+	.join( '' );
+
+/**
+ * A component band beside its measured media lane (`mediaLane`).
+ *
+ * Elementor puts the picture in one column and the copy in the other; the
+ * component kinds render the copy full-width and the photo column disappears
+ * (eca.directory's "Get in touch" form and "Why … makes a difference" benefits
+ * row, 2026-11-25). One rule set for every such band, emitted once.
+ *
+ * On a phone the two columns STACK with the copy FIRST — the industry rule for
+ * split sections is "message first, picture second" — so the media keeps DOM
+ * order (content, then media) and is only re-ordered on the wide layout.
+ */
+const anySplitLane = sections.some( ( section, index ) => Boolean( mediaLane( themeFor( section, index ) ) ) );
+/**
+ * A RAW band's headings take the band's measured alignment.
+ *
+ * A `text` band ships the source's own markup, so none of the component rules
+ * apply — and the source's centred CTA rebuilt with its headings flush left
+ * (eca.directory's blog band measured 488px of left inset against the rebuild's
+ * 104, 2026-11-25). The measured alignment already rides `--ds-title-align`.
+ */
+const textBandCss = sections.some( ( section ) => section.kind === 'text' || section.kind === 'raw' )
+	? '.ds-text-band{text-align:var(--ds-title-align,inherit)}'
+	: '';
+
+const bandSplitCss =
+	( anySplitLane
+		? '.ds-band-split{display:grid;width:100%;grid-template-columns:var(--ds-split-ratio,minmax(0,1fr) minmax(0,1fr));gap:var(--ds-split-gap,clamp(1.5rem,3vw,3rem));align-items:stretch;max-width:var(--ds-measure,100%);margin-inline:auto}' +
+			  '.ds-band-split[data-media-side="left"]>.ds-band-split__media{order:-1}' +
+			  '.ds-band-split>.ds-section{max-width:none;padding-block:0}' +
+			  '.ds-band-split__media{margin:0;min-height:0;overflow:hidden}' +
+			  '.ds-band-split__media img{display:block;width:100%;height:100%;object-fit:cover}' +
+			  // Stacked, the picture needs a box of its own: `height:100%` against an
+			  // indefinite grid row resolves to auto, which collapsed the photo to its
+			  // line box (invisible) on a phone (2026-11-25).
+			  '@media (max-width:767px){.ds-band-split{grid-template-columns:minmax(0,1fr)}.ds-band-split[data-media-side="left"]>.ds-band-split__media{order:0}.ds-band-split__media{aspect-ratio:4/3}}'
+			: '' );
+
+/**
+ * The MEASURED geometry of a two-lane band: the row's GAP and the copy lane's
+ * inner MEASURE.
+ *
+ * The source states both in its own stylesheet — Elementor's `e-con` gap and a
+ * widget's `__width-initial` — and neither ships. Without the gap the hero's
+ * ratio was applied to the wrong track space (830/418 against the source's
+ * 811/409); without the measure the lede ran the full 811px lane and wrapped a
+ * line longer (eca.directory's about-us hero, 2026-11-25).
+ *
+ * Band-scoped on purpose: `global.css` cannot carry a per-band number, and the
+ * template's `.ds-hero-split` gap would otherwise stay its own 2rem guess.
+ */
+const splitBandCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		if ( ! id || ( theme?.columns?.length ?? 0 ) !== 2 ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const rules: string[] = [];
+		const gap = theme?.rowLayout?.gap;
+		if ( gap ) {
+			rules.push( `${ scoped } .ds-hero-split,${ scoped } .ds-band-split{gap:${ gap }px}` );
+		}
+		if ( theme?.copyWidth ) {
+			rules.push( `${ scoped } .ds-hero-body{max-width:${ theme.copyWidth }px}` );
+		}
+		return rules.join( '' );
+	} )
+	.join( '' );
+
+/**
+ * A band whose source row spreads its lanes with `justify-content: space-between`.
+ *
+ * The rebuild's stats list is an equal-cell grid with centred copy, so the
+ * source's counters (151/253/197/163 across 1100px) rendered as four 275px
+ * cells centred in the band — the ink lost 84px and drifted 50px right
+ * (eca.directory's about-us stats, 2026-11-25). The measured justify is the
+ * fact: the row spans the container, so the list does too.
+ *
+ * Scoped to `.ds-stats` only. Any other kind in the same band keeps its own
+ * layout; an absent list makes the rule inert.
+ */
+const rowLayoutCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const layout = theme?.rowLayout;
+		if ( ! id || layout?.justify !== 'space-between' ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const widths = theme?.statsWidths ?? [];
+		const items = widths
+			.map( ( width, item ) => `${ scoped } .ds-stat:nth-child(${ item + 1 }){flex:0 0 ${ width }px}` )
+			.join( '' );
+		// The labels' measured ink: the muted default is unreadable on a dark panel.
+		const labelInk = layout.labelInk ? `${ scoped } .ds-stat__label{color:${ layout.labelInk }}` : '';
+		return (
+			`${ scoped } .ds-stats{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:${ layout.gap ?? 0 }px}` +
+			`${ scoped } .ds-stat{text-align:start;flex:0 1 auto}` +
+			items +
+			labelInk
+		);
+	} )
+	.join( '' );
+
+/**
+ * The NARROW containers nested in a band (`ForgeBandNarrowBox`).
+ *
+ * A builder insets copy by wrapping it in a smaller centred container —
+ * eca.directory's about-us CTA puts the eyebrow, title and button in a 500px
+ * `e-con-inner` inside 1280. Without the width the wrapper stretched, so the
+ * eyebrow chip painted as a 1280px purple bar and the title wrapped at 1280
+ * (2026-11-25). The width is the source's own rendered box, not a guess.
+ */
+const narrowBoxCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const boxes = theme?.narrowBoxes ?? [];
+		if ( ! id || boxes.length === 0 ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		return boxes
+			.map( ( box ) => {
+				const margin =
+					box.align === 'center'
+						? 'margin-left:auto;margin-right:auto'
+						: box.align === 'start'
+							? 'margin-right:auto'
+							: 'margin-left:auto';
+				return (
+					`${ scoped } .elementor-element-${ box.parentId } > .e-con-inner{width:${ box.width }px;max-width:100%;${ margin };` +
+					// The source's inset container is a FLEX column: `align-items` is what
+					// shrinks the eyebrow chip to its text instead of a full-width bar, and a
+					// block container ignores it entirely.
+					`${ box.alignItems ? `display:flex;flex-direction:column;align-items:${ box.alignItems };` : '' }}`
+				);
+			} )
+			.join( '' );
+	} )
+	.join( '' );
+
+/**
+ * The hero BREADCRUMB (`Hero.astro` renders it when the band's only link is
+ * Home). Emitted only when a page can show one, and shaped per the WAI pattern:
+ * a nav landmark, an ordered list, and `aria-current="page"` on the last crumb.
+ */
+const anyHeroBand = sections.some( ( section, index ) => section.kind === 'hero' || themeFor( section, index )?.layout === 'split' );
+const breadcrumbCss = anyHeroBand
+	? '.ds-breadcrumb{margin:0 0 .75rem;font-size:.875rem;color:var(--forge-muted,currentColor)}' +
+	  '.ds-breadcrumb ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}' +
+	  '.ds-breadcrumb li{display:inline-flex;align-items:center;gap:.5rem}' +
+	  '.ds-breadcrumb li+li::before{content:"|";opacity:.4}' +
+	  '.ds-breadcrumb a{color:inherit;text-decoration:none}' +
+	  '.ds-breadcrumb a:hover{text-decoration:underline}' +
+	  '.ds-breadcrumb [aria-current="page"]{color:inherit;font-weight:500}'
+	: '';
 
 /**
  * The band's measured CAROUSELS (`bandFacts[id].carousel`).
@@ -893,6 +1697,28 @@ const bandCarouselCss = sections
 	.join( '' );
 
 /**
+ * Mark every declaration in a STATE delta `!important`.
+ *
+ * The per-element positional facts (`[data-section-id="…"] .post-body > * >
+ * div:nth-child(1) > … > a:nth-child(1)`) re-state the box measured from the
+ * source, and three `:nth-child()` steps already outrank any class-level state
+ * rule — so the resting background won on every hover. A state delta means
+ * "the value WHILE hovered", which by definition beats the resting paint, so it
+ * is forced. The resting pass (`fact.base`) stays overrideable.
+ *
+ * eca.directory's rebuilt buttons kept `rgb(135, 100, 160)` on hover against the
+ * source's `rgb(39, 16, 74)` with the correct rule present in the sheet
+ * (2026-11-24) — specificity, not a missing declaration.
+ */
+const forceState = ( declarations: string ): string =>
+	declarations
+		.split( ';' )
+		.map( ( part ) => part.trim() )
+		.filter( Boolean )
+		.map( ( part ) => ( /!\s*important$/i.test( part ) ? part : `${ part } !important` ) )
+		.join( ';' );
+
+/**
  * The controls' measured interaction STATES (`analyze` interaction pass), scoped
  * to the band that owns them.
  *
@@ -911,7 +1737,155 @@ const bandCarouselCss = sections
  *     changes, it just does not animate for a reader who asked it not to.
  *   - `:focus-visible` (not `:focus`) carries the keyboard ring; `:focus` is
  *     kept only for what the source really styles on any focus (fields).
+ *
+ * A state declaration is emitted `!important` — see `forceState`.
  */
+/**
+ * The band's ROWS, for a band that stays RAW.
+ *
+ * A raw band is the source's own markup with the builder's stylesheet gone, so
+ * every flex container inside it collapses to a block and its lanes stack:
+ * eca.directory's team band rendered three 1180px cards down the page against
+ * the source's three ~318px cards across, and its copy column sat on top of
+ * them instead of beside (2026-11-24).
+ *
+ * The widths are MEASURED — the band's own row from the column facts (the same
+ * numbers `--ds-cols-template-desktop` carries for a component band), the rows
+ * nested inside it from `bandFacts.rows`. Never a guess at the builder's
+ * classes: the vendor sheet that said `flex-direction: row` for THIS container
+ * and `column` for that one never ships. A phone keeps the source's stacking.
+ */
+const tracksFrom = ( widths: number[] ): string | undefined => {
+	const total = widths.reduce( ( sum, width ) => sum + width, 0 );
+	if ( widths.length < 2 || total <= 0 ) {
+		return undefined;
+	}
+	return widths.map( ( width ) => `minmax(0,${ Math.round( ( width / total ) * 1000 ) }fr)` ).join( ' ' );
+};
+
+/**
+ * Do these lanes sit on ONE line?
+ *
+ * `widths` are lane shares (`100` = a full-width lane) for the band's own row,
+ * or rendered pixels for a nested row. Two shapes fail the test:
+ *
+ *  - shares that sum past 100% — Elementor wraps a flex row there, so the
+ *    lanes are stacked in the source even when `flex-direction` says `row`;
+ *  - pixel lanes that EACH fill the content column — a stack of full-width
+ *    stages is the same box repeated, not a row.
+ *
+ * A false positive is the expensive mistake: normalising eca.directory's
+ * about-us CTA ([100, 100]) into two tracks laid the copy beside itself and
+ * moved it 319px left (2026-11-25).
+ */
+const lanesWrap = ( widths: number[] | undefined, available: number | undefined ): boolean => {
+	if ( ! widths || widths.length < 2 ) {
+		return false;
+	}
+	const total = widths.reduce( ( sum, width ) => sum + width, 0 );
+	if ( total <= 0 ) {
+		return false;
+	}
+	if ( widths.every( ( width ) => width <= 100.5 ) ) {
+		return total > 100.5;
+	}
+	return available !== undefined && available > 0 && widths.every( ( width ) => width >= available * 0.95 );
+};
+
+const bandRowCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		// Only a RAW band needs this: a component band lays its own grid out.
+		if ( ! id || ( section.kind !== 'text' && section.kind !== 'raw' ) ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const desktop: string[] = [];
+		const mobile: string[] = [];
+		const measureText = typeof theme?.measure === 'string' ? theme.measure : theme?.measure?.desktop;
+		const available = Number.parseFloat( measureText ?? '' );
+		const box = ( layout: SectionTheme[ 'rowLayout' ] ): string =>
+			[ layout?.justify && `justify-content:${ layout.justify }`, layout?.align && `align-items:${ layout.align }` ]
+				.filter( Boolean )
+				.join( ';' );
+		const gapOf = ( layout: SectionTheme[ 'rowLayout' ] ): string => ( layout?.gap ? `;gap:${ layout.gap }px` : '' );
+		/**
+		 * `stacked` is the source's own layout, not a guess: a measured
+		 * `flex-direction: column`, or lanes that cannot share one line. A stack
+		 * renders as the source's flex column (the gap spaces the lanes; a block
+		 * container would collapse the gap away); a real row renders as a grid.
+		 */
+		const push = (
+			selector: string,
+			widths: number[] | undefined,
+			layout: SectionTheme[ 'rowLayout' ] | undefined
+		) => {
+			if ( ! widths ) {
+				return;
+			}
+			const boxDecl = box( layout );
+			if ( layout?.direction === 'column' || lanesWrap( widths, available ) ) {
+				desktop.push(
+					`${ selector }{display:flex;flex-direction:column${ gapOf( layout ) }${ boxDecl ? `;${ boxDecl }` : '' }}`
+				);
+				// A stacked lane fills the container's CROSS axis, exactly as Elementor's
+				// full-width children do. The measured `columnBox` gives every lane an
+				// `align-self:start` (a height floor for a grid row), and in a column
+				// flex that shrink-wraps the lane to its text — the copy measured 462px
+				// inside a 1280px container (eca.directory's about-us CTA, 2026-11-25).
+				desktop.push( `${ selector } > *{align-self:stretch}` );
+				return;
+			}
+			const tracks = tracksFrom( widths );
+			if ( ! tracks ) {
+				return;
+			}
+			desktop.push( `${ selector }{display:grid;grid-template-columns:${ tracks };align-items:start${ gapOf( layout ) }}` );
+			mobile.push( `${ selector }{grid-template-columns:minmax(0,1fr)}` );
+		};
+		// The band's OWN row — the first `.e-con-inner` under the band element.
+		push(
+			`${ scoped } > .post-body > .elementor-element > .e-con-inner`,
+			( theme?.columns ?? [] ).map( ( column ) => column.width ?? 0 ),
+			theme?.rowLayout
+		);
+		// A device on which the SOURCE changes direction keeps its own rule.
+		for ( const [ device, media ] of [
+			[ 'tablet', '(max-width: 1024px)' ],
+			[ 'mobile', '(max-width: 767px)' ],
+		] as const ) {
+			const override = theme?.rowLayout?.[ device ];
+			if ( ! override || override.direction === theme?.rowLayout?.direction ) {
+				continue;
+			}
+			const selector = `${ scoped } > .post-body > .elementor-element > .e-con-inner`;
+			if ( override.direction === 'column' ) {
+				desktop.push(
+					`@media ${ media }{${ selector }{display:flex;flex-direction:column${ override.gap ? `;gap:${ override.gap }px` : '' }}}`
+				);
+				continue;
+			}
+			const lanes = ( theme?.columns ?? [] ).map( ( column ) => column.width ?? 0 );
+			const tracks = lanesWrap( lanes, available ) ? undefined : tracksFrom( lanes );
+			if ( tracks ) {
+				desktop.push( `@media ${ media }{${ selector }{display:grid;grid-template-columns:${ tracks }}}` );
+			}
+		}
+		// The rows NESTED inside it, addressed by their own element id.
+		for ( const row of theme?.rows ?? [] ) {
+			push( `${ scoped } .elementor-element-${ row.id }`, row.widths, undefined );
+		}
+		if ( desktop.length === 0 ) {
+			return '';
+		}
+		// The SOURCE's own stacking breakpoint (see the scaffold's `stackAt`): a
+		// band whose lanes are full-width at 834px must not keep two columns there.
+		const stackAt = theme?.stackAt === 'tablet' ? 1024 : 767;
+		return desktop.join( '' ) + ( mobile.length > 0 ? `@media (max-width: ${ stackAt }px){${ mobile.join( '' ) }}` : '' );
+	} )
+	.join( '' );
+
 const bandInteractionCss = sections
 	.map( ( section, index ) => {
 		const theme = themeFor( section, index );
@@ -931,16 +1905,16 @@ const bandInteractionCss = sections
 				rules.push( `@media (prefers-reduced-motion: no-preference){${ selector }{transition:${ fact.transition }}}` );
 			}
 			if ( fact.hover ) {
-				rules.push( `@media (hover: hover){${ selector }:hover{${ fact.hover }}}` );
+				rules.push( `@media (hover: hover){${ selector }:hover{${ forceState( fact.hover ) }}}` );
 			}
 			if ( fact.focus ) {
-				rules.push( `${ selector }:focus{${ fact.focus }}` );
+				rules.push( `${ selector }:focus{${ forceState( fact.focus ) }}` );
 			}
 			if ( fact.focusVisible ) {
-				rules.push( `${ selector }:focus-visible{${ fact.focusVisible }}` );
+				rules.push( `${ selector }:focus-visible{${ forceState( fact.focusVisible ) }}` );
 			}
 			if ( fact.active ) {
-				rules.push( `@media (hover: hover){${ selector }:active{${ fact.active }}}` );
+				rules.push( `@media (hover: hover){${ selector }:active{${ forceState( fact.active ) }}}` );
 			}
 			// A child that only repaints while the CONTROL is in a state (the overlay
 			// button): the selector is `<control>:hover > <child>`. The rest layout —
@@ -957,20 +1931,41 @@ const bandInteractionCss = sections
 					rules.push( `@media (prefers-reduced-motion: no-preference){${ selector } > ${ child.selector }{transition:${ child.transition }}}` );
 				}
 				if ( child.hover ) {
-					rules.push( `@media (hover: hover){${ selector }:hover > ${ child.selector }{${ child.hover }}}` );
+					rules.push( `@media (hover: hover){${ selector }:hover > ${ child.selector }{${ forceState( child.hover ) }}}` );
 				}
 				if ( child.focus ) {
-					rules.push( `${ selector }:focus > ${ child.selector }{${ child.focus }}` );
+					rules.push( `${ selector }:focus > ${ child.selector }{${ forceState( child.focus ) }}` );
 				}
 				if ( child.focusVisible ) {
-					rules.push( `${ selector }:focus-visible > ${ child.selector }{${ child.focusVisible }}` );
+					rules.push( `${ selector }:focus-visible > ${ child.selector }{${ forceState( child.focusVisible ) }}` );
 				}
 				if ( child.active ) {
-					rules.push( `@media (hover: hover){${ selector }:active > ${ child.selector }{${ child.active }}}` );
+					rules.push( `@media (hover: hover){${ selector }:active > ${ child.selector }{${ forceState( child.active ) }}}` );
 				}
 			}
 		}
 		return rules.join( '' );
+	} )
+	.join( '' );
+
+/**
+ * The band's MEASURED hover deltas, scoped as variables (`hoverComponentVars`).
+ *
+ * `bandInteractionCss` above emits the recorded states against the SOURCE's
+ * selectors, which a design-rebuilt band does not carry — so those rules match
+ * nothing and the hover state is lost. The measured VALUES still ride onto the
+ * rebuilt components through these variables, which `global.css` reads on
+ * `.ds-button` and `.ds-card`.
+ */
+const bandHoverCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		if ( ! id ) {
+			return '';
+		}
+		const vars = hoverComponentVars( theme?.interactions );
+		return vars.length > 0 ? `[data-section-id="${ id }"]{${ vars.join( ';' ) }}` : '';
 	} )
 	.join( '' );
 
@@ -991,8 +1986,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandCarouselCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandCarouselCss }${ bandInteractionCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandRowCss || bandCarouselCss || bandStructureCss || bandLaneCss || bandSplitCss || splitBandCss || rowLayoutCss || narrowBoxCss || textBandCss || breadcrumbCss || bandLayerCss || bandInkCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandRowCss }${ bandCarouselCss }${ bandStructureCss }${ bandLaneCss }${ bandSplitCss }${ splitBandCss }${ rowLayoutCss }${ narrowBoxCss }${ textBandCss }${ breadcrumbCss }${ bandLayerCss }${ bandInkCss }${ bandInteractionCss }${ bandHoverCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
@@ -1004,32 +1999,143 @@ const bandParallaxCss = sections
 			// kinds that actually RENDER their html can own it: a component band
 			// keeps `section.html` but never emits it, so suppressing there would
 			// drop the anchor entirely.
-			const renderedHtml = section.kind === 'text' || section.kind === 'raw' ? section.html : undefined;
+			// A band whose measured columns say "copy beside media" renders as the
+			// SPLIT HERO even when its classified kind is something else: the photo
+			// is a background-image the semantic pass cannot see, so the kind's own
+			// component would drop the media column and its lane split entirely.
+			const splitMedia = theme ? mediaFromElementFacts( theme ) : undefined;
+			// A LEADING band whose measured row is copy beside a photo IS the hero,
+			// whatever the classifier called it: a page-title + text + breadcrumb band
+			// classifies as `text`, and its raw markup cannot lay the picture out at
+			// all (eca.directory's about-us hero had no photo, 2026-11-25).
+			const leadingHero =
+				index === 0 && theme?.layout === 'split' && ( splitMedia?.length ?? 0 ) > 0;
+			// Only a LEADING band (or one the classifier itself called a hero) becomes
+			// the split hero. A content band that happens to place a picture beside its
+			// copy keeps its own component — the cards ARE the content, and Hero renders
+			// them as stat pairs (eca.directory's benefits band, 2026-11-25). The lane
+			// is rendered by `ds-band-split` below instead.
+			const splitHero = Boolean(
+				theme?.layout === 'split' && ( leadingHero || section.kind === 'hero' )
+			);
+			const kind = splitHero ? 'hero' : section.kind;
+			// A component band with a measured media lane (`mediaLane`).
+			const lane = splitHero ? undefined : mediaLane( theme );
+			const laneKinds = new Set( [ 'form', 'feature-grid', 'icon-list', 'stats', 'cta' ] );
+			const bandLane = lane && laneKinds.has( kind ) ? lane : undefined;
+			// A band that RENDERS its html can own the anchor; a component band keeps
+			// `section.html` but never emits it, so suppressing there would drop it.
+			const renderedHtml = kind === 'text' || kind === 'raw' ? section.html : undefined;
+			// A query loop with nothing published has no cards to show. The band's own
+			// copy is real content and stays; the band goes only when the loop WAS the
+			// band — no title, no lede, nothing else to frame (see
+			// `SemanticSection.dynamicList`).
+			const emptyLoop =
+				section.dynamicList === true && ( section.slots.items?.length ?? 0 ) === 0;
+			const dropBand =
+				emptyLoop &&
+				! section.slots.title &&
+				( section.slots.body?.length ?? 0 ) === 0 &&
+				! theme?.comparison &&
+				( theme?.structure?.length ?? 0 ) === 0 &&
+				( theme?.logos?.length ?? 0 ) === 0;
+			if ( dropBand ) {
+				return null;
+			}
 			const anchor = wrapperAnchor( theme?.anchor ?? section.anchor, renderedHtml );
 			return (
-				<div data-section={section.kind} data-section-id={section.id ?? theme?.id} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
+				<div data-section={kind} data-section-id={section.id ?? theme?.id} data-section-collapsed={foldsAway(section, theme) ? 'grid' : undefined} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.panel && (section.kind === 'icon-list' || section.kind === 'feature-grid') && 'ds-section-wrap--panel', theme?.panel?.width && (section.kind === 'icon-list' || section.kind === 'feature-grid') && ['ds-section-wrap--panel-box', `ds-section-wrap--panel-${theme.panel.align ?? 'start'}`], theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog), pageBodySize, columnsFor(index, theme)?.desktop, foldsAway(section, theme)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
 					{theme?.catalog ? (
 						<Catalog theme={theme} />
+					) : bandLane ? (
+						<div class="ds-band-split" data-media-side={bandLane.side}>
+							<BandBody
+								section={section}
+								kind={kind}
+								theme={theme}
+								columns={columnsFor(index, theme)}
+								media={splitMedia}
+								uid={section.id ?? String(index)}
+							/>
+							<figure class="ds-band-split__media">
+								{/* Decorative by construction: the source paints it as a CSS background
+								 * behind no text, so a null alt is the accessible choice (WAI). */}
+								<img src={bandLane.src} alt="" loading="lazy" decoding="async" />
+							</figure>
+						</div>
 					) : (
-						<>
-							{section.kind === 'hero' && <Hero section={section} theme={theme} />}
-							{section.kind === 'accordion' && <Accordion section={section} theme={theme} />}
-							{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index, theme)} theme={theme} />}
-							{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index, theme)} theme={theme} />}
-							{section.kind === 'testimonial' && <Testimonial section={section} theme={theme} />}
-							{section.kind === 'logo-cloud' && <LogoCloud section={section} theme={theme} />}
-							{section.kind === 'cta' && <Cta section={section} theme={theme} />}
-							{section.kind === 'gallery' && <Gallery section={section} theme={theme} />}
-							{section.kind === 'form' && <Form section={section} theme={theme} />}
-							{section.kind === 'pricing' && <Pricing section={section} theme={theme} />}
-							{section.kind === 'stats' && <Stats section={section} theme={theme} />}
-							{section.kind === 'steps' && <Steps section={section} theme={theme} />}
-							{section.kind === 'team' && <Team section={section} theme={theme} />}
-							{section.kind === 'marquee' && <Marquee section={section} uid={section.id ?? index} />}
-							{section.kind === 'comparison' && <Comparison section={section} theme={theme} />}
-							{section.kind === 'text' && (section.html ? <div class="post-body ds-section" set:html={section.html} /> : <TextBlock section={section} theme={theme} />)}
-							{section.kind === 'raw' && <div class="post-body ds-section" set:html={section.html ?? ''} />}
-						</>
+						<BandBody
+							section={section}
+							kind={kind}
+							theme={theme}
+							columns={columnsFor(index, theme)}
+							media={splitMedia}
+							uid={section.id ?? String(index)}
+						/>
+					)}
+					{/* The band's MARK STRIP. A builder carousel publishes each logo as a
+					 * `background-image` DIV, so no classifier (<img> only, and on
+					 * sanitised HTML) can see it — the band rendered as its heading alone.
+					 * Analyzer-measured, so it renders even though the classifier found
+					 * no media; the band's own copy still renders above it, so nothing
+					 * the source said is dropped. */}
+					{theme?.logos && theme.logos.length > 0 && (() => {
+						// A logo wall the source PAGED renders as a carousel: more marks than
+						// fit at once, on a snapping track carrying the measured
+						// slides-per-view and gutter. A static row stays a static row.
+						const perView = theme.carousel?.perView ?? 0;
+						const paged = perView > 1 && theme.logos.length > perView;
+						return (
+							<section class="ds-section ds-body">
+								<div
+									class:list={[ 'ds-logos', paged && 'ds-logos--carousel' ]}
+									aria-label="Featured brands"
+									style={paged ? `--ds-carousel-per:${ perView };--ds-carousel-gap:${ theme.carousel?.gap ?? 0 }px` : undefined}
+								>
+									{theme.logos.map((mark) => (
+										<img src={mark.src} alt={mark.alt ?? ''} width="240" height="120" loading="lazy" />
+									))}
+								</div>
+							</section>
+						);
+					})()}
+					{/* MEASURED STRUCTURE (see `SectionTheme.structure`). A builder
+					 * publishes each check and cross as an `<svg>`, and sanitisation strips
+					 * every one — so the classifier can never see the table and this fact is
+					 * measured at analyze time (eca.directory's "Compare User Roles": 52
+					 * SVGs raw, 0 sanitised, classified as a 3-card feature grid).
+					 *
+					 * Rendered IN ADDITION to the band's own component, never instead of it:
+					 * that band also carries three phase cards, and swapping the kind would
+					 * delete them. The heading and links are the band's own — they already
+					 * rendered above, so the structure renders without them. */}
+					{( theme?.structure ?? [] ).map((entry) => {
+						if ( entry.type !== 'comparison' || ! entry.data || section.kind === 'comparison' ) {
+							return null;
+						}
+						return (
+							<Comparison
+								section={{
+									...section,
+									slots: { ...section.slots, title: undefined, links: undefined },
+									comparison: entry.data,
+								}}
+								theme={theme}
+							/>
+						);
+					})}
+					{/* The typed fast path for a profile recorded before the channel
+					 * existed (`SectionTheme.comparison`); the scaffold emits `structure`
+					 * for both shapes, so this only fires on an un-regenerated project. */}
+					{theme?.comparison && ! theme.structure && section.kind !== 'comparison' && (
+						<Comparison
+							section={{
+								...section,
+								slots: { ...section.slots, title: undefined, links: undefined },
+								comparison: theme.comparison,
+							}}
+							theme={theme}
+						/>
 					)}
 				</div>
 			);

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // scoped-css.ts — read the band rules out of a BUILT page's <style> blocks.
 //

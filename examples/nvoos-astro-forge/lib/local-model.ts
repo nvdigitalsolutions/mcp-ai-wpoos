@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // local-model.ts — the optional LOCAL model layer (Ollama).
 //

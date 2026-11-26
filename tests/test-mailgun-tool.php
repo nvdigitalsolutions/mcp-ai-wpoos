@@ -86,9 +86,9 @@ class WP_MCP_AI_Send_Mailgun_Email_Tool_Test extends WP_UnitTestCase {
 	 * The tool should reject non-administrators.
 	 */
 	public function test_execute_enforces_capability() {
-		$settings                     = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['mailgun_api_key']  = 'key-test123';
-		$settings['mailgun_domain']   = 'mg.example.com';
+		$settings                    = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['mailgun_api_key'] = 'key-test123';
+		$settings['mailgun_domain']  = 'mg.example.com';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
@@ -112,9 +112,9 @@ class WP_MCP_AI_Send_Mailgun_Email_Tool_Test extends WP_UnitTestCase {
 	 * A from email must be supplied either in settings or arguments.
 	 */
 	public function test_execute_requires_from_email() {
-		$settings                     = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['mailgun_api_key']  = 'key-test123';
-		$settings['mailgun_domain']   = 'mg.example.com';
+		$settings                    = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['mailgun_api_key'] = 'key-test123';
+		$settings['mailgun_domain']  = 'mg.example.com';
 		// mailgun_from_email intentionally left empty.
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -139,10 +139,10 @@ class WP_MCP_AI_Send_Mailgun_Email_Tool_Test extends WP_UnitTestCase {
 	 * The tool should require either text or HTML content.
 	 */
 	public function test_execute_requires_body() {
-		$settings                        = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['mailgun_api_key']     = 'key-test123';
-		$settings['mailgun_domain']      = 'mg.example.com';
-		$settings['mailgun_from_email']  = 'from@mg.example.com';
+		$settings                       = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['mailgun_api_key']    = 'key-test123';
+		$settings['mailgun_domain']     = 'mg.example.com';
+		$settings['mailgun_from_email'] = 'from@mg.example.com';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -165,12 +165,12 @@ class WP_MCP_AI_Send_Mailgun_Email_Tool_Test extends WP_UnitTestCase {
 	 * A successful send should return the Mailgun message ID via the pre-send filter.
 	 */
 	public function test_execute_sends_message() {
-		$settings                        = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['mailgun_api_key']     = 'key-test123';
-		$settings['mailgun_domain']      = 'mg.example.com';
-		$settings['mailgun_from_email']  = 'from@mg.example.com';
-		$settings['mailgun_from_name']   = 'Sender';
-		$settings['mailgun_region']      = 'us';
+		$settings                       = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['mailgun_api_key']    = 'key-test123';
+		$settings['mailgun_domain']     = 'mg.example.com';
+		$settings['mailgun_from_email'] = 'from@mg.example.com';
+		$settings['mailgun_from_name']  = 'Sender';
+		$settings['mailgun_region']     = 'us';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -260,11 +260,11 @@ class WP_MCP_AI_Send_Mailgun_Email_Tool_Test extends WP_UnitTestCase {
 	 * EU region should route to the EU API base.
 	 */
 	public function test_eu_region_uses_eu_endpoint() {
-		$settings                        = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['mailgun_api_key']     = 'key-eu-test';
-		$settings['mailgun_domain']      = 'mg.example.eu';
-		$settings['mailgun_from_email']  = 'from@mg.example.eu';
-		$settings['mailgun_region']      = 'eu';
+		$settings                       = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['mailgun_api_key']    = 'key-eu-test';
+		$settings['mailgun_domain']     = 'mg.example.eu';
+		$settings['mailgun_from_email'] = 'from@mg.example.eu';
+		$settings['mailgun_region']     = 'eu';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -291,8 +291,16 @@ class WP_MCP_AI_Send_Mailgun_Email_Tool_Test extends WP_UnitTestCase {
 				$captured_url = $url;
 				// Return a fake 200 response to short-circuit the actual HTTP call.
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
-					'body'     => wp_json_encode( array( 'id' => '<eu-id>', 'message' => 'Queued.' ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => '<eu-id>',
+							'message' => 'Queued.',
+						)
+					),
 					'headers'  => array(),
 					'cookies'  => array(),
 					'filename' => null,
@@ -327,10 +335,10 @@ class WP_MCP_AI_Send_Mailgun_Email_Tool_Test extends WP_UnitTestCase {
 	 * The domain argument should override the settings domain.
 	 */
 	public function test_domain_argument_overrides_settings() {
-		$settings                        = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['mailgun_api_key']     = 'key-test';
-		$settings['mailgun_domain']      = 'mg.default.com';
-		$settings['mailgun_from_email']  = 'from@mg.default.com';
+		$settings                       = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['mailgun_api_key']    = 'key-test';
+		$settings['mailgun_domain']     = 'mg.default.com';
+		$settings['mailgun_from_email'] = 'from@mg.default.com';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -344,8 +352,16 @@ class WP_MCP_AI_Send_Mailgun_Email_Tool_Test extends WP_UnitTestCase {
 			function ( $preempt, $parsed_args, $url ) use ( &$captured_url ) {
 				$captured_url = $url;
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
-					'body'     => wp_json_encode( array( 'id' => '<id>', 'message' => 'Queued.' ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => '<id>',
+							'message' => 'Queued.',
+						)
+					),
 					'headers'  => array(),
 					'cookies'  => array(),
 					'filename' => null,

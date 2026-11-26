@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // html-ids.test.ts — id uniqueness in the BUILT page.
 //

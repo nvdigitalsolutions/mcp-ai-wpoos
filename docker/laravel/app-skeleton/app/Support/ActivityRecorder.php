@@ -14,6 +14,22 @@ use Illuminate\Support\Facades\DB;
  * unportable.
  *
  * Rows are append-only and pruned by age; nothing updates one.
+ *
+ * ## The estate (Proposal 149 §106)
+ *
+ * A row records the estate that **produced** the event, taken from
+ * `TenantContext` at write time and never from the caller — a second source
+ * would be a second truth to keep in step (§152 §9.3). The column arrived with
+ * `2026_11_20_120000_add_tenant_to_activity_events`; rows older than it read as
+ * `default`, which is the only defensible attribution for a row that records
+ * none (§152 §3 D3).
+ *
+ * Three writers run without a pinned context — the media sweeper, the media
+ * optimiser job and the health sampler. Their events land on `default` rather
+ * than on the estate whose media or health they describe. That is a real
+ * limitation, not a rounding error: `nvoos_files` carries no tenant either, so
+ * there is nothing to pin *from*. Fixing it means giving the media tables an
+ * estate first, which is the `media` surface's own slice, not this one.
  */
 final class ActivityRecorder
 {
@@ -29,6 +45,7 @@ final class ActivityRecorder
     {
         DB::table('nvoos_activity_events')->insert(array(
             'type' => mb_substr($type, 0, 64),
+            'tenant_id' => TenantContext::current(),
             'agent_id' => $agentId,
             'message' => mb_substr($message, 0, 500),
             'context' => array() === $context ? null : (string) json_encode($context),
@@ -37,13 +54,18 @@ final class ActivityRecorder
     }
 
     /**
-     * The newest events, in the shape the console's feed renders.
+     * The newest events for one estate, in the shape the console's feed renders.
+     *
+     * `$tenantId` is required rather than defaulted: `null` means every estate,
+     * and only an operator surface may ask for that. A default would let a new
+     * call site leak without noticing (§152 §3 D5).
      *
      * @return array<int, array{type: string, agent_id: int|null, message: string, timestamp: int}>
      */
-    public function recent(int $limit = 8): array
+    public function recent(int $limit, ?string $tenantId): array
     {
         $rows = DB::table('nvoos_activity_events')
+            ->when(null !== $tenantId, fn ($query) => $query->where('tenant_id', $tenantId))
             ->orderByDesc('id')
             ->limit(max(1, $limit))
             ->get();
@@ -59,6 +81,10 @@ final class ActivityRecorder
 
     /**
      * Drop events older than the retention window.
+     *
+     * Deliberately **platform-wide**: retention is a storage policy, not a
+     * read, and a per-estate prune command would let one estate's silent
+     * failure grow the table for everyone (§152 §3 D7).
      *
      * @return int Rows deleted.
      */

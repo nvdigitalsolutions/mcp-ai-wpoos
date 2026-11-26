@@ -66,9 +66,14 @@ interface NV_oOS_Graphify_Remote_Source_Interface {
 	public function get_config_schema();
 
 	/**
-	 * Test connectivity; returns ['success'=>bool,'message'=>string].
+	 * Test connectivity.
 	 *
-	 * @return array
+	 * Success returns ['success'=>true,'message'=>string] for the admin UI to
+	 * display. Failure returns WP_Error; both consumers (the AJAX tester and
+	 * the REST route) already branch on is_wp_error(), so a driver that
+	 * reported failure as an array was showing "success" in the admin response.
+	 *
+	 * @return array|WP_Error
 	 */
 	public function test_connection();
 

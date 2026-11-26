@@ -21,8 +21,10 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
+use Nvoos\Core\Application\Media\FeaturedImage;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Entity\CreateContentCommand;
 use Nvoos\Core\Domain\Entity\UpdateContentCommand;
 use Nvoos\Core\Domain\Error\AccessDeniedException;
@@ -31,9 +33,14 @@ use Nvoos\Core\Domain\Error\ValidationException;
 
 class SavePostTool extends AbstractTool
 {
+    /**
+     * `$files` is optional: a host with no registry can still save posts, but
+     * cannot resolve a featured image id, which the tool then refuses.
+     */
     public function __construct(
         ErrorFactoryInterface $errors,
         private readonly ContentStoreInterface $content,
+        private readonly ?FileStoreInterface $files = null,
     ) {
         parent::__construct($errors);
     }
@@ -114,6 +121,11 @@ class SavePostTool extends AbstractTool
                     'type'        => 'object',
                     'description' => 'Key-value pairs of custom fields to set.',
                 ),
+                'featured_image_id' => array(
+                    'type'        => 'integer',
+                    'description' => 'Stored file id to use as the featured image. Pass 0 to clear it. Mirrors the WordPress featured_image_id argument.',
+                    'minimum'     => 0,
+                ),
                 'comment_status'    => array(
                     'type'        => 'string',
                     'description' => 'Comment status: "open" or "closed".',
@@ -172,6 +184,16 @@ class SavePostTool extends AbstractTool
         $meta = $this->objectParam($arguments, 'meta_input');
 
         try {
+            // Proposal 162 §162.9.2 — the link from the library into content.
+            // Applied after `meta_input` so the two cannot disagree about which
+            // id won, and `null` means the argument was absent rather than
+            // "clear" — an unrelated update must not drop the image.
+            $featured = FeaturedImage::metaFor($arguments, $this->files);
+
+            if (null !== $featured) {
+                $meta = \array_merge($meta, $featured);
+            }
+
             if ($postId > 0) {
                 // Update existing.
                 $existing = $this->content->find($postId, $userId);
@@ -200,6 +222,7 @@ class SavePostTool extends AbstractTool
                             'status'  => $command->status,
                             'excerpt' => $command->excerpt,
                             'meta'    => array_keys($command->meta),
+                            'featured_image_id' => $meta['featured_image_id'] ?? null,
                         ),
                         'Dry run: the post would be updated.'
                     );
@@ -240,6 +263,7 @@ class SavePostTool extends AbstractTool
                         'content'   => $command->content,
                         'excerpt'   => $command->excerpt,
                         'meta'      => array_keys($command->meta),
+                        'featured_image_id' => $meta['featured_image_id'] ?? null,
                         'author_id' => $command->authorId,
                     ),
                     'Dry run: the post would be created.'

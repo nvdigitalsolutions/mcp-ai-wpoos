@@ -644,7 +644,7 @@ partially complete. Verification observed locally:
 1. ~~Re-confirm Cloudways API verbs~~ — **done 2026-11-12**: route shapes
    verified against live probes + in-repo production clients; see
    `docs/operations/deployment/cloudways-api-verification-spike.md`. The
-   authenticated read-only run (`npm run probe:cloudways` with credentials)
+   authenticated read-only run (local probe, with credentials)
    and a staging-server estate run remain pending credentials.
 2. Wire the bundle-upload transport so `provider.bundlePath` is populated
    automatically (today it is a required manual input for the live tier).

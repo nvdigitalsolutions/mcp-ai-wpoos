@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // pixel.ts — the pixel gate, with the anti-flake machinery the industry uses.
 //

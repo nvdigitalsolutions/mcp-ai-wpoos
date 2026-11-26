@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Assistant;
+use App\Models\Tenant;
 use App\Models\User;
+use App\Support\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
@@ -220,5 +222,90 @@ class TokenManagerTest extends TestCase
         $this->postJson('/api/v1/token-manager/restrictions/1/lift')
             ->assertNotFound()
             ->assertJsonPath('code', 'restriction_not_found');
+    }
+
+    /*
+     * 149 §19 — estate scope.
+     *
+     * `personal_access_tokens` has no tenant column and its `tokenable` is the
+     * issuing user, so the only reliable link to an estate is the assistant id
+     * embedded in the token name. Before this slice the listing used the whole
+     * `oos-assistant-*` range and the revoke path only compared the URL id with
+     * the token name — so an estate administrator could read AND revoke another
+     * estate's credentials.
+     */
+
+    public function test_the_overview_lists_only_the_current_estates_credentials(): void
+    {
+        $this->issue();
+
+        $foreignAssistant = $this->assistantIn('estate-b', 'Foreign Agent');
+        $foreignAdmin = User::factory()->admin()->inEstate('estate-b', 'owner')->create();
+
+        Sanctum::actingAs($foreignAdmin);
+        $this->app->make(AuthProviderInterface::class)->issueCredential($foreignAssistant->id);
+
+        // Each caller resolves its own estate from membership (149 §21), so one
+        // request cannot see the other's credentials.
+        Sanctum::actingAs($foreignAdmin);
+        $foreign = $this->overview()['credentials'];
+
+        $this->assertCount(1, $foreign);
+        $this->assertSame((int) $foreignAssistant->id, (int) $foreign[0]['assistant_id']);
+
+        Sanctum::actingAs($this->admin);
+        $own = $this->overview()['credentials'];
+
+        $this->assertCount(1, $own);
+        $this->assertSame((int) $this->assistant->id, (int) $own[0]['assistant_id']);
+    }
+
+    public function test_a_credential_from_another_estate_cannot_be_revoked(): void
+    {
+        $foreignAssistant = $this->assistantIn('estate-b', 'Foreign Agent');
+
+        TenantContext::set('estate-b');
+        $this->app->make(AuthProviderInterface::class)->issueCredential($foreignAssistant->id);
+
+        TenantContext::set(Assistant::DEFAULT_TENANT);
+
+        $foreignCredentialId = (string) DB::table('personal_access_tokens')
+            ->where('name', 'oos-assistant-'.$foreignAssistant->id)
+            ->value('id');
+
+        $this->assertNotSame('', $foreignCredentialId);
+
+        $this->postJson("/api/v1/token-manager/credentials/{$foreignAssistant->id}/{$foreignCredentialId}/revoke")
+            ->assertNotFound()
+            ->assertJsonPath('code', 'credential_not_found');
+
+        $this->assertSame(
+            1,
+            DB::table('personal_access_tokens')->where('id', (int) $foreignCredentialId)->count(),
+            'A cross-estate refusal must not delete the row.'
+        );
+    }
+
+    private function assistantIn(string $tenantId, string $title): Assistant
+    {
+        Tenant::query()->firstOrCreate(
+            ['id' => $tenantId],
+            ['name' => 'Estate '.$tenantId, 'slug' => $tenantId, 'is_operator' => false]
+        );
+
+        $assistant = Assistant::query()->create([
+            'title' => $title,
+            'slug' => \Illuminate\Support\Str::slug($title),
+            'status' => 'publish',
+        ]);
+
+        // `tenant_id` is deliberately not fillable — "the tenant is never
+        // supplied by a request body" — so it is assigned after create. Passing
+        // it to create() would be silently dropped and the fixture would land in
+        // the default estate, which is exactly the bug this test exists to catch.
+        $assistant->tenant_id = $tenantId;
+        $assistant->save();
+
+        return $assistant;
     }
 }

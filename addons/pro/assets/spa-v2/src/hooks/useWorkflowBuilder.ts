@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useWorkflowBuilder — Hook for the workflow list + selected detail.
  */

@@ -99,19 +99,19 @@ class NV_oOS_Graphify_Tool_Query_Graph implements WP_MCP_AI_Tool_Interface, WP_M
 		$max_nodes = isset( $arguments['max_nodes'] ) ? max( 1, min( 200, absint( $arguments['max_nodes'] ) ) ) : 50;
 
 		if ( ! $question ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'A question or search keyword is required.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'A question or search keyword is required.', 'nvoos-graphify' )
 			);
 		}
 
 		// Find seed nodes via label search.
 		$seeds = NV_oOS_Graphify_DB::search_nodes( $question, '', 5 );
 		if ( empty( $seeds ) ) {
-			return array(
-				'success'  => false,
-				'error'    => __( 'No nodes found matching that query. Try building the graph first with graphify_build_graph.', 'nvoos-graphify' ),
-				'question' => $question,
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'No nodes found matching that query. Try building the graph first with graphify_build_graph.', 'nvoos-graphify' ),
+				array( 'question' => $question )
 			);
 		}
 

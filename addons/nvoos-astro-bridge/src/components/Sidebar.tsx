@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Sidebar navigation — the single nav catalogue (auth/permissions NAV),
  * consumed the same way the console sidebar consumes CONSOLE_NAV_GROUPS:

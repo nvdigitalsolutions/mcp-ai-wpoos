@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // policy-drift.test.ts — Proposal 105 P2: the generated-policy drift pin.
 // Mirrors tokens.test.ts: the committed artifact must (a) parse to the
 // default doc, (b) render in repo style (tabs + single quotes) byte-for-byte

@@ -70,6 +70,18 @@ through `scripts/serve.mjs`, so the committed `dist/` is never rewritten. It
 needs the Laravel stack up and its origin in `SANCTUM_STATEFUL_DOMAINS` — the
 prerequisites are in [`e2e/README.md`](e2e/README.md).
 
+### Backend profile is a runtime setting
+
+`scripts/serve.mjs` reads `NVOOS_BACKEND` (`wordpress` | `laravel` | `hybrid`),
+proxies the matching prefixes, and stamps the client profile into the page it
+serves: the SPA entry gets `<script src="/app-config.js">`, and that route
+answers `window.__NVOOS_BACKEND__="<profile>"`. `runtime-config.ts` reads that
+global first, so **one prebuilt `dist/` serves both runtimes** — switching a
+deployment between WordPress and Laravel is an env-var change plus a restart,
+not a rebuild. A `VITE_NVOOS_BACKEND` baked into the artifact (`.env.laravel`,
+`--mode laravel`) is only the fallback when the stamp is absent (`vite dev`,
+`vite preview`, an older server).
+
 ## Deploy sync
 
 `npm run sync:dist` builds and stages `dist/` (git-tracked). Merges touching
@@ -116,6 +128,38 @@ full contract in the deploy doc
   with `NVOOS_PROXY_CACHE=0`; cap TTL with `NVOOS_PROXY_CACHE_MAX_TTL`
   (default 300 s). Full contract + backend opt-in guide:
   `docs/operations/deployment/nvoos-complete-velocity-setup.md`.
+
+## Connected apps
+
+Content Graph, Docs Hub, Media Studio and Document Editor are separate
+products, usually on their own origin. `scripts/serve.mjs` can mount them
+same-origin at `/connected/<key>/*` so their islands need no CORS
+configuration (Proposal 090-p W6).
+
+```bash
+NVOOS_CONNECTED_APPS='{
+  "contentGraph": {"base": "https://cg.example.com/wp-json/nvoos-content-graph/v1", "token": "…"},
+  "docsHub":      {"base": "https://docs.example.com/wp-json/nvoos-docs/v1", "cacheTtl": 60}
+}'
+```
+
+- **The upstream origin always comes from this variable, never from the
+  request** — a client can only name one of the four known keys.
+- Browser `Cookie`, `Authorization`, `X-WP-Nonce` and `Origin`/`Referer` are
+  dropped; a configured `token` is attached server-side as a bearer
+  credential. Response `Set-Cookie` and origin-policy headers are stripped.
+- Responses are `Cache-Control: no-store` unless the app sets `cacheTtl`
+  (seconds, capped at 900).
+- Paths are refused (`400 nvoos_connected_path_invalid`) when they traverse,
+  encode a separator, or are protocol-relative; an unknown key is
+  `404 nvoos_connected_unknown_app`.
+- The console only uses the mount when `GET /features` advertises
+  `connected_proxy: true`, so a deployment without this variable keeps using
+  each product's absolute URL.
+- Certificate validation is on by default; `NVOOS_CONNECTED_INSECURE=1`
+  disables it for a self-hosted product behind an internal CA.
+
+Never point `NVOOS_CONNECTED_APPS` at a host you do not control.
 
 ## Open decisions
 

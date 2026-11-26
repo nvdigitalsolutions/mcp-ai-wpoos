@@ -50,6 +50,25 @@ final class Text
     }
 
     /**
+     * Reduce a value to a lowercase, hyphenated slug.
+     *
+     * The part of `sanitize_title()` this port depends on: lower-case, every
+     * run of characters outside `a-z0-9` becomes one hyphen, and leading and
+     * trailing hyphens are trimmed. Accent folding is deliberately absent —
+     * `remove_accents()` needs the WordPress locale tables, and no F&B report or
+     * draft title in the corpus carries one. A title that folds to nothing
+     * returns `''`, which the caller must treat as unusable rather than write a
+     * nameless record.
+     */
+    public static function slug(string $value): string
+    {
+        $value = strtolower(trim($value));
+        $value = (string) preg_replace('/[^a-z0-9]+/', '-', $value);
+
+        return trim($value, '-');
+    }
+
+    /**
      * Strip markup from a value while keeping its line structure.
      *
      * Matches `sanitize_textarea_field()`, including the part PHP's `strip_tags()`

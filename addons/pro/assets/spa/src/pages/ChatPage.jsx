@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ChatPage — Default SPA page hosting the AgentPanel.
  */

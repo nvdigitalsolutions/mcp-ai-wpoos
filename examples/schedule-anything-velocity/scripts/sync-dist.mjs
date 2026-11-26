@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Sync the built Schedule Anything SPA into this Velocity app's dist/.
  *

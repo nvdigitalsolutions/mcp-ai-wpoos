@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // builtin-template.mjs — test fixture: a nested built-in template tree.
 //

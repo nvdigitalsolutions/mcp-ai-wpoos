@@ -1,0 +1,33 @@
+{
+  "slug": "video-production",
+  "name": "Video Production",
+  "version": "1.0.0",
+  "description": "Output format, transcription and rendering defaults for the Video Production toolkit.",
+  "icon": "🎬",
+  "feature": "video-production",
+  "screens": ["settings"],
+  "settings": [
+    {
+      "key": "default_output_format",
+      "label": "Default output format",
+      "type": "select",
+      "default": "mp4",
+      "options": ["mp4", "webm", "mov"],
+      "description": "Format used when a render does not name one."
+    },
+    {
+      "key": "transcription_language",
+      "label": "Transcription language",
+      "type": "select",
+      "default": "auto",
+      "options": ["auto", "en", "es", "fr"]
+    },
+    {
+      "key": "enable_distributed_rendering",
+      "label": "Enable distributed rendering",
+      "type": "boolean",
+      "default": false,
+      "description": "Use remote sites to speed up video processing."
+    }
+  ]
+}

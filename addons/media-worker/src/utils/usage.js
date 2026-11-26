@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * In-memory per-site provider usage counters (Phase 2b — proposal 027).
  *

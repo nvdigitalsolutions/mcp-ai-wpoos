@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Server-Sent Events (SSE) Service
  *

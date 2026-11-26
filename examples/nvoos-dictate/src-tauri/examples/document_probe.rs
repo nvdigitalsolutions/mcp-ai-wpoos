@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Document-input de-risk spike (Proposal 109, M0).
 //!
 //! Opens a PDF, reports the page count, extracts per-character text-layer

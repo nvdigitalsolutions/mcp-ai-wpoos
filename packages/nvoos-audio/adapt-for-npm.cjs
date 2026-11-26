@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Adaptation script: Convert WordPress audio + transcription services to standalone NPM package
 
 const fs = require('fs');

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * NV oOS Document Editor — "Coming soon" stub for unfinished modes.
  *

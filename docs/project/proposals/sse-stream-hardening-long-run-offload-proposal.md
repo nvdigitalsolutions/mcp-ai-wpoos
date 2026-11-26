@@ -1,6 +1,6 @@
 # SSE Stream Hardening: Long-Run Offload Proposal
 
-**Status:** Shipped — Phase 4a (keepalive) and Phase 4b (long-run offload) both implemented. 4b shipped 2026-10-24 in the `fix/sse-long-run-offload` branch: default-on at 75 s (`wp_mcp_ai_sse_offload_elapsed_seconds` filter, 0 disables), 240 s worker cap, `job_offload` SSE event + client job-bus follow-up.
+**Status:** Shipped — Phase 4a (keepalive) and Phase 4b (long-run offload) both implemented. 4b shipped 2026-10-24 in the `fix/sse-long-run-offload` branch: default-on (`wp_mcp_ai_sse_offload_elapsed_seconds` filter, 0 disables; default now **110 s**, a margin below Cloudflare's 125 s origin read timeout), 240 s worker cap, `job_offload` SSE event + client job-bus follow-up. **Revised 2026-11-18 (1.2.24):** the gate now measures the longest **silent gap** observed between SSE writes rather than total turn elapsed (see Design 1), and the default comes from a General Settings field.
 **Date:** 2026-10-04
 **Context:** nirmanawellness (Cloudways nginx → Apache, Cloudflare front) chat
 client failures — `net::ERR_HTTP2_PROTOCOL_ERROR` / `SSE stream processing
@@ -56,12 +56,26 @@ a 300 s budget (`WP_MCP_AI_SSE_Stream::stream_job_status()`).
 
 ### Design
 
-1. **Deadline detection.** Record `microtime( true )` at request start
-   (`$request_start_timestamp` exists; switch to microtime). At each safe
-   boundary — before each tool execution and before each in-loop LLM call —
-   compare elapsed time against
-   `apply_filters( 'wp_mcp_ai_sse_offload_elapsed_seconds', 75 )`. Skip the
-   check when the filter returns 0 (feature off).
+1. **Idle-budget detection (revised 1.2.24).** A proxy bounds a stream by its
+   **idle** time, not by its total duration — Cloudflare resets at 125 s, AWS
+   load balancers at 60 s, nginx `proxy_read_timeout` defaults to 60 s — and
+   every byte written resets the timer, keepalive comments included. The reset
+   risk is therefore the longest *silent* stretch, because a blocking tool or a
+   non-streamed LLM call emits nothing for its whole duration.
+   `WP_MCP_AI_SSE_Handler` records each write and exposes `get_max_idle_gap()`.
+   At each safe boundary — before each tool execution and before each in-loop
+   LLM call — compare that figure against the threshold. The threshold defaults
+   to **NV oOS → General Settings → Behavior & Limits → Background Hand-off
+   (seconds)** (`sse_offload_elapsed_seconds`, 110) and is filterable through
+   `apply_filters( 'wp_mcp_ai_sse_offload_elapsed_seconds', $default )`; a value
+   of 0 disables the feature (4a keepalive behavior only). It must sit **below**
+   the proxy's idle timeout to be useful — at or above it the connection has
+   already been reset and no `job_offload` frame can be delivered.
+   *The original design (1.2.11–1.2.23) compared total turn elapsed against the
+   same filter, and read it immediately after a keepalive that had just reset
+   the idle clock — so a turn that had merely been running 75 s offloaded even
+   while it was streaming bytes. That misfired on long healthy turns, e.g. a
+   Gmail search inside a multi-iteration agentic loop.*
 2. **State snapshot.** Reuse the `WP_MCP_AI_Chat_Continuation_Store` payload
    shape (messages incl. all tool messages so far, options minus attachments/
    memory_documents/tools, provider, model, assistant_id, user_id,

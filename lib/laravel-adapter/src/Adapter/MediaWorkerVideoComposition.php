@@ -1,0 +1,357 @@
+<?php
+
+namespace Nvoos\Laravel\Adapter;
+
+use Nvoos\Core\Domain\Contract\VideoCompositionInterface;
+
+/**
+ * Multi-input video operations over the media worker — Proposal 164 §164.19.
+ *
+ * `/api/video/compose` takes an ordered `files` array and an `operation`. It is
+ * a separate endpoint from `/api/video/process` because that route accepts one
+ * upload; widening it would have changed the contract every existing operation
+ * depends on.
+ *
+ * ## The overlay recipe
+ *
+ * `[1:v]format=rgba,scale=<px>:-2,colorchannelmixer=aa=<opacity>[wm];[0:v][wm]overlay=…`
+ *
+ * `format=rgba` comes first because a JPEG mark has no alpha channel and
+ * `colorchannelmixer` would have nothing to multiply. The mark's pixel width is
+ * a fraction of the *video's* width, which is why the route probes the video
+ * before building the graph — `overlay` can compute positions from its own
+ * inputs, but not the `scale` that precedes it.
+ *
+ * @package Nvoos\Laravel
+ * @since   1.2.0
+ * @license MIT
+ */
+final class MediaWorkerVideoComposition implements VideoCompositionInterface
+{
+    /**
+     * The shapes an overlay can take. `merge` will join this list on the same
+     * endpoint rather than getting a contract of its own.
+     */
+    private const OPERATIONS = array('watermark', 'merge', 'images');
+
+    private const POSITIONS = array('top-left', 'top-right', 'bottom-left', 'bottom-right', 'center');
+
+    /**
+     * The transitions each operation offers. `zoom` is a slideshow-only value:
+     * it is Ken Burns motion (`zoompan`) inside a still, so it has no counterpart
+     * on a merge, which only ever joins clips at a boundary.
+     */
+    private const TRANSITIONS = array(
+        'merge' => array('none', 'fade', 'dissolve'),
+        'images' => array('none', 'fade', 'slide', 'zoom'),
+    );
+
+    /**
+     * The transitions that join two inputs, and so have an overlap to describe.
+     * `none` and `zoom` have no boundary, which is why they carry no duration.
+     */
+    private const BOUNDARY_TRANSITIONS = array('fade', 'dissolve', 'slide');
+
+    private const FORMATS = array('mp4', 'webm', 'mov', 'mkv');
+
+    public function __construct(
+        private readonly MediaWorkerClient $worker,
+        private readonly MediaWorkerCapabilityProbe $probe,
+    ) {
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public static function operations(): array
+    {
+        return self::OPERATIONS;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function compose(string $operation, array $inputs, array $options = array()): array
+    {
+        if (! \in_array($operation, self::OPERATIONS, true)) {
+            throw new \InvalidArgumentException(
+                'Unsupported composition: '.$operation.'. Allowed: '.\implode(', ', self::OPERATIONS).'.'
+            );
+        }
+
+        $inputs = \array_values($inputs);
+
+        $minimum = 'images' === $operation ? 1 : 2;
+
+        if (\count($inputs) < $minimum) {
+            throw new \InvalidArgumentException(
+                match ($operation) {
+                    'images' => 'A slideshow needs at least one image.',
+                    'merge' => 'A merge needs at least two inputs, in the order to join them.',
+                    default => 'A watermark needs two inputs: the video, then the mark.',
+                }
+            );
+        }
+
+        foreach ($inputs as $input) {
+            if (! \is_string($input) || '' === \trim($input) || ! \is_file($input) || ! \is_readable($input)) {
+                throw new \InvalidArgumentException('An input does not exist or is not readable: '.(\is_string($input) ? $input : ''));
+            }
+        }
+
+        $format = $this->format($options['format'] ?? 'mp4');
+
+        // Only the fields an operation reads are sent, so a merge does not
+        // carry a position nobody will look at.
+        $fields = array(
+            'operation' => $operation,
+            'format' => $format,
+        );
+
+        if ('watermark' === $operation) {
+            $fields['position'] = $this->position($options['position'] ?? 'bottom-right');
+            $fields['opacity'] = $this->number($options['opacity'] ?? 0.7, 0.0, 1.0, 'opacity');
+            $fields['scale'] = $this->number($options['scale'] ?? 0.2, 0.01, 1.0, 'scale');
+        }
+
+        if ('images' === $operation) {
+            // Even dimensions, because x264 refuses an odd width or height
+            // rather than rounding it.
+            $fields['width'] = $this->even($options['width'] ?? 1920, 'width');
+            $fields['height'] = $this->even($options['height'] ?? 1080, 'height');
+            $fields['duration'] = $this->number($options['duration'] ?? 3, 0.1, 60.0, 'duration');
+            $fields['fps'] = $this->number($options['fps'] ?? 25, 1, 120, 'fps');
+            $fields['transition'] = $this->transition($options['transition'] ?? 'none', 'images');
+
+            if (\in_array($fields['transition'], self::BOUNDARY_TRANSITIONS, true)) {
+                $fields['transition_duration'] = $this->number(
+                    $options['transition_duration'] ?? 0.5,
+                    0.05,
+                    5.0,
+                    'transition_duration',
+                );
+            }
+        }
+
+        if ('merge' === $operation) {
+            $fields['transition'] = $this->transition($options['transition'] ?? 'none', 'merge');
+
+            // Only a transition reads a duration; a copy-merge sends exactly the
+            // fields it always sent.
+            if (\in_array($fields['transition'], self::BOUNDARY_TRANSITIONS, true)) {
+                $fields['transition_duration'] = $this->number(
+                    $options['transition_duration'] ?? 1,
+                    0.05,
+                    5.0,
+                    'transition_duration',
+                );
+            }
+        }
+
+        try {
+            $body = $this->worker->uploadFiles(
+                '/api/video/compose',
+                $inputs,
+                $fields,
+                \max(1, (int) \config('oos.media_worker.video_timeout', 300)),
+            );
+        } catch (MediaWorkerRefusedException $e) {
+            // The route refused the inputs — clips that do not match, a
+            // container the codec cannot be copied into. This contract reports
+            // those as a caller error; the engine's own failures stay runtime.
+            throw new \InvalidArgumentException($e->getMessage(), 0, $e);
+        }
+
+        $remote = (string) ($body['output_file'] ?? '');
+
+        if (! MediaWorkerRemoteName::isSafe($remote)) {
+            throw new \RuntimeException(
+                'The media worker answered an output name this host will not fetch: '.($remote ?: '(empty)')
+            );
+        }
+
+        $bytes = $this->worker->download(
+            '/api/video/download/'.$remote,
+            \max(1, (int) \config('oos.media_worker.video_timeout', 300)),
+        );
+
+        $path = MediaWorkerOutput::write(
+            $bytes,
+            'video-'.$operation,
+            $this->extension($format),
+            \implode('|', $inputs).'|'.$operation.'|'.\json_encode($fields),
+        );
+
+        // The base input is the size a caller can reason about; a watermark
+        // re-encode can grow the file, and a negative saving says so.
+        $original = (int) \filesize($inputs[0]);
+        $size = \strlen($bytes);
+
+        $result = array(
+            'path' => $path,
+            'operation' => $operation,
+            'format' => $format,
+            'bytes' => $size,
+            'original_bytes' => 'merge' === $operation ? $this->totalSize($inputs) : $original,
+            'savings_percent' => 0.0,
+        );
+
+        // A merge copies, so it has no "original" of its own — the comparison
+        // that means something is the sum of its inputs against the result.
+        if ('merge' === $operation) {
+            $total = $result['original_bytes'];
+            $result['savings_percent'] = $total > 0 ? (($total - $size) / $total) * 100 : 0.0;
+        } elseif ($original > 0) {
+            $result['savings_percent'] = (($original - $size) / $original) * 100;
+        }
+
+        if (isset($body['source_count'])) {
+            $result['source_count'] = (int) $body['source_count'];
+        }
+
+        if (isset($body['reencoded'])) {
+            $result['reencoded'] = (bool) $body['reencoded'];
+        }
+
+        if (isset($body['duration'])) {
+            $result['duration'] = (float) $body['duration'];
+        }
+
+        if (isset($body['transition'])) {
+            $result['transition'] = (string) $body['transition'];
+        }
+
+        // The route applies no fallback the adapter did not send, so this is the
+        // overlap it was asked for — reported so a caller can check the length
+        // arithmetic without subtracting from `duration`.
+        if (isset($fields['transition_duration'])) {
+            $result['transition_duration'] = (float) $fields['transition_duration'];
+        }
+
+        return $result;
+    }
+
+    /**
+     * A transition the operation actually offers.
+     */
+    private function transition(mixed $value, string $operation): string
+    {
+        $allowed = self::TRANSITIONS[$operation];
+        $slug = \strtolower(\trim((string) $value));
+
+        if ('' === $slug) {
+            return 'none';
+        }
+
+        if (! \in_array($slug, $allowed, true)) {
+            throw new \InvalidArgumentException(
+                \sprintf(
+                    'A %s transition must be one of: %s. Got: %s.',
+                    $operation,
+                    \implode(', ', $allowed),
+                    $slug,
+                )
+            );
+        }
+
+        return $slug;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function supports(string $operation): bool
+    {
+        if (! \in_array($operation, self::OPERATIONS, true) || ! $this->worker->isConfigured()) {
+            return false;
+        }
+
+        return $this->probe->report()->supports('video_processing');
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function isAvailable(): bool
+    {
+        return $this->worker->isConfigured();
+    }
+
+    private function position(mixed $value): string
+    {
+        $slug = \strtolower(\trim((string) $value));
+
+        if ('' === $slug) {
+            return 'bottom-right';
+        }
+
+        if (! \in_array($slug, self::POSITIONS, true)) {
+            throw new \InvalidArgumentException(
+                'A position must be one of: '.\implode(', ', self::POSITIONS).'.'
+            );
+        }
+
+        return $slug;
+    }
+
+    private function format(mixed $value): string
+    {
+        $slug = \strtolower(\trim((string) $value));
+
+        if ('' === $slug) {
+            return 'mp4';
+        }
+
+        if (! \in_array($slug, self::FORMATS, true)) {
+            throw new \InvalidArgumentException(
+                'The watermark output must be one of: '.\implode(', ', self::FORMATS).'.'
+            );
+        }
+
+        return $slug;
+    }
+
+    private function number(mixed $value, float $min, float $max, string $label): float
+    {
+        $number = (float) $value;
+
+        if ($number < $min || $number > $max) {
+            throw new \InvalidArgumentException(
+                'The '.$label.' must be between '.$min.' and '.$max.'.'
+            );
+        }
+
+        return $number;
+    }
+
+    /**
+     * A dimension rounded to an even pixel count.
+     */
+    private function even(mixed $value, string $label): int
+    {
+        $pixels = (int) \round($this->number($value, 16, 8192, $label));
+
+        return 0 === $pixels % 2 ? $pixels : $pixels + 1;
+    }
+
+    private function extension(string $format): string
+    {
+        return 'webm' === $format ? 'webm' : $format;
+    }
+
+    /**
+     * The sum of the inputs, which is the only "original" a merge has.
+     *
+     * @param list<string> $inputs
+     */
+    private function totalSize(array $inputs): int
+    {
+        $total = 0;
+
+        foreach ($inputs as $input) {
+            $total += (int) \filesize($input);
+        }
+
+        return $total;
+    }
+}

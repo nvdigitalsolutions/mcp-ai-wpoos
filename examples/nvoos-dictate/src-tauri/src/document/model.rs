@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Local document-understanding tier (Proposal 111): a DeepSeek-OCR-class
 //! model behind LM Studio / Ollama replaces the box-level OCR text for
 //! pages the engines recognize poorly. Same blocking-worker shape as

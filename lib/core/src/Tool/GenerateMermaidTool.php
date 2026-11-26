@@ -12,8 +12,10 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class GenerateMermaidTool extends AbstractTool
+class GenerateMermaidTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(ErrorFactoryInterface $e)
     {
@@ -57,5 +59,18 @@ class GenerateMermaidTool extends AbstractTool
 
         $theme = $this->stringParam($arguments, 'theme', 'default');
         return $this->success("Generated {$type} diagram.", array( 'type' => $type, 'mermaid_code' => $code, 'theme' => $theme, 'diagram_id' => 'mermaid-' . bin2hex(random_bytes(4)) ));
+    }
+
+    /**
+     * Capability flags — Proposal 149 §153.
+     *
+     * Pure in-process computation, but the output varies per call, so it is
+     * neither cacheable nor idempotent.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::PURE_LOCAL_NON_DETERMINISTIC;
     }
 }

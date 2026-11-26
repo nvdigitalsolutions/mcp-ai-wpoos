@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Generic helpers — JSON / error responses, micro-USD math, hashing,
  * site-URL normalization, request IDs.

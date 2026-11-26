@@ -21,6 +21,9 @@ class Test_Slash_Command_Context extends WP_UnitTestCase {
 	 */
 	private $command;
 
+	/**
+	 * Reset the orchestrator between tests.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-context.php';
@@ -82,7 +85,7 @@ class Test_Slash_Command_Context extends WP_UnitTestCase {
 	}
 
 	/**
-	 * tool_calls payloads inflate tool_call_count and tool_tokens.
+	 * Tool_calls payloads inflate tool_call_count and tool_tokens.
 	 */
 	public function test_tool_calls_are_counted_and_tokenised() {
 		$messages = array(

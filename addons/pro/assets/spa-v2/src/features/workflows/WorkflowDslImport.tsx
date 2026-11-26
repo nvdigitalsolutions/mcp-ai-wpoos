@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * WorkflowDslImport — DSL paste/import panel with dry-run findings
  * (Proposal 091, Track A).

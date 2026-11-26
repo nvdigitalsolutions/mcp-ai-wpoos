@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Single raster-image decode (Proposal 109, follow-up 1): PNG / JPEG /
 //! WebP — anything the `image` crate's default format set decodes — into
 //! the shared RGB8 frame shape the TIFF path produces. One file = one page;

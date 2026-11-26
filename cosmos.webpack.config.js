@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Webpack configuration for React Cosmos TMA Template Builder playground.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // localize-media-snapshot.test.ts — the localizer reads a committed snapshot
 // BEFORE the network, so a CMS-less rebuild does not depend on surviving CDN
@@ -10,12 +11,15 @@
 // ---------------------------------------------------------------------------
 
 import { execFile } from 'node:child_process';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
+import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 
 import { afterEach, describe, expect, it } from 'vitest';
+
+import { rmTemp } from './helpers/tmp.ts';
 
 const execFileAsync = promisify(execFile);
 const LOCALIZER = resolve('templates/blog/scripts/localize-media.mjs');
@@ -29,7 +33,7 @@ async function tempDir(): Promise<string> {
 }
 
 afterEach(async () => {
-	await Promise.all(roots.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+	await Promise.all(roots.splice(0).map((dir) => rmTemp(dir)));
 });
 
 describe('localize-media — committed snapshot', () => {
@@ -86,5 +90,104 @@ describe('localize-media — committed snapshot', () => {
 		expect(report.failed).toEqual([]);
 		expect(report.localized.every((entry: { source?: string }) => entry.source === 'snapshot')).toBe(true);
 		expect(report.localized.some((entry: { file?: string }) => /-font\.woff$/.test(entry.file ?? ''))).toBe(true);
+	});
+
+	it('stops the build when an authoritative snapshot has a hole', async () => {
+		// A manifest is a promise that the asset is COMMITTED. When it is
+		// authoritative there is no other source, so a missing file used to leave
+		// the origin URL in the page — eight dead hotlinks on a site whose CMS is
+		// gone (monicarajiv: 68 manifest entries, 41 with no file in git).
+		const project = await tempDir();
+		const base = 'http://127.0.0.1:59998';
+		const imgUrl = `${base}/wp-content/uploads/a.jpg`;
+
+		await mkdir(join(project, 'dist', 'client'), { recursive: true });
+		await writeFile(
+			join(project, 'nvoos.json'),
+			JSON.stringify({ url: base, media: { localize: true, mode: 'local', snapshot: true } })
+		);
+		await writeFile(
+			join(project, 'dist', 'client', 'index.html'),
+			`<html><body><img src="${imgUrl}" alt=""></body></html>`
+		);
+
+		await mkdir(join(project, 'media-snapshot', 'media'), { recursive: true });
+		await writeFile(
+			join(project, 'media-snapshot', 'manifest.json'),
+			JSON.stringify({ version: 1, entries: { [imgUrl]: { file: 'media/abc-a.webp', contentType: 'image/webp' } } })
+		);
+		// The manifest names a file the snapshot does not carry.
+
+		// The localizer reports the hole and exits non-zero; the message is on
+		// stderr, so read the whole rejection rather than only `.message`.
+		let failure = '';
+		try {
+			await execFileAsync(process.execPath, [LOCALIZER], {
+				cwd: project,
+				env: { ...process.env, WP_SITE_URL: base, NVOOS_FORGE_MEDIA_TIMEOUT_MS: '1000' },
+				timeout: 30_000,
+			});
+		} catch (error) {
+			const rejection = error as { message?: string; stdout?: string; stderr?: string };
+			failure = `${rejection.message ?? ''}${rejection.stdout ?? ''}${rejection.stderr ?? ''}`;
+		}
+		expect(failure).toMatch(/media snapshot is incomplete: 1 of 1/);
+		expect(failure).toContain('Re-freeze it');
+	});
+
+	it('replaces an asset the CMS no longer serves with a local stand-in', async () => {
+		// monicarajiv's WP install has lost ten of its own uploads to 404. Leaving
+		// the origin URL shipped a hotlink to a dead host; the localizer now writes
+		// a transparent mark and points the reference at it, so the layout keeps
+		// its box and nothing leaves the site.
+		const project = await tempDir();
+		const base = 'http://127.0.0.1:59997';
+		const goneUrl = `${base}/wp-content/uploads/gone.jpg`;
+
+		await mkdir(join(project, 'dist', 'client'), { recursive: true });
+		await writeFile(
+			join(project, 'nvoos.json'),
+			JSON.stringify({ url: base, media: { localize: true, mode: 'local' } })
+		);
+		await writeFile(
+			join(project, 'dist', 'client', 'index.html'),
+			`<html><body><img src="${goneUrl}" alt=""></body></html>`
+		);
+
+		// A server that answers 404 for everything.
+		const server = createServer((_request, response) => {
+			response.writeHead(404, { 'content-type': 'text/plain' });
+			response.end('nope');
+		});
+		await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+		const address = server.address();
+		const port = typeof address === 'object' && address ? address.port : 0;
+		const origin = `http://127.0.0.1:${port}`;
+		try {
+			await writeFile(
+				join(project, 'nvoos.json'),
+				JSON.stringify({ url: origin, media: { localize: true, mode: 'local' } })
+			);
+			await writeFile(
+				join(project, 'dist', 'client', 'index.html'),
+				`<html><body><img src="${origin}/wp-content/uploads/gone.jpg" alt=""></body></html>`
+			);
+			await execFileAsync(process.execPath, [LOCALIZER], {
+				cwd: project,
+				env: { ...process.env, WP_SITE_URL: origin, NVOOS_FORGE_MEDIA_TIMEOUT_MS: '1000' },
+				timeout: 30_000,
+			});
+		} finally {
+			await new Promise<void>((resolve) => server.close(() => resolve()));
+		}
+
+		const html = await readFile(join(project, 'dist', 'client', 'index.html'), 'utf8');
+		expect(html).not.toContain('/wp-content/uploads/gone.jpg');
+		expect(html).toContain('/media/unavailable.svg');
+		expect(await readFile(join(project, 'dist', 'client', 'media', 'unavailable.svg'), 'utf8')).toContain('<svg');
+
+		const report = JSON.parse(await readFile(join(project, '.forge-cache', 'media-localize.json'), 'utf8'));
+		expect(report.failed).toEqual([]);
+		expect(report.replaced).toHaveLength(1);
 	});
 });

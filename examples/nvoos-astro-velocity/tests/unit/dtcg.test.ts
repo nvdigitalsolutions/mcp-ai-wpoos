@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // dtcg.test.ts — validator + resolver matrix (Proposal 095). Also
 // cross-checks the runtime TS validator against the build-time JS twin.
 import { describe, expect, it } from 'vitest';

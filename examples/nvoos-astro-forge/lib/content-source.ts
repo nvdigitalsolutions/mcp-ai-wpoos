@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // content-source.ts — where a scaffold's local content comes from.
 //
@@ -18,6 +19,44 @@
 // ---------------------------------------------------------------------------
 
 import type { SiteProfile } from './types.ts';
+
+/**
+ * Does the profile declare its CMS GONE?
+ *
+ * `materialized` is a PROMISE, not a hint: the snapshot is the only source,
+ * so nothing may contact the old origin. `snapshot: true` is the opposite
+ * promise (the CMS stays authoritative and the snapshot is the net), which is
+ * why the two must never collapse into one flag.
+ */
+export function isMaterializedContent(input: Pick<SiteProfile, 'content'>): boolean {
+	return input.content?.source === 'materialized';
+}
+
+/**
+ * Apply the defaults a `materialized` profile implies.
+ *
+ * With no CMS, a collection the snapshot does not carry is an EMPTY
+ * collection, not a broken source: every collection becomes `optional`, so a
+ * route that has no materialized pages still renders instead of failing the
+ * build. The scaffolded loader never fetches anyway (`localOnly`), so this is
+ * defence in depth for every other reader of the profile.
+ *
+ * Returns the SAME object when nothing changes, and never mutates the input.
+ */
+export function withMaterializedDefaults(profile: SiteProfile): SiteProfile {
+	if (!isMaterializedContent(profile)) {
+		return profile;
+	}
+	if (profile.collections.every((collection) => collection.optional)) {
+		return profile;
+	}
+	return {
+		...profile,
+		collections: profile.collections.map((collection) =>
+			collection.optional ? collection : { ...collection, optional: true }
+		),
+	};
+}
 
 export interface ContentDirInput {
 	/** The profile's `content` block. */

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Unit tests for the shared SSE utilities powering the Chat Tester.
  *

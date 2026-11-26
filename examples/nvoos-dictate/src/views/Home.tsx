@@ -1,12 +1,19 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { useEffect, useState } from 'react';
 import {
   api,
   onDocumentProgress,
+  onGestureAction,
+  onGestureError,
+  onGesturePendingConfirm,
   onMediaProgress,
   type AskResult,
   type Detection,
   type DictateEvent,
   type DocumentResult,
+  type DeicticAnswer,
+  type GestureCatalogue,
+  type GestureSnapshot,
   type MediaTranscription,
   type PreviewFrame,
   type SpaCheck,
@@ -223,6 +230,40 @@ function DocumentPanel() {
 /** Live webcam preview panel (Proposal 073) with an opt-in local object
  *  detection + tracking overlay (Proposal 075): detects objects on-device,
  *  draws labelled boxes on a canvas, and pins a track on click. */
+
+/** MediaPipe's canonical 21-point hand topology, used by the gesture overlay
+ *  (Proposal 153). Index 0 is the wrist. */
+const HAND_LINKS: readonly (readonly [number, number])[] = [
+  [0, 1],
+  [1, 2],
+  [2, 3],
+  [3, 4],
+  [0, 5],
+  [5, 6],
+  [6, 7],
+  [7, 8],
+  [5, 9],
+  [9, 10],
+  [10, 11],
+  [11, 12],
+  [9, 13],
+  [13, 14],
+  [14, 15],
+  [15, 16],
+  [13, 17],
+  [17, 18],
+  [18, 19],
+  [19, 20],
+  [0, 17],
+];
+
+/** `open_palm` -> `Open palm`. The catalogue supplies proper labels when it has
+ *  loaded; this is the fallback so the panel never shows a raw slug. */
+function prettify(id: string): string {
+  const words = id.replaceAll('_', ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 function CameraPanel() {
   const [available, setAvailable] = useState<boolean | null>(null);
   const [visionAvailable, setVisionAvailable] = useState<boolean>(false);
@@ -232,6 +273,19 @@ function CameraPanel() {
   const [detections, setDetections] = useState<Detection[]>([]);
   const [error, setError] = useState('');
 
+  // Gesture input (Proposal 153). The Rust loop owns recognition; this panel
+  // only mirrors its pollable snapshot and announces routed intents.
+  const [gesturesAvailable, setGesturesAvailable] = useState(false);
+  const [gesturesOn, setGesturesOn] = useState(false);
+  const [gesture, setGesture] = useState<GestureSnapshot | null>(null);
+  const [catalogue, setCatalogue] = useState<GestureCatalogue | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState<string | null>(null);
+  const [gestureError, setGestureError] = useState('');
+  const [ask, setAsk] = useState('');
+  const [asking, setAsking] = useState(false);
+  const [answer, setAnswer] = useState<DeicticAnswer | null>(null);
+  const [askError, setAskError] = useState('');
+
   useEffect(() => {
     let cancelled = false;
     void api.cameraAvailable().then((v) => {
@@ -239,6 +293,15 @@ function CameraPanel() {
     });
     void api.visionAvailable().then((v) => {
       if (!cancelled) setVisionAvailable(v);
+    });
+    void api.gesturesAvailable().then((v) => {
+      if (cancelled) return;
+      setGesturesAvailable(v);
+      if (!v) return;
+      void api
+        .getGestureCatalogue()
+        .then((c) => !cancelled && setCatalogue(c))
+        .catch(() => {});
     });
     return () => {
       cancelled = true;
@@ -263,6 +326,30 @@ function CameraPanel() {
     return () => clearInterval(id);
   }, [visionOn]);
 
+  // Poll the gesture snapshot at the same 10 Hz. One `setState` per tick, so
+  // the overlay redraws at a steady rate instead of once per camera frame.
+  useEffect(() => {
+    if (!gesturesOn) return;
+    const id = setInterval(() => {
+      void api.getGestureState().then(setGesture).catch(() => {});
+    }, 100);
+    return () => clearInterval(id);
+  }, [gesturesOn]);
+
+  // Routed intents. `pending-confirm` means a guarded pose flashed but the
+  // deliberate hold never completed, so nothing ran — announce, never execute.
+  useEffect(() => {
+    if (!gesturesOn) return;
+    const pending = [
+      onGesturePendingConfirm((intent) => setPendingConfirm(intent.action)),
+      onGestureAction(() => setPendingConfirm(null)),
+      onGestureError((message) => setGestureError(message)),
+    ];
+    return () => {
+      for (const p of pending) void p.then((unlisten) => unlisten());
+    };
+  }, [gesturesOn]);
+
   const start = async () => {
     setError('');
     try {
@@ -274,6 +361,18 @@ function CameraPanel() {
   };
 
   const stop = async () => {
+    if (gesturesOn) {
+      try {
+        await api.stopGestures();
+      } catch {
+        /* already stopped */
+      }
+      setGesturesOn(false);
+      setGesture(null);
+      setPendingConfirm(null);
+      setAnswer(null);
+      setAskError('');
+    }
     if (visionOn) {
       try {
         await api.stopVision();
@@ -316,6 +415,60 @@ function CameraPanel() {
     if (id == null) return;
     void api.visionSelectTrack(id).catch(() => {});
   };
+
+  const toggleGestures = async () => {
+    setGestureError('');
+    if (gesturesOn) {
+      try {
+        await api.stopGestures();
+      } catch (e) {
+        setGestureError(String(e));
+      }
+      setGesturesOn(false);
+      setGesture(null);
+      setPendingConfirm(null);
+      setAnswer(null);
+      setAskError('');
+      return;
+    }
+    try {
+      await api.startGestures();
+      setGesturesOn(true);
+    } catch (e) {
+      setGestureError(String(e));
+    }
+  };
+
+  const setArming = async (armed: boolean) => {
+    try {
+      await api.setGestureArming(armed);
+      setPendingConfirm(null);
+    } catch (e) {
+      setGestureError(String(e));
+    }
+  };
+
+  // Deictic grounding (M5): the gesture supplies the referent, the question
+  // supplies the intent. The answer is shown here and never pasted anywhere —
+  // "ask your camera" must not be able to write into another app.
+  const askCamera = async () => {
+    if (!ask.trim() || asking) return;
+    setAskError('');
+    setAsking(true);
+    try {
+      setAnswer(await api.askCamera(ask.trim()));
+    } catch (e) {
+      setAskError(String(e));
+      setAnswer(null);
+    } finally {
+      setAsking(false);
+    }
+  };
+
+  const gestureLabel = (id: string) =>
+    catalogue?.gestures.find((g) => g.id === id)?.label ?? prettify(id);
+  const actionLabel = (id: string) =>
+    catalogue?.actions.find((a) => a.id === id)?.label ?? prettify(id);
 
   const dataUri = (() => {
     if (!frame || frame.width === 0 || frame.height === 0) return null;
@@ -364,6 +517,29 @@ function CameraPanel() {
       ctx.fillStyle = '#0b1120';
       ctx.fillText(label, x + 4, Math.max(th - 3, y - 3));
     }
+
+    // Gesture skeleton (Proposal 153) in the secondary accent so it never reads
+    // as a detection box. Landmarks are normalised to the source frame, which
+    // shares the preview's aspect ratio.
+    if (!gesturesOn) return;
+    const points = gesture?.landmarks ?? [];
+    if (points.length !== 21) return;
+    const px = (i: number) => points[i].x * cw;
+    const py = (i: number) => points[i].y * ch;
+    ctx.strokeStyle = '#9d7bff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (const [a, b] of HAND_LINKS) {
+      ctx.moveTo(px(a), py(a));
+      ctx.lineTo(px(b), py(b));
+    }
+    ctx.stroke();
+    ctx.fillStyle = '#e8e8f0';
+    for (let i = 0; i < 21; i++) {
+      ctx.beginPath();
+      ctx.arc(px(i), py(i), i === 0 ? 3.5 : 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
   };
 
   if (available === false) {
@@ -396,12 +572,94 @@ function CameraPanel() {
             {visionOn ? 'Stop detection' : 'Detect objects'}
           </button>
         )}
+        {running && gesturesAvailable && (
+          <button
+            className={gesturesOn ? 'btn' : 'btn ghost'}
+            onClick={toggleGestures}
+            title="Recognise a small set of hand gestures on-device (opt-in)"
+          >
+            {gesturesOn ? 'Stop gestures' : 'Hand gestures'}
+          </button>
+        )}
       </div>
       {error && <p className="warn-text">{error}</p>}
+      {gestureError && <p className="warn-text">{gestureError}</p>}
       {visionOn && (
         <p className="muted small">
           Tracking {detections.length} object{detections.length === 1 ? '' : 's'} — click a box to
           pin it (keeps its id through brief misses).
+        </p>
+      )}
+      {gesturesOn && gesture && (
+        <div className="gesture-status">
+          <span className={gesture.armed ? 'badge ok' : 'badge dim'}>
+            {gesture.armed ? 'Armed' : 'Disarmed'}
+          </span>
+          {gesture.gesture ? (
+            <span className="gesture-current">
+              {gestureLabel(gesture.gesture)}
+              <span className="gesture-conf" aria-hidden="true">
+                <span
+                  className="gesture-conf-fill"
+                  style={{ width: `${Math.round(Math.min(1, Math.max(0, gesture.confidence)) * 100)}%` }}
+                />
+              </span>
+              <span className="muted small">{(gesture.confidence * 100).toFixed(0)}%</span>
+            </span>
+          ) : (
+            <span className="muted small">No hand in view</span>
+          )}
+          {gesture.last_action && (
+            <span className="badge dim">Last: {actionLabel(gesture.last_action)}</span>
+          )}
+          <button
+            className="link"
+            onClick={() => void setArming(!gesture.armed)}
+            title="Arming also happens by holding an open palm to the camera"
+          >
+            {gesture.armed ? 'Disarm' : 'Arm'}
+          </button>
+        </div>
+      )}
+      {pendingConfirm && (
+        <p className="gesture-confirm">
+          Hold the pose to confirm: {actionLabel(pendingConfirm)}. Nothing has run yet.
+        </p>
+      )}
+      {gesturesOn && catalogue?.deictic_enabled && (
+        <div className="ask-camera">
+          <div className="btn-row">
+            <input
+              type="text"
+              value={ask}
+              aria-label="Ask your camera about what you are pointing at"
+              placeholder="Point at something and ask: what is this?"
+              onChange={(e) => setAsk(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void askCamera();
+              }}
+            />
+            <button className="btn" onClick={() => void askCamera()} disabled={asking || !ask.trim()}>
+              {asking ? 'Asking…' : 'Ask camera'}
+            </button>
+          </div>
+          {askError && <p className="warn-text">{askError}</p>}
+          {answer && (
+            <div className="ask-answer">
+              <p>{answer.answer}</p>
+              <p className="muted small">
+                {answer.gesture ? `${gestureLabel(answer.gesture)} · ` : ''}
+                crop {answer.region.w}×{answer.region.h} · {answer.elapsed_ms} ms · answered on
+                this machine
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+      {gesturesOn && (
+        <p className="muted small">
+          Frames are classified on this machine and never leave it. Hold an open palm to arm; a
+          closed fist disarms. No faces are recognised and no identity is stored.
         </p>
       )}
       {running && (
@@ -410,9 +668,9 @@ function CameraPanel() {
       {running && dataUri && (
         <div className="camera-frame" style={{ position: 'relative', display: 'inline-block' }}>
           <img src={dataUri} alt="camera preview" className="camera-preview" />
-          {visionOn && (
+          {(visionOn || gesturesOn) && (
             <canvas
-              className="vision-overlay"
+              className={visionOn ? 'vision-overlay' : undefined}
               ref={drawOverlay}
               style={{
                 position: 'absolute',

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * MCP Bridge over SSH — for NV oOS sites that are only reachable via SSH.
  *

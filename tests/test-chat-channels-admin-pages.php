@@ -3,7 +3,8 @@
  * Tests for Chat Channels Admin Pages
  *
  * Verifies that the top-level Chat Channels admin menu and its sub-pages are
- * properly registered when the toolkit is enabled and the Pro plugin is active,
+ * properly registered when the toolkit is enabled, the Pro plugin is active and
+ * the surface is opted in through the `wp_mcp_ai_chat_channels_enabled` filter,
  * matching the pattern established by the Quiz admin pages.
  *
  * @package WP_MCP_AI
@@ -44,6 +45,12 @@ class Test_Chat_Channels_Admin_Pages extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Since 1.2.22 the Chat Channels admin surface is gated behind an opt-in
+		// filter (090-p W5): `is_enabled()` defaults to false so a menu whose
+		// backend is not served stays hidden. Opt in so these assertions
+		// exercise the real menu registration instead of the gate.
+		add_filter( 'wp_mcp_ai_chat_channels_enabled', '__return_true' );
+
 		// Set up an admin user.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 		set_current_screen( 'dashboard' );
@@ -68,6 +75,8 @@ class Test_Chat_Channels_Admin_Pages extends WP_UnitTestCase {
 	 * Tear down after each test.
 	 */
 	public function tearDown(): void {
+		remove_filter( 'wp_mcp_ai_chat_channels_enabled', '__return_true' );
+
 		// Restore original settings.
 		if ( ! empty( $this->original_settings ) ) {
 			update_option( 'wp_mcp_ai_settings', $this->original_settings );
@@ -100,8 +109,9 @@ class Test_Chat_Channels_Admin_Pages extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that the top-level Chat Channels menu is registered when toolkit is enabled
-	 * and the Pro plugin is active (WP_MCP_AI_PRO_VERSION defined).
+	 * Test that the top-level Chat Channels menu is registered when toolkit is enabled,
+	 * the Pro plugin is active (WP_MCP_AI_PRO_VERSION defined) and the surface is
+	 * opted in through `wp_mcp_ai_chat_channels_enabled`.
 	 *
 	 * This validates the fix: $is_base && ! defined( 'WP_MCP_AI_PRO_VERSION' )
 	 * ensures the menu appears even when WP_MCP_AI_BASE_VERSION is true.

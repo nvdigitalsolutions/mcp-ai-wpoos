@@ -102,6 +102,15 @@ final class EndpointCapabilities
     /** Portable surface WordPress already has; not ported to this runtime yet. */
     private const RUNTIME_ADAPTABLE = 'runtime-adaptable';
 
+    /**
+     * Supplied by an addon that is not active on this install.
+     *
+     * Part of the shared vocabulary (the WordPress runtime emits it while Pro
+     * is inactive); this runtime always has its own code deployed, so it never
+     * reports the code itself.
+     */
+    private const NOT_INSTALLED = 'not-installed';
+
     /** Supplied by the toolkit manifest engine, which does not exist yet. */
     private const TOOLKIT_SHAPED = 'toolkit-shaped';
 
@@ -122,6 +131,7 @@ final class EndpointCapabilities
     public const REASON_CODES = array(
         self::ROUTE,
         self::RUNTIME_ADAPTABLE,
+        self::NOT_INSTALLED,
         self::TOOLKIT_SHAPED,
         self::CONNECTED_SERVICE,
         self::EXTERNAL_PRODUCT,
@@ -204,6 +214,19 @@ final class EndpointCapabilities
     );
 
     /**
+     * Endpoint key => route fragment that must exist on this runtime.
+     *
+     * Public so the contract test can assert the golden file
+     * (`fragments.laravel`) without keeping a second copy.
+     *
+     * @return array<string, string>
+     */
+    public static function routes(): array
+    {
+        return self::ROUTES;
+    }
+
+    /**
      * Resolve every key against the registered routes.
      *
      * @return array<string, bool> Endpoint key => servable.
@@ -243,6 +266,45 @@ final class EndpointCapabilities
             'reasons' => self::REASONS,
             'gaps' => self::gaps($endpoints),
         );
+    }
+
+    /**
+     * Apply discovered connected-app URLs to a manifest.
+     *
+     * A product that answered its discovery probe is evidence the surface is
+     * served, even when no route is registered locally — that is the Class C
+     * case (a separate product on its own origin). The key is therefore forced
+     * true and `endpoint_urls` carries the base the console should mount.
+     *
+     * `gaps` is recomputed because flipping a key changes the answer: a key may
+     * not be both available and listed as missing. The reason map is untouched,
+     * so a key flipped here still reports the class that explains it when the
+     * probe fails.
+     *
+     * Mirrors `WP_MCP_AI_Endpoint_Capabilities::apply_connected_apps()`, so the
+     * two runtimes produce the same document for the same evidence.
+     *
+     * @param array{version:int,endpoints:array<string,bool>,reasons:array<string,string>,gaps:string[]} $manifest Manifest.
+     * @param array<string,string>                                                                      $urls     Reached app key => base URL.
+     *
+     * @return array{version:int,endpoints:array<string,bool>,reasons:array<string,string>,gaps:string[],endpoint_urls?:array<string,string>}
+     */
+    public static function applyConnectedApps(array $manifest, array $urls): array
+    {
+        if (array() === $urls) {
+            return $manifest;
+        }
+
+        foreach (array_keys($urls) as $key) {
+            if (isset($manifest['endpoints'][$key])) {
+                $manifest['endpoints'][$key] = true;
+            }
+        }
+
+        $manifest['gaps'] = self::gaps($manifest['endpoints']);
+        $manifest['endpoint_urls'] = $urls;
+
+        return $manifest;
     }
 
     /**

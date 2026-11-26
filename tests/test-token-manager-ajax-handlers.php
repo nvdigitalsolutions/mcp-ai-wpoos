@@ -66,7 +66,7 @@ class Test_Token_Manager_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_save_tool_limits' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected - AJAX handlers call wp_die().
 		}
 
@@ -104,7 +104,7 @@ class Test_Token_Manager_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_save_tool_limits' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -139,7 +139,7 @@ class Test_Token_Manager_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_save_tool_limits' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -169,7 +169,7 @@ class Test_Token_Manager_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_save_tool_limits' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -210,7 +210,7 @@ class Test_Token_Manager_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_reset_user_token_usage' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -254,7 +254,7 @@ class Test_Token_Manager_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_reset_all_token_usage' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -292,7 +292,7 @@ class Test_Token_Manager_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_save_tool_limits' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -325,7 +325,7 @@ class Test_Token_Manager_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_save_tool_limits' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 
@@ -364,7 +364,7 @@ class Test_Token_Manager_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		// Make AJAX request.
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_save_tool_limits' );
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 

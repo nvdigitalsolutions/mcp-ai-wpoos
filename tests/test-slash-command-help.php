@@ -36,6 +36,11 @@ class Test_Slash_Command_Help extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-help.php';
 
 		$this->handler = new class() {
+			/**
+			 * Commands available to the help formatter.
+			 *
+			 * @var array
+			 */
 			public $commands = array(
 				'cost'   => array(
 					'description' => 'Token usage and cost summary',
@@ -55,11 +60,23 @@ class Test_Slash_Command_Help extends WP_UnitTestCase {
 				),
 			);
 
+			/**
+			 * Return the available commands.
+			 *
+			 * @param bool $filter_by_cap Whether to filter by capability.
+			 * @return array
+			 */
 			public function get_commands( $filter_by_cap = false ) {
 				unset( $filter_by_cap );
 				return $this->commands;
 			}
 
+			/**
+			 * Return a single command by name.
+			 *
+			 * @param string $name Command name.
+			 * @return array|null
+			 */
 			public function get_command( $name ) {
 				return isset( $this->commands[ $name ] ) ? $this->commands[ $name ] : false;
 			}

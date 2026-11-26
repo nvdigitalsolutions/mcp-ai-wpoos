@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Opt-in local VLM OCR polish (Proposal 109 §3.8).
 //!
 //! After the deterministic OCR cleanup, an optional Stage-2 correction pass

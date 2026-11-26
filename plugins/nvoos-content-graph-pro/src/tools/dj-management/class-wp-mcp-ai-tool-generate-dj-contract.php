@@ -104,18 +104,18 @@ class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['booking_id'] ) || empty( $arguments['dj_name'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Booking ID and DJ name are required.', 'nvoos-content-graph-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Booking ID and DJ name are required.', 'nvoos-content-graph-pro' )
 			);
 		}
 
 		$booking_id = absint( $arguments['booking_id'] );
 
 		if ( ! get_post( $booking_id ) || get_post_type( $booking_id ) !== 'dj_booking' ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid booking ID.', 'nvoos-content-graph-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Invalid booking ID.', 'nvoos-content-graph-pro' )
 			);
 		}
 

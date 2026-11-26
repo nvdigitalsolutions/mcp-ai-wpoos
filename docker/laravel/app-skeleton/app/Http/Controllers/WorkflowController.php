@@ -10,8 +10,8 @@ use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Entity\ContentQuery;
 use Nvoos\Core\Domain\Entity\CreateContentCommand;
 use Nvoos\Core\Domain\Entity\UpdateContentCommand;
-use Nvoos\Core\Domain\Exception\AccessDeniedException;
-use Nvoos\Core\Domain\Exception\NotFoundException;
+use Nvoos\Core\Domain\Error\AccessDeniedException;
+use Nvoos\Core\Domain\Error\NotFoundException;
 
 /**
  * Workflows (`/api/v1/orchestration/workflows`).

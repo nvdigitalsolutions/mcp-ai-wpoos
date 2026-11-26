@@ -77,7 +77,7 @@ class WP_MCP_AI_Validator_Dependency_Test extends WP_UnitTestCase {
 			$tool = $registry->get_tool( 'save_post_validated' );
 
 			// It should either not exist or exist as the non-validated version.
-			if ( $tool !== null ) {
+			if ( null !== $tool ) {
 				// If it exists, it should NOT be an instance of WP_MCP_AI_Validated_Tool.
 				$this->assertNotInstanceOf(
 					'WP_MCP_AI_Validated_Tool',

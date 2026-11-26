@@ -1,0 +1,84 @@
+---
+// SPDX-License-Identifier: MIT
+/**
+ * @fileoverview The planned-downtime page served while the CMS is in maintenance mode.
+ *
+ * Invariant: the same self-contained contract as /coming-soon/ — no scripts, no
+ * site assets, one h1, and a retry link the visitor activates. Props: none.
+ */
+// ---------------------------------------------------------------------------
+// /maintenance/ — the planned-downtime page (Proposal 165).
+//
+// PRERENDERED on purpose, for the same reason as /coming-soon/: the managed
+// front controller answers before Astro and serves
+// dist/client/maintenance/index.html directly.
+//
+// The 503 + `Retry-After` pair is added by the front controller
+// (forge-gate/runtime.mjs), never by this page — a static file cannot set a
+// status code. The page is only the body.
+// ---------------------------------------------------------------------------
+export const prerender = true;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex, nofollow" />
+		<title>Down for maintenance</title>
+		<style>
+			:root {
+				color-scheme: light dark;
+				--g-surface: #ffffff;
+				--g-ink: #1d2327;
+				--g-muted: #50575e;
+				--g-line: #dcdcde;
+			}
+			@media (prefers-color-scheme: dark) {
+				:root {
+					--g-surface: #14181d;
+					--g-ink: #f2f3f4;
+					--g-muted: #b6bcc4;
+					--g-line: #333a42;
+				}
+			}
+			* { box-sizing: border-box; }
+			html, body { margin: 0; padding: 0; }
+			body {
+				min-height: 100vh;
+				display: grid;
+				place-items: center;
+				padding: 32px 20px;
+				background: var(--g-surface);
+				color: var(--g-ink);
+				font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+				line-height: 1.6;
+			}
+			main { width: 100%; max-width: 34rem; text-align: center; }
+			.eyebrow {
+				margin: 0 0 12px;
+				font-size: 12px;
+				letter-spacing: 0.14em;
+				text-transform: uppercase;
+				color: var(--g-muted);
+			}
+			h1 { margin: 0 0 12px; font-size: clamp(1.75rem, 4vw, 2.5rem); line-height: 1.15; }
+			p { margin: 0; color: var(--g-muted); }
+			.rule {
+				width: 3rem;
+				height: 2px;
+				margin: 24px auto 0;
+				background: var(--g-line);
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<p class="eyebrow">Maintenance</p>
+			<h1>We are carrying out planned maintenance</h1>
+			<p>The site will be back shortly. Thank you for your patience.</p>
+			<div class="rule" aria-hidden="true"></div>
+		</main>
+	</body>
+</html>

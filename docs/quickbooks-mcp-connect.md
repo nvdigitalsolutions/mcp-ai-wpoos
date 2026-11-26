@@ -10,7 +10,7 @@ web login attached.
 
 | Option | Endpoint | Notes |
 |---|---|---|
-| **Intuit official hosted server** (default) | `https://ai-inc.quickbooks.intuit.com/v1/mcp` | Publisher-listed remote MCP connector. Authentication is **not verified by the directory** — run **Test Connection** and complete the web login to confirm. |
+| **Intuit official hosted server** | `https://ai-inc.quickbooks.intuit.com/v1/mcp` | Publisher-listed remote MCP connector, **but the host is behind Akamai bot protection**: every path — including `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server` — returns `403` with `Content-Type: text/html` and **no `WWW-Authenticate` header**. Server-side clients are refused at the edge before any credential is evaluated, so neither OAuth discovery nor a bearer token can work from a WordPress host. Probe it from the machine that will make the calls before relying on it. |
 | **Intuit stdio reference server** | local process (`node dist/index.js`) | [intuit/quickbooks-online-mcp-server](https://github.com/intuit/quickbooks-online-mcp-server). Runs on a developer machine over stdio, so WordPress cannot dial it directly. |
 | **Self-hosted Streamable HTTP wrapper** | your URL | The upstream HTTP transport (PR #74, `/mcp` route) or community builds (e.g. Cloudflare Workers) expose the same tool surface over HTTP. Save your URL on the connection. |
 
@@ -27,6 +27,35 @@ web login attached.
 4. Decide **Sandbox** vs **Production**. Sandbox accepts `http://localhost`
    callbacks; production requires the public HTTPS callback above. Start in
    sandbox and validate reports against the real books before switching.
+
+### Intuit portal field values
+
+Only the **Redirect URI** is load-bearing for the MCP OAuth flow. The four app
+URLs and the webhook are UX/compliance surfaces — Intuit gates **production**
+keys on a live host domain whose privacy policy and EULA pages it can open.
+
+| Portal field | What to enter |
+|---|---|
+| **Host domain** | Bare host, no protocol (e.g. `console.example.com`). |
+| **Launch URL** | `https://console.example.com/` — a public landing page. |
+| **Disconnect URL** | A public page confirming the disconnect, e.g. `https://console.example.com/quickbooks/disconnected`. |
+| **Connect/Reconnect URL** | A public page linking to the OAuth start, or `https://console.example.com/wp-admin/admin-post.php?action=wp_mcp_ai_quickbooks_oauth_start` (requires an admin session). |
+| **Webhook endpoint URL** | Leave unset — nothing in NV oOS consumes Intuit change events, and a failing endpoint is disabled after repeated delivery errors. |
+| **Verifier token** | Only needed once a receiver exists: it is the HMAC-SHA256 key for the `intuit-signature` header. Treat it as a secret. |
+
+Rules Intuit enforces:
+
+- Production redirect URIs must use `https`.
+- **Redirect URIs must not carry query parameters.** Both QuickBooks flows now
+  register clean paths: the MCP callback above, and the accounting flow's
+  `/wp-json/mcp-ai/v1/quickbooks/oauth/callback`
+  (`WP_MCP_AI_QuickBooks_OAuth_Handler::get_quickbooks_oauth_redirect_uri()`).
+  Sites on plain permalinks produce a `?rest_route=` URL; switch to pretty
+  permalinks before connecting, or the Remote Sites panel disables the button.
+- Multiple redirect URIs are allowed on one app (add each with **Add URI**), so
+  `console.…` plus every WordPress site that runs its own login can share one
+  app. Register each site's own `rest_url()` verbatim; the plugin derives the
+  value per-site and never shares tokens across sites.
 
 Scopes: the accounting scope (`com.intuit.quickbooks.accounting`) covers
 customers, invoices, payments, bills, vendors, items and reports. Request only
@@ -107,9 +136,34 @@ categories at the server process:
 | `QUICKBOOKS_DISABLE_DELETE=true` | `delete_*` |
 | *(none)* | `get_*`, `search_*`, `read_*` are always available |
 
-Apply these on the **server** (self-hosted wrapper). On the NV oOS side,
-bridged tools still pass the per-tool capability gate (`edit_posts` by
-default) and are only exposed to assistants you attach the app to.
+**Set these on the server** (self-hosted wrapper) whenever you control the
+process — that is the authoritative boundary.
+
+### The same switches on the connection
+
+The **Tool Categories** row on a `QuickBooks Online (MCP)` connection mirrors
+those flags so the boundary also holds on the WordPress side:
+
+| Connection checkbox | Stored field | Mirrors | Suppresses |
+|---|---|---|---|
+| Disable `create_*` | `quickbooks_disable_write` | `QUICKBOOKS_DISABLE_WRITE` | `create_*` |
+| Disable `update_*` | `quickbooks_disable_update` | `QUICKBOOKS_DISABLE_UPDATE` | `update_*` |
+| Disable `delete_*` | `quickbooks_disable_delete` | `QUICKBOOKS_DISABLE_DELETE` | `delete_*` |
+
+A checked category is enforced at three points:
+
+1. **Discovery** — suppressed tools are dropped from the connection snapshot
+   and from the discovery count the MCP Apps metabox reports.
+2. **Chat payload** — bridged tools are registered as `mcp_app_<label>_<tool>`
+   only for the surviving categories, so the model never sees them.
+3. **Execution** — a bridged call to a suppressed verb returns
+   `wp_mcp_ai_mcp_app_tool_category_disabled` even if a bridge was registered
+   before the switch was flipped.
+
+Only the three prefixes above are honoured; a tampered config cannot suppress
+arbitrary tool families. `get_*`, `search_*` and `read_*` stay available, and
+bridged tools still pass the per-tool capability gate (`edit_posts` by default)
+and are only exposed to assistants you attach the app to.
 
 For finance workflows, prefer a dedicated Intuit user with the minimum role,
 and start with write/delete categories disabled until reports reconcile.
@@ -119,7 +173,10 @@ and start with write/delete categories disabled until reports reconcile.
 | Symptom | Likely cause / fix |
 |---|---|
 | `HTTP 404` on Test Connection | Endpoint path wrong, or a trailing slash was added by a proxy. The connection stores the URL verbatim — re-paste it. |
-| `HTTP 401` after login | Token belongs to another realm/environment, or the wrapper expects its own issuer. Confirm sandbox vs production and the realm ID. |
+| `HTTP 403` after login | Token belongs to another realm/environment, or the wrapper expects its own issuer. Confirm sandbox vs production and the realm ID. |
+| `HTTP 403` with `Content-Type: text/html` and no `WWW-Authenticate` header | Edge **WAF** (Akamai), not an auth failure — no credential or auth type fixes it. Confirm with `curl -sI <endpoint>` and `curl -sI <endpoint>/.well-known/oauth-protected-resource`; if both return `403`, the host refuses server-side clients. Self-host a wrapper, or call the accounting API directly. |
+| OAuth discovery returns `405`/`403` for every probe | The resource publishes no RFC 9728 / 8414 metadata, so there is nothing for the discovery chain to follow. Same remedies as above — a bearer token only helps if some path returns a `401` carrying `WWW-Authenticate`. |
+| `redirect_uri` mismatch at Intuit | The registered URI differs from `rest_url( 'mcp-ai/v1/mcp-apps/oauth/callback' )` — wrong host (frontend vs WP origin), missing/extra trailing slash, or `http` instead of `https`. Register the value the site prints. |
 | OAuth discovery fails | The gateway does not publish AS/PRM metadata. Use a bearer token, or point at an OAuth-capable wrapper. The failure alert lists each probe URL and status. |
 | Tools found but calls denied | The Intuit user behind the token lacks the entity/report permission. Fix the role in QuickBooks. |
 | Refresh stops after ~100 days | The rotating refresh token was not persisted (e.g. read-only host). Ensure the site can write the connection option, or re-authenticate. |

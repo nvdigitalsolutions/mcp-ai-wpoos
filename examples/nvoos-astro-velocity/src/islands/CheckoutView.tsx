@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // CheckoutView island — the embedded checkout (Proposal 110 Phase B).
 //

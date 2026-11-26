@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests for getFileTypeInfo helper in chat-attachments-service.js
  *

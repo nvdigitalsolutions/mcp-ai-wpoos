@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Diagnostics\RoutingExportStore;
 use App\Support\SettingsSchema;
 use Illuminate\Http\JsonResponse;
 use Nvoos\Core\Application\Provider\ProviderRouter;
@@ -9,6 +10,7 @@ use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Laravel\Adapter\JobStatusStore;
+use Nvoos\Laravel\Adapter\MediaWorkerCapabilityProbe;
 
 class DiagnosticsController
 {
@@ -18,23 +20,23 @@ class DiagnosticsController
         SettingsStoreInterface $store,
         JobStatusStore $jobs,
         ProEntitlementInterface $entitlement,
+        RoutingExportStore $routing,
+        MediaWorkerCapabilityProbe $mediaWorker,
     ): JsonResponse {
         $settings = $store->all();
         $registered = $providers->getRegisteredSlugs();
 
         $providerRows = array_map(
             static function (string $slug) use ($settings): array {
-                $key = match ($slug) {
-                    'openai' => 'openai_api_key',
-                    'gemini' => 'google_api_key',
-                    'anthropic' => 'anthropic_api_key',
-                    default => $slug.'_api_key',
-                };
+                // The provider client's storage key, not the settings surface's
+                // key: diagnostics reports whether the runtime can authenticate,
+                // so it must ask the same question the client does.
+                $key = SettingsSchema::providerCredentialKey($slug);
 
                 $has = ! empty($settings[$key]);
 
                 if ($slug === 'ollama') {
-                    $has = $has || ! empty($settings['ollama_endpoint']);
+                    $has = $has || ! empty($settings['ollama_endpoint_url']);
                 }
 
                 return [
@@ -96,7 +98,46 @@ class DiagnosticsController
                     'available' => $jobs->isAvailable(),
                     'counts' => $jobs->counts(),
                 ],
+                // §78 — the gauge a scraper reads. The page shows the same
+                // facts as a sentence; these are the fields behind it.
+                'routing_export' => $this->routingExport($routing),
+
+                // Proposal 164 §164.4.2 — what the processing tier can do, not
+                // just whether it is up. A managed Node host can answer
+                // `/api/health` and still have no `ffmpeg`; without this block
+                // the only way to learn that was a failed transcode.
+                'media_worker' => $mediaWorker->toArray(),
             ],
         ]);
+    }
+
+    /**
+     * Machine-readable routing-export state.
+     *
+     * `backing_off` is the gauge: true only while the exporter is inside its
+     * retry window. `retry_after` is null when it is false, so a consumer
+     * never has to compare a timestamp against its own clock to decide.
+     *
+     * @return array{configured: bool, backing_off: bool, retry_after: string|null, consecutive_failures: int}
+     */
+    private function routingExport(RoutingExportStore $store): array
+    {
+        if ('' === trim((string) config('oos.routing.export.endpoint', ''))) {
+            return [
+                'configured' => false,
+                'backing_off' => false,
+                'retry_after' => null,
+                'consecutive_failures' => 0,
+            ];
+        }
+
+        $state = $store->backoffState();
+
+        return [
+            'configured' => true,
+            'backing_off' => $state['backing_off'],
+            'retry_after' => $state['retry_after']?->toIso8601String(),
+            'consecutive_failures' => $state['consecutive_failures'],
+        ];
     }
 }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Global push-to-talk hotkey.
 //!
 //! Design (per implementation-plan research):

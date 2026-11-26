@@ -1,0 +1,33 @@
+{
+  "slug": "social-media",
+  "name": "Social Media",
+  "version": "1.0.0",
+  "description": "Scheduling, image optimisation and listening defaults for the Social Media toolkit.",
+  "icon": "📣",
+  "feature": "social-media",
+  "screens": ["settings"],
+  "settings": [
+    {
+      "key": "default_schedule",
+      "label": "Default posting schedule",
+      "type": "select",
+      "default": "immediate",
+      "options": ["immediate", "optimal", "custom"],
+      "description": "Optimal lets the AI pick the posting time."
+    },
+    {
+      "key": "auto_optimize_images",
+      "label": "Auto-optimise images",
+      "type": "boolean",
+      "default": true,
+      "description": "Resize and optimise images for each target platform."
+    },
+    {
+      "key": "enable_social_listening",
+      "label": "Enable social listening",
+      "type": "boolean",
+      "default": false,
+      "description": "Monitor brand mentions and industry trends."
+    }
+  ]
+}

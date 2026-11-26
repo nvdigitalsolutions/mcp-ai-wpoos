@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! macOS CGEventTap listener: global modifier push-to-talk with hold
 //! semantics (P5 port, phase M2).
 //!

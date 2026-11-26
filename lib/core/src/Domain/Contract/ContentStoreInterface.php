@@ -52,6 +52,9 @@ interface ContentStoreInterface
     /**
      * Create a new content item.
      *
+     * `taxonomyInput` is the item's complete term set per taxonomy. On create the
+     * item has no terms yet, so this is the set it is born with.
+     *
      * @return ContentItem  The newly created item with its assigned ID.
      *
      * @throws \Nvoos\Core\Domain\Error\AccessDeniedException  When user lacks permission.
@@ -64,6 +67,11 @@ interface ContentStoreInterface
      *
      * Only the fields present (non-null) in the command are updated.
      * Meta fields are merged, not replaced.
+     *
+     * `taxonomyInput` **replaces** each named taxonomy's terms: it is the complete
+     * desired set, not an addition. Naming a taxonomy with an empty list clears
+     * it; omitting the taxonomy leaves it untouched. Both hosts implement this
+     * the same way — see {@see UpdateContentCommand} for the rule and why.
      *
      * @return ContentItem  The updated item.
      *
@@ -93,6 +101,26 @@ interface ContentStoreInterface
      * @return array<string, array<int, string>>  Taxonomy slug → [term names].
      */
     public function getTaxonomyTerms(int $id): array;
+
+    /**
+     * List the terms defined in a taxonomy.
+     *
+     * This is the taxonomy's **vocabulary** — the list a categorizer chooses from,
+     * or a filter UI renders. Distinct from {@see getTaxonomyTerms()}, which reads
+     * the terms attached to one item. A term nobody has used yet still belongs to
+     * the vocabulary, so this must not filter on usage.
+     *
+     * Added for `auto_categorize_content` (Proposal 090-M §26): the tool cannot ask
+     * a model to choose a category it was never shown, and `ContentQuery.taxQuery`
+     * only *filters* by known term names — it cannot enumerate them.
+     *
+     * @param string $taxonomy  Taxonomy slug (e.g. 'category', 'post_tag').
+     * @param int    $limit     Maximum terms to return, 1–500.
+     *
+     * @return array<int, array{id:int, name:string, slug:string, count:int}>
+     *         Ordered by name. `count` is how many items carry the term.
+     */
+    public function listTaxonomyTerms(string $taxonomy, int $limit = 200): array;
 
     /**
      * Check if a user can perform an operation on a content item.

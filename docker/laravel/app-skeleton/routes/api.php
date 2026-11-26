@@ -8,11 +8,16 @@ use App\Http\Controllers\BlueprintController;
 use App\Http\Controllers\AssistantPortabilityController;
 use App\Http\Controllers\CommandCenterController;
 use App\Http\Controllers\ChatStreamController;
+use App\Http\Controllers\ChatProfileController;
 use App\Http\Controllers\DiagnosticsController;
 use App\Http\Controllers\FeaturesController;
+use App\Http\Controllers\FileController;
+use App\Http\Controllers\MagicLoginController;
 use App\Http\Controllers\MemoryController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\MediaUploadController;
 use App\Http\Controllers\OkfController;
+use App\Http\Controllers\OkfWriteController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\OpsController;
 use App\Http\Controllers\OrchestrationStatsController;
@@ -28,9 +33,11 @@ use App\Http\Controllers\Pro\ToolkitsController;
 use App\Http\Controllers\Pro\WorkflowNodeController;
 use App\Http\Controllers\Pro\WorkflowPresetsController;
 use App\Http\Controllers\McpAppsController;
+use App\Http\Controllers\PersonalTokenController;
 use App\Http\Controllers\ProfessionController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\SessionController;
+use App\Http\Controllers\RootKeyController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SkillController;
@@ -39,12 +46,15 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TokenManagerController;
 use App\Http\Controllers\ToolController;
 use App\Http\Controllers\ToolShortcutsController;
+use App\Http\Controllers\MachineToolController;
 use App\Http\Controllers\ToolsController;
 use App\Http\Controllers\TranscriptsController;
 use App\Http\Controllers\TriggersController;
 use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorkflowRunController;
+use App\Http\Controllers\Wifi\KpiController as WifiKpisController;
 use App\Http\Controllers\Wp\ContentController as WpContentController;
+use App\Http\Middleware\ResolveApiTenant;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -64,23 +74,57 @@ Route::prefix('api/v1')->group(function (): void {
     Route::get('/features', FeaturesController::class);
     Route::get('/site', SiteController::class);
 
-    // The nonce is a plain GET and must always have a session, so it keeps the
-    // `web` group. Login/logout deliberately stay on the `api` group:
-    // `statefulApi()` already starts the session (and validates CSRF) for
-    // console-origin requests, and wrapping them in `web` a second time started
-    // two session stores, the outer of which overwrote the authenticated
-    // payload.
-    Route::middleware('web')->group(function (): void {
-        Route::get('/session/nonce', [SessionController::class, 'nonce']);
-    });
+    // All three session routes share the `api` group so `statefulApi()` owns the
+    // one session store. `/session/nonce` used to add the `web` group as well;
+    // that started a second store, so the token it returned belonged to a
+    // session the login POST could not see and every sign-in was a 419 CSRF
+    // mismatch. Logout stays on `api` for the same reason.
+    Route::get('/session/nonce', [SessionController::class, 'nonce']);
 
     Route::post('/session/login', [SessionController::class, 'login'])
         ->middleware('throttle:6,1');
     Route::post('/session/logout', [SessionController::class, 'logout'])
         ->middleware('auth');
 
+    // Passwordless sign-in (149 §103). Unauthenticated by necessity — the caller
+    // has no session yet, which is the point — and invisible when no estate has
+    // opted in: both routes answer 404 in that case. The limiters are named
+    // rather than per-minute counts because the request endpoint has to be
+    // limited on TWO dimensions (identifier and IP) and a per-identifier limit
+    // cannot be expressed as route middleware.
+    Route::post('/magic-login/request', [MagicLoginController::class, 'request'])
+        ->middleware('throttle:magic-login-request');
+    Route::post('/magic-login/confirm', [MagicLoginController::class, 'confirm'])
+        ->middleware('throttle:magic-login-confirm');
+
+    // Identity endpoint. Deliberately OUTSIDE tenant resolution: it is how a
+    // client learns who it is and which estates it may select, so requiring a
+    // selection first would leave a multi-estate client with no way to ask.
+    // A machine principal reading its own identity has no narrower scope to
+    // name, so this is the one route declaring `any` (159 §10.4).
+    Route::middleware(['auth:sanctum', 'scope:any'])
+        ->get('/session/me', [SessionController::class, 'me']);
+
+    // Personal access tokens are user-scoped, not estate-scoped: a token belongs
+    // to a person across every estate they can reach, so demanding an estate
+    // selection before minting one would be a fiction (149 §26). Ownership is
+    // the authorization on every route — no capability gate, because the token
+    // carries the user's own authority and nothing more.
     Route::middleware('auth:sanctum')->group(function (): void {
-        Route::get('/session/me', [SessionController::class, 'me']);
+        Route::get('/personal-tokens', [PersonalTokenController::class, 'index'])
+            ->middleware('throttle:console');
+
+        // Tighter than the console default: minting a credential is the one
+        // action here that produces a durable secret.
+        Route::post('/personal-tokens', [PersonalTokenController::class, 'store'])
+            ->middleware('throttle:6,1');
+
+        Route::delete('/personal-tokens/{token}', [PersonalTokenController::class, 'destroy'])
+            ->middleware('throttle:console');
+    });
+
+    // Everything authenticated below acts inside one estate (149 §21).
+    Route::middleware(['auth:sanctum,auth0', ResolveApiTenant::class])->group(function (): void {
 
         // Chat streams. Its own limiter, tighter than the console default,
         // because a stream holds the connection open.
@@ -102,6 +146,11 @@ Route::prefix('api/v1')->group(function (): void {
         // `wp/*` and `media` mirror WordPress's own capabilities: authors may
         // create content and upload files, subscribers may not.
         Route::middleware('throttle:console')->group(function (): void {
+            // Proposal 162 — reading a stored file. A public file's URL is stable and
+            // never needs this route; a private file has no URL at all, so this is the
+            // only way in and the estate is checked per request.
+            Route::get('/files/{id}', FileController::class)->whereNumber('id');
+
             Route::get('/chat-transcripts', [TranscriptsController::class, 'index']);
             Route::post('/chat-transcripts', [TranscriptsController::class, 'store']);
             Route::get('/chat-transcripts/{sessionKey}', [TranscriptsController::class, 'show']);
@@ -115,11 +164,29 @@ Route::prefix('api/v1')->group(function (): void {
             Route::match(['put', 'patch'], '/chat-memory/{id}', [MemoryController::class, 'update']);
             Route::delete('/chat-memory/{id}', [MemoryController::class, 'destroy']);
 
+            // Chat profiles — a per-user permission boundary over tool calls
+            // (Proposal 015 port). The GET is the catalogue plus the resolved
+            // profile; the PUT is the only writer, and selecting the site
+            // default clears the override instead of pinning it.
+            Route::get('/chat-profile', [ChatProfileController::class, 'show']);
+            Route::match(['put', 'patch'], '/chat-profile', [ChatProfileController::class, 'update']);
+
             Route::get('/tools', ToolsController::class);
+
+            // 159 slice 4 — machine tool execution. The catalogue above
+            // stays readable to any member; executing is an action, so it
+            // requires an assistant scope, the assistant's own tool list,
+            // and an operator allowlist (`oos.machine_tools`).
+            Route::post('/tools/{tool}', MachineToolController::class)
+                ->middleware('scope:assistant');
 
             // The list stays readable: the console shows every role the
             // assistant catalogue. Everything below it is administrative.
-            Route::get('/assistants', [AssistantController::class, 'index']);
+            // A machine principal reaches the catalogue only with the estate
+            // permission that names it — the setting gates the fleet, the scope
+            // names the slice (159 §5 rule 4, §10.3).
+            Route::get('/assistants', [AssistantController::class, 'index'])
+                ->middleware(['assistant.rest:list', 'scope:estate:assistants.list']);
 
             // 090-g Phase 3 — org teams and user membership.
             //
@@ -171,6 +238,24 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::post('/media', [MediaController::class, 'store']);
                 Route::get('/media/{id}', [MediaController::class, 'show'])->whereNumber('id');
 
+                // Proposals 164 §164.30 — resumable uploads (tus 1.0.0 core).
+                // PHP's `upload_max_filesize` is 2 MB in this image, so a file of
+                // any real size cannot arrive in one request however wide the
+                // application's own allowance is. Small requests, big files.
+                Route::options('/media/uploads', [MediaUploadController::class, 'options']);
+                Route::post('/media/uploads', [MediaUploadController::class, 'create']);
+
+                // `Route::head()` is not on the registrar, so HEAD is declared through
+                // `match`. Laravel answers a HEAD request by running the GET handler and
+                // discarding the body; there is no GET here, so the handler is the status
+                // probe itself.
+                Route::match(['head'], '/media/uploads/{uploadId}', [MediaUploadController::class, 'status'])
+                    ->where('uploadId', '[A-Fa-f0-9]{32}');
+                Route::patch('/media/uploads/{uploadId}', [MediaUploadController::class, 'append'])
+                    ->where('uploadId', '[A-Fa-f0-9]{32}');
+                Route::delete('/media/uploads/{uploadId}', [MediaUploadController::class, 'destroy'])
+                    ->where('uploadId', '[A-Fa-f0-9]{32}');
+
                 // 090-j slice 2 — alt text is the one mutable field.
                 Route::match(['put', 'patch'], '/media/{id}', [MediaController::class, 'update'])
                     ->whereNumber('id');
@@ -201,7 +286,35 @@ Route::prefix('api/v1')->group(function (): void {
             Route::get('/settings/values', [SettingsController::class, 'values']);
             Route::post('/settings/values', [SettingsController::class, 'updateValues']);
 
+            // Proposal 162 §162.10 — the OKF write side. A bundle is
+            // deployment-global knowledge, so writes are operator-scoped even
+            // though they live on the console's `pro/okf` base: `manage_options`
+            // is the authority, and no surface renders an editor yet.
+            Route::post('/pro/okf/bundles/{bundle}/concepts', [OkfWriteController::class, 'writeConcept'])
+                ->where('bundle', '[a-z0-9][a-z0-9_-]{0,99}');
+            Route::delete('/pro/okf/bundles/{bundle}/concepts/{concept}', [OkfWriteController::class, 'deleteConcept'])
+                ->where(['bundle' => '[a-z0-9][a-z0-9_-]{0,99}', 'concept' => '.+']);
+            Route::post('/pro/okf/bundles/{bundle}/index', [OkfWriteController::class, 'regenerateIndex'])
+                ->where('bundle', '[a-z0-9][a-z0-9_-]{0,99}');
+
+            // 149 §188 — step-up verification for operator writes. The limiter is
+            // tighter than the console default because this endpoint verifies a
+            // password-like secret.
+            Route::get('/ops/root-key', [RootKeyController::class, 'status']);
+            Route::post('/ops/root-key/unlock', [RootKeyController::class, 'unlock'])
+                ->middleware('throttle:6,1');
+            Route::delete('/ops/root-key', [RootKeyController::class, 'lock']);
+
             Route::get('/diagnostics/overview', DiagnosticsController::class);
+
+            // Proposal 150 — NV oOS WiFi. The controller adds no logic of its
+            // own: it calls the portable NvoosWifi\Services\Class_Kpi_Service,
+            // so this payload must match the WordPress route's by content.
+            // tests/Feature/WifiKpisTest.php pins both against one committed
+            // fixture (addons/nvoos-wifi/tests/fixtures/), which is the Phase 0
+            // exit condition for portability.
+            Route::get('/wifi/venues/{venue}/kpis', WifiKpisController::class)
+                ->where('venue', '[A-Za-z0-9_\-]+');
             Route::get('/operations/cron', [OperationsController::class, 'cron']);
             Route::delete('/operations/cron/{jobId}', [OperationsController::class, 'removeCron']);
             Route::get('/operations/dlq', [OperationsController::class, 'dlq']);
@@ -238,10 +351,12 @@ Route::prefix('api/v1')->group(function (): void {
             // sourced KPIs, a derived agent-status map and the activity feed.
             Route::get('/pro/command-center/overview', [CommandCenterController::class, 'overview']);
 
-            Route::post('/assistants', [AssistantController::class, 'store']);
+            Route::post('/assistants', [AssistantController::class, 'store'])
+                ->middleware(['assistant.rest:create', 'scope:estate:assistants.create']);
             Route::get('/assistants/{assistant}', [AssistantController::class, 'show']);
             Route::match(['put', 'patch'], '/assistants/{assistant}', [AssistantController::class, 'update']);
-            Route::delete('/assistants/{assistant}', [AssistantController::class, 'destroy']);
+            Route::delete('/assistants/{assistant}', [AssistantController::class, 'destroy'])
+                ->middleware(['assistant.rest:delete', 'scope:estate:assistants.delete']);
 
             // 090-b task 2.7 — the Test Assistant surface (WordPress's
             // Admin → AI Assistants → Test Assistant). Empty body resolves the
@@ -376,6 +491,10 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::delete('/schedules/{id}', [SchedulesController::class, 'destroy']);
                 Route::post('/schedules/{id}/toggle', [SchedulesController::class, 'toggle']);
                 Route::post('/schedules/{id}/trigger', [SchedulesController::class, 'trigger']);
+                // The poll half of the async trigger: 202 + run id is useless
+                // without a status resource the console can read.
+                Route::get('/schedules/{id}/runs/{runId}', [SchedulesController::class, 'run'])
+                    ->whereNumber('runId');
                 Route::get('/schedules/{id}/history', [SchedulesController::class, 'history']);
                 Route::get('/schedules/{id}/results', [SchedulesController::class, 'results']);
 

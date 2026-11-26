@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Shared implementation for **local** OpenAI-compatible Stage-2 providers.
 //!
 //! LM Studio and Ollama both expose an OpenAI-compatible `/v1` surface over
@@ -326,6 +327,28 @@ impl LocalOpenAiProvider {
         self.post_vision(&body).await
     }
 
+    /// Answer a question about a crop the user is pointing at (Proposal 153
+    /// §7.2, deictic grounding). Returns the raw assistant text; the caller
+    /// trims it. Shares the vision transport and the same endpoint/error
+    /// mapping, but carries the deictic prompt (which restates the
+    /// no-face-identification bright line).
+    #[cfg(feature = "gestures")]
+    pub async fn ask_crop(&self, image_data_uri: &str, question: &str) -> AppResult<String> {
+        let model = if self.model.is_empty() {
+            None
+        } else {
+            Some(self.model.as_str())
+        };
+        let body = openai_shape::build_vision_body(
+            model,
+            &openai_shape::deictic_prompt(question),
+            image_data_uri,
+            // Low but non-zero: a factual look at the crop, not a creative one.
+            0.1,
+        );
+        self.post_vision(&body).await
+    }
+
     /// Correct OCR text against a page image (Proposal 109 §3.8 polish).
     #[cfg(feature = "document")]
     /// `image_data_uri` is a base64 data-URI PNG of the page; `text` is the
@@ -406,8 +429,8 @@ impl LocalOpenAiProvider {
         Ok(openai_shape::parse_document_model_native_reply(&payload))
     }
 
-    /// Shared multimodal POST (the two polish flavours differ only in prompt).
-    #[cfg(any(feature = "vision", feature = "document"))]
+    /// Shared multimodal POST (the polish flavours differ only in prompt).
+    #[cfg(any(feature = "vision", feature = "document", feature = "gestures"))]
     async fn post_vision(&self, body: &serde_json::Value) -> AppResult<String> {
         let url = format!("{}/chat/completions", self.base_url);
         let resp = match self.http.post(&url).json(body).send().await {

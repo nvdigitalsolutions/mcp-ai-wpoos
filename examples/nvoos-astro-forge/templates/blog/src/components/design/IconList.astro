@@ -1,4 +1,5 @@
 ---
+// SPDX-License-Identifier: MIT
 // IconList — icon-list sections rebuilt as a card list.
 // `columns` (Proposal 115 §4) drives the grid via per-breakpoint CSS custom
 // properties — the wireframe's captured/inferred collapse behavior.
@@ -12,9 +13,11 @@
 import type { SemanticSection } from '../../forge/semantic.ts';
 import SectionLinks from './SectionLinks.astro';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
+import ItemTitle from './ItemTitle.astro';
 import SmartImage from '../SmartImage.astro';
 import IconMarker from './IconMarker.astro';
 import SectionTitle from './SectionTitle.astro';
+import { bandParagraphs, titleEchoItems } from '../../lib/band-copy.ts';
 
 interface Props {
 	section: SemanticSection;
@@ -23,8 +26,12 @@ interface Props {
 }
 
 const { section, columns, theme } = Astro.props;
-const { title, body, items, media } = section.slots;
-const list = items ?? [];
+const { title: parsedTitle, body, items, media } = section.slots;
+// The measured `titleText` stands in when the semantic pass could not pick the
+// heading — the echo fold below needs it to recognise the lead icon-box.
+const title = parsedTitle ?? theme?.titleText;
+const echoes = new Set( titleEchoItems( items, title, theme, theme?.columns ) );
+const list = ( items ?? [] ).filter( ( item ) => ! echoes.has( item ) );
 const rows = list.length > 0 && list.every((item) => item.layout === 'row');
 const desktop = columns ? Math.min(columns.desktop ?? 4, Math.max(list.length, 1)) : undefined;
 const gridStyle = !rows && columns && desktop
@@ -63,9 +70,9 @@ const dividerStyle = theme?.titleDivider
 			<div class="ds-icon-content">
 				{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 				{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
-				{body && body.length > 0 && (
+				{bandParagraphs(body, theme).length > 0 && (
 					<div class="ds-lede">
-						{body.map((paragraph) => (
+						{bandParagraphs(body, theme).map((paragraph) => (
 							<p>{paragraph}</p>
 						))}
 					</div>
@@ -76,7 +83,7 @@ const dividerStyle = theme?.titleDivider
 							<li class="ds-icon-row">
 								<IconMarker item={item} />
 								<div class="ds-icon-row-text">
-									{item.title && <h4>{item.title}</h4>}
+									<ItemTitle item={item} fallback="h4" />
 									{item.body && <p>{item.body}</p>}
 								</div>
 							</li>
@@ -89,7 +96,7 @@ const dividerStyle = theme?.titleDivider
 								<li class="ds-card">
 									<IconMarker item={item} />
 									{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
-									{item.title && <h4>{item.title}</h4>}
+									<ItemTitle item={item} fallback="h4" />
 									{item.body && <p>{item.body}</p>}
 								</li>
 							))}
@@ -102,9 +109,9 @@ const dividerStyle = theme?.titleDivider
 		<>
 			{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 			{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
-			{body && body.length > 0 && (
+			{bandParagraphs(body, theme).length > 0 && (
 				<div class="ds-lede">
-					{body.map((paragraph) => (
+					{bandParagraphs(body, theme).map((paragraph) => (
 						<p>{paragraph}</p>
 					))}
 				</div>
@@ -115,7 +122,7 @@ const dividerStyle = theme?.titleDivider
 						<li class="ds-icon-row">
 							<IconMarker item={item} />
 							<div class="ds-icon-row-text">
-								{item.title && <h4>{item.title}</h4>}
+								<ItemTitle item={item} fallback="h4" />
 								{item.body && <p>{item.body}</p>}
 							</div>
 						</li>
@@ -128,7 +135,7 @@ const dividerStyle = theme?.titleDivider
 							<li class="ds-card">
 								<IconMarker item={item} />
 								{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
-								{item.title && <h4>{item.title}</h4>}
+								<ItemTitle item={item} fallback="h4" />
 								{item.body && <p>{item.body}</p>}
 							</li>
 						))}

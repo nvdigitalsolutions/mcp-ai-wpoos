@@ -10,6 +10,57 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Pro entitlement (Proposal 090-B ADR-7 · Proposal 149 T-0.8)
+	|--------------------------------------------------------------------------
+	|
+	| Which Pro surfaces this installation is entitled to. Three driver
+	| families share one contract (`ProEntitlementInterface`):
+	|
+	|   allow  — every feature entitled. Development, CI, and a private
+	|            deployment enforced elsewhere.
+	|   deny   — nothing entitled. Base-only and fail-closed deployments.
+	|   config — only the features listed in `features`.
+	|   license— resolve against the commercial licence server.
+	|
+	| Unknown drivers fail closed. `features` is applied last and wins in both
+	| directions, so an operator can grant or revoke a single surface without
+	| touching the licence server.
+	|
+	| Tenancy note: this block is the INSTALL-LEVEL default. A host that owns
+	| per-estate licences (the Laravel admin resolves each tenant's key) binds
+	| its own decorator over this contract; these values remain the fallback
+	| for an estate with no licence of its own.
+	|
+	| Before Proposal 149 T-0.8 these settings had no home in the shipped
+	| config file at all — `config('oos.pro_entitlement')` was always empty, so
+	| the runtime was permanently on the `allow` default and could not be
+	| configured without publishing the file by hand.
+	|
+	*/
+	'pro_entitlement' => array(
+		'driver' => env( 'NVOOS_PRO_ENTITLEMENT_DRIVER', 'allow' ),
+
+		// Licence-server driver.
+		'license_key' => env( 'NVOOS_PRO_LICENSE_KEY', '' ),
+		'server_url' => env( 'NVOOS_PRO_LICENSE_SERVER', '' ),
+		'instance_id' => env( 'NVOOS_PRO_LICENSE_INSTANCE', '' ),
+		'product' => env( 'NVOOS_PRO_LICENSE_PRODUCT', 'mcp-ai-wpoos-pro' ),
+
+		// `config` driver plan label (diagnostics only; `features` decides).
+		'plan' => env( 'NVOOS_PRO_PLAN', 'compliance' ),
+
+		// Operator overrides: feature => bool.
+		'features' => array(),
+
+		// Licence cache windows (seconds).
+		'ttl' => (int) env( 'NVOOS_PRO_ENTITLEMENT_TTL', 43200 ),
+		'denied_ttl' => (int) env( 'NVOOS_PRO_ENTITLEMENT_DENIED_TTL', 300 ),
+		'grace_ttl' => (int) env( 'NVOOS_PRO_ENTITLEMENT_GRACE_TTL', 604800 ),
+		'timeout' => (int) env( 'NVOOS_PRO_ENTITLEMENT_TIMEOUT', 10 ),
+	),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Media worker
 	|--------------------------------------------------------------------------
 	|
@@ -821,6 +872,18 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Assistants Database Table
+	|--------------------------------------------------------------------------
+	|
+	| The adapter reads one column from the app-owned assistant table: the
+	| estate a trace run belongs to (Proposal 152 §9.3). Configurable because
+	| the table belongs to the application, not to this package.
+	|
+	*/
+	'assistants_table' => env( 'NVOOS_ASSISTANTS_TABLE', 'assistants' ),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Pro Entitlement
 	|--------------------------------------------------------------------------
 	|
@@ -875,12 +938,39 @@ return array(
 	| capability flags are blocked by default — "I could not tell whether this
 	| writes" is not a reason to let it write. Allowlist the slugs you trust.
 	|
+	| `gated_flags` defaults to the canonical list, which mirrors the WordPress
+	| chat profile's. Replace the value to override it; the guard normalises
+	| underscore and hyphen spellings either way.
+	|
 	*/
 	'read_only' => array(
 		'enabled'          => (bool) env( 'NVOOS_READ_ONLY', false ),
-		'gated_flags'      => array( 'write', 'state_changing', 'mutating', 'destructive', 'external_side_effect' ),
+		'gated_flags'      => \Nvoos\Core\Application\Tool\ReadOnlyToolGuard::DEFAULT_GATED_FLAGS,
 		'allowed_slugs'    => array(),
 		'block_undeclared' => (bool) env( 'NVOOS_READ_ONLY_BLOCK_UNDECLARED', true ),
+	),
+
+	/*
+	|--------------------------------------------------------------------------
+	| Per-user chat profiles
+	|--------------------------------------------------------------------------
+	|
+	| WordPress lets each user carry a chat profile (`write` or `read-only`).
+	| The resolved profile is enforced at the same pre-dispatch point as the
+	| deployment-wide read-only switch above, so a blocked write is denied
+	| rather than confirmed.
+	|
+	| On by default: a user with no personal selection resolves to `write`, so
+	| the feature changes nothing until someone chooses a restrictive profile.
+	| `default` is the site fallback for those users. `block_undeclared` keeps
+	| the MCP pessimistic default — a tool that declares no capability flags is
+	| assumed to write.
+	|
+	*/
+	'chat_profiles' => array(
+		'enabled'          => (bool) env( 'NVOOS_CHAT_PROFILES', true ),
+		'default'          => (string) env( 'NVOOS_CHAT_PROFILE_DEFAULT', 'write' ),
+		'block_undeclared' => (bool) env( 'NVOOS_CHAT_PROFILES_BLOCK_UNDECLARED', true ),
 	),
 
 	/*
@@ -1001,6 +1091,58 @@ return array(
 		// and search are served. Grant-backed /okf/skills is honest-empty.
 		'okf'                => true,
 	),
+
+	/*
+	|--------------------------------------------------------------------------
+	| Connected apps (Class C discovery — 090-i Phase 4)
+	|--------------------------------------------------------------------------
+	|
+	| The four console keys that belong to separate NV oOS products —
+	| `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor` — are never
+	| reimplemented on this runtime (ADR-11). Point each at the product's REST
+	| base and the runtime probes it once, caches the answer, and reports the
+	| URL through the capability manifest (`endpoint_urls` + a flipped
+	| `endpoints` entry). An unconfigured key stays unavailable with the
+	| `external-product` reason.
+	|
+	| `url` is the product's REST base, e.g.
+	| `https://docs.example.com/wp-json/nvoos-docs/v1`. `probe` is the relative
+	| path appended for the health check (defaults per product); `token` is an
+	| optional bearer credential for a protected product. The probe resolves the
+	| hostname and validates every address (refusing private/reserved ranges),
+	| pins the validated address for the request, follows no redirects and
+	| requires HTTPS for any non-loopback host. The token never appears in the
+	| manifest.
+	|
+	*/
+	'connected_apps' => array(
+		'contentGraph' => array(
+			'url' => env( 'NVOOS_CONTENT_GRAPH_URL', '' ),
+			'probe' => '/graph',
+			'token' => env( 'NVOOS_CONTENT_GRAPH_TOKEN', '' ),
+		),
+		'docsHub' => array(
+			'url' => env( 'NVOOS_DOCS_HUB_URL', '' ),
+			'probe' => '/health',
+			'token' => env( 'NVOOS_DOCS_HUB_TOKEN', '' ),
+		),
+		'mediaStudio' => array(
+			'url' => env( 'NVOOS_MEDIA_STUDIO_URL', '' ),
+			'probe' => '/health',
+			'token' => env( 'NVOOS_MEDIA_STUDIO_TOKEN', '' ),
+		),
+		'documentEditor' => array(
+			'url' => env( 'NVOOS_DOCUMENT_EDITOR_URL', '' ),
+			'probe' => '/health',
+			'token' => env( 'NVOOS_DOCUMENT_EDITOR_TOKEN', '' ),
+		),
+	),
+
+	// Probe result cache (seconds) and timeouts. Failures are cached too, so an
+	// unreachable product cannot slow every console boot.
+	'connected_apps_ttl' => (int) env( 'NVOOS_CONNECTED_APPS_TTL', 300 ),
+	'connected_apps_timeout' => (int) env( 'NVOOS_CONNECTED_APPS_TIMEOUT', 2 ),
+	'connected_apps_connect_timeout' => (int) env( 'NVOOS_CONNECTED_APPS_CONNECT_TIMEOUT', 1 ),
 
 	/*
 	|--------------------------------------------------------------------------

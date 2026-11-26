@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * i18n bootstrap tests — @wordpress/i18n defaults (en_US) standalone.
  */

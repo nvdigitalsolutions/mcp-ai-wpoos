@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ProfileSelector — Dropdown for Write/Ask/Minimal/Custom profiles.
  * Zed equivalent: Agent Profiles selector.

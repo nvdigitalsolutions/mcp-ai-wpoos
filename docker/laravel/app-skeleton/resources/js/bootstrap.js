@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import axios from 'axios';
 window.axios = axios;
 

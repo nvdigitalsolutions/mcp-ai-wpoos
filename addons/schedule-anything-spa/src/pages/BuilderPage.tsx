@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * BuilderPage — full-screen visual schedule builder.
  */

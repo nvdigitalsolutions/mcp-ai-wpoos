@@ -14,27 +14,79 @@ if ( ! class_exists( 'Test_Slash_Memory_Stub_Tool' ) ) {
 	class Test_Slash_Memory_Stub_Tool implements WP_MCP_AI_Tool_Interface {
 		use WP_MCP_AI_Tool_Default_Capability;
 
+		/**
+		 * Tool slug.
+		 *
+		 * @var string
+		 */
 		public $slug;
+		/**
+		 * Arguments from the last execute call.
+		 *
+		 * @var array|null
+		 */
 		public $last_args    = null;
+		/**
+		 * Context from the last execute call.
+		 *
+		 * @var array|null
+		 */
 		public $last_context = null;
+		/**
+		 * Value returned by the next execute call.
+		 *
+		 * @var array
+		 */
 		public $return_value = array( 'ok' => true );
 
+		/**
+		 * Constructor.
+		 *
+		 * @param string $slug Tool slug.
+		 */
 		public function __construct( $slug ) {
 			$this->slug = $slug;
 		}
+		/**
+		 * Return the tool slug.
+		 *
+		 * @return string
+		 */
 		public function get_slug() {
 			return $this->slug;
 		}
+		/**
+		 * Return the tool name.
+		 *
+		 * @return string
+		 */
 		public function get_name() {
 			return $this->slug; }
+		/**
+		 * Return the tool description.
+		 *
+		 * @return string
+		 */
 		public function get_description() {
 			return 'stub'; }
+		/**
+		 * Return the empty parameters schema.
+		 *
+		 * @return array
+		 */
 		public function get_parameters_schema() {
 			return array(
 				'type'       => 'object',
 				'properties' => array(),
 			);
 		}
+		/**
+		 * Record the call and return the canned value.
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Execution context.
+		 * @return array
+		 */
 		public function execute( array $arguments = array(), array $context = array() ) {
 			$this->last_args    = $arguments;
 			$this->last_context = $context;
@@ -69,6 +121,9 @@ class Test_Slash_Command_Memory extends WP_UnitTestCase {
 	 */
 	private $subscriber_id;
 
+	/**
+	 * Reset the registry and the stub between tests.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-memory.php';
@@ -94,6 +149,9 @@ class Test_Slash_Command_Memory extends WP_UnitTestCase {
 		$this->subscriber_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 	}
 
+	/**
+	 * Reset the registry after each test.
+	 */
 	public function tearDown(): void {
 		remove_filter( 'wp_mcp_ai_chat_memory_enabled', '__return_true', 999 );
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
@@ -140,7 +198,11 @@ class Test_Slash_Command_Memory extends WP_UnitTestCase {
 	public function test_remember_dispatches_to_store_agent_context_tool() {
 		wp_set_current_user( $this->editor_id );
 
-		/** @var Test_Slash_Memory_Stub_Tool $tool */
+		/**
+		 * Registered memory tool.
+		 *
+		 * @var Test_Slash_Memory_Stub_Tool $tool
+		 */
 		$tool = WP_MCP_AI_Tool_Registry::get_instance()->get_tool( 'store_agent_context' );
 		$this->assertInstanceOf( 'Test_Slash_Memory_Stub_Tool', $tool );
 

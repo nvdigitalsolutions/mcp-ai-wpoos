@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-box-facts.test.ts — the measured box of a builder's classes.
 //
@@ -37,6 +38,39 @@ describe( 'boxDeclarations', () => {
 		// panel's inherited white; without this fact the bullets rebuild white.
 		expect( boxDeclarations( { mar: '0px 0px 24px 0px', color: 'rgb(146, 146, 146)' } ) ).toBe(
 			'margin:0px 0px 24px 0px;color:rgb(146, 146, 146)'
+		);
+	} );
+
+	it( 'carries a uniform border, which changes the rendered box on every side', () => {
+		// Flatsome frames `.section-title-main` with a 2px hairline; without it the
+		// title is 4px narrow and 4px short inside a band whose height is exact
+		// (monicarajiv, 2026-11-20).
+		expect(
+			boxDeclarations( {
+				pad: '8.66px 23.09px 8.66px 23.09px',
+				mar: '0px 0px 0px 0px',
+				border: '2px solid rgba(0, 0, 0, 0.1)',
+			} )
+		).toBe(
+			'padding:8.66px 23.09px 8.66px 23.09px;margin:0px 0px 0px 0px;border:2px solid rgba(0, 0, 0, 0.1)'
+		);
+	} );
+
+	it( 'states the type a class DECLARES, so a band can hold two headings', () => {
+		// Flatsome's salon band has an `h1.uppercase` (Karma, caps, 1.2) beside an
+		// `h1.alt-font` (Dancing Script, no caps, 1.3). The band's tag fact can only
+		// describe one, so the outlier restates itself and outranks it.
+		expect(
+			boxDeclarations( {
+				mar: '0px 0px 15.1px 0px',
+				color: 'rgb(255, 255, 255)',
+				fontSize: '30.192px',
+				lineHeight: '39.2496px',
+				textTransform: 'none',
+				letterSpacing: 'normal',
+			} )
+		).toBe(
+			'margin:0px 0px 15.1px 0px;color:rgb(255, 255, 255);font-size:30.192px;line-height:39.2496px;text-transform:none;letter-spacing:normal'
 		);
 	} );
 } );

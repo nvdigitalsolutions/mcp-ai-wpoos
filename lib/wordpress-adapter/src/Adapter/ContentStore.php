@@ -107,7 +107,8 @@ class ContentStore implements ContentStoreInterface {
 			\update_post_meta( $postId, \sanitize_key( $key ), $value );
 		}
 
-		// Set taxonomy terms.
+		// Replace taxonomy terms: the command carries the complete set.
+		// `$append` defaults to false, which is the contract (UpdateContentCommand).
 		foreach ( $command->taxonomyInput as $taxonomy => $terms ) {
 			\wp_set_post_terms( $postId, $terms, \sanitize_key( $taxonomy ) );
 		}
@@ -163,7 +164,8 @@ class ContentStore implements ContentStoreInterface {
 			\update_post_meta( $id, \sanitize_key( $key ), $value );
 		}
 
-		// Set taxonomy terms (replace, not append).
+		// Replace taxonomy terms: the command carries the complete set, and
+		// `$append` defaults to false, which is the contract (UpdateContentCommand).
 		foreach ( $command->taxonomyInput as $taxonomy => $terms ) {
 			\wp_set_post_terms( $id, $terms, \sanitize_key( $taxonomy ) );
 		}
@@ -211,6 +213,57 @@ class ContentStore implements ContentStoreInterface {
 		}
 
 		return $unwrapped;
+	}
+
+	/**
+	 * List the terms defined in a taxonomy.
+	 *
+	 * The vocabulary, not the assignment: `hide_empty` is false so an unused term is
+	 * still offered, which is what a categorizer needs. WordPress's own term count is
+	 * the closest thing to the contract's `count`.
+	 *
+	 * @param string $taxonomy  Taxonomy slug.
+	 * @param int    $limit     Maximum terms to return, 1–500.
+	 *
+	 * @return array<int, array{id:int, name:string, slug:string, count:int}>
+	 */
+	public function listTaxonomyTerms( string $taxonomy, int $limit = 200 ): array {
+		$taxonomy = \sanitize_key( $taxonomy );
+
+		if ( '' === $taxonomy || ! \taxonomy_exists( $taxonomy ) ) {
+			return array();
+		}
+
+		$terms = \get_terms(
+			array(
+				'taxonomy'   => $taxonomy,
+				'hide_empty' => false,
+				'orderby'    => 'name',
+				'order'      => 'ASC',
+				'number'     => max( 1, min( 500, $limit ) ),
+			)
+		);
+
+		if ( \is_wp_error( $terms ) || ! \is_array( $terms ) ) {
+			return array();
+		}
+
+		$listed = array();
+
+		foreach ( $terms as $term ) {
+			if ( ! $term instanceof \WP_Term ) {
+				continue;
+			}
+
+			$listed[] = array(
+				'id'    => (int) $term->term_id,
+				'name'  => (string) $term->name,
+				'slug'  => (string) $term->slug,
+				'count' => (int) $term->count,
+			);
+		}
+
+		return $listed;
 	}
 
 	public function getTaxonomyTerms( int $id ): array {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // portable-text.test.ts — the Proposal 107 block-content schema: accept/
 // reject matrices for every custom type, the link-href safety walk (D3),
@@ -32,6 +33,12 @@ describe('portableText schema — accept', () => {
 		const blocks = parsePortableText([
 			{ _type: 'hero', title: 'Hero', lede: 'A lede' },
 			{ _type: 'image', src: 'https://example.com/a.png', alt: 'alt' },
+			{
+				_type: 'model3d',
+				src: '/models/sofa.glb',
+				poster: '/models/sofa.svg',
+				alt: 'Aurora sofa',
+			},
 			{ _type: 'productGrid', ids: [1, 2, 3] },
 			{ _type: 'promotion', promotionId: 4 },
 			{ _type: 'testimonial', quote: 'Great', author: 'A' },
@@ -54,7 +61,7 @@ describe('portableText schema — accept', () => {
 				],
 			},
 		]);
-		expect(blocks).toHaveLength(8);
+		expect(blocks).toHaveLength(9);
 	});
 
 	it('accepts tabs with nested custom blocks and a supplied _key', () => {

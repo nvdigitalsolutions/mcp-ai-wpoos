@@ -99,7 +99,14 @@ class Test_Slash_Command_Session extends WP_UnitTestCase {
 			}
 		);
 
-		$this->command->reset( array(), array(), array( 'user_id' => $this->subscriber_id, 'assistant_id' => 0 ) );
+		$this->command->reset(
+			array(),
+			array(),
+			array(
+				'user_id'      => $this->subscriber_id,
+				'assistant_id' => 0,
+			)
+		);
 		$this->assertTrue( $fired );
 	}
 

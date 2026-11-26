@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\ResolveApiTenant;
 use App\Support\CapabilityMap;
+use App\Support\Security\SecurityEventLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +21,19 @@ class SessionController
      */
     public function nonce(Request $request): JsonResponse
     {
+        // Reached without a session only when the caller is not a first-party
+        // console origin (Sanctum opens the session for those). Answer with the
+        // same shape as login rather than letting `session()` throw.
+        if (! $request->hasSession()) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'session_required',
+                    'message' => 'Session nonce requires a first-party console origin.',
+                ],
+            ], 419);
+        }
+
         return response()->json([
             'success' => true,
             'nonce' => (string) $request->session()->token(),
@@ -60,6 +75,14 @@ class SessionController
 
         $request->session()->regenerate();
 
+        // 149 §186 — a successful sign-in, recorded only when the operator turned
+        // `log_successful_auth` on. Failures are recorded by
+        // GuardFailedAuthentication, which sees the 401s this path never returns.
+        app(SecurityEventLogger::class)->recordSuccess(
+            $request,
+            (int) Auth::id()
+        );
+
         return $this->me($request);
     }
 
@@ -88,6 +111,26 @@ class SessionController
 
         $entitlement = app(ProEntitlementInterface::class);
 
+        // The estates this caller may act in, and the one the next request will
+        // resolve without a header (149 §21). Returning both here — rather than
+        // in the 409 body — keeps errors as errors: a client should not have to
+        // parse a failure to learn it needs to show a picker.
+        $estates = $user->tenants()
+            ->orderBy('tenants.name')
+            ->get()
+            ->map(static fn ($tenant): array => array(
+                'id' => (string) $tenant->getKey(),
+                'name' => (string) ($tenant->name ?? ''),
+                'slug' => (string) ($tenant->slug ?? ''),
+                'role' => (string) ($tenant->pivot->role ?? ''),
+                'is_operator' => (bool) ($tenant->is_operator ?? false),
+            ))
+            ->values()
+            ->all();
+
+        $selected = $request->header(ResolveApiTenant::HEADER);
+        $selected = is_string($selected) ? trim($selected) : '';
+
         return response()->json([
             'id' => (int) $user->getAuthIdentifier(),
             'login' => (string) ($user->email ?? $user->name ?? ''),
@@ -95,6 +138,10 @@ class SessionController
             'capabilities' => CapabilityMap::forUser($user),
             'plan' => $entitlement->plan(),
             'source' => $entitlement->source(),
+            'tenant' => '' !== $selected
+                ? $selected
+                : (1 === count($estates) ? $estates[0]['id'] : null),
+            'estates' => $estates,
         ]);
     }
 }

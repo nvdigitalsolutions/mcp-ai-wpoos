@@ -18,8 +18,10 @@ namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\ValueObject\FormatBytesRequest;
 use Nvoos\Core\Domain\ValueObject\ToolResult;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class FormatBytesTool extends AbstractResultTool
+class FormatBytesTool extends AbstractResultTool implements ToolCapabilityFlagsInterface
 {
     /**
      * Human-readable size units.
@@ -143,5 +145,18 @@ class FormatBytesTool extends AbstractResultTool
         }
 
         return sprintf("%.{$decimals}f %s", $value, $unit);
+    }
+
+    /**
+     * Capability flags — Proposal 149 §153.
+     *
+     * Pure in-process computation: no file, no service, no state. Same input,
+     * same output.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::PURE_LOCAL;
     }
 }

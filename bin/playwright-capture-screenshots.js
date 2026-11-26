@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Playwright Screenshot Capture Script for NV oOS Chat Interface
  * 

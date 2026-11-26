@@ -32,6 +32,7 @@
 		"start": "node server.js",
 		"smoke": "node scripts/smoke.mjs",
 		"record:fixtures": "node scripts/record-fixtures.mjs",
+		"optimize:model": "node scripts/optimize-glb.mjs",
 		"sync:bridge-fixtures": "node scripts/sync-bridge-fixtures.mjs",
 		"sync:dist": "node scripts/sync-dist.mjs"
 	},
@@ -77,6 +78,9 @@
 		"vitest": "^5.0.5"
 	},
 	"overrides": {
+		"fflate": ">=0.7.5 <0.8",
+		"minimatch@^10": ">=11.0.1 <12",
+		"minimatch@^9": ">=11.0.1 <12",
 		"tmp": ">=0.2.4",
 		"uuid": "^11.1.1",
 		"hono": ">=4.13.16 <5",

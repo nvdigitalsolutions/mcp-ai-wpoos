@@ -532,7 +532,12 @@ class Test_Typesafe_Client extends WP_UnitTestCase {
 
 				return array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.7 ) ) ) ),
+					'body'     => wp_json_encode(
+						array(
+							'model'   => 'jev-1.13.0',
+							'answers' => array( 'q' => array( 'noul' => 0.7 ) ),
+						)
+					),
 				);
 			},
 			10,
@@ -574,7 +579,12 @@ class Test_Typesafe_Client extends WP_UnitTestCase {
 
 				return array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.5 ) ) ) ),
+					'body'     => wp_json_encode(
+						array(
+							'model'   => 'jev-1.13.0',
+							'answers' => array( 'q' => array( 'noul' => 0.5 ) ),
+						)
+					),
 				);
 			},
 			10,
@@ -648,13 +658,26 @@ class Test_Typesafe_Client extends WP_UnitTestCase {
 
 				return array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.9 ) ) ) ),
+					'body'     => wp_json_encode(
+						array(
+							'model'   => 'jev-1.13.0',
+							'answers' => array( 'q' => array( 'noul' => 0.9 ) ),
+						)
+					),
 				);
 			},
 			10
 		);
 
-		$result = $this->client->decide( 'state', array( 'q' => array( 'type' => 'noul', 'instructions' => 'Yes?' ) ) );
+		$result = $this->client->decide(
+			'state',
+			array(
+				'q' => array(
+					'type'         => 'noul',
+					'instructions' => 'Yes?',
+				),
+			)
+		);
 
 		remove_all_filters( 'pre_http_request' );
 
@@ -682,7 +705,15 @@ class Test_Typesafe_Client extends WP_UnitTestCase {
 			10
 		);
 
-		$result = $this->client->decide( 'state', array( 'q' => array( 'type' => 'noul', 'instructions' => 'Yes?' ) ) );
+		$result = $this->client->decide(
+			'state',
+			array(
+				'q' => array(
+					'type'         => 'noul',
+					'instructions' => 'Yes?',
+				),
+			)
+		);
 
 		remove_all_filters( 'pre_http_request' );
 
@@ -699,7 +730,13 @@ class Test_Typesafe_Client extends WP_UnitTestCase {
 	 * Test decide() serves identical requests from the opt-in cache at zero cost.
 	 */
 	public function test_decide_serves_identical_requests_from_cache() {
-		update_option( 'wp_mcp_ai_settings', array( 'typesafe_api_key' => 'sk-ts-test', 'enable_typesafe_cache' => true ) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'typesafe_api_key'      => 'sk-ts-test',
+				'enable_typesafe_cache' => true,
+			)
+		);
 
 		$calls = 0;
 		add_filter(
@@ -709,13 +746,24 @@ class Test_Typesafe_Client extends WP_UnitTestCase {
 
 				return array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.9 ) ), 'usage' => array( 'input_tokens' => 50 ) ) ),
+					'body'     => wp_json_encode(
+						array(
+							'model'   => 'jev-1.13.0',
+							'answers' => array( 'q' => array( 'noul' => 0.9 ) ),
+							'usage'   => array( 'input_tokens' => 50 ),
+						)
+					),
 				);
 			},
 			10
 		);
 
-		$questions = array( 'q' => array( 'type' => 'noul', 'instructions' => 'Yes?' ) );
+		$questions = array(
+			'q' => array(
+				'type'         => 'noul',
+				'instructions' => 'Yes?',
+			),
+		);
 
 		$first  = $this->client->decide( 'state', $questions );
 		$second = $this->client->decide( 'state', $questions );
@@ -747,13 +795,23 @@ class Test_Typesafe_Client extends WP_UnitTestCase {
 
 				return array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.9 ) ) ) ),
+					'body'     => wp_json_encode(
+						array(
+							'model'   => 'jev-1.13.0',
+							'answers' => array( 'q' => array( 'noul' => 0.9 ) ),
+						)
+					),
 				);
 			},
 			10
 		);
 
-		$questions = array( 'q' => array( 'type' => 'noul', 'instructions' => 'Yes?' ) );
+		$questions = array(
+			'q' => array(
+				'type'         => 'noul',
+				'instructions' => 'Yes?',
+			),
+		);
 		$this->client->decide( 'state', $questions );
 		$this->client->decide( 'state', $questions );
 
@@ -767,7 +825,13 @@ class Test_Typesafe_Client extends WP_UnitTestCase {
 	 * Test decide() does not serve expired cache entries.
 	 */
 	public function test_decide_cache_respects_ttl() {
-		update_option( 'wp_mcp_ai_settings', array( 'typesafe_api_key' => 'sk-ts-test', 'enable_typesafe_cache' => true ) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'typesafe_api_key'      => 'sk-ts-test',
+				'enable_typesafe_cache' => true,
+			)
+		);
 		add_filter(
 			'wp_mcp_ai_typesafe_cache_ttl',
 			static function () {
@@ -783,13 +847,23 @@ class Test_Typesafe_Client extends WP_UnitTestCase {
 
 				return array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.9 ) ) ) ),
+					'body'     => wp_json_encode(
+						array(
+							'model'   => 'jev-1.13.0',
+							'answers' => array( 'q' => array( 'noul' => 0.9 ) ),
+						)
+					),
 				);
 			},
 			10
 		);
 
-		$questions = array( 'q' => array( 'type' => 'noul', 'instructions' => 'Yes?' ) );
+		$questions = array(
+			'q' => array(
+				'type'         => 'noul',
+				'instructions' => 'Yes?',
+			),
+		);
 		$this->client->decide( 'state', $questions );
 		$this->client->decide( 'state', $questions ); // Cache hit.
 		sleep( 2 );

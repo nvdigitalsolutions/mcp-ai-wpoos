@@ -18,6 +18,8 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Application\Provider;
 
+use Nvoos\Core\Domain\Contract\ModelRoutingCatalogueInterface;
+use Nvoos\Core\Domain\Contract\RoutingMetricsInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Infrastructure\Provider\AbstractProviderClient;
@@ -51,6 +53,25 @@ class ProviderRouter
      * @var array<string, int>
      */
     private array $cooldowns = array();
+
+    /**
+     * Optional model-routing catalogue (Proposal 149 §69-§70).
+     *
+     * When absent, a model-level failure goes straight to provider failover,
+     * which is the behaviour before the catalogue existed.
+     *
+     * @var ModelRoutingCatalogueInterface|null
+     */
+    private ?ModelRoutingCatalogueInterface $modelCatalogue = null;
+
+    /**
+     * Optional routing metrics sink (Proposal 149 §71).
+     *
+     * A fallback succeeds silently; this is where it stops being invisible.
+     *
+     * @var RoutingMetricsInterface|null
+     */
+    private ?RoutingMetricsInterface $metrics = null;
 
     /**
      * Default cooldown TTL when the provider sends no Retry-After.
@@ -110,6 +131,54 @@ class ProviderRouter
             }
         }
         $this->fallbackChain = $normalized;
+    }
+
+    /**
+     * Attach a model-routing catalogue (Proposal 149 §69).
+     *
+     * The catalogue answers two questions — "which servable sibling model may
+     * I retry on this provider?" and "does this provider publish this id?" —
+     * and the router asks them before abandoning a provider. Without one,
+     * behaviour is unchanged.
+     *
+     * @since 1.5.0
+     *
+     * @param ModelRoutingCatalogueInterface $catalogue Catalogue implementation.
+     * @return void
+     */
+    public function setModelCatalogue(ModelRoutingCatalogueInterface $catalogue): void
+    {
+        $this->modelCatalogue = $catalogue;
+    }
+
+    /**
+     * The attached model-routing catalogue, if any.
+     *
+     * @since 1.5.0
+     */
+    public function getModelCatalogue(): ?ModelRoutingCatalogueInterface
+    {
+        return $this->modelCatalogue;
+    }
+
+    /**
+     * Attach a metrics sink for fallback attempts (Proposal 149 §71).
+     *
+     * @since 1.7.0
+     */
+    public function setMetrics(RoutingMetricsInterface $metrics): void
+    {
+        $this->metrics = $metrics;
+    }
+
+    /**
+     * The attached metrics sink, if any.
+     *
+     * @since 1.7.0
+     */
+    public function getMetrics(): ?RoutingMetricsInterface
+    {
+        return $this->metrics;
     }
 
     /**
@@ -261,6 +330,13 @@ class ProviderRouter
                 $this->healthTracker->recordFailure($slug, $this->classifyError($result));
             }
 
+            // A single model can fail while its provider is healthy: retry the
+            // catalogue's servable sibling before giving up on the provider.
+            $modelFallback = $this->attemptModelFallback($messages, $options, $assistantConfig, $provider);
+            if (null !== $modelFallback) {
+                return $modelFallback;
+            }
+
             $fallback = $this->attemptFailover($messages, $options, $assistantConfig, $slug, null, $result);
             if (null !== $fallback) {
                 return $fallback;
@@ -304,6 +380,12 @@ class ProviderRouter
             if ($this->healthTracker) {
                 $this->healthTracker->recordFailure($slug, $this->classifyError($result));
             }
+
+            $modelFallback = $this->attemptModelFallback($messages, $options, $assistantConfig, $provider, $onChunk);
+            if (null !== $modelFallback) {
+                return $modelFallback;
+            }
+
             $fallback = $this->attemptFailover($messages, $options, $assistantConfig, $slug, $onChunk, $result);
             if (null !== $fallback) {
                 return $fallback;
@@ -409,6 +491,188 @@ class ProviderRouter
     }
 
     /**
+     * Retry the request on the same provider with the catalogue's fallback.
+     *
+     * Ordering is deliberate: a model-level retry is cheaper and safer than a
+     * provider hop — same auth, same response format, same billing account — so
+     * it runs first and the ordered provider chain only gets a turn when the
+     * sibling model fails too.
+     *
+     * Returns null when there is nothing to try: no catalogue, no explicit
+     * model, no servable sibling, or the sibling failed as well. In every one
+     * of those cases the caller continues with provider-level failover.
+     *
+     * @since 1.5.0
+     *
+     * @param array<int, array<string, mixed>> $messages        Chat messages.
+     * @param array<string, mixed>             $options         Request options.
+     * @param array<string, mixed>             $assistantConfig Assistant config.
+     * @param AbstractProviderClient           $provider        The client that just failed.
+     * @param callable|null                    $onChunk         Optional stream callback.
+     * @return mixed|null Fallback result, or null when there is no retry to make.
+     */
+    private function attemptModelFallback(
+        array $messages,
+        array $options,
+        array $assistantConfig,
+        AbstractProviderClient $provider,
+        ?callable $onChunk = null
+    ): mixed {
+        if (null === $this->modelCatalogue) {
+            return null;
+        }
+
+        $modelId = (string) ( $options['model'] ?? $assistantConfig['model'] ?? '' );
+
+        // Without an explicit model the provider is already using its own
+        // default; switching it would be a provider decision, not a model one.
+        if ('' === $modelId) {
+            return null;
+        }
+
+        $slug      = $provider->getProviderSlug();
+        $fallbackId = $this->modelCatalogue->fallbackFor($slug, $modelId);
+
+        // A catalogue that names the same id as its own fallback would loop.
+        if (null === $fallbackId || '' === $fallbackId || $fallbackId === $modelId) {
+            return null;
+        }
+
+        $fallbackOptions          = $options;
+        $fallbackOptions['model'] = $fallbackId;
+
+        $result = null !== $onChunk
+            ? $provider->stream($messages, $fallbackOptions, $onChunk)
+            : $provider->chat($messages, $fallbackOptions);
+
+        $succeeded = ! $this->isError($result);
+
+        // Counted before the caller sees the result, and never allowed to
+        // affect routing: the operator's view of fallbacks must not cost a
+        // request.
+        if (null !== $this->metrics) {
+            $this->metrics->recordModelFallback($slug, $modelId, $fallbackId, $succeeded);
+        }
+
+        if (! $succeeded) {
+            if ($this->healthTracker) {
+                $this->healthTracker->recordFailure($slug, $this->classifyError($result));
+            }
+
+            return null;
+        }
+
+        if ($this->healthTracker) {
+            $this->healthTracker->recordSuccess($slug, 0);
+        }
+
+        return $this->annotateRouting($result, $slug, $fallbackId, $options, 'model_fallback', 2);
+    }
+
+    /**
+     * Prepare request options for a hop to another provider.
+     *
+     * A model id is provider-scoped: `gpt-4o` is an OpenAI id, not a Gemini
+     * one, and carrying it into a fallback hop turns the failover into a second
+     * failure. When the catalogue positively knows the target does not publish
+     * the id, the override is dropped so the provider answers with its own
+     * default.
+     *
+     * `null` from the catalogue is "no opinion" and keeps the model: an
+     * unlisted id may be a deployment name, a fine-tune, or a model released
+     * after the last sync, and none of those should lose their override.
+     *
+     * @since 1.6.0
+     *
+     * @param array<string, mixed> $options Request options.
+     * @param string               $slug    Target provider slug.
+     * @return array<string, mixed>
+     */
+    private function optionsForProvider(array $options, string $slug): array
+    {
+        $modelId = (string) ( $options['model'] ?? '' );
+
+        if ('' === $modelId || null === $this->modelCatalogue) {
+            return $options;
+        }
+
+        if (false === $this->modelCatalogue->serves($slug, $modelId)) {
+            unset($options['model']);
+        }
+
+        return $options;
+    }
+
+    /**
+     * Record which provider and model actually answered, and what was asked.
+     *
+     * Every deviation from the request is annotated — a model fallback, an
+     * ordered-chain hop, health-based failover, an accepted cascade tier 1 —
+     * because both the caller and the billing path need to know who answered.
+     *
+     * The vocabulary follows the OpenTelemetry GenAI conventions: `requested_*`
+     * carries the meaning of `gen_ai.request.model`, while `provider` / `model`
+     * carry the meaning of `gen_ai.provider.name` and `gen_ai.response.model` —
+     * the pair that actually produced the answer. `via` and `attempt` mirror
+     * what gateways expose as attempted-fallback counters (LiteLLM's
+     * `x-litellm-attempted-fallbacks`), so an operator can tell a first-try
+     * answer from a rescued one.
+     *
+     * `provider` and `model` keep the names §69/§70 introduced, so a consumer
+     * that only wants the serving pair is unaffected by the extra keys.
+     *
+     * @since 1.6.0
+     *
+     * @param mixed                $result         Provider response.
+     * @param string               $provider       Serving provider slug.
+     * @param string|null          $model          Serving model id, when known.
+     * @param array<string, mixed> $requestOptions The options the caller supplied.
+     * @param string               $via            How the serving pair was chosen.
+     * @param int                  $attempt        1-based attempt that answered.
+     * @return mixed The response, annotated when it is a successful array.
+     */
+    protected function annotateRouting(
+        mixed $result,
+        string $provider,
+        ?string $model = null,
+        array $requestOptions = array(),
+        string $via = '',
+        int $attempt = 1
+    ): mixed {
+        if (! \is_array($result) || $this->isError($result)) {
+            return $result;
+        }
+
+        $routing = array( 'provider' => $provider );
+
+        if (null !== $model && '' !== $model) {
+            $routing['model'] = $model;
+        }
+
+        $requestedProvider = (string) ( $requestOptions['provider'] ?? '' );
+        if ('' !== $requestedProvider) {
+            $routing['requested_provider'] = $requestedProvider;
+        }
+
+        $requestedModel = (string) ( $requestOptions['model'] ?? '' );
+        if ('' !== $requestedModel) {
+            $routing['requested_model'] = $requestedModel;
+        }
+
+        if ('' !== $via) {
+            $routing['via'] = $via;
+        }
+
+        if ($attempt > 1) {
+            $routing['attempt'] = $attempt;
+        }
+
+        $result['_nvoos_routing'] = $routing;
+
+        return $result;
+    }
+
+    /**
      * Attempt provider failover when the primary provider fails.
      *
      * @since 1.2.5
@@ -433,7 +697,7 @@ class ProviderRouter
         $chain = $this->resolveFallbackCandidates($assistantConfig);
         if (! empty($chain)) {
             $this->coolDown($failedSlug, $this->retryAfterSeconds($failedResult));
-            return $this->attemptChain($messages, $options, $chain, $onChunk);
+            return $this->attemptChain($messages, $options, $chain, $onChunk, $failedSlug);
         }
 
         if (! $this->failoverEnabled() || null === $this->healthTracker) {
@@ -441,24 +705,44 @@ class ProviderRouter
         }
 
         $fallbacks = $this->healthTracker->getFallbackChain($failedSlug);
+        $from      = $failedSlug;
+        $attempt   = 2;
+
         foreach ($fallbacks as $fallback) {
             $fallbackProvider = $this->get($fallback['slug']);
             if (! $fallbackProvider) {
                 continue;
             }
 
+            $candidateOptions = $this->optionsForProvider($options, $fallback['slug']);
+
             if (null !== $onChunk) {
-                $result = $fallbackProvider->stream($messages, $options, $onChunk);
+                $result = $fallbackProvider->stream($messages, $candidateOptions, $onChunk);
             } else {
-                $result = $fallbackProvider->chat($messages, $options);
+                $result = $fallbackProvider->chat($messages, $candidateOptions);
             }
 
-            if (! $this->isError($result)) {
+            $succeeded = ! $this->isError($result);
+
+            if (null !== $this->metrics) {
+                $this->metrics->recordProviderHop($from, $fallback['slug'], $succeeded);
+            }
+
+            if ($succeeded) {
                 $this->healthTracker->recordSuccess($fallback['slug'], 0);
-                return $result;
+                return $this->annotateRouting(
+                    $result,
+                    $fallback['slug'],
+                    $candidateOptions['model'] ?? null,
+                    $options,
+                    'health_failover',
+                    $attempt
+                );
             }
 
             $this->healthTracker->recordFailure($fallback['slug'], $this->classifyError($result));
+            $from = $fallback['slug'];
+            ++$attempt;
         }
 
         return null;
@@ -473,10 +757,19 @@ class ProviderRouter
      * @param array<string, mixed>         $options  Request options.
      * @param string[]      $chain    Ordered provider slugs.
      * @param callable|null $onChunk  Optional stream callback.
+     * @param string        $failedSlug Provider that just failed.
      * @return mixed|null First successful result, or null when exhausted.
      */
-    private function attemptChain(array $messages, array $options, array $chain, ?callable $onChunk): mixed
-    {
+    private function attemptChain(
+        array $messages,
+        array $options,
+        array $chain,
+        ?callable $onChunk,
+        string $failedSlug
+    ): mixed {
+        $from    = $failedSlug;
+        $attempt = 2;
+
         foreach ($chain as $slug) {
             if ($this->isCooledDown($slug)) {
                 continue;
@@ -487,21 +780,38 @@ class ProviderRouter
                 continue;
             }
 
-            $result = null !== $onChunk
-                ? $provider->stream($messages, $options, $onChunk)
-                : $provider->chat($messages, $options);
+            $candidateOptions = $this->optionsForProvider($options, $slug);
 
-            if (! $this->isError($result)) {
+            $result = null !== $onChunk
+                ? $provider->stream($messages, $candidateOptions, $onChunk)
+                : $provider->chat($messages, $candidateOptions);
+
+            $succeeded = ! $this->isError($result);
+
+            if (null !== $this->metrics) {
+                $this->metrics->recordProviderHop($from, $slug, $succeeded);
+            }
+
+            if ($succeeded) {
                 if ($this->healthTracker) {
                     $this->healthTracker->recordSuccess($slug, 0);
                 }
-                return $result;
+                return $this->annotateRouting(
+                    $result,
+                    $slug,
+                    $candidateOptions['model'] ?? null,
+                    $options,
+                    'provider_fallback',
+                    $attempt
+                );
             }
 
             if ($this->healthTracker) {
                 $this->healthTracker->recordFailure($slug, $this->classifyError($result));
             }
             $this->coolDown($slug, $this->retryAfterSeconds($result));
+            $from = $slug;
+            ++$attempt;
         }
 
         return null;

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import manifest from '../../nvoos.json';
@@ -84,12 +85,19 @@ export const GET: APIRoute = async ({ site }) => {
 
 	if (site) {
 		entries.push({ loc: new URL('/', site).href });
-		entries.push({ loc: new URL('/posts/', site).href });
-		if (hasProducts) {
+		// A collection INDEX is advertised only when it has entries: an empty
+		// `/posts/` is a thin page Search Console reports as "crawled — currently
+		// not indexed" (krishandramikasavethe.world ships a pages-only site).
+		if (posts.length > 0) {
+			entries.push({ loc: new URL('/posts/', site).href });
+		}
+		if (hasProducts && products.length > 0) {
 			entries.push({ loc: new URL('/products/', site).href });
 		}
-		for ( const collection of extraCollections ) {
-			entries.push( { loc: new URL( `${ baseOf( collection ) }/`, site ).href } );
+		for ( const group of extraEntries ) {
+			if ( group.items.length > 0 ) {
+				entries.push( { loc: new URL( `${ group.base }/`, site ).href } );
+			}
 		}
 	}
 	for (const post of posts) {

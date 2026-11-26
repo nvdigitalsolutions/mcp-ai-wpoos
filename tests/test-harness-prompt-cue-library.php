@@ -24,6 +24,9 @@ class Test_Harness_Prompt_Cue_Library extends WP_UnitTestCase {
 		WP_MCP_AI_Prompt_Cue_Library::get_instance()->reset();
 	}
 
+	/**
+	 * The default cues are seeded on boot.
+	 */
 	public function test_default_cues_are_seeded() {
 		$lib  = WP_MCP_AI_Prompt_Cue_Library::get_instance();
 		$cues = $lib->all();
@@ -33,6 +36,9 @@ class Test_Harness_Prompt_Cue_Library extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'cite_or_abstain', $cues );
 	}
 
+	/**
+	 * Registering a cue and reading it back round-trips.
+	 */
 	public function test_register_then_get_round_trip() {
 		$lib = WP_MCP_AI_Prompt_Cue_Library::get_instance();
 		$lib->register(
@@ -50,6 +56,9 @@ class Test_Harness_Prompt_Cue_Library extends WP_UnitTestCase {
 		$this->assertContains( 'qa', $cue['task_classes'] );
 	}
 
+	/**
+	 * Registering an empty template is rejected.
+	 */
 	public function test_register_rejects_empty_template() {
 		$lib    = WP_MCP_AI_Prompt_Cue_Library::get_instance();
 		$result = $lib->register(
@@ -63,6 +72,9 @@ class Test_Harness_Prompt_Cue_Library extends WP_UnitTestCase {
 		$this->assertNull( $lib->get( 'no_template' ) );
 	}
 
+	/**
+	 * Applying a cue prepends it and keeps the original prompt.
+	 */
 	public function test_apply_prepends_cue_and_preserves_original() {
 		$lib            = WP_MCP_AI_Prompt_Cue_Library::get_instance();
 		$original       = 'You are a helpful assistant. Always be polite.';
@@ -72,6 +84,9 @@ class Test_Harness_Prompt_Cue_Library extends WP_UnitTestCase {
 		$this->assertStringEndsWith( $original, $augmented );
 	}
 
+	/**
+	 * Applying an unknown cue returns the original prompt.
+	 */
 	public function test_apply_with_unknown_cue_returns_original() {
 		$lib       = WP_MCP_AI_Prompt_Cue_Library::get_instance();
 		$original  = 'You are a helpful assistant.';
@@ -79,6 +94,9 @@ class Test_Harness_Prompt_Cue_Library extends WP_UnitTestCase {
 		$this->assertSame( $original, $augmented );
 	}
 
+	/**
+	 * Applying a cue handles an empty system prompt.
+	 */
 	public function test_apply_handles_empty_system_prompt() {
 		$lib       = WP_MCP_AI_Prompt_Cue_Library::get_instance();
 		$augmented = $lib->apply( '', array( 'chain_of_thought' ) );
@@ -86,6 +104,9 @@ class Test_Harness_Prompt_Cue_Library extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'step by step', strtolower( $augmented ) );
 	}
 
+	/**
+	 * Selection returns a cue for a known task class.
+	 */
 	public function test_select_returns_a_cue_for_known_task_class() {
 		$lib = WP_MCP_AI_Prompt_Cue_Library::get_instance();
 		$cue = $lib->select( 'math' );
@@ -93,6 +114,9 @@ class Test_Harness_Prompt_Cue_Library extends WP_UnitTestCase {
 		$this->assertContains( 'math', $cue['task_classes'] );
 	}
 
+	/**
+	 * The selection filter can force a specific cue.
+	 */
 	public function test_select_filter_can_force_cue() {
 		$called = array();
 		add_filter(
@@ -110,6 +134,9 @@ class Test_Harness_Prompt_Cue_Library extends WP_UnitTestCase {
 		remove_all_filters( 'wp_mcp_ai_select_prompt_cue' );
 	}
 
+	/**
+	 * Listing cues filters by task class.
+	 */
 	public function test_list_cues_filters_by_task_class() {
 		$lib    = WP_MCP_AI_Prompt_Cue_Library::get_instance();
 		$math   = $lib->list_cues( 'math' );
@@ -127,6 +154,9 @@ class Test_Harness_Prompt_Cue_Library extends WP_UnitTestCase {
  */
 class Test_Harness_Profile extends WP_UnitTestCase {
 
+	/**
+	 * Every layer is off by default.
+	 */
 	public function test_defaults_are_off() {
 		$d = WP_MCP_AI_Harness_Profile::defaults();
 		$this->assertFalse( $d['enabled'] );
@@ -137,6 +167,9 @@ class Test_Harness_Profile extends WP_UnitTestCase {
 		$this->assertSame( 'fixed', $d['tools']['router'] );
 	}
 
+	/**
+	 * Sanitising clamps n_samples to the documented maximum.
+	 */
 	public function test_sanitize_clamps_n_samples_to_max() {
 		$p = WP_MCP_AI_Harness_Profile::sanitize(
 			array(
@@ -151,32 +184,50 @@ class Test_Harness_Profile extends WP_UnitTestCase {
 		$this->assertSame( WP_MCP_AI_Harness_Profile::MAX_REASONING_SAMPLES, $p['reasoning']['n_samples'] );
 	}
 
+	/**
+	 * Sanitising rejects an unknown router.
+	 */
 	public function test_sanitize_rejects_unknown_router() {
 		$p = WP_MCP_AI_Harness_Profile::sanitize( array( 'tools' => array( 'router' => 'magic' ) ) );
 		$this->assertSame( 'fixed', $p['tools']['router'] );
 	}
 
+	/**
+	 * Sanitising accepts the scored router.
+	 */
 	public function test_sanitize_accepts_scored_router() {
 		$p = WP_MCP_AI_Harness_Profile::sanitize( array( 'tools' => array( 'router' => 'scored' ) ) );
 		$this->assertSame( 'scored', $p['tools']['router'] );
 	}
 
+	/**
+	 * Sanitising clamps negative cost ceilings to zero.
+	 */
 	public function test_sanitize_clamps_cost_ceiling_negatives() {
 		$p = WP_MCP_AI_Harness_Profile::sanitize( array( 'cost_ceiling_usd' => -5.0 ) );
 		$this->assertSame( 0.0, $p['cost_ceiling_usd'] );
 	}
 
+	/**
+	 * Sanitising caps an excessive cost ceiling.
+	 */
 	public function test_sanitize_caps_cost_ceiling_high() {
 		$p = WP_MCP_AI_Harness_Profile::sanitize( array( 'cost_ceiling_usd' => 99999 ) );
 		$this->assertSame( 1000.0, $p['cost_ceiling_usd'] );
 	}
 
+	/**
+	 * Sanitising decodes a JSON string payload.
+	 */
 	public function test_sanitize_decodes_json_string() {
 		$p = WP_MCP_AI_Harness_Profile::sanitize( '{"enabled":true,"cues":["chain_of_thought"]}' );
 		$this->assertTrue( $p['enabled'] );
 		$this->assertSame( array( 'chain_of_thought' ), $p['cues'] );
 	}
 
+	/**
+	 * Saving and reading per-assistant settings round-trips.
+	 */
 	public function test_save_and_get_round_trip_for_assistant() {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
@@ -197,6 +248,9 @@ class Test_Harness_Profile extends WP_UnitTestCase {
 		$this->assertSame( array( 'chain_of_thought', 'cite_or_abstain' ), $loaded['cues'] );
 	}
 
+	/**
+	 * Saving is rejected when the user lacks the capability.
+	 */
 	public function test_save_rejects_when_user_lacks_capability() {
 		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
@@ -207,6 +261,9 @@ class Test_Harness_Profile extends WP_UnitTestCase {
 		$this->assertFalse( $ok );
 	}
 
+	/**
+	 * A layer is disabled while the master switch is off.
+	 */
 	public function test_is_layer_enabled_respects_master_switch() {
 		$p_off = WP_MCP_AI_Harness_Profile::sanitize(
 			array(
@@ -228,6 +285,9 @@ class Test_Harness_Profile extends WP_UnitTestCase {
 		remove_all_filters( 'wp_mcp_ai_harness_profile' );
 	}
 
+	/**
+	 * A layer is enabled once the master switch is on.
+	 */
 	public function test_is_layer_enabled_when_master_switch_on() {
 		$p_on = WP_MCP_AI_Harness_Profile::sanitize(
 			array(

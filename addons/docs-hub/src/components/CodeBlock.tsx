@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * CodeBlock — syntax-highlighted code block with a language badge and copy button.
  *

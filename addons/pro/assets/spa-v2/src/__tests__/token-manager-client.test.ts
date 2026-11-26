@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * TokenManagerClient contract tests (fetch mocked).
  */

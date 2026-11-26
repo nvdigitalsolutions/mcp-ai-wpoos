@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! PDFium access layer for the document pipeline (Proposal 109, D1/D2).
 //!
 //! Runtime-dynamic binding: the `pdfium.dll` / `libpdfium.dylib` is loaded

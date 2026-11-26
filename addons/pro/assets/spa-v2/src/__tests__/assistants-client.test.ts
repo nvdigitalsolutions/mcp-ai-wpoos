@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * AssistantsClient contract tests (fetch mocked) — the console edit flow.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Storage integration tests: history CRUD, dictionary, meetings, kv.
 
 use nvoos_dictate_lib::storage::Db;

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // vault.test.ts — Phase 3.1: encrypted credential store, masking, fail-closed
 // behavior. All fixtures live in a temp dir; nothing touches the user home.

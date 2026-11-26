@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Support\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
@@ -88,6 +89,11 @@ class WorkflowRunTest extends TestCase
         $this->assertSame(1, (int) $run->tool_calls);
         $this->assertNotNull($run->finished_at);
         $this->assertNotNull($run->duration);
+
+        // 149 §18 — the run records the estate that executed it. Without this the
+        // read-only /admin list cannot be scoped, and the console would show
+        // every estate's per-node payload.
+        $this->assertSame(TenantContext::current(), (string) $run->tenant_id);
     }
 
     public function test_a_missing_tool_fails_the_run_and_records_the_node_error(): void

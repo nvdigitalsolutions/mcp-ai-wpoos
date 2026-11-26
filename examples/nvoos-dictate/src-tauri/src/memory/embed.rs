@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Embedder implementations (Proposal 127).
 //!
 //! `MockEmbedder` (always compiled) backs the test suite with deterministic

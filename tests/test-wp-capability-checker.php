@@ -139,7 +139,7 @@ class Test_WP_MCP_AI_WP_Capability_Checker extends WP_UnitTestCase {
 	}
 
 	/**
-	 * current_user_can() returns a boolean, not a truthy/falsy mixed value.
+	 * Current_user_can() returns a boolean, not a truthy/falsy mixed value.
 	 */
 	public function test_current_user_can_returns_bool_for_admin() {
 		wp_set_current_user( $this->admin_id );
@@ -149,7 +149,7 @@ class Test_WP_MCP_AI_WP_Capability_Checker extends WP_UnitTestCase {
 	}
 
 	/**
-	 * current_user_can() returns a boolean for subscriber.
+	 * Current_user_can() returns a boolean for subscriber.
 	 */
 	public function test_current_user_can_returns_bool_for_subscriber() {
 		wp_set_current_user( $this->subscriber_id );
@@ -159,7 +159,7 @@ class Test_WP_MCP_AI_WP_Capability_Checker extends WP_UnitTestCase {
 	}
 
 	/**
-	 * current_user_can() respects a capability that includes extra object args
+	 * Current_user_can() respects a capability that includes extra object args
 	 * (e.g. editing a specific post by ID).
 	 */
 	public function test_current_user_can_with_post_id_arg() {
@@ -211,7 +211,7 @@ class Test_WP_MCP_AI_WP_Capability_Checker extends WP_UnitTestCase {
 	}
 
 	/**
-	 * user_can() with a non-existent user ID returns false rather than
+	 * User_can() with a non-existent user ID returns false rather than
 	 * throwing an exception.
 	 */
 	public function test_user_can_returns_false_for_nonexistent_user() {
@@ -221,7 +221,7 @@ class Test_WP_MCP_AI_WP_Capability_Checker extends WP_UnitTestCase {
 	}
 
 	/**
-	 * user_can() returns false for user ID 0 (unauthenticated sentinel).
+	 * User_can() returns false for user ID 0 (unauthenticated sentinel).
 	 */
 	public function test_user_can_returns_false_for_user_id_zero() {
 		$result = $this->checker->user_can( 0, 'edit_posts' );
@@ -230,7 +230,7 @@ class Test_WP_MCP_AI_WP_Capability_Checker extends WP_UnitTestCase {
 	}
 
 	/**
-	 * user_can() is independent of the currently logged-in user.
+	 * User_can() is independent of the currently logged-in user.
 	 *
 	 * Confirms that checking a subscriber's capabilities while an admin is
 	 * logged in correctly reflects the subscriber's permissions, not the
@@ -247,7 +247,7 @@ class Test_WP_MCP_AI_WP_Capability_Checker extends WP_UnitTestCase {
 	}
 
 	/**
-	 * user_can() returns a boolean, not a truthy/falsy mixed value.
+	 * User_can() returns a boolean, not a truthy/falsy mixed value.
 	 */
 	public function test_user_can_returns_bool() {
 		$result = $this->checker->user_can( $this->admin_id, 'manage_options' );
@@ -256,7 +256,7 @@ class Test_WP_MCP_AI_WP_Capability_Checker extends WP_UnitTestCase {
 	}
 
 	/**
-	 * user_can() respects extra object args (e.g. editing a specific post).
+	 * User_can() respects extra object args (e.g. editing a specific post).
 	 */
 	public function test_user_can_with_post_id_arg() {
 		$post_id = $this->factory->post->create( array( 'post_author' => $this->admin_id ) );

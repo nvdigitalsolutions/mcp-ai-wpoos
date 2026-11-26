@@ -127,9 +127,9 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['registration_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Registration ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Registration ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -138,9 +138,10 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 		// Verify registration exists.
 		$registration = get_post( $registration_id );
 		if ( ! $registration || 'mcp_ai_registration' !== $registration->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Registration not found.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Registration not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'registration_id' => $registration_id )
 			);
 		}
 
@@ -152,9 +153,10 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 		// Get product details.
 		$product = get_post( $product_id );
 		if ( ! $product ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Associated product not found.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Associated product not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'product_id' => $product_id )
 			);
 		}
 
@@ -184,10 +186,10 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 
 		$missing_docs = array_diff( $required_docs, $existing_types );
 		if ( ! empty( $missing_docs ) ) {
-			return array(
-				'success'           => false,
-				'error'             => __( 'Cannot generate submission pack. Missing required documents.', 'mcp-ai-wpoos-pro' ),
-				'missing_documents' => array_values( $missing_docs ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_required',
+				__( 'Cannot generate submission pack. Missing required documents.', 'mcp-ai-wpoos-pro' ),
+				array( 'missing_documents' => array_values( $missing_docs ) )
 			);
 		}
 

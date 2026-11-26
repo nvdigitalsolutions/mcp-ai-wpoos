@@ -122,9 +122,9 @@ class WP_MCP_AI_Tool_Get_Reg_Document implements WP_MCP_AI_Tool_Interface, WP_MC
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['document_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Document ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Document ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -133,9 +133,10 @@ class WP_MCP_AI_Tool_Get_Reg_Document implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Get document.
 		$document = get_post( $document_id );
 		if ( ! $document || 'mcp_ai_reg_document' !== $document->post_type ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Document not found.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Document not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'document_id' => $document_id )
 			);
 		}
 

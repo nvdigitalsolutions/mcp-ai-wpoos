@@ -111,6 +111,9 @@ derivative, so every cold rebuild loses a different set of images and fonts
 
 # 2. Freeze the localizer's work beside the profile.
 node scripts/forge.mjs media-snapshot sites/<name>.json --from ./my-frontend
+#    Add --strict in CI: two advisory traps (a sheet snapshotted without its
+#    SOURCE text, and origin assets the report never localized) become exit 1.
+#    The snapshot is still written, so a red run leaves something to inspect.
 # → sites/<name>.media/{manifest.json,media/…}
 
 # 3. Make the snapshot authoritative and rebuild anywhere.
@@ -124,6 +127,25 @@ sheet's relative font URLs again instead of chasing its own `/media/…`
 rewrites. A missing `media/` file is reported, never silently trusted. The
 scaffold refuses `media.snapshot: true` when the directory is absent.
 
+Two source documents may share a slug (page slugs are unique among siblings
+only). The writer publishes one on the bare slug and suffixes the rest
+(`team.mdx` + `team-3.mdx`, starting at `-2`, never shadowing a real `team-2`),
+writes the suffixed value into the frontmatter `slug` too, and keeps the source
+slug as `slugRenamedFrom` for the redirect map and hybrid merges. The loader
+still keys both by the numeric id, so nothing is overwritten. The keeper is
+deterministic (the document whose own link is `/<slug>/`, else the lowest id),
+so a re-materialize is a stable diff. `verify`'s `route keys` gate still fails a
+collision that was NOT captured — hand-written MDX, a live CMS publishing one
+slug twice, or a case variant.
+
+Freeze the snapshot **after** the `content.source: materialized` switch. A
+materialized profile no longer authorizes the retired CMS as an image host, so
+SmartImage renders a plain `<img>` and the localizer sees every image; a
+snapshot taken from an image-optimized build misses the assets Astro consumed
+(virtuallysrilanka: 26 → 29 URLs, and the three heroes had no entry).
+`media-snapshot` now warns about both the stale-sheet trap and uncovered origin
+assets.
+
 Content the site **owns** (not mirrored from the source WordPress) lives in the
 bridge's local CPT and is read with a normal collection — `restBase` is optional
 for it:
@@ -135,6 +157,16 @@ for it:
 `optional: true` turns a missing collection into an empty one instead of failing
 the build. Local documents are slug-authoritative: renaming the title does not
 move the URL.
+
+Hand-written files in `src/content/<collection>/` fill the gaps while
+WordPress stays authoritative. A local file whose slug matches a WordPress
+document is **dropped with a warning** unless it declares `override: true` — and
+an override of an id-routed collection (posts, products, CPTs) must also carry
+`id: <wp-id>`, because the route is `/<base>/<id>/<slug>/` and overriding
+without it would move a live URL. Set `build.strictRoutes: true` to make an
+exact duplicate slug a build failure instead of a warning (it writes
+`prerenderConflictBehavior: "error"`), and run `forge verify` — its `route keys`
+gate fails when the content store still holds two entries for one URL.
 
 A `managed` site also gets `/api/preview` and `/preview/<slug>/`. The `/manage`
 SPA mints the link (`POST /local/<id>/preview-token`), the forged app stores the

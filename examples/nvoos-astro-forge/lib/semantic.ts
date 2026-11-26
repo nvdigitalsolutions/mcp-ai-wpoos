@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // semantic.ts — the builder-structure classifier (Proposal 114 P2).
 //
@@ -106,7 +107,68 @@ export interface LinkRef {
 
 export interface SectionItem {
 	title?: string;
+	/**
+	 * The heading LEVEL the item's title came from (2–6). A multi-column band
+	 * spreads real `h2` headings across its lanes, and the band's measured type
+	 * rule is scoped to that level — an item rendered at a different level never
+	 * matches it (virtuallysrilanka's services columns stayed at the template's
+	 * default size). Absent → the component's own default.
+	 */
+	titleLevel?: number;
+	/**
+	 * The SOURCE COLUMN this item came from, when the band is a column grid.
+	 *
+	 * A lane can hold a surface and no content (a photo column painted as a CSS
+	 * background), and `columnItems` skips those so no empty card is emitted —
+	 * but then the remaining items no longer line up with `design.sections[].columns`
+	 * and a three-column band rebuilt as two lanes with none of its surfaces.
+	 * The index is what lets the grid place and paint the lanes faithfully.
+	 */
+	columnIndex?: number;
 	body?: string;
+	/**
+	 * A BOLD lead-in that opens `body` (the source's `<strong>` run).
+	 *
+	 * A builder opens most copy blocks with one — the accordion panel is
+	 * `<p><strong>Advertise Your Business</strong> with your own Wi-Fi Start
+	 * Page…` — and flattening the panel to `textContent` printed it as ordinary
+	 * copy, so the para lost the only thing distinguishing its first clause
+	 * (virtuallysrilanka's features band, 2026-11-20). Plain text, never markup:
+	 * the template wraps it in its own `<strong>`, so nothing is injected.
+	 */
+	lead?: string;
+	/**
+	 * The card's copy as SEPARATE paragraphs, when the source publishes more than
+	 * one.
+	 *
+	 * `body` joins them with a space so the card still has one string, but a
+	 * builder's services panel is four distinct paragraphs 20px apart — joined,
+	 * they render as one block of prose and the card reads as a wall of text
+	 * (virtuallysrilanka's black services column, 2026-11-20).
+	 */
+	paragraphs?: string[];
+	/**
+	 * The card's BULLET LIST — a list the CARD carries, not items beside it.
+	 *
+	 * A builder publishes one as `<ul class="elementor-icon-list-items">
+	 * <li class="elementor-icon-list-item"><span class="elementor-icon-list-text">
+	 * Branding &amp; SSO setup</span></li>…`. `iconListItems` turns each ENTRY into a
+	 * card when the list IS the band, which is right for an icon-list section and
+	 * wrong inside a card: the column path then dropped the entries entirely.
+	 * eca.directory's phased-delivery band lost 17 entries this way — its largest
+	 * text loss (2026-11-23), still missing after `iconListItems` shipped because
+	 * `columnItems` replaced the items it had found (2026-11-24).
+	 */
+	bullets?: string[];
+	/**
+	 * A small label that sits ABOVE the card's title in the source — Elementor’s
+	 * `h3` “Phase 1” over its icon-box title “Pilot Setup”.
+	 *
+	 * Order is copy: printed after the title the shingles no longer match the
+	 * source (“phase 1 pilot” vanished from eca.directory’s coverage report,
+	 * 2026-11-24). Absent → no kicker.
+	 */
+	kicker?: string;
 	media?: MediaRef;
 	links?: LinkRef[];
 	/** The item renders with an icon marker (icon-list family). */
@@ -172,6 +234,8 @@ export interface SemanticSection {
 	confidence: 'high' | 'medium' | 'low';
 	slots: {
 		title?: string;
+		/** The source heading level the title came from (`title` is an h1 at 1). */
+		titleLevel?: number;
 		body?: string[];
 		media?: MediaRef[];
 		items?: SectionItem[];
@@ -206,6 +270,17 @@ export interface SemanticSection {
 	marquee?: { items: MarqueeItem[]; speed?: string };
 	/** Comparison band: columns then rows; `values` align to the columns. */
 	comparison?: { columns: string[]; rows: ComparisonRow[]; caption?: string };
+	/**
+	 * The band renders a DYNAMIC LIST — a query loop (Elementor's Posts /
+	 * Portfolio widget), not authored cards.
+	 *
+	 * Recorded because the two cases need different empty states: an authored
+	 * grid with no cards is a classification miss, while a query loop with no
+	 * published cards is the CMS honestly having nothing. The renderer also uses
+	 * it to keep a loop band's empty state to its own COPY instead of inventing
+	 * placeholder tiles.
+	 */
+	dynamicList?: boolean;
 }
 
 /** classifyHtml options (the generated renderer passes the manifest's
@@ -271,6 +346,12 @@ function childrenOf( node: HNode ): HNode[] {
 // -- elementor + block signatures --------------------------------------------
 
 const ELEMENTOR_SECTION = /(^|\s)elementor-section(\s|$)/;
+// Elementor's flexbox containers (≥3.16, the default since 3.19) replaced top
+// sections: a TOP-LEVEL container is `.e-con.e-parent`, and the nested ones
+// are `.e-con.e-child`. Without this, every container-built page collapsed to
+// ONE band plus a form section (eca.directory, 2026-11-23: a 7-band home page
+// classified as a single `form`).
+const ELEMENTOR_CONTAINER_BAND = /(^|\s)e-parent(\s|$)/;
 const ELEMENTOR_WIDGET = /(^|\s)elementor-widget(\s|$)/;
 const WIDGET_NAME_RE = /elementor-widget-([\w-]+)/;
 const WP_BLOCK = /(^|\s)wp-block-([\w-]+)(\s|$)/;
@@ -286,7 +367,7 @@ const WPB_ROW = /(^|\s)(?:vc_row|wpb_row)(?:[\s-]|$)/;
  * they classify as `content` (slots merge, the section shape decides the
  * kind) and the operator can pin them per-profile via `widgetRoles`.
  */
-export type WidgetRole = { kind: 'title' | 'body' | 'media' | 'links' | 'feature' | 'icon-item' | 'quote' | 'gallery' | 'form' | 'accordion' | 'content' };
+export type WidgetRole = { kind: 'title' | 'body' | 'media' | 'links' | 'feature' | 'icon-item' | 'quote' | 'gallery' | 'form' | 'accordion' | 'list' | 'content' };
 export type BlockRole = { kind: 'title' | 'body' | 'media' | 'links' | 'quote' | 'gallery' | 'container' | 'content' };
 
 /** The seeded widget dictionary (exported for the learn/report surface). */
@@ -318,6 +399,48 @@ export const SEEDED_WIDGET_ROLES: Record<string, WidgetRole> = {
 	// expanded to 2987px).
 	accordion: { kind: 'accordion' },
 	'toggle': { kind: 'accordion' },
+	// A tab set is an accordion with a different control: its pane TITLES are
+	// links the flat merge would collect as buttons and its panes are body copy.
+	// Fewer than two panes falls through to the normal path (see `accordionEntries`).
+	tabs: { kind: 'accordion' },
+	// DYNAMIC LISTS. Their cards come from a query, not from the markup, so the
+	// role only NAMES the band: `SectionItem`s still come from the rendered
+	// cards, but the renderer can now tell that a band is a post/portfolio loop
+	// (and render its empty state instead of a placeholder card). A `list` role
+	// deliberately does NOT force `low` confidence the way `content` does — a
+	// posts band is a recognised widget, not an unknown one.
+	posts: { kind: 'list' },
+	portfolio: { kind: 'list' },
+	// Elementor Free widgets that were unseeded: an unseeded name resolves to
+	// `content`, which (a) flattens the widget's own structure and (b) forces
+	// the band to `low` confidence by the `effectiveConfidence` rule.
+	'star-rating': { kind: 'feature' },
+	video: { kind: 'media' },
+	google_maps: { kind: 'media' },
+	'social-icons': { kind: 'links' },
+	'text-path': { kind: 'body' },
+	// Elementor Pro widgets.
+	'nav-menu': { kind: 'links' },
+	'search-form': { kind: 'form' },
+	login: { kind: 'form' },
+	'share-buttons': { kind: 'links' },
+	'paypal-button': { kind: 'links' },
+	'stripe-button': { kind: 'links' },
+	countdown: { kind: 'feature' },
+	rating: { kind: 'feature' },
+	'price-table': { kind: 'feature' },
+	'price-list': { kind: 'feature' },
+	'animated-headline': { kind: 'title' },
+	gallery: { kind: 'gallery' },
+	slides: { kind: 'gallery' },
+	// Theme-builder widgets: a header/footer/archive template renders through
+	// these, and their copy belongs to the slot the name says.
+	'theme-site-logo': { kind: 'media' },
+	'theme-site-title': { kind: 'title' },
+	'theme-post-title': { kind: 'title' },
+	'theme-archive-title': { kind: 'title' },
+	'theme-post-content': { kind: 'body' },
+	'theme-post-featured-image': { kind: 'media' },
 	// Phlox Pro / Auxin widget family (jayainc's live vocabulary, 2026-11-06
 	// run) — same Elementor widget-class contract, vendor-prefixed names.
 	aux_modern_heading: { kind: 'title' },
@@ -377,6 +500,88 @@ function trimmed( value: string ): string {
 	return value.replace( /\s+/g, ' ' ).trim();
 }
 
+/** Words in a string (whitespace-separated runs). */
+function wordCount( text: string ): number {
+	const clean = text.trim();
+	return clean.length === 0 ? 0 : clean.split( /\s+/ ).length;
+}
+
+/**
+ * Which slots each RENDERED kind actually paints.
+ *
+ * Mirrors the template's design components (`templates/blog/src/components/design/`
+ * read `section.slots` directly). A kind that does not read a slot SILENTLY
+ * DROPS its words: eca.directory's “Explore Our Activities” band classified as a
+ * `cta`, which renders title + links only, so an icon-box's three paragraphs
+ * vanished. Kept as data so the fidelity guard in `classifyRegion` can measure
+ * what a component will actually put on the page. An unlisted kind (the
+ * structural six) renders its own payload and is never demoted.
+ */
+const RENDERED_SLOTS: Partial< Record< SectionKind, Array< 'title' | 'body' | 'items' | 'links' | 'media' > > > = {
+	hero: [ 'title', 'body', 'media', 'links' ],
+	cta: [ 'title', 'links' ],
+	'feature-grid': [ 'title', 'body', 'items', 'links' ],
+	'icon-list': [ 'title', 'body', 'items', 'media', 'links' ],
+	testimonial: [ 'title', 'body', 'items', 'links' ],
+	'logo-cloud': [ 'title', 'media', 'items', 'links' ],
+	gallery: [ 'title', 'media', 'links' ],
+	text: [ 'title', 'body', 'media', 'links' ],
+	accordion: [ 'title', 'body', 'media', 'items', 'links' ],
+};
+
+/**
+ * The words a section's SLOTS carry — optionally restricted to the slots its
+ * RENDERED kind will paint.
+ *
+ * Compared against the band's source text to catch a confident-but-wrong kind:
+ * the shape ladder can see a heading and a button, call the band a `cta`, and
+ * discard the paragraphs it was never shaped for (see the guard in
+ * `classifyRegion`).
+ */
+function slotWordCount(
+	slots: SemanticSection[ 'slots' ],
+	rendered: Array< 'title' | 'body' | 'items' | 'links' | 'media' > = [ 'title', 'body', 'items', 'links', 'media' ]
+): number {
+	const parts: string[] = [];
+	if ( rendered.includes( 'title' ) && slots.title ) {
+		parts.push( slots.title );
+	}
+	if ( rendered.includes( 'body' ) ) {
+		for ( const paragraph of slots.body ?? [] ) {
+			parts.push( paragraph );
+		}
+	}
+	if ( rendered.includes( 'items' ) ) {
+		for ( const item of slots.items ?? [] ) {
+			if ( item.kicker ) {
+				parts.push( item.kicker );
+			}
+			if ( item.title ) {
+				parts.push( item.title );
+			}
+			if ( item.body ) {
+				parts.push( item.body );
+			}
+			// The card's LIST renders (`.ds-card-bullets`); leaving it out made a band
+			// whose words are mostly bullets look lossy to the fidelity guard.
+			for ( const bullet of item.bullets ?? [] ) {
+				parts.push( bullet );
+			}
+			if ( item.author ) {
+				parts.push( item.author );
+			}
+		}
+	}
+	if ( rendered.includes( 'links' ) ) {
+		for ( const link of slots.links ?? [] ) {
+			if ( link.text ) {
+				parts.push( link.text );
+			}
+		}
+	}
+	return wordCount( parts.join( ' ' ) );
+}
+
 /** First descendant matching a predicate (depth-first). */
 function findDescendant( node: HNode, predicate: ( node: HNode ) => boolean ): HNode | undefined {
 	if ( predicate( node ) ) {
@@ -422,6 +627,27 @@ interface HeadingCandidate {
  * important LEVEL wins, and a same-level ALL-CAPS kicker yields to the line
  * under it.
  */
+/**
+ * A heading ELEMENT of the page.
+ *
+ * A real `<h1>`–`<h6>`, or a builder heading that renders as a `div`/`span`.
+ * Elementor lets the owner pick the HTML tag on a Heading widget ("div" is a
+ * common choice when the visual order differs from the document order), and
+ * its Icon Box always uses a div — so skimming `h*` alone dropped whole bands'
+ * copy (eca.directory's "Compare User Roles" grid and its 4.8 / +1k counters,
+ * 2026-11-23). The reported LEVEL is 7 for a div heading: a real heading still
+ * wins the band title, and a band made only of div headings still has one.
+ */
+const isHeadingLike = ( n: HNode ): boolean =>
+	n.type === 'tag' &&
+	( /^h[1-6]$/.test( n.name ?? '' ) ||
+		classList( n.attribs ).some( ( c ) => /^(?:elementor-heading-title|elementor-icon-box-title)$/.test( c ) ) );
+
+const headingLevelOf = ( n: HNode ): number => {
+	const tag = /^h([1-6])$/.exec( n.name ?? '' );
+	return tag ? Number( tag[ 1 ] ) : 7;
+};
+
 function pickHeadingTitle( headings: HeadingCandidate[] ): HeadingCandidate | undefined {
 	if ( headings.length === 0 ) {
 		return undefined;
@@ -451,12 +677,11 @@ function isKickerLine( text: string ): boolean {
 
 /** Every heading under a node, in document order. */
 function headingCandidatesIn( node: HNode ): HeadingCandidate[] {
-	const isHeading = ( n: HNode ) => n.type === 'tag' && /^h[1-6]$/.test( n.name ?? '' );
 	const out: HeadingCandidate[] = [];
-	for ( const heading of allDescendants( node, isHeading ) ) {
+	for ( const heading of allDescendants( node, isHeadingLike ) ) {
 		const text = trimmed( textOf( heading ) );
 		if ( text ) {
-			out.push( { level: Number( ( heading.name ?? 'h6' ).slice( 1 ) ), text } );
+			out.push( { level: headingLevelOf( heading ), text } );
 		}
 	}
 	return out;
@@ -488,7 +713,7 @@ function collectSlots( node: HNode ): CollectedSlots {
 		}
 	}
 
-	const isHeading = ( n: HNode ) => n.type === 'tag' && /^h[1-6]$/.test( n.name ?? '' );
+	const isHeading = isHeadingLike;
 	const headings = headingCandidatesIn( node );
 	const title = pickHeadingTitle( headings );
 	const titleText = title?.text ?? '';
@@ -610,8 +835,18 @@ function glyphClassesOf( node: HNode ): string | undefined {
 	return undefined;
 }
 
-function extractStructuredItem( node: HNode ): { title?: string; body?: string; media?: MediaRef; icon: boolean; iconClass?: string; layout?: 'row' | 'stack' } | undefined {
-	const headings = allDescendants( node, ( n ) => n.type === 'tag' && /^h[3-6]$/.test( n.name ?? '' ) );
+function extractStructuredItem( node: HNode ): { title?: string; titleLevel?: number; body?: string; bullets?: string[]; media?: MediaRef; icon: boolean; iconClass?: string; layout?: 'row' | 'stack' } | undefined {
+	// h3–h6 or a DIV heading are CARD titles. An h1/h2 inside a widget is the
+	// band's own heading — treating it as a card title hid the band title from
+	// every caller that reads `slots.title`.
+	const headings = allDescendants(
+		node,
+		( n ) =>
+			n.type === 'tag' &&
+			( /^h[3-6]$/.test( n.name ?? '' ) ||
+				( ! /^h[1-6]$/.test( n.name ?? '' ) &&
+					classList( n.attribs ).some( ( c ) => /^(?:elementor-heading-title|elementor-icon-box-title)$/.test( c ) ) ) )
+	);
 	if ( headings.length === 0 ) {
 		return undefined;
 	}
@@ -653,7 +888,85 @@ function extractStructuredItem( node: HNode ): { title?: string; body?: string; 
 		.map( ( p ) => trimmed( textOf( p ) ) )
 		.filter( ( value ) => value && value !== title );
 	const body = paragraphs.length > 0 ? paragraphs.join( ' ' ) : undefined;
-	return { title, body, media, icon, iconClass, layout };
+	// A list INSIDE the card (see `SectionItem.bullets`) — the entries are the
+	// card's copy, never sibling cards.
+	const bullets = bulletItems( node );
+	return { title, titleLevel: headingLevelOf( headings[ 0 ] ) <= 6 ? headingLevelOf( headings[ 0 ] ) : undefined, body, bullets, media, icon, iconClass, layout };
+}
+
+/**
+ * One item per entry of a builder ICON LIST.
+ *
+ * `<ul class="elementor-icon-list-items"><li class="elementor-icon-list-item">
+ * <a><span class="elementor-icon-list-icon"><i …></i></span>
+ * <span class="elementor-icon-list-text">Branding &amp; SSO setup</span>
+ * </a></li>…`
+ *
+ * The flat slot merge saw the widget as an item widget with no heading, so
+ * every entry became an EMPTY item — the single largest text loss on
+ * eca.directory (the phased-delivery lists: 17 entries gone, 2026-11-23).
+ */
+function iconListItems( node: HNode ): SectionItem[] | undefined {
+	const entries = allDescendants(
+		node,
+		( n ) => n.type === 'tag' && n.name === 'li' && classList( n.attribs ).some( ( c ) => /icon-list-item/.test( c ) )
+	);
+	if ( entries.length === 0 ) {
+		return undefined;
+	}
+	const items: SectionItem[] = [];
+	for ( const entry of entries ) {
+		const label = trimmed( textOf( entry ) );
+		if ( ! label ) {
+			continue;
+		}
+		const glyph = findDescendant( entry, ( n ) => n.type === 'tag' && ( n.name === 'i' || n.name === 'svg' ) );
+		// The icon makes the KIND `icon-list` on a pure list; a mixed band stays a
+		// feature grid. The entry's own text is the copy either way.
+		items.push( {
+			title: label,
+			...( glyph ? { icon: true } : {} ),
+			...( glyph ? { iconClass: glyphClassesOf( glyph ) } : {} ),
+		} );
+	}
+	return items.length > 0 ? items : undefined;
+}
+
+/**
+ * The BULLETS a card carries (see `SectionItem.bullets`).
+ *
+ * Only a real list counts: a `<ul>`/`<ol>` with at least one `<li>`, and not a
+ * navigation menu, breadcrumb row, pagination row or social row — chrome the
+ * card's copy must never absorb (a mega-menu's entries would print as bullet
+ * copy). Entries are de-duplicated and length-capped: a bullet is copy, not a
+ * paragraph.
+ */
+function bulletItems( node: HNode ): string[] | undefined {
+	const chrome = allDescendants(
+		node,
+		( n ) =>
+			n.type === 'tag' &&
+			( n.name === 'nav' ||
+				( n.attribs?.role ?? '' ) === 'navigation' ||
+				classList( n.attribs ).some( ( c ) => /(?:^|[-_])(?:menu|nav|breadcrumb|pagination|social)(?:[-_]|$)/i.test( c ) ) )
+	);
+	const bullets: string[] = [];
+	for ( const list of allDescendants( node, ( n ) => n.type === 'tag' && ( n.name === 'ul' || n.name === 'ol' ) ) ) {
+		if ( chrome.some( ( ancestor ) => within( list, ancestor ) ) ) {
+			continue;
+		}
+		for ( const entry of directChildren( list ) ) {
+			if ( entry.type !== 'tag' || entry.name !== 'li' ) {
+				continue;
+			}
+			const text = trimmed( textOf( entry ) );
+			if ( ! text || text.length > 160 || bullets.includes( text ) ) {
+				continue;
+			}
+			bullets.push( text );
+		}
+	}
+	return bullets.length > 0 ? bullets : undefined;
 }
 
 /** The attribution line of a quote widget (aux-author / cite / byline). */
@@ -697,9 +1010,33 @@ function accordionEntries( node: HNode ): SectionItem[] {
 		}
 		const panel = accordionPanelOf( node, titleNode );
 		const panelText = panel ? trimmed( textOf( panel ) ) : '';
-		items.push( panelText ? { title: label, body: panelText } : { title: label } );
+		if ( ! panelText ) {
+			items.push( { title: label } );
+			continue;
+		}
+		// The panel's opening `<strong>` is a LEAD-IN, not emphasis: the source
+		// bolds the first clause (`Advertise Your Business`) and leaves the rest
+		// plain. Kept as a separate plain-text fact so the body stays a string and
+		// the template renders the emphasis itself.
+		const lead = panel ? leadingStrongOf( panel, panelText ) : undefined;
+		items.push( lead ? { title: label, body: panelText.slice( lead.length ).trim(), lead } : { title: label, body: panelText } );
 	}
 	return items;
+}
+
+/**
+ * The `<strong>`/`<b>` run that OPENS a copy block, as plain text.
+ *
+ * Only a prefix qualifies: an emphasised phrase mid-paragraph is emphasis, not
+ * the block's lead-in, and splitting there would print the sentence twice.
+ */
+function leadingStrongOf( panel: HNode, text: string ): string | undefined {
+	const bold = findDescendant( panel, ( n ) => n.type === 'tag' && ( n.name === 'strong' || n.name === 'b' ) );
+	const lead = bold ? trimmed( textOf( bold ) ) : '';
+	if ( ! lead || lead === text || ! text.startsWith( lead ) ) {
+		return undefined;
+	}
+	return lead;
 }
 
 function titlesOfAccordion( node: HNode ): HNode[] {
@@ -736,6 +1073,113 @@ function accordionPanelOf( node: HNode, titleNode: HNode ): HNode | undefined {
 }
 
 /**
+ * Elementor's CONTAINER model, named once (4.x flexbox + the legacy grid).
+ *
+ * Elementor 4.x publishes a band as a stack of flex containers —
+ * `div.e-con.e-parent > .e-con-inner > .e-con-full.e-child` — and each CARD is
+ * itself a container (`e-con-full e-child`). The pre-4.x model is the same idea
+ * under different names (`.elementor-container > .elementor-column`), and a
+ * builder that migrated halfway carries BOTH in one page.
+ *
+ * Before this, three consumers re-derived the vocabulary from class strings and
+ * disagreed: `columnItems` only knew the legacy pair, and `cardContainerItems`
+ * carried its own regex plus a private card predicate. The symptoms were a band
+ * grouped by ROWS instead of cards (2 items for 5) and a comparison table's
+ * cells read as cards. One model, one place to fix the next shape.
+ *
+ * A ROW is ≥2 sibling containers of the same SHAPE — the shape signature drops
+ * `elementor-element-*`/`elementor-col-*`, so two cards built in different
+ * sessions still match. A CARD is a container with a heading AND a list; that
+ * is what separates the three phase cards from a matrix cell (heading only) and
+ * from an intro row (a single child).
+ */
+
+/** Every class token that marks a container in either model. */
+const CONTAINER_TOKENS = /^(?:e-con|e-con-inner|e-con-full|e-con-boxed|e-child|elementor-column|elementor-container)$/;
+
+/** A heading, or a builder's heading element (Elementor uses a `div`). */
+export function isHeadingNode( node: HNode ): boolean {
+	return (
+		node.type === 'tag' &&
+		( /^h[1-6]$/.test( node.name ?? '' ) ||
+			classList( node.attribs ).some( ( name ) => /^(?:elementor-heading-title|elementor-icon-box-title)$/.test( name ) ) )
+	);
+}
+
+/** Is this node a layout container (flexbox or legacy grid)? */
+export function isContainerNode( node: HNode ): boolean {
+	return node.type === 'tag' && classList( node.attribs ).some( ( name ) => CONTAINER_TOKENS.test( name ) );
+}
+
+/** The legacy row wrapper (`.elementor-container`). */
+export function isLegacyRow( node: HNode ): boolean {
+	return node.type === 'tag' && classList( node.attribs ).includes( 'elementor-container' );
+}
+
+/** A legacy column (`.elementor-column`) — a direct child of `isLegacyRow`. */
+export function isLegacyColumn( node: HNode ): boolean {
+	return node.type === 'tag' && classList( node.attribs ).includes( 'elementor-column' );
+}
+
+/**
+ * A container's SHAPE: its class tokens minus the per-element identity.
+ *
+ * `elementor-element-<id>` is unique per instance and `elementor-col-*` encodes
+ * a width, so keeping either would give every card its own shape and the row
+ * would never group.
+ */
+export function containerShape( node: HNode ): string {
+	return classList( node.attribs )
+		.filter( ( name ) => ! /^elementor-(?:element-|col-)/.test( name ) )
+		.sort()
+		.join( ' ' );
+}
+
+/** The card's own heading — the icon-box title wins over a plain heading above it. */
+export function containerHeadingNode( node: HNode ): HNode | undefined {
+	return findDescendant( node, isHeadingNode );
+}
+
+/** A CARD: a container carrying a heading AND a list (see the model note). */
+export function isCardContainer( node: HNode ): boolean {
+	return (
+		Boolean( containerHeadingNode( node ) ) &&
+		Boolean( findDescendant( node, ( child ) => child.type === 'tag' && ( child.name === 'ul' || child.name === 'ol' ) ) )
+	);
+}
+
+/**
+ * The ROWS of a band: sibling container groups of ≥2 members sharing a shape.
+ *
+ * Groups, not children: a band can carry several rows (an intro row and a card
+ * row) with different shapes, and a nested row is its own group. Document order
+ * is preserved — the caller indexes cards by it.
+ */
+export function containerRows( scope: HNode ): HNode[][] {
+	const rows: HNode[][] = [];
+	for ( const parent of allDescendants( scope, isContainerNode ) ) {
+		const kids = directChildren( parent ).filter( isContainerNode );
+		if ( kids.length < 2 ) {
+			continue;
+		}
+		const byShape = new Map< string, HNode[] >();
+		for ( const kid of kids ) {
+			const shape = containerShape( kid );
+			if ( ! shape ) {
+				continue;
+			}
+			byShape.set( shape, [ ...( byShape.get( shape ) ?? [] ), kid ] );
+		}
+		for ( const members of byShape.values() ) {
+			if ( members.length >= 2 ) {
+				rows.push( members );
+			}
+		}
+	}
+	return rows;
+}
+
+/**
  * One item per SOURCE COLUMN, when a band spreads its content across columns.
  *
  * A multi-column band has no flat equivalent: concatenating the columns gave
@@ -744,29 +1188,37 @@ function accordionPanelOf( node: HNode, titleNode: HNode ): HNode | undefined {
  * pushed off the right edge). Returns undefined unless at least two columns
  * carry content, so an ordinary one-column band keeps its old path.
  */
-function columnItems( section: HNode ): SectionItem[] | undefined {
-	const container = findDescendant(
-		section,
-		( n ) => n.type === 'tag' && classList( n.attribs ).includes( 'elementor-container' )
-	);
+function columnItems( section: HNode ): { items: SectionItem[]; lead: string[] } | undefined {
+	const container = findDescendant( section, isLegacyRow );
 	if ( ! container ) {
 		return undefined;
 	}
-	const columns = childrenOf( container ).filter(
-		( child ) => child.type === 'tag' && classList( child.attribs ).includes( 'elementor-column' )
-	);
+	const columns = childrenOf( container ).filter( isLegacyColumn );
 	if ( columns.length < 2 ) {
 		return undefined;
 	}
 	const items: SectionItem[] = [];
-	for ( const column of columns ) {
+	let droppedPlaceholder = false;
+	for ( const [ columnIndex, column ] of columns.entries() ) {
 		const collected = collectSlots( column );
-		const item: SectionItem = {};
+		// The LANE index rides every item, including the ones after a skipped lane:
+		// `design.sections[].columns` is keyed by this index and carries that
+		// lane's surface (virtuallysrilanka's services band is red / photo / black).
+		const item: SectionItem = { columnIndex };
 		if ( collected.title ) {
 			item.title = collected.title;
 		}
+		if ( collected.titleLevel ) {
+			item.titleLevel = collected.titleLevel;
+		}
 		if ( ( collected.body ?? [] ).length > 0 ) {
 			item.body = ( collected.body ?? [] ).join( ' ' );
+			// Two or more blocks are PARAGRAPHS, not one sentence run together: the
+			// card renders them separately so the source's inter-paragraph rhythm
+			// survives.
+			if ( ( collected.body ?? [] ).length > 1 ) {
+				item.paragraphs = collected.body;
+			}
 		}
 		if ( ( collected.media ?? [] ).length > 0 ) {
 			item.media = collected.media?.[ 0 ];
@@ -774,16 +1226,174 @@ function columnItems( section: HNode ): SectionItem[] | undefined {
 		if ( ( collected.links ?? [] ).length > 0 ) {
 			item.links = collected.links;
 		}
+		// A list inside the card (see `SectionItem.bullets`). This is where
+		// eca.directory's phased-delivery entries were lost: the entries are
+		// neither the card's title nor its `<p>` copy.
+		const bullets = bulletItems( column );
+		if ( bullets ) {
+			item.bullets = bullets;
+		}
 		if ( ! item.title && ! item.body && ! item.media ) {
 			// A column with no copy and no media (a photo painted as a CSS
-			// background, a spacer) has no rebuildable content — the flat model
-			// has no per-column surface to paint it with. Skip it rather than
-			// emitting an empty card.
+			// background, a spacer) has no rebuildable content, so no item is
+			// emitted — but its LANE still exists in the profile's `columns`, and
+			// the grid places the remaining items by `columnIndex` and paints that
+			// lane's surface. Skipping the item must not renumber the lanes.
+			continue;
+		}
+		if ( isPlaceholderCard( item ) ) {
+			// WordPress's default "Hello world!" post, rendered by the source's
+			// own posts widget. The lane keeps its index like any skipped column.
+			droppedPlaceholder = true;
 			continue;
 		}
 		items.push( item );
 	}
-	return items.length >= 2 ? items : undefined;
+	// A single surviving card is still a column grid WHEN one was removed here:
+	// falling back to the raw band HTML would put the placeholder straight back
+	// (the sanitized markup still carries the source's posts widget).
+	if ( ! ( items.length >= 2 || ( droppedPlaceholder && items.length >= 1 ) ) ) {
+		return undefined;
+	}
+	// Copy that sits OUTSIDE the columns — the band's own LEDE, above the grid.
+	// The caller replaces `slots` with the items, so without this the sentence
+	// introducing the cards is thrown away (eca.directory's phased-delivery band,
+	// 2026-11-24). Paragraphs a card already carries are excluded so the lede
+	// never repeats the cards.
+	const carried = new Set(
+		items.flatMap( ( item ) => [ item.body ?? '', ...( item.paragraphs ?? [] ), ...( item.bullets ?? [] ) ] ).filter( Boolean )
+	);
+	const lead = allDescendants( section, ( n ) => n.type === 'tag' && n.name === 'p' && ! within( n, container ) )
+		.map( ( n ) => trimmed( textOf( n ) ) )
+		.filter( ( text ) => text && ! carried.has( text ) );
+	return { items, lead };
+}
+
+/**
+ * One item per CARD CONTAINER of a band.
+ *
+ * Elementor 4.x publishes each card as its own flex container
+ * (`div.e-con-full.e-child`), not as a `.elementor-column`, so `columnItems`
+ * cannot see the band at all:
+ *
+ * ```
+ * e-con-inner                    (the band)
+ * ├─ e-con-boxed.e-child        (intro row: h2 + icon-box)
+ * ├─ e-con-full.e-child         (card row)
+ * │   ├─ e-con-full.e-child     (CARD: h3 label + h4 title + p + ul ×4 + a)
+ * │   └─ …
+ * └─ e-con-full.e-child         (comparison table — a grid of CELLS)
+ * ```
+ *
+ * A CARD is a container with a heading AND a LIST. That is what separates the
+ * three phase cards from the comparison table: a table cell holds a heading and
+ * nothing else (or a mark), a row of cells is not a row of cards, and the intro
+ * row is a single child. Without the predicate, grouping took the ROWS for cards
+ * and produced 2 items for 5.
+ *
+ * Items carry `columnIndex`, so the laned grid renders exactly the cards the
+ * source laid out.
+ */
+function cardContainerItems( section: HNode ): { items: SectionItem[]; lead: string[] } | undefined {
+	// One row per shape-sharing sibling group (see `containerRows`), keeping the
+	// groups whose members are all CARDS. The comparison table's cells fail
+	// `isCardContainer` (a heading and nothing else), so the matrix is never
+	// mistaken for a card row.
+	const buckets = containerRows( section ).filter( ( members ) => members.every( isCardContainer ) );
+	if ( buckets.length === 0 ) {
+		return undefined;
+	}
+
+	const headingsOf = ( card: HNode ): HNode[] => allDescendants( card, isHeadingNode );
+
+	const items: SectionItem[] = [];
+	for ( const bucket of buckets ) {
+		for ( const [ columnIndex, card ] of bucket.entries() ) {
+			const headings = headingsOf( card );
+			// The visual TITLE is the icon-box heading when the card has one; the
+			// plain heading above it is a KICKER (“Phase 1” over “Pilot Setup”).
+			const titleNode =
+				headings.find( ( n ) => classList( n.attribs ).some( ( c ) => /icon-box-title/.test( c ) ) ) ?? headings[ 0 ];
+			const title = titleNode ? trimmed( textOf( titleNode ) ) : '';
+			if ( ! title ) {
+				continue;
+			}
+			const bullets = bulletItems( card ) ?? [];
+			// A heading that comes BEFORE the title is the card's KICKER (“Phase 1”
+			// over “Pilot Setup”); one after it is copy. Printing the kicker after the
+			// title breaks the source's word order.
+			const titleIndex = titleNode ? headings.indexOf( titleNode ) : -1;
+			const label = ( n: HNode ): string => trimmed( textOf( n ) );
+			const usable = ( text: string ): boolean => Boolean( text ) && text !== title && ! bullets.includes( text );
+			const kicker = ( titleIndex > 0 ? headings.slice( 0, titleIndex ) : [] ).map( label ).filter( usable ).join( ' ' );
+			const others = ( titleIndex >= 0 ? headings.slice( titleIndex + 1 ) : headings ).map( label ).filter( usable );
+			const paragraphs = allDescendants( card, ( n ) => n.type === 'tag' && n.name === 'p' )
+				.map( ( n ) => trimmed( textOf( n ) ) )
+				.filter( ( text ) => text && text !== title && ! bullets.includes( text ) );
+			const body = [ ...new Set( [ ...others, ...paragraphs ] ) ];
+			const anchor = findDescendant(
+				card,
+				( n ) => n.type === 'tag' && n.name === 'a' && Boolean( trimmed( attrOf( n, 'href' ) ?? '' ) ) && Boolean( trimmed( textOf( n ) ) )
+			);
+			const href = anchor ? trimmed( attrOf( anchor, 'href' ) ?? '' ) : '';
+			const item: SectionItem = {
+				title,
+				columnIndex,
+				...( kicker ? { kicker } : {} ),
+				...( titleNode && headingLevelOf( titleNode ) <= 6 ? { titleLevel: headingLevelOf( titleNode ) } : {} ),
+				...( body.length > 0 ? { body: body.join( ' ' ), ...( body.length > 1 ? { paragraphs: body } : {} ) } : {} ),
+				...( bullets.length > 0 ? { bullets } : {} ),
+				...( anchor && href && ! href.startsWith( '#' ) ? { links: [ { text: trimmed( textOf( anchor ) ), href } ] } : {} ),
+			};
+			items.push( item );
+		}
+	}
+	if ( items.length < 2 ) {
+		return undefined;
+	}
+	// Copy that sits OUTSIDE the cards — the band’s own lede, above the grid. The
+	// flat merge leaves it inside a card-like item instead, so the intro printed
+	// as a card and the comparison table’s headings became the lede
+	// (eca.directory, 2026-11-24).
+	const cardNodes = buckets.flat();
+	const lead = [
+		...new Set(
+			allDescendants( section, ( n ) => n.type === 'tag' && n.name === 'p' && ! cardNodes.some( ( card ) => within( n, card ) ) )
+				.map( ( n ) => trimmed( textOf( n ) ) )
+				.filter( Boolean )
+		),
+	];
+	return { items, lead };
+}
+
+/**
+ * WordPress ships one placeholder post and one placeholder page on every
+ * install — "Hello world!" (slug `hello-world`) and "Sample Page"
+ * (`sample-page`) — and every setup checklist tells the owner to delete them.
+ *
+ * A rebuild cannot delete CMS content, and a builder's "Latest posts" widget
+ * renders whatever the CMS returns, so a dropped-in card titled "Hello world!"
+ * published as if it were the school's only story (eca.directory's updates
+ * band, 2026-11-24). Drop the CARD, not the record: the post keeps its route,
+ * so removing the placeholder in the CMS is still all it takes for the card to
+ * come back.
+ *
+ * Matching is on the TITLE only and only for a card with no body, media or
+ * attribution — an article that quotes "Hello world!" is copy, not a placeholder.
+ */
+const PLACEHOLDER_TITLES = new Set( [ 'hello world', 'sample page' ] );
+
+function isPlaceholderCard( item: SectionItem ): boolean {
+	if ( item.body || item.media || item.author ) {
+		return false;
+	}
+	const title = ( item.title ?? '')
+		.toLowerCase()
+		.replace( /\s+/g, ' ' )
+		// "Hello world!" also arrives as "Hello world" and "Hello, world!"
+		// depending on the WP version and locale.
+		.replace( /^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '' );
+	return title.length > 0 && PLACEHOLDER_TITLES.has( title );
 }
 
 /** Merge widget slots into one section draft. */
@@ -810,14 +1420,31 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 		// Structured icon-text widgets (an icon/image header + a small heading)
 		// are single-column feature cards — extract them as items BEFORE the
 		// flat slot merge, which loses the captions and flattens the columns.
+		const iconList = iconListItems( widget.node );
+		if ( iconList ) {
+			items.push( ...iconList );
+			continue;
+		}
 		const structured =
-			widget.role.kind === 'body' || widget.role.kind === 'content' || widget.role.kind === 'feature'
+			widget.role.kind === 'body' ||
+			widget.role.kind === 'content' ||
+			widget.role.kind === 'feature' ||
+			// A query loop's REAL cards are still authored markup — `list` only adds
+			// the signal, it must not skip the extractor (a genuine post card was
+			// dropped the first time this role was added).
+			widget.role.kind === 'list'
 				? extractStructuredItem( widget.node )
 				: undefined;
 		if ( structured ) {
 			const item: SectionItem = { title: structured.title };
+			if ( structured.titleLevel ) {
+				item.titleLevel = structured.titleLevel;
+			}
 			if ( structured.body ) {
 				item.body = structured.body;
+			}
+			if ( structured.bullets ) {
+				item.bullets = structured.bullets;
 			}
 			if ( structured.media ) {
 				item.media = structured.media;
@@ -836,10 +1463,15 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 		}
 		const collected = collectSlots( widget.node );
 		// Item widgets (feature/icon/quote) carry their own headings — those are
-		// card captions, never the band title.
+		// card captions, never the band title. An `h1` is the exception wherever it
+		// sits: eca.directory's hero publishes the page's only h1 inside an icon-box
+		// (`elementor-icon-box-title`), so treating the widget as a card demoted it
+		// to an `<h3>` inside a grid and titled the band after a rating label
+		// ("Parent ratings") — the page had no h1 at all (2026-11-24).
 		const isItemWidget =
 			widget.role.kind === 'feature' || widget.role.kind === 'icon-item' || widget.role.kind === 'quote';
-		if ( collected.title && ! isItemWidget ) {
+		const isBandHeading = collected.titleLevel === 1;
+		if ( collected.title && ( ! isItemWidget || isBandHeading ) ) {
 			headingCandidates.push( { level: collected.titleLevel ?? 6, text: collected.title } );
 		}
 		for ( const paragraph of collected.body ?? [] ) {
@@ -849,7 +1481,7 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 		}
 		media.push( ...( collected.media ?? [] ) );
 		links.push( ...( collected.links ?? [] ) );
-		if ( widget.role.kind === 'feature' || widget.role.kind === 'icon-item' || widget.role.kind === 'quote' ) {
+		if ( ( widget.role.kind === 'feature' || widget.role.kind === 'icon-item' || widget.role.kind === 'quote' ) && ! isBandHeading ) {
 			const item: SectionItem = {};
 			if ( collected.title ) {
 				item.title = collected.title;
@@ -866,7 +1498,13 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 			if ( widget.role.kind === 'quote' ) {
 				item.author = authorOf( widget.node );
 			}
-			items.push( item );
+			// An item with no title, copy or media is an empty CARD in the rebuild
+			// (a layout-only widget, a heading the extractor already claimed) — a
+			// third of eca.directory's phased-delivery grid rendered as blanks. The
+			// band's own text is unaffected; only the empty cell is dropped.
+			if ( item.title || item.body || item.media || item.author ) {
+				items.push( item );
+			}
 		}
 	}
 	if ( media.length > 0 ) {
@@ -879,17 +1517,32 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 		slots.body = body;
 	}
 	if ( items.length > 0 ) {
-		slots.items = items;
+		// One guard covers EVERY item path (structured extract, icon list, posts
+		// widget): WordPress's placeholder post must never publish as a card.
+		// Placed here because the same band reaches `items` through three
+		// different branches and a per-branch check had already missed two.
+		const published = items.filter( ( item ) => ! isPlaceholderCard( item ) );
+		if ( published.length !== items.length ) {
+			slots.items = published.length > 0 ? published : undefined;
+		} else {
+			slots.items = items;
+		}
 	}
 	const title = pickHeadingTitle( headingCandidates );
 	if ( title ) {
 		slots.title = title.text;
+		// The level rides along so the renderer can keep an `h1` where the page
+		// owns one (the front page) instead of relying on measured facts that a
+		// maintenance-mode analysis never captured.
+		slots.titleLevel = title.level;
 	}
 	// Every heading that is not the title is still the source's copy — it ships
 	// as the band's intro text so no word is lost (and the title gate stays
 	// green) without changing how the band is classified.
 	const extraHeadings = headingCandidates.map( ( heading ) => heading.text ).filter( ( text ) => text !== title?.text );
 
+	// A query loop (Posts/Portfolio) — see `SemanticSection.dynamicList`.
+	const dynamicList = widgets.some( ( widget ) => widget.role.kind === 'list' );
 	const hasBody = ( slots.body?.length ?? 0 ) > 0;
 	// Unknown-name widgets drop the confidence — the shape decided the kind,
 	// not a recognized vocabulary entry (Proposal 116).
@@ -903,7 +1556,22 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 		{ kind: 'testimonial', reason: items.length > 0 && items.some( ( item ) => Boolean( item.body ) ) && ! slots.title && ! items.some( ( item ) => Boolean( item.title ) ) },
 		{ kind: 'icon-list', reason: items.length >= 2 && items.every( ( item ) => Boolean( item.icon ) ) },
 		{ kind: 'feature-grid', reason: items.length >= 2 },
-		{ kind: 'cta', reason: Boolean( slots.title ) && links.length > 0 && ! hasBody && media.length === 0 },
+		{
+			// A single item is the band's own copy (a lone icon-box carrying the
+			// heading and lede), not a card row. Requiring ZERO items kept every CTA
+			// with a supporting sentence out of the `cta` kind, and raw builder markup
+			// ships no vendor CSS (eca.directory's blog CTA, 2026-11-25).
+			//
+			// A LEADING band that also states copy is the page's hero, which keeps the
+			// h1 and its media; a leading title + button with no copy is still a CTA.
+			kind: 'cta',
+			reason:
+				Boolean( slots.title ) &&
+				links.length > 0 &&
+				items.length <= 1 &&
+				media.length === 0 &&
+				( index > 0 || ! hasBody ),
+		},
 		{ kind: 'hero', reason: Boolean( slots.title ) && ( hasBody || media.length > 0 ) && ( index === 0 || ( links.length > 0 && media.length > 0 ) ) },
 		{ kind: 'text', reason: true },
 	];
@@ -915,17 +1583,80 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNo
 	}
 	if ( matched.kind === 'accordion' ) {
 		slots.items = accordionItems;
-		return { kind: 'accordion', confidence: effectiveConfidence, slots };
+		return { kind: 'accordion', confidence: effectiveConfidence, slots, ...( dynamicList ? { dynamicList: true } : {} ) };
+	}
+	// Cards that are CONTAINERS (Elementor 4.x flex) — see `cardContainerItems`.
+	// Runs before the text→columns fallback: such a band has no
+	// `.elementor-container` for that path to find.
+	if ( section && ( matched.kind === 'feature-grid' || matched.kind === 'icon-list' || matched.kind === 'text' ) ) {
+		const cards = cardContainerItems( section );
+		if ( cards ) {
+			// The flat merge put the cards’ captions in `body`; they live in the items
+			// now, so the body keeps the copy no card carries — the band’s own lede.
+			const carried = new Set(
+				cards.items
+					.flatMap( ( item ) => [ item.kicker ?? '', item.title ?? '', item.body ?? '', ...( item.paragraphs ?? [] ), ...( item.bullets ?? [] ) ] )
+					.filter( Boolean )
+			);
+			const body = [
+				...cards.lead,
+				// Copy the flat merge found but no card carries and the lead does not
+				// repeat — the comparison table’s headings, when a band mixes a card row
+				// with a table. Losing them demoted the band to raw text once already.
+				...( slots.body ?? [] ).filter( ( text ) => ! carried.has( text ) && ! cards.lead.includes( text ) ),
+			];
+			// Flat items no card carries are still the band’s content — the comparison
+			// table that shares this band, for instance. Keeping them means no word is
+			// lost: when they were dropped the fidelity guard demoted the whole band to
+			// raw text (2026-11-24).
+			const extras = ( slots.items ?? [] ).filter( ( item ) => {
+				if ( item.columnIndex !== undefined ) {
+					return false;
+				}
+				const text = [ item.title ?? '', item.body ?? '', ...( item.paragraphs ?? [] ), ...( item.bullets ?? [] ) ].filter( Boolean );
+				// The band already renders its own title and lede — an extra that repeats
+				// them would print the intro twice.
+				const own = new Set( [ slots.title ?? '', ...( body ) ].filter( Boolean ) );
+				if ( text.some( ( value ) => own.has( value ) ) ) {
+					return false;
+				}
+				return text.every( ( value ) => ! carried.has( value ) );
+			} );
+			// An extra is a ROW LABEL of a comparison table that shares this band. It
+			// is copy, not a card: rendered as a card it printed as a 35px heading in
+			// the phase grid (eca.directory, 2026-11-24). Fold the labels into the
+			// band's text so no word is lost and the grid stays cards-only.
+			const extraLines = extras.map( ( item ) => item.title ?? '' ).filter( Boolean );
+			const finalBody = [ ...body, ...extraLines.filter( ( text ) => ! body.includes( text ) ) ];
+			return {
+				kind: 'feature-grid',
+				confidence: 'high',
+				slots: {
+					...( slots.title ? { title: slots.title } : {} ),
+					...( slots.titleLevel ? { titleLevel: slots.titleLevel } : {} ),
+					...( finalBody.length > 0 ? { body: finalBody } : {} ),
+					items: cards.items,
+				},
+			};
+		}
 	}
 	// A band the flat merge could only describe as one text blob, whose source
 	// spreads its copy across columns, rebuilds as a column grid instead.
 	if ( matched.kind === 'text' && section ) {
 		const columns = columnItems( section );
 		if ( columns ) {
-			return { kind: 'feature-grid', confidence: 'low', slots: { items: columns } };
+			return {
+				kind: 'feature-grid',
+				confidence: 'low',
+				slots: {
+					...( slots.title ? { title: slots.title } : {} ),
+					...( columns.lead.length > 0 ? { body: columns.lead } : {} ),
+					items: columns.items,
+				},
+			};
 		}
 	}
-	return { kind: matched.kind, confidence: effectiveConfidence, slots };
+	return { kind: matched.kind, confidence: effectiveConfidence, slots, ...( dynamicList ? { dynamicList: true } : {} ) };
 }
 
 // -- structural kinds (Proposal 136 §4.1) -------------------------------------
@@ -1189,8 +1920,61 @@ function pricingFrom( node: HNode ): SemanticSection['pricing'] | undefined {
 	return plans.length >= 2 ? { plans } : undefined;
 }
 
+/**
+ * Elementor's counter widget ANIMATES from 0: the DOM text is the start value
+ * ("0") and the real number lives in `data-to-value`. Reading text alone is why
+ * about-us (`14c60321`) published "0 / %" and "0 / Term" while the titles
+ * ("Hour allocation time", "Pilot implementation") were dropped in favour of the
+ * suffix spans (2026-11-24). The live site shows the same `0` in its HTML and
+ * only reaches the real figure once its JS runs.
+ *
+ * The prefix carries the comparison ("≤", "+"); the suffix carries the unit
+ * ("%", "% less", "Term") and belongs in `unit`, which Stats renders inside the
+ * same node as the value.
+ */
+function elementorCounterStats( node: HNode ): StatItem[] | undefined {
+	const boxes = descendantTags( node ).filter( ( tag ) => ownsClass( tag, /^elementor-counter$/ ) );
+	if ( boxes.length < 2 ) {
+		return undefined;
+	}
+	const items: StatItem[] = [];
+	for ( const box of boxes ) {
+		const number = findDescendant( box, ( tag ) => ownsClass( tag, /^elementor-counter-number$/ ) );
+		const target = trimmed( attrOf( number ?? box, 'data-to-value' ) ?? '' );
+		const digits = /^[\d.,]+$/.test( target ) ? target : trimmed( textOf( number ?? box ) );
+		if ( ! /^[\d.,]+$/.test( digits ) ) {
+			continue;
+		}
+		const prefix = trimmed( textOf( findDescendant( box, ( tag ) => ownsClass( tag, /^elementor-counter-number-prefix$/ ) ) ?? box ) );
+		const suffixEl = findDescendant( box, ( tag ) => ownsClass( tag, /^elementor-counter-number-suffix$/ ) );
+		const suffix = suffixEl ? trimmed( textOf( suffixEl ) ) : '';
+		const label = trimmed( textOf( findDescendant( box, ( tag ) => ownsClass( tag, /^elementor-counter-title$/ ) ) ?? box ) );
+		if ( ! label || label.length > 80 ) {
+			continue;
+		}
+		// A prefix that is only the widget's own text (no number element at all)
+		// would be the whole box — never prepend that.
+		const barePrefix = number && prefix && prefix !== trimmed( textOf( box ) ) ? prefix : '';
+		// A WORD suffix needs a space (`1Term` reads as a typo); a symbol does not
+		// (`50% less`, not `50 % less`).
+		const unit = suffix ? ( /^[a-z]/i.test( suffix ) ? ` ${ suffix }` : suffix ) : '';
+		items.push( {
+			value: `${ barePrefix }${ digits }`,
+			...( unit ? { unit } : {} ),
+			label,
+		} );
+	}
+	return items.length >= 2 ? items : undefined;
+}
+
 /** Value/label metrics. A label is required — a bare number is not a stat. */
 function statsFrom( node: HNode ): SemanticSection['stats'] | undefined {
+	// A counter widget first: its text is always "0", so the generic path below
+	// finds numbers that are animation artefacts and labels that are suffixes.
+	const counters = elementorCounterStats( node );
+	if ( counters ) {
+		return { items: counters };
+	}
 	const all = descendantTags( node );
 	let boxes = all.filter( ( tag ) => ownsClass( tag, STAT_INTENT ) && STAT_VALUE.test( trimmed( textOf( tag ) ) ) );
 	if ( boxes.length < 2 ) {
@@ -1302,6 +2086,7 @@ function isSectionBoundary( node: HNode ): boolean {
 		( c ) =>
 			ELEMENTOR_SECTION.test( c ) ||
 			ELEMENTOR_SECTION.test( ` ${ c } ` ) ||
+			ELEMENTOR_CONTAINER_BAND.test( c ) ||
 			WPB_ROW.test( c ) ||
 			/(^|\s)wp-block-group(\s|$)/.test( c ) ||
 			/(^|\s)wp-block-cover(\s|$)/.test( c )
@@ -1845,6 +2630,26 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, opt
 			if ( sourceId ) {
 				out.push( { kind: 'text', confidence: 'low', slots: {}, id: sourceId, ...( anchor ? { anchor } : {} ) } );
 			}
+			continue;
+		}
+		// Words are the one thing a rebuild may never lose. A CONFIDENT kind can
+		// still drop the copy it was never shaped for: eca.directory's “Explore
+		// Our Activities” band (a heading, an icon-box and a button) classified as
+		// a `cta` and lost three paragraphs, and its team band took the first
+		// card's name for the band title and dropped the roster. When the slots
+		// carry under half the band's words, the band keeps its RAW slice instead
+		// — the measured band facts still theme it. This is Proposal 116's
+		// “never empty a document” ladder, applied per band.
+		const sourceWords = wordCount( textOf( section ) );
+		if ( sourceWords >= 12 && slotWordCount( built.slots, RENDERED_SLOTS[ built.kind ] ) < sourceWords * 0.5 ) {
+			out.push( {
+				kind: 'text',
+				confidence: 'low',
+				slots: {},
+				html: sliceHtml( html, section ) || fallbackHtml,
+				...( sourceId ? { id: sourceId } : {} ),
+				...( anchor ? { anchor } : {} ),
+			} );
 			continue;
 		}
 		if ( sourceId ) {

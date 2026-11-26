@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ScheduleManagerPage — Pro schedule + preset management
  * (Proposal 084 Phase 3b, gap P9).
@@ -10,7 +11,7 @@
 
 import { useMemo, useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
-import { useScheduleManager } from '../../hooks/useScheduleManager';
+import { useScheduleManager, type RunPhase } from '../../hooks/useScheduleManager';
 import { useBootstrap } from '../../hooks/useBootstrap';
 import { ScheduleRunsView } from './ScheduleRunsView';
 import { ScheduleFleetCard } from './ScheduleFleetCard';
@@ -35,6 +36,27 @@ function Badge( { label, ok }: { label: string; ok: boolean } ): JSX.Element {
 	);
 }
 
+/**
+ * A live run label. Rendered next to the enabled badge only while the poll
+ * loop has something to say, so an idle row keeps its original shape.
+ */
+function runLabel( phase: RunPhase ): string {
+	switch ( phase ) {
+		case 'pending':
+			return __( 'Pending…', 'nvoos-pro-spa' );
+		case 'running':
+			return __( 'Running…', 'nvoos-pro-spa' );
+		case 'success':
+			return __( 'Success', 'nvoos-pro-spa' );
+		case 'failure':
+			return __( 'Failed', 'nvoos-pro-spa' );
+		case 'timeout':
+			return __( 'Timed out', 'nvoos-pro-spa' );
+		default:
+			return __( 'Check history', 'nvoos-pro-spa' );
+	}
+}
+
 export function ScheduleManagerPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
 	const {
@@ -46,6 +68,7 @@ export function ScheduleManagerPage(): JSX.Element {
 		schedulesError,
 		fleetStatsError,
 		actionError,
+		runStates,
 		refresh,
 		createSchedule,
 		removeSchedule,
@@ -107,10 +130,24 @@ export function ScheduleManagerPage(): JSX.Element {
 								{ schedule.schedule_type || '—' } · { schedule.schedule || '—' }
 							</code>
 						</>,
-						<Badge
-							label={ schedule.enabled ? __( 'enabled', 'nvoos-pro-spa' ) : __( 'disabled', 'nvoos-pro-spa' ) }
-							ok={ Boolean( schedule.enabled ) }
-						/>,
+						<>
+							<Badge
+								label={ schedule.enabled ? __( 'enabled', 'nvoos-pro-spa' ) : __( 'disabled', 'nvoos-pro-spa' ) }
+								ok={ Boolean( schedule.enabled ) }
+							/>
+							{ runStates[ schedule.id ] && (
+								<span
+									className={ `nvoos-pro-spa-run nvoos-pro-spa-run--${ runStates[ schedule.id ].status }` }
+									title={
+									runStates[ schedule.id ].error ||
+									runStates[ schedule.id ].message ||
+									undefined
+								}
+								>
+									{ runLabel( runStates[ schedule.id ].status ) }
+								</span>
+							) }
+						</>,
 						<>
 							{ schedule.next_run && (
 								<>

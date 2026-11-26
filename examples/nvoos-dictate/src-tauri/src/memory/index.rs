@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Hybrid retrieval: FTS5 keyword leg + vec0 vector leg, blended
 //! (Proposal 127 — SurfSense ADRs 0006/0031/0033 adapted to Rust).
 //!

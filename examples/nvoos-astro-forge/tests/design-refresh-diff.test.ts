@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // design-refresh-diff.test.ts — what a `--design` refresh silently drops.
 //
@@ -70,5 +71,34 @@ describe( 'diffDesignFacts', () => {
 			chrome: { footerBg: '#ededed' },
 		} );
 		expect( diffDesignFacts( before, undefined ).sort() ).toEqual( [ 'chrome.footerBg', 'section a (home)' ] );
+	} );
+
+	it( 'reports a BAND MODEL flip — the refresh that repaints every band transparent', () => {
+		// eca.directory, 2026-11-25: the section pass kept fewer bands than the
+		// outline, so the model flipped and the surviving outline bands carried no
+		// `bgColor`/`bgGradient`. Nothing reported it.
+		const before = design( { bandSource: 'sections', sections: [ { id: 'a' } ] } );
+		const after = design( { bandSource: 'outline', sections: [ { id: 'a' } ] } );
+		expect( diffDesignFacts( before, after ) ).toEqual( [ 'band model sections → outline' ] );
+	} );
+
+	it( 'reports a band surface the refresh dropped, naming the band and the fact', () => {
+		const before = design( {
+			sections: [
+				{ id: 'a', bgGradient: 'linear-gradient(#27104a 30%, #ffffff 0%)' },
+				{ id: 'b', bgColor: '#f7f7f7' },
+			],
+		} );
+		const after = design( { sections: [ { id: 'a' }, { id: 'b' } ] } );
+		expect( diffDesignFacts( before, after ).sort() ).toEqual( [
+			"section a's bgGradient",
+			"section b's bgColor",
+		] );
+	} );
+
+	it( 'does not report a CHANGED band surface — that is a source change', () => {
+		const before = design( { sections: [ { id: 'a', bgColor: '#f7f7f7' } ] } );
+		const after = design( { sections: [ { id: 'a', bgColor: '#ffffff' } ] } );
+		expect( diffDesignFacts( before, after ) ).toEqual( [] );
 	} );
 } );

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // sites.test.ts — Phase 3.4: the multi-site registry (add/list/use/remove,
 // default handling, profile resolution). The two-site round-trip is the

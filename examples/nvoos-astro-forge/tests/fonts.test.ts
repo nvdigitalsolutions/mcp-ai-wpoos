@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // fonts.test.ts — canonical Google Fonts family names.
 //

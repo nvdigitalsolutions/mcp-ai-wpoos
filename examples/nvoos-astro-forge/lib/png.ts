@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // png.ts — a minimal, dependency-free PNG codec.
 //

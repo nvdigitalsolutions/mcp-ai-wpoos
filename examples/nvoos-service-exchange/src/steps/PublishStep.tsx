@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { useState } from 'react';
 import type { ApiClient } from '../api/client';
 import { ApiClientError } from '../api/client';

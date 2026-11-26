@@ -25,6 +25,9 @@ class WP_MCP_AI_REST_Tool_Slug_Normalization_Test extends WP_Test_REST_TestCase 
 	 */
 	private $original_controller = null;
 
+	/**
+	 * Swap in the stub tool and capture the production controller.
+	 */
 	public function set_up() {
 		parent::set_up();
 
@@ -124,6 +127,7 @@ class WP_MCP_AI_REST_Tool_Slug_Normalization_Test extends WP_Test_REST_TestCase 
  */
 class WP_MCP_AI_REST_Tool_Slug_Normalization_Test_Stub_Tool implements WP_MCP_AI_Tool_Interface {
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * Captured arguments from the last execute call.
 	 *
@@ -158,7 +162,13 @@ class WP_MCP_AI_REST_Tool_Slug_Normalization_Test_Stub_Tool implements WP_MCP_AI
 		);
 	}
 
-	/** {@inheritdoc} */
+	/**
+	 * Execute the stub tool and capture its arguments.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$this->last_arguments = $arguments;
 

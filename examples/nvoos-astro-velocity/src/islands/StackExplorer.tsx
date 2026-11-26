@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // StackExplorer island — accessible tab panels on the home page that explain
 // the storefront's layers (client:load).

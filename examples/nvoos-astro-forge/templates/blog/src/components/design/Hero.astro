@@ -1,4 +1,5 @@
 ---
+// SPDX-License-Identifier: MIT
 // Hero — the hero section component (Proposal 114 P4). Token-driven only;
 // no brand values. The page article already owns the h1, so the hero leads
 // with an h2.
@@ -13,14 +14,60 @@ import type { SemanticSection } from '../../forge/semantic.ts';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SmartImage from '../SmartImage.astro';
 import SectionTitle from './SectionTitle.astro';
+import { bandParagraphs, titleEchoItems } from '../../lib/band-copy.ts';
 
 interface Props {
 	section: SemanticSection;
 	theme?: SectionTheme;
+	/**
+	 * Media the MEASURED element facts prove exists.
+	 *
+	 * A builder paints its hero photo as a `background-image` on a spacer div,
+	 * so `collectSlots` (which reads `<img src>`) finds no media and the split
+	 * rendered an empty collage column. The element pass recorded the painted
+	 * URLs and their heights; the renderer passes the tall one here.
+	 */
+	media?: Array< { src?: string; alt?: string } >;
 }
 
 const { section, theme } = Astro.props;
-const { title, body, media, links } = section.slots;
+const { body, items, links } = section.slots;
+const title = section.slots.title ?? theme?.titleText;
+const media = Astro.props.media ?? section.slots.media;
+// A leading hero usually opens with the source's BREADCRUMB (`Home | About us`).
+// It arrives either as the band's only link or as an icon-list item titled
+// "Home" with no body and no number — a stat always carries a value, so that
+// shape is the crumb. Rendering it as a button/stat under the copy was the
+// give-away (eca.directory's about-us hero, 2026-11-25). Semantic shape per
+// WAI: nav[aria-label], an ordered list, `aria-current="page"` on the last crumb.
+const homeLink =
+	links && links.length === 1 && /^home$/i.test( ( links[ 0 ].text ?? '' ).trim() ) ? links[ 0 ] : undefined;
+const crumbItem = homeLink
+	? undefined
+	: ( items ?? [] ).find( ( item ) => ! item.body && /^home$/i.test( ( item.title ?? '' ).trim() ) );
+const breadcrumbText = homeLink?.text ?? crumbItem?.title;
+const breadcrumb =
+	breadcrumbText && title ? { text: breadcrumbText.trim(), href: homeLink?.href ?? '/' } : undefined;
+const actionLinks = breadcrumb && homeLink ? [] : links;
+const listableItems = crumbItem ? ( items ?? [] ).filter( ( item ) => item !== crumbItem ) : items;
+// The source's lead icon-box often repeats the band title. Rendering it as a
+// stat pair printed the heading twice (eca.directory's about-us benefits band,
+// 2026-11-25) — the echo belongs to the heading, not to the list.
+const echoes = new Set( titleEchoItems( listableItems, title, theme, theme?.columns ) );
+const heroItems = ( listableItems ?? [] ).filter( ( item ) => ! echoes.has( item ) );
+
+/**
+ * The collage, as measured LAYERS.
+ *
+ * A builder's hero media column is a stack of painted spacers — a blob, two
+ * shapes, then the photograph — overlapped by a transform the vendor sheet
+ * owns. Flattening that to one image loses the composition (the green blob IS
+ * the design on eca.directory), so each layer is placed absolutely at the top of
+ * a box sized to the lane's measured height, painted in DOM order.
+ */
+const layers = theme?.mediaLayers ?? [];
+const collageHeight = theme?.mediaHeight ?? Math.max( 0, ...layers.map( ( layer ) => layer.height ?? 0 ) );
+const collageStyle = collageHeight > 0 ? `--ds-collage-h:${ collageHeight }px` : undefined;
 
 /** The heading typography facts ride CSS vars — the .ds-title clamp keeps
  * its fluid floor so a 43px source heading never breaks a 360px viewport. */
@@ -94,19 +141,41 @@ const offsetVars = ( index: number ): string | undefined => {
 
 {theme?.layout === 'split' ? (
 	<section class="ds-section ds-hero ds-hero-split">
-		<div class="ds-hero-copy">
+		{/* The source's own side. Rendered as grid ORDER, not extra CSS: the two
+		    columns are the grid's only children, so order is the whole change. */}
+		<div class="ds-hero-copy" style={theme.mediaSide === 'left' ? 'order:2' : undefined}>
+			{breadcrumb && (
+				<nav class="ds-breadcrumb" aria-label="Breadcrumb">
+					<ol>
+						<li>
+							<a href={breadcrumb.href}>{breadcrumb.text}</a>
+						</li>
+						<li aria-current="page">{title}</li>
+					</ol>
+				</nav>
+			)}
 			{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 			{theme.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
-			{body && body.length > 0 && (
+			{bandParagraphs(body, theme).length > 0 && (
 				<div class="ds-hero-body" style={theme.bodyColumns ? `--ds-body-cols:${theme.bodyColumns}` : undefined}>
-					{body.map((paragraph) => (
+					{bandParagraphs(body, theme).map((paragraph) => (
 						<p class="ds-text">{paragraph}</p>
 					))}
 				</div>
 			)}
-			{links && links.length > 0 && (
+			{( heroItems?.length ?? 0 ) > 0 && (
+				<dl class="ds-hero-stats">
+					{heroItems?.map( ( item ) => (
+						<div class="ds-hero-stat">
+							{ item.title && <dt class="ds-hero-stat__value">{ item.title }</dt> }
+							{ item.body && <dd class="ds-hero-stat__label">{ item.body }</dd> }
+						</div>
+					) )}
+				</dl>
+			)}
+			{actionLinks && actionLinks.length > 0 && (
 				<div class="ds-links">
-					{links.map((link) => (
+					{actionLinks.map((link) => (
 						<a class="ds-button" href={link.href ?? '#'}>
 							{link.text ?? 'Learn more'}
 						</a>
@@ -114,9 +183,25 @@ const offsetVars = ( index: number ): string | undefined => {
 				</div>
 			)}
 		</div>
-		{media && media.length > 0 && (
-			<div class="ds-hero-collage">
-				{theme.mediaShape && (
+		{layers.length > 0 ? (
+			<div
+				class="ds-hero-collage ds-hero-collage--layered"
+				style={[collageStyle, theme.mediaSide === 'left' ? 'order:1' : ''].filter(Boolean).join(';') || undefined}
+			>
+				{layers.map( ( layer, index ) => (
+					<img
+						class="ds-collage-layer"
+						src={layer.src}
+						alt={index === layers.length - 1 ? title ?? '' : ''}
+						aria-hidden={index === layers.length - 1 ? undefined : 'true'}
+						loading={index === layers.length - 1 ? 'eager' : 'lazy'}
+						style={layer.height ? `--ds-layer-h:${ layer.height }px;z-index:${ index + 1 }` : `z-index:${ index + 1 }`}
+					/>
+				) )}
+			</div>
+		) : media && media.length > 0 && (
+			<div class="ds-hero-collage" style={theme.mediaSide === 'left' ? 'order:1' : undefined}>
+				{theme?.mediaShape && (
 					<span
 						class="ds-collage-shape"
 						aria-hidden="true"
@@ -153,6 +238,10 @@ const offsetVars = ( index: number ): string | undefined => {
 										alt={image.alt ?? ''}
 										sizes="(min-width: 768px) 50vw, 100vw"
 										eager={index === 0}
+										/* The measured media LANE height: the source crops the picture to
+										 * that box. Without it the band grew past the source's height and
+										 * pushed every following band down (2026-11-25). */
+										style={theme?.mediaHeight ? `max-height:${theme.mediaHeight}px;object-fit:cover` : undefined}
 									/>
 								)
 					  )}

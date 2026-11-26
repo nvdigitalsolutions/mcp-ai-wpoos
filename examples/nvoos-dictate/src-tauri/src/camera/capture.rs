@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! `nokhwa`-backed camera capture: device enumeration and a resident frame
 //! ring feeding the live preview. Camera audio is handled by the existing mic
 //! path (a webcam mic is an ordinary input device).
@@ -24,6 +25,9 @@ pub(crate) struct CameraStats {
 /// Shared, thread-safe camera handle (video preview only).
 pub struct CameraCapture {
     pub frame: Arc<Mutex<Option<PreviewFrame>>>,
+    /// Larger ring (up to 640 px) consumed by the gesture and detection
+    /// stages; the 320 px `frame` ring stays UI-only.
+    pub frame_vision: Arc<Mutex<Option<PreviewFrame>>>,
     pub device_name: String,
     pub(crate) stats: Arc<CameraStats>,
     pub(crate) stop_tx: Option<Sender<()>>,
@@ -42,7 +46,13 @@ impl CameraCapture {
     /// shared handle. The `nokhwa::Camera` is held by the worker for its
     /// lifetime; dropping the handle signals shutdown.
     pub fn start(device_name: Option<&str>) -> AppResult<Self> {
-        let (tx, rx) = channel::<AppResult<(String, Arc<Mutex<Option<PreviewFrame>>>)>>();
+        let (tx, rx) = channel::<
+            AppResult<(
+                String,
+                Arc<Mutex<Option<PreviewFrame>>>,
+                Arc<Mutex<Option<PreviewFrame>>>,
+            )>,
+        >();
         let (stop_tx, stop_rx) = channel::<()>();
         let requested = device_name.map(|s| s.to_string());
         let stats = Arc::new(CameraStats::default());
@@ -51,9 +61,9 @@ impl CameraCapture {
         let worker = std::thread::Builder::new()
             .name("nvoos-camera".into())
             .spawn(move || {
-                let (camera, _name, frame) = match build_camera(requested.as_deref()) {
+                let (camera, _name, frame, vision) = match build_camera(requested.as_deref()) {
                     Ok(t) => {
-                        let _ = tx.send(Ok((t.1.clone(), t.2.clone())));
+                        let _ = tx.send(Ok((t.1.clone(), t.2.clone(), t.3.clone())));
                         t
                     }
                     Err(e) => {
@@ -61,14 +71,16 @@ impl CameraCapture {
                         return;
                     }
                 };
-                run_loop(camera, frame, worker_stats, stop_rx);
+                run_loop(camera, frame, vision, worker_stats, stop_rx);
             })
             .map_err(|e| AppError::Audio(e.to_string()))?;
         drop(worker);
 
-        let (device_name, frame) = rx.recv().map_err(|e| AppError::Audio(e.to_string()))??;
+        let (device_name, frame, frame_vision) =
+            rx.recv().map_err(|e| AppError::Audio(e.to_string()))??;
         Ok(Self {
             frame,
+            frame_vision,
             device_name,
             stats,
             stop_tx: Some(stop_tx),
@@ -107,7 +119,12 @@ impl Drop for CameraCapture {
     }
 }
 
-type Held = (nokhwa::Camera, String, Arc<Mutex<Option<PreviewFrame>>>);
+type Held = (
+    nokhwa::Camera,
+    String,
+    Arc<Mutex<Option<PreviewFrame>>>,
+    Arc<Mutex<Option<PreviewFrame>>>,
+);
 
 fn build_camera(requested: Option<&str>) -> AppResult<Held> {
     use nokhwa::pixel_format::RgbFormat;
@@ -137,12 +154,18 @@ fn build_camera(requested: Option<&str>) -> AppResult<Held> {
         .open_stream()
         .map_err(|e| AppError::Audio(format!("camera stream failed: {e}")))?;
 
-    Ok((camera, name, Arc::new(Mutex::new(None))))
+    Ok((
+        camera,
+        name,
+        Arc::new(Mutex::new(None)),
+        Arc::new(Mutex::new(None)),
+    ))
 }
 
 fn run_loop(
     mut camera: nokhwa::Camera,
     frame: Arc<Mutex<Option<PreviewFrame>>>,
+    frame_vision: Arc<Mutex<Option<PreviewFrame>>>,
     stats: Arc<CameraStats>,
     stop_rx: std::sync::mpsc::Receiver<()>,
 ) {
@@ -159,8 +182,13 @@ fn run_loop(
                 let (w, h) = (buffer.resolution().width(), buffer.resolution().height());
                 if let Ok(img) = buffer.decode_image::<RgbFormat>() {
                     let raw = img.as_raw();
-                    let downsampled = downsample(raw, w, h, 320);
-                    *frame.lock().unwrap() = Some(downsampled);
+                    // One decode, two consumers: the UI preview stays small,
+                    // while the gesture/detection stages get enough pixels to
+                    // resolve a hand at arm's length.
+                    let full = downsample(raw, w, h, VISION_MAX_W);
+                    let preview = downsample(&full.rgb, full.width, full.height, PREVIEW_MAX_W);
+                    *frame.lock().unwrap() = Some(preview);
+                    *frame_vision.lock().unwrap() = Some(full);
                 }
             }
             Err(e) => {
@@ -172,6 +200,11 @@ fn run_loop(
     }
     let _ = camera.stop_stream();
 }
+
+/// Preview-ring width (UI thumbnail).
+const PREVIEW_MAX_W: u32 = 320;
+/// Vision-ring width (detectors and the hand-landmark stage).
+const VISION_MAX_W: u32 = 640;
 
 /// Nearest-neighbour downsample of an RGB buffer to at most `max_w` wide.
 fn downsample(rgb: &[u8], w: u32, h: u32, max_w: u32) -> PreviewFrame {

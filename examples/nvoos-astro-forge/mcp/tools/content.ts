@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // content.ts — the content tool slice (096 §3.3 long-tail): audit, preview
 // (through the versioned sanitizer), the live redirect map, media audit, and

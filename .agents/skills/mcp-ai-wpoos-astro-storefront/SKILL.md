@@ -409,6 +409,21 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   then `node scripts/sync-manage-assets.mjs` here (or `npm run build:manage`).
   Both committed bundles must move together — `build/standalone/*` and
   `public/manage-assets/*` — or the two-bundle drift gate fails.
+- **A toolkit nav entry needs `Customer.features`, not just a `NAV` entry
+  (2026-11-26).** The bundle decides which toolkit sections to render from the
+  admin config's `features` list, which `manage-config.ts` forwards from the
+  contract's `Customer.features` (defaulting to `[]`). Drop the field and the
+  bundle still renders perfectly while the nav (ECA's **Activities**, the first
+  run) is simply absent — no error, no 404, just a missing tab. `features` has
+  to survive `GET /api/auth/me` → `manage-config.ts` → the config island.
+- **A forged managed site (Proposal 165) is a second host for `/manage`.** It
+  serves the surface from its own front controller with no CMS cookie in reach:
+  the Application Password rides a sealed AES-256-GCM `nvoos_forge_cred` cookie
+  and the session is
+  `HMAC(secret, 'manage.v1.' + <exp>.<uid>.<base64url(name)>)`.
+  `manage-runtime.ts` signs and `forge-gate/runtime.mjs` verifies locally, so
+  changing the recipe in one silently logs every manager out. Read Proposal
+  165's runbook before touching either.
 - **A per-row action that mints a link must open the tab synchronously.**
   `window.open()` after an `await` is treated as a popup and blocked; open
   `about:blank` first, then `location.replace(url)` once the request resolves
@@ -1196,11 +1211,12 @@ legacy-identifier renames.
   `lib/content/portable-text.ts`, the `CUSTOM_BLOCK_TYPES` allowlist, a
   component in `components/blocks/`, and the `TYPE_COMPONENTS` map in
   `components.ts`. `tests/unit/agent-surfaces.test.ts` pins accept + reject.
-- **`data-section` on block roots**: ALL eleven block types now emit it.
+- **`data-section` on block roots**: ALL twelve block types now emit it.
   The three new blocks (comparison/steps/team) plus hero, image, testimonial,
   `stat` (which emits `data-section="stats"` — the KIND name — while its
   Portable Text type keeps the name `stat`), and — as of the follow-up pass —
-  `faq`, `tabs`, `productGrid` (`product-grid`), `promotion`.
+  `faq`, `tabs`, `productGrid` (`product-grid`), `promotion`, and `model3d`
+  (`model-3d`, 2026-11-17).
 - **The `ui/` primitives already forward attributes.** `UiAccordion`,
   `UiTabs`, `UiTabsList`, `UiTabsPanel`, `UiTabsTab`, `UiAccordionItem` all
   end with `{...rest}` on their root, so passing `data-section` from the block
@@ -1210,7 +1226,11 @@ legacy-identifier renames.
 - **Vocabulary lives in `src/lib/content/section-kinds.ts`**
   (`SECTION_KINDS`, `isSectionKind`, `BLOCK_TYPE_TO_KIND`). It is
   storefront-local: the forge has no `faq`/`tabs`/`product-grid`/`promotion`
-  kinds because it does not generate those bands. Two gates:
+  kinds because it does not generate those bands. **`model-3d` is the one
+  exception** (2026-11-17): the forge's `product-3d` variant emits the same
+  `data-section`, so it is the sole SHARED entry in the parity gate's
+  vocabulary — adding a kind that both apps can emit means editing BOTH trees
+  plus `bin/check-astro-app-parity.mjs`'s `SHARED` array. Two gates:
   `tests/unit/section-kinds.test.ts` (source grep — every
   `src/components/blocks/*.astro` declares exactly ONE in-vocabulary
   `data-section`, every kind has a block; `Blocks.astro` is the dispatcher and

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // text-parity.test.ts — normalisation, shingling, coverage direction, extraction.
 //
@@ -29,6 +30,15 @@ describe( 'normalizeText', () => {
 
 	it( 'applies NFKC (ligatures and full-width forms)', () => {
 		expect( normalizeText( '\uFB01ne \uFF21' ) ).toBe( 'fine a' );
+	} );
+
+	it( 'folds typographic and non-breaking hyphens to the ASCII hyphen', () => {
+		// NFKC does NOT fold U+2010/U+2011. Since `tokenize` keeps an ASCII hyphen
+		// inside a word, an unfolded one splits "real‑time" into two tokens and
+		// destroys every shingle around it — eca.directory's hero and article
+		// bands lost 14 and 36 points of text coverage on identical copy.
+		expect( normalizeText( 'real\u2010time role\u2011based' ) ).toBe( 'real-time role-based' );
+		expect( tokenize( normalizeText( 'real\u2010time' ) ) ).toEqual( [ 'real-time' ] );
 	} );
 } );
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * CSS custom-property name constants for the Docs Hub theme.
  *

@@ -133,6 +133,8 @@
 .wp-mcp-ai-sm-status-success { color: #0a7a0a; }
 .wp-mcp-ai-sm-status-failure { color: #cc1818; }
 .wp-mcp-ai-sm-status-pending { color: #856404; }
+.wp-mcp-ai-sm-status-running { color: #2271b1; }
+.wp-mcp-ai-sm-status-timeout { color: #996800; }
 .wp-mcp-ai-sm-status-never   { color: #646970; }
 
 .wp-mcp-ai-sm-error-text {

@@ -32,9 +32,20 @@
 		PHPUnit test methods use the `test_snake_case` convention across this
 		repo (and WordPress's test suite). PSR-1's CamelCaps rule does not apply
 		to them; renaming would break the house convention for no runtime gain.
+
+		The second exemption is a real interface conflict, not a preference. The
+		WiFi addon (`addons/nvoos-wifi`) is WordPress code gated by its own WPCS
+		ruleset, which mandates snake_case method names, so
+		`Interface_WiFi_Id_Generator` declares `new_device_id()` and
+		`new_session_id()`. The Laravel host class implements that interface, so
+		it must use those names or fail to satisfy the contract — and renaming
+		across the addon would fail the addon's `WordPress` ruleset instead. The
+		exemption is scoped to the host adapter, so new Laravel code there is still
+		checked for every other PSR-12 rule.
 	-->
 	<rule ref="PSR1.Methods.CamelCapsMethodName.NotCamelCaps">
 		<exclude-pattern>*/tests/*</exclude-pattern>
+		<exclude-pattern>*/app-skeleton/app/Wifi/*</exclude-pattern>
 	</rule>
 
 	<!--
@@ -65,6 +76,7 @@
 	<rule ref="PSR1.Classes.ClassDeclaration.MultipleClasses">
 		<exclude-pattern>*/lib/core/tests/Integration/ToolRegistryIntegrationTest.php</exclude-pattern>
 		<exclude-pattern>*/lib/core/tests/Unit/Application/Tool/ReadOnlyToolGuardTest.php</exclude-pattern>
+		<exclude-pattern>*/lib/core/tests/Unit/Application/Tool/ChatProfileGuardTest.php</exclude-pattern>
 		<exclude-pattern>*/lib/core/tests/Unit/Infrastructure/Profession/CachedProfessionRepositoryTest.php</exclude-pattern>
 		<exclude-pattern>*/lib/core/tests/Unit/Tool/LegacyToolAdapterTest.php</exclude-pattern>
 		<exclude-pattern>*/lib/core/tests/Unit/Tool/PortedClusterOneToolsTest.php</exclude-pattern>

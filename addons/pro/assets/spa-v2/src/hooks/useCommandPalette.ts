@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useCommandPalette — Hook for the command palette overlay.
  */

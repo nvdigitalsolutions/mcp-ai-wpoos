@@ -1089,6 +1089,307 @@ class Test_Pro_Schedule_Manager extends WP_UnitTestCase {
 	}
 
 	// -------------------------------------------------------------------------
+	// Run lifecycle (pending → running → terminal) and stale-run reaping
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Create a minimal enabled task schedule.
+	 *
+	 * @param string $prefix Hook-name prefix, to keep schedules independent.
+	 * @return string Schedule ID.
+	 */
+	private function make_task_schedule( $prefix = 'lifecycle' ) {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => $prefix . '_' . uniqid(),
+				'schedule'      => 'single',
+				'timestamp'     => time() + 120,
+			),
+			$this->admin_id
+		);
+
+		$this->assertIsString( $id, 'Fixture schedule could not be created.' );
+
+		return $id;
+	}
+
+	/**
+	 * Move the newest history entry back in time, past the staleness window.
+	 *
+	 * @param string $id     Schedule ID.
+	 * @param int    $offset Seconds to subtract from `start_time`.
+	 */
+	private function backdate_newest_run( $id, $offset ) {
+		$history = get_option( WP_MCP_AI_Pro_Schedule_Manager::HISTORY_OPTION, array() );
+		$last    = count( $history[ $id ] ) - 1;
+
+		$history[ $id ][ $last ]['start_time'] = time() - $offset;
+		update_option( WP_MCP_AI_Pro_Schedule_Manager::HISTORY_OPTION, $history );
+
+		// load_history() caches for 60 s; drop the entry so the reaper sees the
+		// back-dated timestamp rather than the fresh one it cached.
+		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+			WP_MCP_AI_Cache_Helper::delete( 'pro_schedule_history' );
+		}
+	}
+
+	/**
+	 * Opens an observable `pending` record before execution starts.
+	 */
+	public function test_begin_run_creates_pending_record() {
+		$id = $this->make_task_schedule( 'begin_run' );
+
+		$run_id = WP_MCP_AI_Pro_Schedule_Manager::begin_run( $id, $this->admin_id, 'manual' );
+
+		$this->assertNotEmpty( $run_id );
+
+		$run = WP_MCP_AI_Pro_Schedule_Manager::get_run( $id, $run_id );
+		$this->assertIsArray( $run );
+		$this->assertSame( 'pending', $run['status'] );
+		$this->assertSame( 'manual', $run['trigger'] );
+		$this->assertSame( $this->admin_id, $run['user_id'] );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 'pending', $schedule['last_run_status'] );
+		$this->assertSame( $run_id, $schedule['last_run_id'] );
+
+		$this->assertNotNull( WP_MCP_AI_Pro_Schedule_Manager::get_active_run( $id ) );
+	}
+
+	/**
+	 * Completes the record opened by begin_run() in place.
+	 *
+	 * A duplicate history entry would double-count the run and lose the
+	 * original trigger/user provenance the UI shows in the history modal.
+	 */
+	public function test_dispatch_closes_open_run_in_place() {
+		$id = $this->make_task_schedule( 'close_in_place' );
+
+		$run_id = WP_MCP_AI_Pro_Schedule_Manager::begin_run( $id, $this->admin_id, 'manual' );
+
+		$this->assertTrue( WP_MCP_AI_Pro_Schedule_Manager::dispatch( $id, $run_id ) );
+
+		$history = WP_MCP_AI_Pro_Schedule_Manager::get_run_history( $id, 10 );
+		$this->assertCount( 1, $history, 'The opened run must be completed, not duplicated.' );
+
+		$this->assertSame( $run_id, $history[0]['run_id'] );
+		$this->assertSame( 'success', $history[0]['status'] );
+		$this->assertSame( 'manual', $history[0]['trigger'], 'Trigger provenance must survive completion.' );
+
+		$this->assertNull( WP_MCP_AI_Pro_Schedule_Manager::get_active_run( $id ) );
+		$this->assertSame( 'success', WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id )['last_run_status'] );
+	}
+
+	/**
+	 * A plain cron firing opens its own record so it is observable.
+	 */
+	public function test_dispatch_without_run_id_opens_its_own_record() {
+		$id = $this->make_task_schedule( 'cron_record' );
+
+		$this->assertTrue( WP_MCP_AI_Pro_Schedule_Manager::dispatch( $id ) );
+
+		$history = WP_MCP_AI_Pro_Schedule_Manager::get_run_history( $id, 10 );
+		$this->assertCount( 1, $history );
+		$this->assertSame( 'cron', $history[0]['trigger'] );
+		$this->assertNotEmpty( $history[0]['run_id'] );
+	}
+
+	/**
+	 * Closes a run queued before its schedule was disabled.
+	 *
+	 * The user already received a queue acknowledgement, so the record must
+	 * reach a terminal state instead of waiting out the stale-run window.
+	 */
+	public function test_dispatch_closes_queued_run_when_schedule_disabled() {
+		$id = $this->make_task_schedule( 'disabled_after_queue' );
+
+		$run_id = WP_MCP_AI_Pro_Schedule_Manager::begin_run( $id, $this->admin_id, 'manual' );
+
+		WP_MCP_AI_Pro_Schedule_Manager::toggle_schedule( $id, false, $this->admin_id );
+
+		$this->assertFalse( WP_MCP_AI_Pro_Schedule_Manager::dispatch( $id, $run_id ) );
+
+		$run = WP_MCP_AI_Pro_Schedule_Manager::get_run( $id, $run_id );
+		$this->assertIsArray( $run );
+		$this->assertSame( 'failure', $run['status'] );
+		$this->assertStringContainsString( 'disabled', strtolower( $run['error'] ) );
+
+		$this->assertNull( WP_MCP_AI_Pro_Schedule_Manager::get_active_run( $id ) );
+	}
+
+	/**
+	 * Closes a run whose worker never reported back.
+	 *
+	 * Without this, a fatal error or a killed worker leaves an eternal
+	 * `pending` record that blocks every later run and never terminates the
+	 * UI's status poller.
+	 */
+	public function test_reap_stale_runs_marks_timeout_and_mirrors_schedule() {
+		$id = $this->make_task_schedule( 'reap' );
+
+		$run_id = WP_MCP_AI_Pro_Schedule_Manager::begin_run( $id, $this->admin_id, 'manual' );
+		$this->backdate_newest_run( $id, WP_MCP_AI_Pro_Schedule_Manager::RUN_STALE_AFTER + 60 );
+
+		$this->assertSame( 1, WP_MCP_AI_Pro_Schedule_Manager::reap_stale_runs( $id ) );
+
+		$run = WP_MCP_AI_Pro_Schedule_Manager::get_run( $id, $run_id );
+		$this->assertSame( 'timeout', $run['status'] );
+		$this->assertNotSame( '', $run['error'] );
+
+		$schedule = WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id );
+		$this->assertSame( 'timeout', $schedule['last_run_status'] );
+		$this->assertNotSame( '', $schedule['last_error'] );
+
+		// The schedule is unblocked, and reaping again is a no-op.
+		$this->assertNull( WP_MCP_AI_Pro_Schedule_Manager::get_active_run( $id ) );
+		$this->assertSame( 0, WP_MCP_AI_Pro_Schedule_Manager::reap_stale_runs( $id ) );
+	}
+
+	/**
+	 * A fresh run is never reaped, however often the sweep runs.
+	 */
+	public function test_reap_stale_runs_leaves_fresh_runs_alone() {
+		$id = $this->make_task_schedule( 'reap_fresh' );
+
+		$run_id = WP_MCP_AI_Pro_Schedule_Manager::begin_run( $id, $this->admin_id, 'manual' );
+
+		$this->assertSame( 0, WP_MCP_AI_Pro_Schedule_Manager::reap_stale_runs( $id ) );
+		$this->assertSame( 'pending', WP_MCP_AI_Pro_Schedule_Manager::get_run( $id, $run_id )['status'] );
+	}
+
+	/**
+	 * Queues the run and returns a handle immediately.
+	 */
+	public function test_trigger_now_async_queues_without_executing() {
+		$fired = 0;
+		$hook  = 'async_queue_' . uniqid();
+
+		add_action(
+			$hook,
+			static function () use ( &$fired ) {
+				++$fired;
+			}
+		);
+
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => $hook,
+				'schedule'      => 'single',
+				'timestamp'     => time() + 120,
+			),
+			$this->admin_id
+		);
+
+		$result = WP_MCP_AI_Pro_Schedule_Manager::trigger_now_async( $id, $this->admin_id );
+
+		$this->assertIsArray( $result, 'A queueable run must return a handle, not an error.' );
+		$this->assertTrue( $result['queued'] );
+		$this->assertSame( $id, $result['schedule_id'] );
+		$this->assertContains( $result['backend'], array( 'action-scheduler', 'wp-cron' ) );
+
+		$this->assertSame( 0, $fired, 'trigger_now_async() must not execute the schedule inline.' );
+
+		$run = WP_MCP_AI_Pro_Schedule_Manager::get_run( $id, $result['run_id'] );
+		$this->assertIsArray( $run );
+		$this->assertSame( 'pending', $run['status'] );
+	}
+
+	/**
+	 * Refuses to stack runs on one schedule.
+	 */
+	public function test_trigger_now_async_refuses_concurrent_run() {
+		$id = $this->make_task_schedule( 'concurrent' );
+
+		$first = WP_MCP_AI_Pro_Schedule_Manager::trigger_now_async( $id, $this->admin_id );
+		$this->assertIsArray( $first );
+
+		$second = WP_MCP_AI_Pro_Schedule_Manager::trigger_now_async( $id, $this->admin_id );
+
+		$this->assertWPError( $second );
+		$this->assertSame( 'schedule_already_running', $second->get_error_code() );
+		$this->assertSame( 409, $second->get_error_data()['status'] );
+	}
+
+	/**
+	 * Refuses disabled schedules instead of no-op'ing.
+	 */
+	public function test_trigger_now_async_refuses_disabled_schedule() {
+		$id = WP_MCP_AI_Pro_Schedule_Manager::create_schedule(
+			array(
+				'schedule_type' => 'task',
+				'hook'          => 'async_disabled_' . uniqid(),
+				'schedule'      => 'single',
+				'timestamp'     => time() + 120,
+				'enabled'       => false,
+			),
+			$this->admin_id
+		);
+
+		$result = WP_MCP_AI_Pro_Schedule_Manager::trigger_now_async( $id, $this->admin_id );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'schedule_disabled', $result->get_error_code() );
+	}
+
+	/**
+	 * A run that could not be queued is closed, not left pending forever.
+	 */
+	public function test_trigger_now_async_closes_record_when_queueing_fails() {
+		$id = $this->make_task_schedule( 'queue_fail' );
+
+		$fail = static function () {
+			return new WP_Error( 'no_backend', 'No executor available.' );
+		};
+		add_filter( 'wp_mcp_ai_pro_schedule_run_backend', $fail );
+
+		try {
+			$result = WP_MCP_AI_Pro_Schedule_Manager::trigger_now_async( $id, $this->admin_id );
+		} finally {
+			remove_filter( 'wp_mcp_ai_pro_schedule_run_backend', $fail );
+		}
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'no_backend', $result->get_error_code() );
+
+		$history = WP_MCP_AI_Pro_Schedule_Manager::get_run_history( $id, 10 );
+		$this->assertCount( 1, $history, 'The opened record must be closed, not duplicated.' );
+		$this->assertSame( 'failure', $history[0]['status'] );
+		$this->assertSame( 'No executor available.', $history[0]['error'] );
+
+		$this->assertNull(
+			WP_MCP_AI_Pro_Schedule_Manager::get_active_run( $id ),
+			'A failed enqueue must not leave the schedule blocked on a pending run.'
+		);
+		$this->assertSame( 'failure', WP_MCP_AI_Pro_Schedule_Manager::get_schedule( $id )['last_run_status'] );
+	}
+
+	/**
+	 * The queue backend can be forced to WP-Cron.
+	 *
+	 * Escape hatch for sites whose Action Scheduler tables are missing or whose
+	 * queue is backed up.
+	 */
+	public function test_trigger_now_async_can_force_wp_cron_backend() {
+		$id = $this->make_task_schedule( 'force_cron' );
+
+		$force = static function () {
+			return 'wp-cron';
+		};
+		add_filter( 'wp_mcp_ai_pro_schedule_run_backend', $force );
+
+		try {
+			$result = WP_MCP_AI_Pro_Schedule_Manager::trigger_now_async( $id, $this->admin_id );
+		} finally {
+			remove_filter( 'wp_mcp_ai_pro_schedule_run_backend', $force );
+		}
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'wp-cron', $result['backend'] );
+	}
+
+	// -------------------------------------------------------------------------
 	// Get schedules / filtering
 	// -------------------------------------------------------------------------
 

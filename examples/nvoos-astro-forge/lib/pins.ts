@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // pins.ts — operator-owned facts inside the ANALYZED `design` block.
 //

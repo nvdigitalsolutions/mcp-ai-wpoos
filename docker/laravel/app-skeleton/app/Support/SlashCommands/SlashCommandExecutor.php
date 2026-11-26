@@ -316,7 +316,10 @@ final class SlashCommandExecutor
         $days = is_numeric($raw) ? (int) $raw : 30;
         $days = max(1, min(365, $days));
 
-        $summary = $this->usage->summary($days);
+        // The console user's estate, not the deployment's spend: `/cost` is
+        // answered in the same scope as every other number a tenant sees
+        // (Proposal 152 §3 D5).
+        $summary = $this->usage->summary($days, TenantContext::current());
 
         $lines = [
             sprintf('Cost summary (last %d days):', $days),
@@ -440,6 +443,7 @@ final class SlashCommandExecutor
         }
 
         return (int) DB::table('nvoos_token_usage')
+            ->where('tenant_id', TenantContext::current())
             ->where('created_at', '>=', now()->startOfDay())
             ->sum('total_tokens');
     }

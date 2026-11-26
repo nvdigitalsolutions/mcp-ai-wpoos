@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Permission utility tests — capability-based access (auth/permissions.ts).
  *

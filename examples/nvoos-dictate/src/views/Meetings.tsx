@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { useCallback, useEffect, useState } from 'react';
 import { api, type MeetingRow } from '../lib/ipc';
 

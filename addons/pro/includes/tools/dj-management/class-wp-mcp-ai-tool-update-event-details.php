@@ -148,9 +148,9 @@ class WP_MCP_AI_Tool_Update_Event_Details implements WP_MCP_AI_Tool_Interface, W
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['booking_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Booking ID is required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Booking ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -158,9 +158,9 @@ class WP_MCP_AI_Tool_Update_Event_Details implements WP_MCP_AI_Tool_Interface, W
 
 		// Verify booking exists.
 		if ( ! get_post( $booking_id ) || get_post_type( $booking_id ) !== 'dj_booking' ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid booking ID.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Invalid booking ID.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

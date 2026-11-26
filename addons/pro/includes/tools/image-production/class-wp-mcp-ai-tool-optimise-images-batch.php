@@ -222,7 +222,7 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
-	 * @return array Optimization results.
+	 * @return array|WP_Error Optimization results, or WP_Error on failure.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Parse arguments with sanitization.
@@ -244,9 +244,9 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 		);
 
 		if ( empty( $attachment_ids ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'No valid attachment IDs provided.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'No valid attachment IDs provided.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -254,9 +254,10 @@ class WP_MCP_AI_Tool_Optimise_Images_Batch implements WP_MCP_AI_Tool_Interface, 
 		// The Media Worker batch route (Sharp) needs no GD at all, so the gate
 		// only applies when the sidecar path is unavailable.
 		if ( ! $dry_run && ! $this->is_sidecar_upload_supported() && $convert_to_webp && ! $this->has_gd_library() ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'PHP GD extension is required for WebP conversion. Please enable the GD extension on your server.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_engine_missing',
+				__( 'PHP GD extension is required for WebP conversion. Please enable the GD extension on your server.', 'mcp-ai-wpoos-pro' ),
+				array( 'engine' => 'gd' )
 			);
 		}
 

@@ -202,12 +202,27 @@ class Test_SLA_Manager extends WP_UnitTestCase {
 	 */
 	protected function create_mock_tool( $capabilities ) {
 		return new class( $capabilities ) {
+			/**
+			 * Capabilities supplied to the manager.
+			 *
+			 * @var array
+			 */
 			protected $capabilities;
 
+			/**
+			 * Constructor.
+			 *
+			 * @param array $capabilities Capabilities.
+			 */
 			public function __construct( $capabilities ) {
 				$this->capabilities = $capabilities;
 			}
 
+			/**
+			 * Return the capabilities.
+			 *
+			 * @return array
+			 */
 			public function get_capabilities() {
 				return $this->capabilities;
 			}

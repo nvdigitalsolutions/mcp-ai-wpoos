@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Clipboard Service for NV oOS Chat
  * 

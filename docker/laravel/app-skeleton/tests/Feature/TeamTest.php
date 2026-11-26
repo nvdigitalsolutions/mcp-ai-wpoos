@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Team;
 use App\Models\TeamMember;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Support\TenantContext;
 use Illuminate\Database\QueryException;
@@ -80,7 +81,7 @@ class TeamTest extends TestCase
         $this->postJson("/api/v1/org/teams/{$team->id}/members", [
             'user_id' => $user->id,
             'role' => 'manager',
-            'profession_slug' => 'ux_designer',
+            'profession_slug' => 'ui_ux_designer',
         ])->assertCreated();
 
         $this->getJson("/api/v1/org/teams/{$team->id}")
@@ -88,7 +89,7 @@ class TeamTest extends TestCase
             ->assertJsonPath('data.member_count', 2)
             ->assertJsonFragment([
                 'email' => $user->email,
-                'profession_slug' => 'ux_designer',
+                'profession_slug' => 'ui_ux_designer',
             ]);
     }
 
@@ -199,8 +200,18 @@ class TeamTest extends TestCase
     {
         $this->createTeam('Shared Name');
 
-        TenantContext::set('tenant-b');
-        $this->createTeam('Shared Name');
+        Tenant::query()->firstOrCreate(
+            ['id' => 'tenant-b'],
+            ['name' => 'Estate B', 'slug' => 'tenant-b', 'is_operator' => false]
+        );
+
+        // 149 §21 — the estate now comes from membership, not from a pinned
+        // static. A second actor whose only estate is tenant-b exercises the
+        // real path; pinning `TenantContext` would be overridden by the
+        // middleware and the second create would land in the default estate.
+        Sanctum::actingAs(User::factory()->admin()->inEstate('tenant-b', 'owner')->create());
+
+        $this->postJson('/api/v1/org/teams', ['name' => 'Shared Name'])->assertCreated();
 
         $this->assertSame(2, Team::query()->where('slug', 'shared-name')->count());
     }

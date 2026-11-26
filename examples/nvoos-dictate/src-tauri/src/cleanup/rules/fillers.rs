@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Filler removal: um/uh/like/you-know and repeated-word collapse.
 //!
 //! Conservative by design: only removes words that are unambiguously filler

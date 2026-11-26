@@ -38,10 +38,19 @@ Acceptance criteria (from the proposal):
 
 ## Gap analysis (what must be built)
 
-- **G1 — Deadline detection.** `microtime(true)` at stream start; at each safe
-  boundary (before each tool execution, before each in-loop LLM call) compare
-  elapsed against `apply_filters( 'wp_mcp_ai_sse_offload_elapsed_seconds', 75 )`;
-  0 disables. First boundary past the deadline triggers offload.
+- **G1 — Idle-budget detection (revised 1.2.24).** The proxy resets on any
+  byte, so total turn elapsed is not the risk signal. `WP_MCP_AI_SSE_Handler`
+  records each write and exposes `get_max_idle_gap()`; at each safe boundary
+  (before each tool execution, before each in-loop LLM call) the streaming path
+  compares that figure against the threshold and offloads on the first boundary
+  that exceeds it. The threshold defaults to the General Settings value
+  `sse_offload_elapsed_seconds` (110, a ~15 s margin below Cloudflare's origin
+    read timeout)
+  and is filterable through `wp_mcp_ai_sse_offload_elapsed_seconds`; 0 disables.
+  It must stay below the proxy's idle timeout — at or above it the connection has
+  already been reset when the check fires. *Original 1.2.11 shape compared turn
+  elapsed and misfired on healthy long turns — see the proposal's Design 1
+  revision.*
 - **G2 — Snapshot extension.** `WP_MCP_AI_Chat_Continuation_Store` payload gains
   `iteration`, `max_iterations`, `assistant_config` (tool allowlist + provider
   settings), `agentic_cost_accumulator` (so costs don't vanish mid-turn), and a

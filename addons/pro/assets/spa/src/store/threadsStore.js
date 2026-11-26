@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Threads Store — Zustand store for agent conversation threads.
  */

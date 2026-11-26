@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Web Worker for handling heavy localStorage operations.
  * 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Playwright e2e — Proposal 092 Phase 2.5 gates.
 //
 // Boots its own fixture contract server + BFF (same pair smoke.mjs uses),
@@ -27,7 +28,10 @@ export default defineConfig({
 		{
 			name: 'default',
 			fullyParallel: true,
-			testIgnore: /(design-import|rebrand-loop|theme-policy|content-write|checkout-woo|checkout-embedded)\.spec\.ts/,
+			// model-3d is content-write's sibling: it hard-codes the 8125
+			// fixture and creates/deletes a post, so it must not run here.
+			testIgnore:
+				/(design-import|rebrand-loop|theme-policy|content-write|model-3d|checkout-woo|checkout-embedded)\.spec\.ts/,
 		},
 		{
 			name: 'stateful-mcp',
@@ -48,11 +52,14 @@ export default defineConfig({
 		// The content-write spec publishes/deletes posts, which would race
 		// every other spec's listing counts — so it runs serial against its
 		// OWN fixture + BFF pair (ports 8125/4323), the theme-policy pattern.
+		// model-3d shares the pair for the same reason (it creates/deletes a
+		// post to exercise the 3D block) and is excluded from `default`, where
+		// its hard-coded 8125 fixture is not the one behind the 4321 BFF.
 		{
 			name: 'content-write',
 			fullyParallel: false,
 			workers: 1,
-			testMatch: /content-write\.spec\.ts/,
+			testMatch: /(content-write|model-3d)\.spec\.ts/,
 			use: {
 				baseURL: 'http://localhost:4323',
 				trace: 'on-first-retry',

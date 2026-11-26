@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // tracking.ts — the tracker & measurement capture pass (Proposal 130).
 //
@@ -12,6 +13,8 @@
 // ---------------------------------------------------------------------------
 
 import { Parser } from 'htmlparser2';
+
+import { gateContextOptions } from './gate.ts';
 
 import type {
 	ForgeConsent,
@@ -337,6 +340,14 @@ export const TRACKING_VENDORS: VendorSpec[] = [
 		label: 'Cloudflare Web Analytics',
 		category: 'analytics',
 		hosts: [/cloudflareinsights\.com\/beacon/i],
+		// Two documented installs, two id shapes: the canonical
+		// `data-cf-beacon='{"token":…}'` attribute, and the `?token=` query
+		// string Cloudflare prescribes for tag managers (and for `spa:false`).
+		// A site tag is 32 lowercase hex characters.
+		idPatterns: [
+			{ key: 'token', re: /data-cf-beacon=['"]\s*\{[^}]*?"token"\s*:\s*"([0-9a-f]{16,64})"/i },
+			{ key: 'token', re: /cloudflareinsights\.com\/beacon\.min\.js\?(?:[^"'\s>]*&)?token=([0-9a-f]{16,64})/i },
+		],
 		probeHosts: ['cloudflareinsights.com'],
 		cookieless: true,
 		csp: { 'script-src': ['https://static.cloudflareinsights.com'], 'connect-src': ['https://cloudflareinsights.com'] },
@@ -435,6 +446,15 @@ const VERIFICATION_META: Record< Exclude< keyof ForgeVerification, 'files' >, st
 export interface TrackingHtmlSignals {
 	/** Absolute or relative <script src> values, document order. */
 	scriptSrcs: string[];
+	/**
+	 * Each <script src> opening tag, rebuilt from its DECODED attributes.
+	 * Vendor ids also live in attributes — Cloudflare's `data-cf-beacon`, GA's
+	 * `data-layer` — which a src-only capture cannot see. Rebuilding from the
+	 * parser rather than slicing raw HTML means escaped markup
+	 * (`data-cf-beacon="{&quot;token&quot;:…}"`, as SSR frameworks emit) still
+	 * matches once htmlparser2 has decoded it.
+	 */
+	scriptTags?: string[];
 	/** Concatenated inline <script> bodies (bounded by the caller's HTML). */
 	inlineJs: string;
 	/** <meta name="…" content="…"> pairs (lower-cased name). */
@@ -449,6 +469,7 @@ export interface TrackingHtmlSignals {
 export function scanTrackingHtml( html: string ): TrackingHtmlSignals {
 	const signals: TrackingHtmlSignals = {
 		scriptSrcs: [],
+		scriptTags: [],
 		inlineJs: '',
 		metas: {},
 		noscriptImgSrcs: [],
@@ -464,6 +485,11 @@ export function scanTrackingHtml( html: string ): TrackingHtmlSignals {
 				if ( name === 'script' ) {
 					if ( attribs.src ) {
 						signals.scriptSrcs.push( attribs.src );
+						signals.scriptTags?.push(
+							`<script ${ Object.entries( attribs )
+								.map( ( [ key, value ] ) => `${ key }="${ value }"` )
+								.join( ' ' ) }>`
+						);
 					} else {
 						inScript = true;
 					}
@@ -546,7 +572,7 @@ export async function probeTracking(
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { headless: true } );
 	try {
-		const context = await browser.newContext( { userAgent: PROBE_UA } );
+		const context = await browser.newContext( gateContextOptions( { userAgent: PROBE_UA } ) );
 		const page = await context.newPage();
 		const requests = new Set< string >();
 		page.on( 'request', ( request ) => {
@@ -675,13 +701,13 @@ export function detectTrackers(
 	}
 
 	// Id extraction over the whole evidence corpus.
-	const corpus = [ scriptSrcs.join( '\n' ), signals.inlineJs ].join( '\n' );
+	const corpus = [ scriptSrcs.join( '\n' ), ( signals.scriptTags ?? [] ).join( '\n' ), signals.inlineJs ].join( '\n' );
 	const trackers: ForgeTracker[] = [];
 	for ( const entry of found.values() ) {
 		const ids: Record< string, string > = {};
 		for ( const pattern of entry.spec.idPatterns ?? [] ) {
 			// Path-based ids (hotjar-123.js, clarity.ms/tag/abc) live in the URL.
-			const match = pattern.re.exec( `${ scriptSrcs.join( '\n' ) }\n${ corpus }` );
+			const match = pattern.re.exec( corpus );
 			if ( match && match[ 1 ] ) {
 				ids[ pattern.key ] = match[ 1 ];
 			}
@@ -702,7 +728,7 @@ export function detectTrackers(
 			notes.push( 'Deprecated vendor (Universal Analytics stopped processing in 2023) — reported, never rebuilt.' );
 		}
 		if ( entry.spec.cookieless ) {
-			notes.push( 'Cookieless analytics is still consent-gated in the EEA; the UK DUAA 2025 exception is narrow. Promote to exempt only with a documented legal basis.' );
+			notes.push( 'Cookieless analytics stays consent-gated by default. The CNIL/EDPB audience-measurement exemption is narrow (no cookies or device storage, publisher-only, no cross-site profiling) — set consentExempt on this tracker only when that frame is met.' );
 		}
 		trackers.push( {
 			vendor: entry.spec.vendor,
@@ -752,8 +778,20 @@ export function detectTrackers(
 	if ( cmpTracker && trackers.some( ( tracker ) => tracker.category !== 'consent' ) ) {
 		warnings.push( `The source runs a consent layer (${ cmpTracker.vendor }) — the rebuild must ship one too (mode: external-cmp or forge).` );
 	}
-	if ( ! cmpTracker && trackers.some( ( tracker ) => tracker.category === 'analytics' || tracker.category === 'advertising' ) ) {
+	// A cookieless vendor does not necessarily need a decision (the operator can
+	// exempt it under the audience-measurement frame), so only a cookie-setting
+	// tracker with no layer is a real gap.
+	const needsConsent = trackers.filter(
+		( tracker ) =>
+			( tracker.category === 'analytics' || tracker.category === 'advertising' ) &&
+			! TRACKING_VENDORS.find( ( spec ) => spec.vendor === tracker.vendor )?.cookieless
+	);
+	const measured = trackers.some( ( tracker ) => tracker.category === 'analytics' || tracker.category === 'advertising' );
+	if ( ! cmpTracker && needsConsent.length > 0 ) {
 		warnings.push( 'Trackers found with no consent layer on the source — the forged site defaults to denied and will not fire them until a visitor opts in.' );
+	}
+	if ( ! cmpTracker && measured && needsConsent.length === 0 ) {
+		warnings.push( 'Only cookieless analytics and no consent layer — these may load without a decision under the audience-measurement exemption (set consentExempt on the tracker).' );
 	}
 	const gtm = trackers.find( ( tracker ) => tracker.vendor === 'google-tag-manager' );
 	if ( gtm && trackers.some( ( tracker ) => tracker.vendor === 'google-analytics-4' ) ) {
@@ -836,10 +874,11 @@ export async function analyzeTracking( options: AnalyzeTrackingOptions ): Promis
 
 	// Merge signals across pages: a tracker that only mounts on a product page
 	// still belongs to the site.
-	const merged: TrackingHtmlSignals = { scriptSrcs: [], inlineJs: '', metas: {}, noscriptImgSrcs: [], links: [] };
+	const merged: TrackingHtmlSignals = { scriptSrcs: [], scriptTags: [], inlineJs: '', metas: {}, noscriptImgSrcs: [], links: [] };
 	for ( const page of pages ) {
 		const signals = scanTrackingHtml( page.html );
 		merged.scriptSrcs.push( ...signals.scriptSrcs );
+		merged.scriptTags?.push( ...( signals.scriptTags ?? [] ) );
 		merged.inlineJs += `\n${ signals.inlineJs }`;
 		merged.metas = { ...merged.metas, ...signals.metas };
 		merged.noscriptImgSrcs.push( ...signals.noscriptImgSrcs );
@@ -864,6 +903,14 @@ export async function analyzeTracking( options: AnalyzeTrackingOptions ): Promis
 }
 
 // -- report → profile --------------------------------------------------------
+
+/**
+ * True when the vendor measures without cookies or device storage. Only such a
+ * vendor can be marked `consentExempt`: everything else needs a decision first.
+ */
+export function isCookielessVendor( vendor: string ): boolean {
+	return TRACKING_VENDORS.some( ( entry ) => entry.vendor === vendor && entry.cookieless === true );
+}
 
 export function consentCategoryFor( category: TrackerCategory ): 'analytics' | 'advertising' | 'functional' {
 	if ( category === 'advertising' ) {

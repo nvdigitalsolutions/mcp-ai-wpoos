@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Dependency pin gate: the upstream MCP server must be pinned to an exact
  * version — upstream releases are frequent and a range would let a broken

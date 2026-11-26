@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { defineConfig, devices } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 
@@ -12,7 +13,8 @@ import { fileURLToPath } from 'node:url';
  * smoke never rewrites it.
  *
  * Prerequisites (see e2e/README.md):
- *   - the Laravel stack is up (`docker compose -f docker/docker-compose.laravel.yml up -d`)
+ *   - a Laravel runtime on :8001 with the schema migrated and the seeded user
+ *     (Playwright starts `php artisan serve` itself unless one is already up)
  *   - the console origin is a Sanctum stateful domain
  *
  * Env:
@@ -23,6 +25,10 @@ import { fileURLToPath } from 'node:url';
  */
 
 const APP_DIR = fileURLToPath(new URL('..', import.meta.url));
+// `e2e/` → the console app → `examples/` → the repo root.
+const LARAVEL_DIR = fileURLToPath(
+  new URL('../../../docker/laravel/app-skeleton', import.meta.url),
+);
 const AUTH_FILE = fileURLToPath(new URL('./.auth/state.json', import.meta.url));
 
 const PORT = Number(process.env.E2E_CONSOLE_PORT || 4318);
@@ -70,24 +76,43 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    // Build the Laravel-profile artifact, then serve it through the proxy the
-    // deployment uses. `NVOOS_BACKEND=laravel` must match the build's
-    // VITE_NVOOS_BACKEND — runtime-config.ts asserts the pair at boot.
-    command: SKIP_BUILD ? 'node scripts/serve.mjs' : 'npm run build:e2e && node scripts/serve.mjs',
-    cwd: APP_DIR,
-    url: `http://localhost:${PORT}/`,
-    // Never reuse: a stray server on this port would be a different artifact
-    // and the zero-WordPress-requests gate would fail for the wrong reason.
-    reuseExistingServer: false,
-    timeout: 240_000,
-    env: {
-      PORT: String(PORT),
-      NVOOS_BACKEND: 'laravel',
-      NVOOS_TARGET_SITE: BACKEND,
-      NVOOS_CONSOLE_ROOT: '.e2e-dist',
+  // Two servers, both owned by Playwright so their lifetimes match the run.
+  // Starting the backend from a separate CI step does not work: the process
+  // does not survive the step boundary, the proxy then 502s, and the console
+  // renders its fatal state instead of the login screen.
+  webServer: [
+    {
+      // The Laravel runtime the console is built against. Reused when it is
+      // already up (the Docker stack on :8001); started here otherwise.
+      command: `php artisan serve --host=127.0.0.1 --port=${new URL(BACKEND).port || 80}`,
+      cwd: LARAVEL_DIR,
+      // Auth-gated, so 401 is the healthy answer — Playwright treats any 4xx
+      // as "ready".
+      url: `${BACKEND}/api/v1/features`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
     },
-    stdout: 'pipe',
-    stderr: 'pipe',
-  },
+    {
+      // Build the Laravel-profile artifact, then serve it through the proxy the
+      // deployment uses. `NVOOS_BACKEND=laravel` must match the build's
+      // VITE_NVOOS_BACKEND — runtime-config.ts asserts the pair at boot.
+      command: SKIP_BUILD ? 'node scripts/serve.mjs' : 'npm run build:e2e && node scripts/serve.mjs',
+      cwd: APP_DIR,
+      url: `http://localhost:${PORT}/`,
+      // Never reuse: a stray server on this port would be a different artifact
+      // and the zero-WordPress-requests gate would fail for the wrong reason.
+      reuseExistingServer: false,
+      timeout: 240_000,
+      env: {
+        PORT: String(PORT),
+        NVOOS_BACKEND: 'laravel',
+        NVOOS_TARGET_SITE: BACKEND,
+        NVOOS_CONSOLE_ROOT: '.e2e-dist',
+      },
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+  ],
 });

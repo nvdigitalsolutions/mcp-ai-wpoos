@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // auth.test.ts — pure auth-helper matrix (Proposal 095 §4.2): bearer
 // timing-safe compare, manager-session verification, write-tool detection.
 import { describe, expect, it, vi } from 'vitest';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Test for streaming status transition from "thinking" to "text-stream"
  * 

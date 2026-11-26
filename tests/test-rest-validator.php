@@ -764,21 +764,24 @@ class Test_REST_Validator extends WP_UnitTestCase {
 	}
 
 	/**
-	 * sanitize_tool_result_for_llm() always returns a string (not an array
+	 * Sanitize_tool_result_for_llm() always returns a string (not an array
 	 * or object), even when passed a complex array result.
 	 *
 	 * @group security
 	 */
 	public function test_sanitize_tool_result_for_llm_returns_string() {
 		$result = $this->validator->sanitize_tool_result_for_llm(
-			array( 'success' => true, 'posts' => array( 'title' => 'Hello' ) ),
+			array(
+				'success' => true,
+				'posts'   => array( 'title' => 'Hello' ),
+			),
 			'get_posts'
 		);
 		$this->assertIsString( $result, 'sanitize_tool_result_for_llm must always return a string' );
 	}
 
 	/**
-	 * sanitize_tool_result_for_llm() with an oversized array result produces
+	 * Sanitize_tool_result_for_llm() with an oversized array result produces
 	 * a truncated string.
 	 *
 	 * @group security
@@ -797,7 +800,7 @@ class Test_REST_Validator extends WP_UnitTestCase {
 	}
 
 	/**
-	 * sanitize_tool_result_for_llm() strips ChatML tokens from a string result.
+	 * Sanitize_tool_result_for_llm() strips ChatML tokens from a string result.
 	 *
 	 * @group security
 	 */

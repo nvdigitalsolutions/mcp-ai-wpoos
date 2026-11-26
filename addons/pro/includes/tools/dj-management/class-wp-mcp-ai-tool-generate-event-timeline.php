@@ -122,9 +122,9 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 		// Get details from booking if provided.
 		if ( $booking_id ) {
 			if ( ! get_post( $booking_id ) || get_post_type( $booking_id ) !== 'dj_booking' ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Invalid booking ID.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'wp_mcp_ai_not_found',
+					__( 'Invalid booking ID.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -137,9 +137,9 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 		} else {
 			// Validate required parameters if no booking ID.
 			if ( empty( $arguments['event_date'] ) || empty( $arguments['start_time'] ) || empty( $arguments['end_time'] ) ) {
-				return array(
-					'success' => false,
-					'error'   => __( 'Event date, start time, and end time are required when booking_id is not provided.', 'mcp-ai-wpoos-pro' ),
+				return new WP_Error(
+					'wp_mcp_ai_missing_param',
+					__( 'Event date, start time, and end time are required when booking_id is not provided.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 

@@ -44,12 +44,13 @@ cd "$APP_DIR"
 # composer.json uses host-relative paths).
 composer config repositories.nvoos-core '{"type":"path","url":"/workspace/oos/lib/core","options":{"versions":{"nvoos/core":"1.0.0"}}}' >/dev/null
 composer config repositories.nvoos-laravel '{"type":"path","url":"/workspace/oos/lib/laravel-adapter","options":{"versions":{"nvoos/laravel-adapter":"1.0.0"}}}' >/dev/null
+composer config repositories.nvoos-wifi '{"type":"path","url":"/workspace/oos/addons/nvoos-wifi","options":{"versions":{"nvoos/wifi":"0.1.0"}}}' >/dev/null
 
 if [ ! -f vendor/autoload.php ]; then
     echo "[spike] installing Composer dependencies"
     if ! composer install --no-interaction --prefer-dist; then
         echo "[spike] retrying with path-package update"
-        composer update nvoos/core nvoos/laravel-adapter --with-dependencies --no-interaction --prefer-dist
+        composer update nvoos/core nvoos/laravel-adapter nvoos/wifi --with-dependencies --no-interaction --prefer-dist
     fi
 fi
 
@@ -66,6 +67,14 @@ php artisan migrate --force --no-interaction
 
 # Serve uploaded media from the public disk (idempotent).
 php artisan storage:link >/dev/null 2>&1 || true
+
+# Filament's panel CSS/JS are build output published into public/, which is
+# gitignored — a fresh checkout has none and the panels render unstyled. Build
+# them once per checkout rather than on every boot (Proposal 149 T-0.4).
+if [ ! -f public/css/filament/filament/app.css ]; then
+	echo "[spike] publishing filament assets"
+	php artisan filament:assets --no-interaction >/dev/null 2>&1 || true
+fi
 
 if [ "$ROLE" = "setup" ]; then
     echo "[spike] setup complete"

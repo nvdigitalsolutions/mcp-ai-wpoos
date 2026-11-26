@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Pro SPA v2 — typed wrappers around `mcp-ai/v1/settings`.
  */

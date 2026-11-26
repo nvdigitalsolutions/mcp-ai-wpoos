@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Assistant;
+use App\Services\AssistantWriter;
 use App\Support\McpAppsStore;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,11 +20,20 @@ use InvalidArgumentException;
  * The response shape is top-level — `success`, `assistant_id`, `apps`,
  * `app_count` — because `McpAppsResponse` is read straight from the body, not
  * from a `data` envelope. Wrapping it would silently render an empty panel.
+ *
+ * Both routes sit in the `manage_options` group, and `Assistant` carries no
+ * global tenant scope, so route-model binding alone resolved an id from **any**
+ * estate. An estate administrator could read — and `PUT` — another estate's
+ * assistant configuration by id (149 §89.3). The check is the same one
+ * `AssistantController` already applies: `ensureInCurrentEstate()` answers 404,
+ * so a foreign assistant is indistinguishable from one that does not exist.
  */
 class McpAppsController
 {
-    public function __construct(private readonly McpAppsStore $store)
-    {
+    public function __construct(
+        private readonly McpAppsStore $store,
+        private readonly AssistantWriter $writer,
+    ) {
     }
 
     /**
@@ -31,6 +41,8 @@ class McpAppsController
      */
     public function show(Assistant $assistant): JsonResponse
     {
+        $this->writer->ensureInCurrentEstate($assistant);
+
         return $this->respond($assistant, $this->store->read($assistant));
     }
 
@@ -39,6 +51,8 @@ class McpAppsController
      */
     public function update(Request $request, Assistant $assistant): JsonResponse
     {
+        $this->writer->ensureInCurrentEstate($assistant);
+
         $validated = $request->validate(
             array(
                 'apps' => array('required', 'array'),

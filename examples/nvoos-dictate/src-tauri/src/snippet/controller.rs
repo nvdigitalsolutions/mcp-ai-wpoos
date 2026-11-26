@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! `SnippetController`: the single-flight state machine for snippet OCR
 //! (Proposal 100).
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! `Windows.Media.Ocr` engine — the built-in Windows OCR stack behind
 //! PowerToys Text Extractor / Text Grab (Proposal 100, M2).
 //!

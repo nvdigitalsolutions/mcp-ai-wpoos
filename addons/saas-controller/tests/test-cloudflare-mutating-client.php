@@ -114,7 +114,7 @@ class Test_NVOOS_SaaS_Controller_Cloudflare_Mutating_Client extends WP_UnitTestC
 			),
 			'body'     => wp_json_encode(
 				array(
-					'success' => false,
+					'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Cloudflare API error envelope fixture, not our return shape.
 					'errors'  => array(
 						array(
 							'code' => $cf_code,

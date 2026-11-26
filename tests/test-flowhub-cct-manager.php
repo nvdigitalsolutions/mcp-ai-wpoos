@@ -11,6 +11,9 @@
  */
 class Test_FlowHub_CCT_Manager extends WP_UnitTestCase {
 
+	/**
+	 * Reset the CCT manager state.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
@@ -19,6 +22,9 @@ class Test_FlowHub_CCT_Manager extends WP_UnitTestCase {
 		update_option( 'wp_mcp_ai_flowhub_toolkit_settings', array( 'cct_slug' => 'flowhub_inventory_test' ) );
 	}
 
+	/**
+	 * Reset the CCT manager state after each test.
+	 */
 	public function tearDown(): void {
 		delete_option( 'wp_mcp_ai_flowhub_toolkit_settings' );
 		delete_option( 'wp_mcp_ai_flowhub_last_sync' );
@@ -29,17 +35,26 @@ class Test_FlowHub_CCT_Manager extends WP_UnitTestCase {
 	// Configuration
 	// ------------------------------------------------------------------ //
 
+	/**
+	 * The default CCT slug is used.
+	 */
 	public function test_default_cct_slug() {
 		delete_option( 'wp_mcp_ai_flowhub_toolkit_settings' );
 		$manager = new WP_MCP_AI_FlowHub_CCT_Manager();
 		$this->assertEquals( 'flowhub_inventory', $manager->get_cct_slug() );
 	}
 
+	/**
+	 * A custom CCT slug comes from settings.
+	 */
 	public function test_custom_cct_slug_from_settings() {
 		$manager = new WP_MCP_AI_FlowHub_CCT_Manager();
 		$this->assertEquals( 'flowhub_inventory_test', $manager->get_cct_slug() );
 	}
 
+	/**
+	 * Setting the CCT slug override takes effect.
+	 */
 	public function test_set_cct_slug_override() {
 		$manager = new WP_MCP_AI_FlowHub_CCT_Manager();
 		$manager->set_cct_slug( 'custom_slug' );
@@ -50,6 +65,9 @@ class Test_FlowHub_CCT_Manager extends WP_UnitTestCase {
 	// Column Definitions
 	// ------------------------------------------------------------------ //
 
+	/**
+	 * Column definitions have the expected structure.
+	 */
 	public function test_column_definitions_structure() {
 		$manager = new WP_MCP_AI_FlowHub_CCT_Manager();
 		$columns = $manager->get_column_definitions();
@@ -64,6 +82,9 @@ class Test_FlowHub_CCT_Manager extends WP_UnitTestCase {
 	// JetEngine Dependency
 	// ------------------------------------------------------------------ //
 
+	/**
+	 * The CCT is unavailable without JetEngine.
+	 */
 	public function test_is_cct_available_without_jetengine() {
 		$manager = new WP_MCP_AI_FlowHub_CCT_Manager();
 		$result  = $manager->is_cct_available();
@@ -74,18 +95,27 @@ class Test_FlowHub_CCT_Manager extends WP_UnitTestCase {
 	// Freshness
 	// ------------------------------------------------------------------ //
 
+	/**
+	 * Without a sync the cache is not fresh.
+	 */
 	public function test_is_fresh_returns_false_without_sync() {
 		delete_option( 'wp_mcp_ai_flowhub_last_sync' );
 		$manager = new WP_MCP_AI_FlowHub_CCT_Manager();
 		$this->assertFalse( $manager->is_fresh() );
 	}
 
+	/**
+	 * A recent sync makes the cache fresh.
+	 */
 	public function test_is_fresh_returns_true_with_recent_sync() {
 		update_option( 'wp_mcp_ai_flowhub_last_sync', current_time( 'mysql' ) );
 		$manager = new WP_MCP_AI_FlowHub_CCT_Manager();
 		$this->assertTrue( $manager->is_fresh( 900 ) );
 	}
 
+	/**
+	 * A stale sync makes the cache not fresh.
+	 */
 	public function test_is_fresh_returns_false_with_stale_sync() {
 		update_option( 'wp_mcp_ai_flowhub_last_sync', gmdate( 'Y-m-d H:i:s', time() - 3600 ) );
 		$manager = new WP_MCP_AI_FlowHub_CCT_Manager();
@@ -96,6 +126,9 @@ class Test_FlowHub_CCT_Manager extends WP_UnitTestCase {
 	// Field Mapping
 	// ------------------------------------------------------------------ //
 
+	/**
+	 * The default field mapping is applied.
+	 */
 	public function test_default_field_mapping() {
 		$manager = new WP_MCP_AI_FlowHub_CCT_Manager();
 		$mapping = $manager->get_default_field_mapping();

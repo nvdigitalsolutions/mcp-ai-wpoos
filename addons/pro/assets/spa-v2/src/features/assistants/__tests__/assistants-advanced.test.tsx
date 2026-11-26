@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * AssistantsPage — Advanced section (090-B assistant edit parity).
  *
@@ -313,6 +314,10 @@ describe( 'AssistantsPage advanced section', () => {
 			target: { value: 'openai, anthropic, ollama' },
 		} );
 
+		fireEvent.change( screen.getByLabelText( 'Adaptive tool cap' ), {
+			target: { value: 'off' },
+		} );
+
 		fireEvent.click( screen.getByRole( 'button', { name: 'Update' } ) );
 
 		await waitFor( () => {
@@ -322,9 +327,33 @@ describe( 'AssistantsPage advanced section', () => {
 				'anthropic',
 				'ollama',
 			] );
+			expect( advanced.adaptive_tool_cap ).toBe( 'off' );
 			expect( advanced.vector_store_id ).toBe( 'vs_123' );
 			expect( advanced.prompt_caching ).toBe( true );
 			expect( advanced.required_capability ).toBe( 'manage_options' );
+		} );
+	} );
+
+	/**
+	 * The three-state control has an empty string for "inherit", which is the
+	 * value a serialiser is most likely to drop as falsy. WordPress deletes the
+	 * meta row for it and Laravel unsets the key, so both fall back to the site
+	 * setting — but only if the SPA actually sends it.
+	 */
+	it( 'writes the inherit state when the cap is set back to the server default', async () => {
+		setRuntime();
+		routerFor( makeRecord( SEEDED_ADVANCED ) );
+
+		await openEdit();
+
+		fireEvent.change( screen.getByLabelText( 'Adaptive tool cap' ), {
+			target: { value: '' },
+		} );
+
+		fireEvent.click( screen.getByRole( 'button', { name: 'Update' } ) );
+
+		await waitFor( () => {
+			expect( savedAdvanced().adaptive_tool_cap ).toBe( '' );
 		} );
 	} );
 

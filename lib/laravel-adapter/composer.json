@@ -7,6 +7,7 @@
     "prefer-stable": true,
     "require": {
         "php": "^8.2",
+        "ext-fileinfo": "*",
         "nvoos/core": "*",
         "illuminate/support": "^12.41.1 || ^13.0",
         "illuminate/cache": "^12.41.1 || ^13.0",
@@ -15,6 +16,7 @@
         "illuminate/events": "^12.41.1 || ^13.0",
         "illuminate/filesystem": "^12.41.1 || ^13.0",
         "illuminate/http": "^12.41.1 || ^13.0",
+        "illuminate/mail": "^12.41.1 || ^13.0",
         "illuminate/queue": "^12.41.1 || ^13.0",
         "illuminate/auth": "^12.41.1 || ^13.0",
         "illuminate/contracts": "^12.41.1 || ^13.0"

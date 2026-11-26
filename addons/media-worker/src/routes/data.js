@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Data utilities — translation, language detection, QR codes, phone formatting,
  * CSV processing, markdown, math evaluation, regression, currency, validation.

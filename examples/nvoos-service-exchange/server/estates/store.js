@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * In-memory estate store with an advisory JSONL event log.
  *

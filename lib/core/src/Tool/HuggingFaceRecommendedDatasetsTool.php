@@ -42,7 +42,26 @@ class HuggingFaceRecommendedDatasetsTool extends AbstractHuggingFaceTool
     {
         $category = $this->stringParam($arguments, 'category');
         // Curated list — no API call needed for recommendations.
-        $all = array(
+        $all = self::datasets();
+        if ('' !== $category) {
+            $all = array_values(array_filter($all, fn($d)=>$d['category'] === $category));
+        }
+        return $this->collection('Recommended datasets' . ( '' !== $category ? " in '{$category}'" : '' ) . '.', $all, count($all));
+    }
+
+    /**
+     * The curated list.
+     *
+     * Public because the dataset browser shows it as starting points: one
+     * list, two readers. The tool answers `huggingface_recommended_datasets`
+     * from it, and the page renders the same rows rather than a second copy
+     * that would drift the first time someone adds a dataset.
+     *
+     * @return list<array{dataset: string, category: string, description: string, rows: int}>
+     */
+    public static function datasets(): array
+    {
+        return array(
             array(
                 'dataset'     => 'imdb',
                 'category'    => 'nlp',
@@ -92,9 +111,5 @@ class HuggingFaceRecommendedDatasetsTool extends AbstractHuggingFaceTool
                 'rows'        => 70000,
             ),
         );
-        if ('' !== $category) {
-            $all = array_values(array_filter($all, fn($d)=>$d['category'] === $category));
-        }
-        return $this->collection('Recommended datasets' . ( '' !== $category ? " in '{$category}'" : '' ) . '.', $all, count($all));
     }
 }

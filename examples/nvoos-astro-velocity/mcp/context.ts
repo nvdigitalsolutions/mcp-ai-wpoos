@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // context.ts — per-request ambient context for nvoos-astro-mcp tool handlers
 // (Proposal 095 security hardening; closes the "tool handlers read the

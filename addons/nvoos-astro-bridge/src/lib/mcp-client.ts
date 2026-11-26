@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Minimal MCP Streamable HTTP client for the storefront's /mcp surface
  * (Proposal 095 §4.1) — the modern 2026-07-28 dialect, the exact wire

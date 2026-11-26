@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! NV oOS client validation tests (no network — construction rules only).
 
 use nvoos_dictate_lib::error::AppError;

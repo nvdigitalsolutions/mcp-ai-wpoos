@@ -21,6 +21,7 @@ namespace Nvoos\Core\Infrastructure\Provider;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\ValueObject\ProviderConnectivity;
 
 class AnthropicClient extends AbstractProviderClient
 {
@@ -243,6 +244,61 @@ class AnthropicClient extends AbstractProviderClient
         } catch (\Exception $e) {
             return $this->errors->create('http_request_failed', $e->getMessage());
         }
+    }
+
+    /**
+     * Authenticated `GET /models` — proves reachability and key validity
+     * without spending completion tokens.
+     *
+     * listModels() is a hand-written catalogue in this client because the
+     * comment above it says Anthropic has no models endpoint. That is no longer
+     * true, and a catalogue can never prove a key, so the probe uses the real
+     * endpoint and reports the status it gets — including a 404 if the API
+     * ever drops it.
+     */
+    public function connectivity(): ProviderConnectivity
+    {
+        $apiKey = $this->getApiKey();
+
+        if ('' === $apiKey) {
+            return ProviderConnectivity::failed(null, 'No API key is configured for anthropic.');
+        }
+
+        $headers = array(
+            'x-api-key'         => $apiKey,
+            'anthropic-version' => self::API_VERSION,
+            'Content-Type'      => 'application/json',
+        );
+
+        try {
+            $response = $this->http->send('GET', $this->getBaseUrl() . '/models', $headers);
+        } catch (\Exception $e) {
+            return ProviderConnectivity::failed(null, $e->getMessage());
+        }
+
+        $decoded = \json_decode($response->body, true);
+        $count   = 0;
+
+        if (is_array($decoded) && isset($decoded['data']) && is_array($decoded['data'])) {
+            foreach ($decoded['data'] as $model) {
+                if (is_array($model) && isset($model['id'])) {
+                    ++$count;
+                }
+            }
+        }
+
+        if ($response->statusCode < 200 || $response->statusCode >= 300) {
+            return ProviderConnectivity::failed(
+                $response->statusCode,
+                $this->probeFailure($response->statusCode, $decoded)
+            );
+        }
+
+        return ProviderConnectivity::ok(
+            $response->statusCode,
+            $count,
+            \sprintf('%s answered %d with %d model(s).', $this->probeHost(), $response->statusCode, $count)
+        );
     }
 
     public function listModels(): mixed

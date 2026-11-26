@@ -6,10 +6,15 @@
  */
 
 /**
+ * PARA taxonomy tests.
+ *
  * @group para
  */
 class Test_PARA_Taxonomy extends WP_UnitTestCase {
 
+	/**
+	 * Enable PARA settings and register the taxonomy, roots and CPT.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		// Enable PARA via settings.
@@ -30,6 +35,9 @@ class Test_PARA_Taxonomy extends WP_UnitTestCase {
 		WP_MCP_AI_PARA_Area_CPT::register();
 	}
 
+	/**
+	 * The root terms are seeded on registration.
+	 */
 	public function test_root_terms_are_seeded() {
 		$this->assertTrue( taxonomy_exists( WP_MCP_AI_PARA_Taxonomy::TAXONOMY ) );
 		foreach ( WP_MCP_AI_PARA_Taxonomy::ROOTS as $slug ) {
@@ -37,17 +45,26 @@ class Test_PARA_Taxonomy extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Assigning to a missing post returns WP_Error.
+	 */
 	public function test_assign_returns_error_for_invalid_post() {
 		$result = WP_MCP_AI_PARA_Taxonomy::assign( 999999, 'projects' );
 		$this->assertWPError( $result );
 	}
 
+	/**
+	 * Assigning an unknown bucket returns WP_Error.
+	 */
 	public function test_assign_returns_error_for_unknown_term() {
 		$post_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_area' ) );
 		$result  = WP_MCP_AI_PARA_Taxonomy::assign( $post_id, 'not-a-bucket' );
 		$this->assertWPError( $result );
 	}
 
+	/**
+	 * Assigning a valid root bucket succeeds.
+	 */
 	public function test_assign_succeeds_for_valid_root() {
 		$post_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_area' ) );
 		$result  = WP_MCP_AI_PARA_Taxonomy::assign( $post_id, 'areas', 'unit test' );
@@ -55,6 +72,9 @@ class Test_PARA_Taxonomy extends WP_UnitTestCase {
 		$this->assertSame( 'areas', WP_MCP_AI_PARA_Taxonomy::get_post_bucket( $post_id ) );
 	}
 
+	/**
+	 * Moving a record to archives fires the archived action.
+	 */
 	public function test_archived_event_fires_on_move_to_archives() {
 		$post_id = self::factory()->post->create( array( 'post_type' => 'mcp_ai_area' ) );
 		WP_MCP_AI_PARA_Taxonomy::assign( $post_id, 'projects' );
@@ -72,6 +92,9 @@ class Test_PARA_Taxonomy extends WP_UnitTestCase {
 		$this->assertSame( 'test reason', $fired[0][1] );
 	}
 
+	/**
+	 * A root term cannot be deleted.
+	 */
 	public function test_root_term_cannot_be_deleted() {
 		$root = get_term_by( 'slug', 'projects', WP_MCP_AI_PARA_Taxonomy::TAXONOMY );
 		$this->assertNotFalse( $root );

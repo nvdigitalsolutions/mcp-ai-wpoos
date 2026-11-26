@@ -128,4 +128,101 @@ final class DeepSeekClientTest extends TestCase
         $this->assertArrayHasKey('usage', $result);
         $this->assertSame(15, $result['usage']['total_tokens']);
     }
+
+    /**
+     * deepseek-flash (V4.1 Flash) rejects max_tokens — the first request
+     * must already carry max_completion_tokens, not a corrected retry.
+     */
+    public function testChatUsesMaxCompletionTokensForFlashModels(): void
+    {
+        $bodies = array();
+
+        $this->httpClient->expects($this->once())
+            ->method('send')
+            ->willReturnCallback(static function (string $method, string $url, array $headers, ?string $body) use (&$bodies) {
+                $bodies[] = (string) $body;
+
+                return new HttpResponse(200, json_encode(array(
+                    'choices' => array(
+                        array(
+                            'message'       => array( 'role' => 'assistant', 'content' => 'ok' ),
+                            'finish_reason' => 'stop',
+                        ),
+                    ),
+                )) ?: '');
+            });
+
+        $this->client->chat(
+            array( array( 'role' => 'user', 'content' => 'Hi' ) ),
+            array( 'model' => 'deepseek-flash', 'max_tokens' => 3000 ),
+        );
+
+        $payload = json_decode($bodies[0], true);
+        $this->assertArrayNotHasKey('max_tokens', $payload);
+        $this->assertSame(3000, $payload['max_completion_tokens']);
+    }
+
+    /**
+     * deepseek-v4-pro keeps the legacy max_tokens key.
+     */
+    public function testChatKeepsMaxTokensForProModels(): void
+    {
+        $bodies = array();
+
+        $this->httpClient->expects($this->once())
+            ->method('send')
+            ->willReturnCallback(static function (string $method, string $url, array $headers, ?string $body) use (&$bodies) {
+                $bodies[] = (string) $body;
+
+                return new HttpResponse(200, json_encode(array(
+                    'choices' => array(
+                        array(
+                            'message'       => array( 'role' => 'assistant', 'content' => 'ok' ),
+                            'finish_reason' => 'stop',
+                        ),
+                    ),
+                )) ?: '');
+            });
+
+        $this->client->chat(
+            array( array( 'role' => 'user', 'content' => 'Hi' ) ),
+            array( 'model' => 'deepseek-v4-pro', 'max_tokens' => 3000 ),
+        );
+
+        $payload = json_decode($bodies[0], true);
+        $this->assertSame(3000, $payload['max_tokens']);
+        $this->assertArrayNotHasKey('max_completion_tokens', $payload);
+    }
+
+    /**
+     * Callers may pass either spelling; the client normalises it.
+     */
+    public function testChatAcceptsMaxCompletionTokensAsInput(): void
+    {
+        $bodies = array();
+
+        $this->httpClient->expects($this->once())
+            ->method('send')
+            ->willReturnCallback(static function (string $method, string $url, array $headers, ?string $body) use (&$bodies) {
+                $bodies[] = (string) $body;
+
+                return new HttpResponse(200, json_encode(array(
+                    'choices' => array(
+                        array(
+                            'message'       => array( 'role' => 'assistant', 'content' => 'ok' ),
+                            'finish_reason' => 'stop',
+                        ),
+                    ),
+                )) ?: '');
+            });
+
+        $this->client->chat(
+            array( array( 'role' => 'user', 'content' => 'Hi' ) ),
+            array( 'model' => 'deepseek-v4-pro', 'max_completion_tokens' => 2048 ),
+        );
+
+        $payload = json_decode($bodies[0], true);
+        $this->assertSame(2048, $payload['max_tokens']);
+        $this->assertArrayNotHasKey('max_completion_tokens', $payload);
+    }
 }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // sanitize.ts — the XSS gate between WordPress HTML and Astro `set:html`.
 //
@@ -12,7 +13,7 @@ import sanitizeHtmlLib from 'sanitize-html';
 import { readableInk } from './contrast.ts';
 
 /** Bump on every allowlist/behaviour change. Generated projects carry this. */
-export const SANITIZE_VERSION = 4;
+export const SANITIZE_VERSION = 5;
 
 /** The default sanitize-html options — Gutenberg output minus scripts/events. */
 export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
@@ -46,6 +47,12 @@ export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
 		'blockquote',
 		'figure',
 		'figcaption',
+		// 3D product viewer (v5). The tag must SURVIVE: `disallowedTagsMode`
+		// discards unknown elements, so an authored <model-viewer> used to vanish
+		// from `set:html` with no build error at all. The RUNTIME stays
+		// layout-owned — `script` is still forbidden, so the custom element is
+		// registered by the generated project, never by content authors.
+		'model-viewer',
 		'img',
 		'table',
 		'thead',
@@ -76,10 +83,34 @@ export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
 		'legend',
 	],
 	allowedAttributes: {
-		a: ['href', 'title', 'target', 'rel', 'class'],
+		a: ['href', 'title', 'target', 'rel', 'class', 'id'],
 		img: ['src', 'alt', 'title', 'width', 'height', 'srcset', 'sizes', 'loading', 'decoding', 'class'],
 		figure: ['class'],
 		figcaption: ['class'],
+		// The viewer's data contract only: `src`/`poster` are scheme-checked by
+		// sanitize-html (http/https/root-relative — a data: or javascript: model
+		// URL dies), and there is deliberately NO `environment-image` or
+		// `with-credentials`: both would open a fetch/credential surface from a
+		// content-authored tag. No `style`, no `on*`.
+		'model-viewer': [
+			'src',
+			'poster',
+			'alt',
+			'class',
+			'id',
+			'title',
+			'loading',
+			'reveal',
+			'camera-controls',
+			'touch-action',
+			'shadow-intensity',
+			'auto-rotate',
+			'auto-rotate-delay',
+			'camera-orbit',
+			'field-of-view',
+			'ar',
+			'ar-modes',
+		],
 		// NOTE (2026-11-11): `p` deliberately does NOT keep its class YET. A builder
 		// styles paragraphs by class (`text-extra-large`, `padding-six-lr`), and
 		// stripping them costs fidelity — but restoring them without per-device
@@ -91,7 +122,13 @@ export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
 		blockquote: ['class', 'cite'],
 		code: ['class'],
 		pre: ['class'],
-		span: ['class'],
+		// `data-to-value` is the only data attribute worth keeping: Elementor's
+		// counter widget animates from 0, so the START value is the DOM text and
+		// the real figure exists only in that attribute. Stripped here, the
+		// classifier could only ever read "0" (about-us `14c60321`, 2026-11-24:
+		// "≤0" and "0% less" shipped instead of ≤48 and a real percentage). Inert
+		// in output — the Stats component renders text, not the attribute.
+		span: ['class', 'data-to-value'],
 		// Headings keep their CLASS. A builder styles its headings by class
 		// (`panel-title`, `heading-style13`, `text-medium`), so stripping it left
 		// the rebuilt heading at the template's prose defaults: virtuallyjamaica's
@@ -107,7 +144,7 @@ export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
 		// selects the glyph in the source's own icon sheet; without it every
 		// feature/accordion icon renders as an empty box.
 		i: ['class', 'aria-hidden'],
-		div: ['class', 'id', 'style'],
+		div: ['class', 'id', 'style', 'data-to-value'],
 		section: ['class', 'id', 'style'],
 		ul: ['class'],
 		ol: ['class', 'start'],
@@ -315,6 +352,18 @@ function bandAttribs( tagName: string, attribs: { [key: string]: string } ) {
 function linkAttribs(attribs: { [key: string]: string }) {
 	if (attribs.target === '_blank') {
 		attribs.rel = 'noopener noreferrer';
+	}
+	// Legacy NAMED anchors (`<a name="rates"></a>`) are how Flatsome and older
+	// builders publish an in-page target for `href="#rates"`. `name` is not an
+	// allowed attribute on `a`, so it was dropped and every such link pointed at
+	// nothing. Promote it to the modern equivalent id, behind the same safety
+	// rules as any other source anchor.
+	if ( typeof attribs.name === 'string' ) {
+		const name = attribs.name.trim();
+		if ( ! attribs.id && SAFE_ANCHOR_ID.test( name ) && ! RESERVED_ANCHOR_ID.test( name ) ) {
+			attribs.id = name;
+		}
+		delete attribs.name;
 	}
 	return { tagName: 'a', attribs };
 }

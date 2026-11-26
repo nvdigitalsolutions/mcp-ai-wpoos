@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * NV oOS Cloud — Cloudflare Worker entry point.
  *

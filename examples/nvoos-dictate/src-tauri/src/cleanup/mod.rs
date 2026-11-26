@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Two-stage text cleanup.
 //!
 //! **Stage 1 — deterministic rules (always, on-device, synchronous):**

@@ -1,4 +1,5 @@
 ---
+// SPDX-License-Identifier: MIT
 // Comparison — a row/column fact table (Proposal 136 §4.1).
 //
 // A real <table> with scoped headers, because that IS the information. The
@@ -27,6 +28,7 @@ const headingId = section.id ? `ds-compare-${ section.id }` : undefined;
 
 {columns.length > 0 && rows.length > 0 && (
 	<section
+		data-structure="comparison"
 		class:list={['ds-section', 'ds-body', 'ds-compare-band', theme?.titleAlign === 'center' && 'ds-body--center']}
 		aria-labelledby={section.slots.title ? headingId : undefined}
 	>

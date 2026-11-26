@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // seo.ts — kind-typed JSON-LD builder (Proposal 104 §4.6 / D5), vendored
 // into the template like sanitize.ts. One `jsonLdFor(kind, input)` covers
@@ -189,6 +190,13 @@ export interface SiteIdentity {
 	sameAs?: string[];
 	/** Absolute search URL (`/search/`) — enables the sitelinks search box. */
 	searchUrl?: string;
+	/**
+	 * The people a family can actually write to (schema.org ContactPoint). The
+	 * same list the contact band renders, so the markup and the structured data
+	 * cannot disagree — a page that shows four addresses but publishes none as
+	 * data is throwing away the one fact a search result can surface.
+	 */
+	contactPoints?: Array< { contactType?: string; email?: string; name?: string } >;
 }
 
 export interface JsonLdGraph {
@@ -224,6 +232,16 @@ export function jsonLdGraph( input: {
 		url: `${ origin }/`,
 		...( input.site.logo ? { logo: { '@type': 'ImageObject', url: input.site.logo } } : {} ),
 		...( input.site.sameAs && input.site.sameAs.length > 0 ? { sameAs: input.site.sameAs } : {} ),
+		...( input.site.contactPoints && input.site.contactPoints.length > 0
+			? {
+					contactPoint: input.site.contactPoints.map( ( point ) => ( {
+						'@type': 'ContactPoint',
+						...( point.contactType ? { contactType: point.contactType } : {} ),
+						...( point.email ? { email: point.email } : {} ),
+						...( point.name ? { name: point.name } : {} ),
+					} ) ),
+			  }
+			: {} ),
 	};
 
 	const website: Record< string, unknown > = {

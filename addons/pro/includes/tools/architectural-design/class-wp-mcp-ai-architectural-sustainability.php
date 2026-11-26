@@ -151,7 +151,7 @@ class WP_MCP_AI_Architectural_Sustainability {
 	 * @param string $country_code   ISO country code (LK / JM / US).
 	 * @param string $building_use   `residential` or `commercial`.
 	 * @param array  $proposed       Proposed performance values or savings percentages.
-	 * @return array Score result.
+	 * @return array|WP_Error Score result, or WP_Error when no baseline is registered.
 	 */
 	public static function score_edge( $country_code, $building_use, array $proposed ) {
 		$country_code = strtoupper( (string) $country_code );
@@ -165,9 +165,11 @@ class WP_MCP_AI_Architectural_Sustainability {
 			: null;
 
 		if ( null === $baseline ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf( 'No EDGE baseline registered for country=%s use=%s.', $country_code, $building_use ),
+			// Keeps the code `score_edge_certification` already publishes for this
+			// failure, so converting the shape does not change that tool's contract.
+			return new WP_Error(
+				'wp_mcp_ai_edge_score_failed',
+				sprintf( 'No EDGE baseline registered for country=%s use=%s.', $country_code, $building_use )
 			);
 		}
 

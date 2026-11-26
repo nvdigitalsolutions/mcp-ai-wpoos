@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // anchor.test.ts — where a band's in-page anchor id lives.
 //

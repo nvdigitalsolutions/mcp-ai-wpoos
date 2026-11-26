@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // vocabulary.ts — the LEARNED widget/block vocabulary (Proposal 116).
 //

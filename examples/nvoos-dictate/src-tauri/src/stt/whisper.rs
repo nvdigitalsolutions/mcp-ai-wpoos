@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Whisper engine via `whisper-rs` (whisper.cpp bindings).
 //!
 //! API verified against whisper-rs 0.16 README (2026): the crate migrated

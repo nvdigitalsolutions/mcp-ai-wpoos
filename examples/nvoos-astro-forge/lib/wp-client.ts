@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // wp-client.ts — the WordPress REST client (Proposal 096 Phase 0).
 //

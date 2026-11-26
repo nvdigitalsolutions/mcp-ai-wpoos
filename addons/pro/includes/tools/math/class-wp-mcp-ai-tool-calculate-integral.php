@@ -167,9 +167,9 @@ class WP_MCP_AI_Tool_Calculate_Integral implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Validate definite integral has limits.
 		if ( 'definite' === $type && ( null === $lower_limit || null === $upper_limit ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Definite integrals require both lower_limit and upper_limit parameters.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Definite integrals require both lower_limit and upper_limit parameters.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -188,9 +188,10 @@ class WP_MCP_AI_Tool_Calculate_Integral implements WP_MCP_AI_Tool_Interface, WP_
 		);
 
 		if ( false === $math_result || isset( $math_result['error'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Integral calculation requires math.js service. Please set up Node.js integration. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_engine_missing',
+				__( 'Integral calculation requires math.js service. Please set up Node.js integration. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+				array( 'engine' => 'mathjs' )
 			);
 		}
 

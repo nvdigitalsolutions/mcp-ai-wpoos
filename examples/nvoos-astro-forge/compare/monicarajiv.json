@@ -1,0 +1,35 @@
+{
+	"note": "Selectors must resolve on BOTH pages. These are the elements that regressed most often: the hero photo (a fill layer must not carry a frozen height), a column's inner padding (dropped as ambiguous), and the section-title module (skipped as scaffolding).",
+	"elements": [
+		{
+			"name": "hero photo",
+			"selector": ".banner-bg > img",
+			"properties": [ "rect.width", "rect.height", "object-fit" ]
+		},
+		{
+			"name": "hero layer",
+			"selector": ".banner-bg",
+			"properties": [ "rect.height" ]
+		},
+		{
+			"name": "rajiv col-inner",
+			"selector": ".small-col-first > .col-inner",
+			"properties": [ "padding", "rect.width" ]
+		},
+		{
+			"name": "section title container",
+			"selector": ".section-title-container",
+			"properties": [ "margin", "rect.width" ]
+		},
+		{
+			"name": "section title main",
+			"selector": ".section-title-main",
+			"properties": [ "margin", "rect.width" ]
+		},
+		{
+			"name": "icon box",
+			"selector": ".icon-box",
+			"properties": [ "padding", "margin", "rect.width" ]
+		}
+	]
+}

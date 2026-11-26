@@ -129,9 +129,9 @@ class WP_MCP_AI_Tool_Generate_Playlist_AI implements WP_MCP_AI_Tool_Interface, W
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['name'] ) || empty( $arguments['mood'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Playlist name and mood are required.', 'nvoos-content-graph-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Playlist name and mood are required.', 'nvoos-content-graph-pro' )
 			);
 		}
 
@@ -245,10 +245,7 @@ class WP_MCP_AI_Tool_Generate_Playlist_AI implements WP_MCP_AI_Tool_Interface, W
 		$playlist_id = wp_insert_post( $post_data );
 
 		if ( is_wp_error( $playlist_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => $playlist_id->get_error_message(),
-			);
+			return $playlist_id;
 		}
 
 		// Store playlist metadata.

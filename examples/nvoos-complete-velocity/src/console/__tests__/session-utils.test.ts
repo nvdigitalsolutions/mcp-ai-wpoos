@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * session-utils tests — dock session-label formatting (pure module).
  */

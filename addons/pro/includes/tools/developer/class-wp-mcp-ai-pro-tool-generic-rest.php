@@ -528,7 +528,7 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @param array  $response wp_remote_request response.
 	 * @param string $url Target URL.
 	 * @param string $method HTTP method used.
-	 * @return array Processed response data.
+	 * @return array|WP_Error Processed response data, or WP_Error when the body is too large.
 	 */
 	protected function process_response( $response, $url, $method ) {
 		$status_code = wp_remote_retrieve_response_code( $response );
@@ -537,14 +537,16 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Check response size.
 		if ( strlen( $body ) > self::MAX_RESPONSE_SIZE ) {
-			return array(
-				'success'     => false,
-				'status_code' => $status_code,
-				'error'       => __( 'Response body exceeds maximum allowed size (5MB).', 'mcp-ai-wpoos-pro' ),
-				'url'         => $url,
-				'method'      => $method,
-				'truncated'   => true,
-				'body'        => substr( $body, 0, 10000 ) . '... [truncated]',
+			return new WP_Error(
+				'wp_mcp_ai_response_too_large',
+				__( 'Response body exceeds maximum allowed size (5MB).', 'mcp-ai-wpoos-pro' ),
+				array(
+					'status_code' => $status_code,
+					'url'         => $url,
+					'method'      => $method,
+					'truncated'   => true,
+					'body'        => substr( $body, 0, 10000 ) . '... [truncated]',
+				)
 			);
 		}
 

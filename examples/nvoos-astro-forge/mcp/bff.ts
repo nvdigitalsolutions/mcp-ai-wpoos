@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // bff.ts — Streamable HTTP mount for nvoos-astro-forge MCP (096 Phase 4; the
 // 095 dual-era pattern). Request pipeline: per-IP rate-limit gate → Host /

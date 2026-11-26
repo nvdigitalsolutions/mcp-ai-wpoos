@@ -15,6 +15,9 @@ if ( ! class_exists( 'ER_CF_Length_Verifier' ) ) {
 	 * coupling).
 	 */
 	class ER_CF_Length_Verifier extends WP_MCP_AI_Verifier_Base {
+		/**
+		 * Configure the local length verifier.
+		 */
 		public function __construct() {
 			$this->slug                 = 'er_cf_length';
 			$this->kind                 = 'rule';
@@ -26,6 +29,13 @@ if ( ! class_exists( 'ER_CF_Length_Verifier' ) ) {
 				'allowed_domains'      => array(),
 			);
 		}
+		/**
+		 * Score by value length, clamped to 1.0.
+		 *
+		 * @param array $subject Subject being scored.
+		 * @param array $context Optional scoring context.
+		 * @return array Pass or fail result.
+		 */
 		public function verify( array $subject, array $context = array() ) {
 			$value = array_key_exists( 'value', $subject ) ? $subject['value'] : '';
 			$len   = is_string( $value ) ? strlen( $value ) : 0;
@@ -43,10 +53,15 @@ if ( ! class_exists( 'ER_CF_Length_Verifier' ) ) {
 class Test_WP_MCP_AI_Eval_Runner_Counterfactual extends WP_UnitTestCase {
 
 	/**
+	 * Eval runner under test.
+	 *
 	 * @var WP_MCP_AI_Eval_Runner
 	 */
 	private $runner;
 
+	/**
+	 * Register the length verifier and build the runner.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		WP_MCP_AI_Verifier_Registry::reset_instance();
@@ -55,11 +70,17 @@ class Test_WP_MCP_AI_Eval_Runner_Counterfactual extends WP_UnitTestCase {
 		$this->runner = new WP_MCP_AI_Eval_Runner( $verifiers );
 	}
 
+	/**
+	 * Reset the verifier registry between tests.
+	 */
 	public function tearDown(): void {
 		WP_MCP_AI_Verifier_Registry::reset_instance();
 		parent::tearDown();
 	}
 
+	/**
+	 * Counterfactual mode reports a summary and per-case detail.
+	 */
 	public function test_run_counterfactual_produces_summary_and_case_reports() {
 		$suite = new WP_MCP_AI_Eval_Suite(
 			array(
@@ -100,6 +121,9 @@ class Test_WP_MCP_AI_Eval_Runner_Counterfactual extends WP_UnitTestCase {
 		$this->assertTrue( $by_slug['long']['preferred'] );
 	}
 
+	/**
+	 * An invalid generator return records an error case.
+	 */
 	public function test_run_counterfactual_generator_invalid_return_records_error() {
 		$suite = new WP_MCP_AI_Eval_Suite(
 			array(
@@ -125,6 +149,9 @@ class Test_WP_MCP_AI_Eval_Runner_Counterfactual extends WP_UnitTestCase {
 		$this->assertSame( 0, $report['summary']['preferred'] );
 	}
 
+	/**
+	 * A non-callable generator is rejected.
+	 */
 	public function test_run_counterfactual_rejects_non_callable_generator() {
 		$suite  = new WP_MCP_AI_Eval_Suite(
 			array(
@@ -136,6 +163,9 @@ class Test_WP_MCP_AI_Eval_Runner_Counterfactual extends WP_UnitTestCase {
 		$this->assertSame( 'generator_not_callable', $report['error'] );
 	}
 
+	/**
+	 * The counterfactual completion action fires with the report.
+	 */
 	public function test_run_counterfactual_fires_completion_action() {
 		$captured = array();
 		add_action(

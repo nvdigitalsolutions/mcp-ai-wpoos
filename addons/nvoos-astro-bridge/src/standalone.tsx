@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Standalone entry — the Astro CMS bundle served by the storefront's
  * /manage surface.

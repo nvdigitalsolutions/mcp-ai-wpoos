@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Design System tab — Proposal 095 §4.1 (the /manage MCP client).
  *

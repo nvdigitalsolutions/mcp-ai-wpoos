@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // content-scan.test.ts — the audit scanner (096 §3.3 long-tail): a real
 // htmlparser2 pass over canned HTML — images/hosts/alt, embeds, links,

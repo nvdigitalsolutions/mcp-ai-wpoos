@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { useCallback, useEffect, useState } from 'react';
 import { api, onDictateEvent, windowKind, type DictateEvent, type StatusInfo } from './lib/ipc';
 import Home from './views/Home';

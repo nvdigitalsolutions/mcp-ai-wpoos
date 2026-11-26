@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // media-localize.test.ts — Proposal 138 media localization.
 //
@@ -221,13 +222,21 @@ describe('collectAssetUrls', () => {
 		);
 	});
 
-	it('never collects anchors, meta tags or JSON-LD images', () => {
+	it('never collects anchors or JSON-LD images, but DOES collect social images', () => {
 		const html = [
 			'<a href="https://cms.test/wp-content/uploads/catalog.pdf">Catalogue</a>',
 			'<meta property="og:image" content="https://cms.test/og.jpg">',
+			'<meta name="twitter:image" content="https://cms.test/tw.jpg">',
+			'<meta property="og:title" content="https://cms.test/not-an-image.jpg">',
 			'<script type="application/ld+json">{"image":"https://cms.test/ld.jpg"}</script>',
 		].join('\n');
-		expect([...collectAssetUrls(html)]).toEqual([]);
+		// `og:image` / `twitter:image` are MIRRORED (they are assets like any other)
+		// but must stay ABSOLUTE, so `rewriteHtml` re-points them at the public
+		// origin. Anchors and JSON-LD payloads are still never touched.
+		expect([...collectAssetUrls(html)].sort()).toEqual([
+			'https://cms.test/og.jpg',
+			'https://cms.test/tw.jpg',
+		]);
 	});
 
 	it('collects stylesheet url() assets', () => {
@@ -267,6 +276,18 @@ describe('rewriteHtml', () => {
 		].join('\n');
 		const out = rewriteHtml(html, map);
 		expect(out.match(/https:\/\/cms\.test\/wp-content\/uploads\/a\.jpg/g)).toHaveLength(3);
+	});
+
+	it('re-points a mirrored og:image at the PUBLIC origin (still absolute)', () => {
+		const html = [
+			'<meta property="og:image" content="https://cms.test/wp-content/uploads/a.jpg">',
+			'<meta name="twitter:image" content="https://cms.test/wp-content/uploads/a.jpg">',
+			'<meta property="og:title" content="Hello">',
+		].join('\n');
+		const out = rewriteHtml(html, map, { siteOrigin: 'https://site.test/' });
+		expect(out).toContain('content="https://site.test/media/abc123-a.jpg"');
+		expect(out).toContain('content="Hello"');
+		expect(out).not.toContain('cms.test');
 	});
 
 	it('is a no-op with an empty map', () => {
@@ -660,5 +681,40 @@ describe( 'Proposal 140 — unmirrored webfont faces', () => {
 
 		expect( out ).toContain( 'body{color:red}' );
 		expect( out ).toContain( 'example.com/x.woff2' );
+	} );
+} );
+
+describe( 'rewriteHtml — JSON-LD assets', () => {
+	const map = new Map( [
+		[ 'https://old.example.com/wp-content/uploads/logo.svg', '/media/abc-logo.svg' ],
+	] );
+	const doc = ( payload: unknown ) =>
+		`<script type="application/ld+json">${ JSON.stringify( payload ) }</script>`;
+
+	it( 're-points a schema image at the public origin, not the retired CMS', () => {
+		// A cut-over site retires the CMS, so an absolute logo URL that is left
+		// alone 404s and the structured data advertises a dead image.
+		const html = doc( { '@type': 'Organization', logo: { url: 'https://old.example.com/wp-content/uploads/logo.svg' } } );
+		const out = rewriteHtml( html, map, { siteOrigin: 'https://new.example.com' } );
+		expect( out ).toContain( 'https://new.example.com/media/abc-logo.svg' );
+		expect( out ).not.toContain( 'old.example.com' );
+	} );
+
+	it( 'moves the escaped-slash form a serializer emits', () => {
+		const html = doc( { logo: 'https:\/\/old.example.com\/wp-content\/uploads\/logo.svg' } );
+		const out = rewriteHtml( html, map, { siteOrigin: 'https://new.example.com' } );
+		expect( out ).not.toContain( 'old.example.com' );
+	} );
+
+	it( 'leaves the payload alone without a known origin', () => {
+		// Schema.org needs an ABSOLUTE url; a root-relative rewrite would make
+		// the document invalid, so without an origin nothing moves.
+		const html = doc( { logo: 'https://old.example.com/wp-content/uploads/logo.svg' } );
+		expect( rewriteHtml( html, map ) ).toBe( html );
+	} );
+
+	it( 'does not touch a JSON-LD payload that references no localized asset', () => {
+		const html = doc( { '@type': 'WebSite', name: 'Monica & Rajiv' } );
+		expect( rewriteHtml( html, map, { siteOrigin: 'https://new.example.com' } ) ).toBe( html );
 	} );
 } );

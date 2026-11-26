@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Memory layer (Proposal 127): unified, searchable corpus over every
 //! capture surface — dictation transcripts, meetings, snippets, and
 //! document pages. Hybrid retrieval (FTS5 keyword leg + sqlite-vec vector

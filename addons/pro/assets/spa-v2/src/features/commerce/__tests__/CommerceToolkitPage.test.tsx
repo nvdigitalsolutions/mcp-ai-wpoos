@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * CommerceToolkitPage tests (Proposal 089).
  *

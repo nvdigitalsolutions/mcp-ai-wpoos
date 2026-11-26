@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * PortabilityPage — assistant export/import (NV oOS bundle format).
  *

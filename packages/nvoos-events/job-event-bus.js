@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Job Event Bus
  *

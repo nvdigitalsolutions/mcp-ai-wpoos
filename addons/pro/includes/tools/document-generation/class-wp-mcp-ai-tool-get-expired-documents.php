@@ -151,14 +151,14 @@ class WP_MCP_AI_Tool_Get_Expired_Documents implements WP_MCP_AI_Tool_Interface, 
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
-	 * @return array Expired documents result.
+	 * @return array|WP_Error Expired documents result, or WP_Error on failure.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_document_generation_toolkit'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Document Generation Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'toolkit_not_available',
+				__( 'Document Generation Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

@@ -54,7 +54,7 @@ class Test_Service_Function_Call_Validator extends WP_UnitTestCase {
 		$result = $this->validator->validate_function_call(
 			'nonexistent_tool_xyz_12345',
 			array(),
-			array() // empty schema forces registry lookup
+			array() // empty schema forces registry lookup.
 		);
 
 		$this->assertIsArray( $result );
@@ -118,7 +118,7 @@ class Test_Service_Function_Call_Validator extends WP_UnitTestCase {
 
 		$result = $this->validator->validate_function_call(
 			'any_tool',
-			array(), // missing 'action'
+			array(), // missing 'action'.
 			$schema
 		);
 
@@ -143,7 +143,7 @@ class Test_Service_Function_Call_Validator extends WP_UnitTestCase {
 
 		$result = $this->validator->validate_function_call(
 			'any_tool',
-			array( 'title' => 'hi' ), // only 2 chars
+			array( 'title' => 'hi' ), // only 2 chars.
 			$schema
 		);
 

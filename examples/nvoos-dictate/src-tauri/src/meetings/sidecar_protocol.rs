@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! NDJSON framing protocol spoken by the macOS system-audio sidecar
 //! (P5 port, phase M5).
 //!

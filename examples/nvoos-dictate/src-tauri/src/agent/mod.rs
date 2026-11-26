@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Browser agent (dictated web control) — Phase 1.
 //!
 //! Turns a dictated instruction into a completed browser task: a local (or

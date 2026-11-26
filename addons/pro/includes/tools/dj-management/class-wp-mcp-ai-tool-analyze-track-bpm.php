@@ -110,9 +110,9 @@ class WP_MCP_AI_Tool_Analyze_Track_BPM implements WP_MCP_AI_Tool_Interface, WP_M
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['track_id'] ) || empty( $arguments['bpm'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Track ID and BPM are required.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'Track ID and BPM are required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -120,9 +120,9 @@ class WP_MCP_AI_Tool_Analyze_Track_BPM implements WP_MCP_AI_Tool_Interface, WP_M
 
 		// Verify track exists.
 		if ( ! get_post( $track_id ) || get_post_type( $track_id ) !== 'dj_track' ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid track ID.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Invalid track ID.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -135,9 +135,9 @@ class WP_MCP_AI_Tool_Analyze_Track_BPM implements WP_MCP_AI_Tool_Interface, WP_M
 
 		// Validate BPM range.
 		if ( $bpm < 1 || $bpm > 300 ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'BPM must be between 1 and 300.', 'mcp-ai-wpoos-pro' ),
+			return new WP_Error(
+				'wp_mcp_ai_invalid_arguments',
+				__( 'BPM must be between 1 and 300.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

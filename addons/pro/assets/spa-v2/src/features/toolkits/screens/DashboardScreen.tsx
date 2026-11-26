@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * DashboardScreen — the manifest's aggregated cards.
  *

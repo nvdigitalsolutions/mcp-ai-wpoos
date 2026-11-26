@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * W3C Trace Context propagation (Phase 0 of Proposal 094).
  *

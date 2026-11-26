@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // contact-section.test.ts — the rebuilt contact band (issue #7549) + footer ink.
 //
@@ -6,7 +7,7 @@
 // declares the copy; the form posts through Proposal 138's transport.
 // ---------------------------------------------------------------------------
 
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -14,6 +15,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { FORGE_ROOT, scaffold } from '../lib/scaffold.ts';
 import type { SiteProfile } from '../lib/types.ts';
+import { rmTemp } from './helpers/tmp.ts';
 
 const tempDirs: string[] = [];
 
@@ -24,7 +26,7 @@ async function tempDir(): Promise<string> {
 }
 
 afterEach(async () => {
-	await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
+	await Promise.all(tempDirs.splice(0).map((dir) => rmTemp(dir)));
 });
 
 const CONTACT = {
@@ -60,7 +62,11 @@ describe( 'contact band (issue #7549)', () => {
 
 		const index = await readFile( path.join( target, 'src', 'pages', 'index.astro' ), 'utf8' );
 		expect( index ).toContain( "import Contact from '../components/design/Contact.astro'" );
-		expect( index ).toContain( '{contactBlock && <Contact />}' );
+		expect( index ).toContain( '{contactBlock && !bodyHasContactBand && <Contact />}' );
+		// The guard exists because the body's own enquiry band already renders the
+		// contacts when it degrades (a form this build cannot post) — appending
+		// `#contact` as well asked the same question twice on one page.
+		expect( index ).toContain( "homeBands.some((band) => band.kind === 'form')" );
 
 		const component = await readFile(
 			path.join( target, 'src', 'components', 'design', 'Contact.astro' ),
@@ -71,6 +77,18 @@ describe( 'contact band (issue #7549)', () => {
 		expect( component ).toContain( "'/api/forms/submit'" );
 		expect( component ).toContain( 'forms/submit' );
 		expect( component ).toContain( 'data-ds-contact' );
+		// Cloudflare's Email Address Obfuscation rewrites a mailto anchor's href and
+		// its text, restoring them with JS: a no-JS parent gets a dead link and
+		// "[email protected]". Both components that print an address opt out.
+		expect( component ).toContain( '<!--email_off-->' );
+		expect( component ).toContain( '<!--/email_off-->' );
+
+		const form = await readFile(
+			path.join( target, 'src', 'components', 'design', 'Form.astro' ),
+			'utf8'
+		);
+		expect( form ).toContain( '<!--email_off-->' );
+		expect( form ).toContain( '<!--/email_off-->' );
 	} );
 
 	it( 'omits the block when the profile declares no contact', async () => {

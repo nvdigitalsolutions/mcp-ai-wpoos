@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ChatSidebar — Left sidebar with two tabs: Chats and Media.
  *

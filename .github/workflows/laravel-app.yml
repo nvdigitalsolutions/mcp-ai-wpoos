@@ -13,12 +13,16 @@ on:
       - 'docker/laravel/**'
       - 'lib/core/**'
       - 'lib/laravel-adapter/**'
+      - 'bin/cloudways-deploy.sh'
+      - 'bin/cloudways-deploy-smoke.sh'
       - '.github/workflows/laravel-app.yml'
   pull_request:
     paths:
       - 'docker/laravel/**'
       - 'lib/core/**'
       - 'lib/laravel-adapter/**'
+      - 'bin/cloudways-deploy.sh'
+      - 'bin/cloudways-deploy-smoke.sh'
       - '.github/workflows/laravel-app.yml'
 
 permissions:
@@ -76,10 +80,61 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: php bin/sync-schedule-presets.php --check
 
+      - name: Toolkit manifest mirror is current
+        # Same contract again: the app serves resources/pro-toolkits/*.json,
+        # mirrored from addons/pro/includes/toolkits/manifests. Without this a
+        # manifest edit in the addon silently leaves the console serving the
+        # old toolkit definition (Proposal 149 Q-6).
+        working-directory: ${{ github.workspace }}
+        run: php bin/sync-toolkit-manifests.php --check
+
+      - name: Provider endpoints are wired to the surface
+        # Proposal 149 §65: an adapter that reads a second name for a provider
+        # endpoint returns null without an error, so a saved custom endpoint is
+        # silently ignored and the client falls back to its built-in default.
+        # This gate holds all three adapters to the keys the ported catalogue
+        # publishes, in both directions.
+        working-directory: ${{ github.workspace }}
+        run: php bin/check-endpoint-wiring.php
+
+      - name: Toolkit manifests are servable
+        # Proposal 149 Wave 3: the panel renders settings, entities and
+        # dashboard from the manifest, so a document that validates but names
+        # a screen no surface serves becomes a blank toolkit page. This gate
+        # validates every source manifest and fails on an unknown screen, a
+        # slug/filename mismatch, or a manifest with no screens at all.
+        working-directory: ${{ github.workspace }}
+        run: php bin/audit-admin-manifests.php
+
+      - name: WP admin surfaces are all dispositioned
+        # Proposal 149 Wave 7 exit gate: the parity claim is only measurable if
+        # every `includes/admin/` and `addons/pro/includes/admin/` page carries a
+        # recorded disposition in Appendix A of the proposal. The sweep was
+        # hand-run until now, so a new admin page could join the inventory
+        # silently and shrink the reported coverage without failing anything.
+        working-directory: ${{ github.workspace }}
+        run: php bin/audit-wp-admin-surfaces.php
+
       - name: Prepare the application
         run: |
           cp .env.example .env
           php artisan key:generate --force
+
+      - name: Cloudways deploy script (hermetic smoke)
+        # Cloudways' Git deployment path is relative to the docroot, so the
+        # checkout lands at public_html/repo/ and the app's public/ directory is
+        # not the docroot. bin/cloudways-deploy.sh generates the front controller
+        # that bridges them. This harness stubs PHP/Composer/rsync and asserts the
+        # generated PHP parses, .htaccess keeps the /repo deny and front-controller
+        # rules, the .env gate still exits 2, and the docroot guards hold.
+        working-directory: ${{ github.workspace }}
+        run: bash bin/cloudways-deploy-smoke.sh
+
+      - name: Admin theme is current
+        # The Filament palette is generated from the ADS design tokens and
+        # committed. A token change that was not regenerated must fail here —
+        # AdminThemeDriftTest also covers it, but this step names the fix.
+        run: php artisan admin:theme --check
 
       - name: Run the suite
         run: php artisan test

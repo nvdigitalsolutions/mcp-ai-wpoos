@@ -77,7 +77,7 @@ class Test_Ollama_AJAX_Handlers extends WP_UnitTestCase {
 			// Initialize the AJAX handler.
 			$ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
 			$ajax_handlers->handle_fetch_ollama_models();
-		} catch ( WPDieException $e ) {
+		} catch ( WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected - wp_send_json_* calls wp_die().
 		}
 		$output = ob_get_clean();
@@ -161,7 +161,7 @@ class Test_Ollama_AJAX_Handlers extends WP_UnitTestCase {
 		try {
 			$ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
 			$ajax_handlers->handle_fetch_ollama_models();
-		} catch ( WPDieException $e ) {
+		} catch ( WPDieException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$output = ob_get_clean();

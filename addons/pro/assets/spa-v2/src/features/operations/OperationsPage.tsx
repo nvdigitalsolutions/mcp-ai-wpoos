@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * OperationsPage — cron jobs + dead-letter queue (Proposal 084 Phase 3).
  *

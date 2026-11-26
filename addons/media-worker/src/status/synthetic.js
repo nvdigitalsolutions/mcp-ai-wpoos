@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Synthetic external checks: seeding + the probe loop.
  *

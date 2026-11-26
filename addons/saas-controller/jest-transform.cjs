@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Minimal TypeScript transformer for jest (no Babel dependency).
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Windows foreground-app detection for per-app cleanup profiles.
 //!
 //! Category mapping lives in `config::AppCategory::from_process_name`; this

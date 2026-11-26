@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // dtcg.mjs — DTCG 2025.10 validation + reference resolution (zero-dep, Node).
 //

@@ -794,7 +794,7 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 
 		// Simulate Ollama streaming response with multiple chunks.
 		// Ollama sends content deltas in each chunk, not full accumulated content.
-		// See: https://docs.ollama.com/api/streaming
+		// See: https://docs.ollama.com/api/streaming.
 		$filter_callback = function ( $preempt, $args, $url ) {
 			// Simulate newline-delimited JSON stream with multiple chunks.
 			$stream_chunks = array(

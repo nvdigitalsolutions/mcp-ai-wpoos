@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Assistant;
+use App\Services\AssistantTestPlan;
+use App\Support\Budgets\BudgetExceededException;
+use App\Support\Budgets\BudgetGuard;
+use App\Support\Budgets\BudgetUnverifiableException;
 use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Nvoos\Core\Application\Chat\ChatOrchestrator;
 use Nvoos\Core\Application\Provider\ProviderRouter;
-use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 
 /**
@@ -38,8 +41,9 @@ class AssistantTestController
         Assistant $assistant,
         ChatOrchestrator $orchestrator,
         ProviderRouter $router,
-        ToolRegistry $tools,
         ErrorFactoryInterface $errors,
+        AssistantTestPlan $planBuilder,
+        BudgetGuard $budgets,
     ): JsonResponse {
         abort_if($assistant->tenant_id !== TenantContext::current(), 404);
 
@@ -54,69 +58,12 @@ class AssistantTestController
 
         $config = $assistant->toRecord();
 
-        // What a turn would send. `resolveForChat()` falls back to the site
-        // default provider, so the resolved slug is reported separately from
-        // the assistant's own setting rather than conflated with it.
+        // The plan is shared with the `/ops/diagnostics` Test Assistant probe,
+        // which renders it without spending a token (§48).
         $client = $router->resolveForChat([], $config);
-        $configuredProvider = (string) ($config['provider'] ?? '');
-        $assigned = array_values(array_filter(
-            (array) ($config['tools'] ?? []),
-            static fn ($slug): bool => is_string($slug) && '' !== $slug,
-        ));
-        $registered = array_values(array_filter($assigned, static fn (string $slug): bool => $tools->has($slug)));
-        $missing = array_values(array_diff($assigned, $registered));
-        $prompt = (string) ($config['system_prompt'] ?? '');
+        $plan = $planBuilder->build($assistant, $client);
 
-        $warnings = [];
-        if ('' === $configuredProvider) {
-            $warnings[] = 'no_provider';
-        }
-        if (null === $client) {
-            $warnings[] = 'provider_unavailable';
-        }
-        if ('' === (string) ($config['model'] ?? '')) {
-            $warnings[] = 'no_model';
-        }
-        if ('' === trim($prompt)) {
-            $warnings[] = 'no_system_prompt';
-        }
-        if ([] === $assigned) {
-            $warnings[] = 'no_tools';
-        }
-        foreach ($missing as $slug) {
-            $warnings[] = 'tool_not_registered:' . $slug;
-        }
-
-        $plan = [
-            'assistant' => [
-                'id' => (int) $assistant->id,
-                'title' => (string) $assistant->title,
-                'status' => (string) $assistant->status,
-            ],
-            'provider' => [
-                'configured' => $configuredProvider,
-                'resolved' => $client?->getProviderSlug() ?? '',
-            ],
-            'model' => (string) ($config['model'] ?? ''),
-            'system_prompt' => [
-                'present' => '' !== trim($prompt),
-                'characters' => strlen($prompt),
-            ],
-            'tools' => [
-                'assigned' => $assigned,
-                'registered' => $registered,
-                'missing' => $missing,
-            ],
-            'warnings' => $warnings,
-            'dry_run' => true,
-            'reply' => null,
-            'tool_calls' => [],
-            'iterations' => 0,
-            'latency_ms' => null,
-            'cost' => null,
-        ];
-
-        $messages = $this->messages($validated);
+        $messages = $planBuilder->messages($validated);
 
         if ([] === $messages) {
             return response()->json(['success' => true, 'data' => $plan]);
@@ -139,6 +86,33 @@ class AssistantTestController
             ],
             static fn ($value): bool => null !== $value,
         );
+
+        // The estate budget is checked before the provider call, not after it
+        // (Proposal 154). A 429 here refuses the turn; a 503 means the budget
+        // could not be read, which is a different problem for the operator.
+        try {
+            $budgets->assertWithinBudget((int) $assistant->id);
+        } catch (BudgetExceededException $error) {
+            return response()->json(array(
+                'success' => false,
+                'error' => array(
+                    'code' => 'budget_exceeded',
+                    'message' => $error->getMessage(),
+                    'window' => $error->window,
+                    'assistant_id' => $error->assistantId,
+                    'spend' => $error->spend,
+                    'limit' => $error->limit,
+                ),
+            ), 429);
+        } catch (BudgetUnverifiableException $error) {
+            return response()->json(array(
+                'success' => false,
+                'error' => array(
+                    'code' => 'budget_unverifiable',
+                    'message' => $error->getMessage(),
+                ),
+            ), 503);
+        }
 
         $started = microtime(true);
         $result = $orchestrator->handleChat(
@@ -173,26 +147,6 @@ class AssistantTestController
         $plan['cost'] = $result['cost'] ?? null;
 
         return response()->json(['success' => true, 'data' => $plan]);
-    }
-
-    /**
-     * Normalise the two request shapes into one conversation.
-     *
-     * `messages` wins when both are supplied — it is the explicit form — and a
-     * bare `message` becomes a single user turn.
-     *
-     * @param array<string, mixed> $validated
-     * @return array<int, array<string, mixed>>
-     */
-    private function messages(array $validated): array
-    {
-        if (! empty($validated['messages'])) {
-            return array_values($validated['messages']);
-        }
-
-        $message = trim((string) ($validated['message'] ?? ''));
-
-        return '' === $message ? [] : [['role' => 'user', 'content' => $message]];
     }
 
     /**

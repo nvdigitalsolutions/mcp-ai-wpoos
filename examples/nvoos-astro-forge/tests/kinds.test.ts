@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // kinds.test.ts — the six structural section kinds (Proposal 136 §4.1).
 //

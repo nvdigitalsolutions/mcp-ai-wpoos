@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * PageFooter — displays last-modified date and an "Edit on GitHub" link.
  *

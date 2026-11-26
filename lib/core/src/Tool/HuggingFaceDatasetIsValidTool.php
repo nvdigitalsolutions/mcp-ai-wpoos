@@ -13,6 +13,15 @@ namespace Nvoos\Core\Tool;
 
 class HuggingFaceDatasetIsValidTool extends AbstractHuggingFaceTool
 {
+    /**
+     * The datasets-server endpoint this tool calls.
+     *
+     * Public because the dataset browser derives its catalogue from it:
+     * one declaration, two readers, and an endpoint change cannot leave
+     * the page describing a route that no longer exists.
+     */
+    public const ENDPOINT = '/is-valid';
+
     public function getSlug(): string
     {
         return 'huggingface_dataset_is_valid';
@@ -55,7 +64,7 @@ class HuggingFaceDatasetIsValidTool extends AbstractHuggingFaceTool
             if ('' !== $config) {
                 $params['config'] = $config;
             }
-            $data = $this->apiGet('/is-valid', $params);
+            $data = $this->apiGet(self::ENDPOINT, $params);
             if ($this->errors->isError($data)) {
                 return $data;
             }

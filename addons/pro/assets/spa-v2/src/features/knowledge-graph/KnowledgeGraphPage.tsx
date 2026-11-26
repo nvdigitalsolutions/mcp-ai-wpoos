@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * KnowledgeGraphPage — NV oOS Content Graph explorer inside the Pro SPA.
  *

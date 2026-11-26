@@ -39,19 +39,6 @@ class OkfController
     /** Matches WordPress's `MAX_SEARCH_RESULTS`. */
     private const MAX_SEARCH_RESULTS = 50;
 
-    /** Frontmatter keys exposed over REST, matching WordPress's allowlist. */
-    private const FRONTMATTER_ALLOWLIST = [
-        'title',
-        'description',
-        'type',
-        'tags',
-        'status',
-        'verified',
-        'stale_after',
-        'generated',
-        'usage_window',
-    ];
-
     /**
      * GET /okf/bundles.
      */
@@ -141,7 +128,7 @@ class OkfController
         return response()->json([
             'bundle' => $bundle,
             'concept_id' => (string) ($detail['concept_id'] ?? $concept),
-            'frontmatter' => $this->allowlisted($frontmatter),
+            'frontmatter' => OkfCatalogue::allowlisted($frontmatter),
             'body' => $body,
             'links' => $reader->conceptLinks($body, (string) ($detail['concept_id'] ?? $concept)),
             'trust_tier' => $reader->getTrustTier($frontmatter),
@@ -216,25 +203,6 @@ class OkfController
             'assistant_id' => (int) $request->query('assistant_id', 0),
             'skills' => [],
         ]);
-    }
-
-    /**
-     * Allowlist frontmatter keys.
-     *
-     * @param array<string, mixed> $frontmatter Parsed frontmatter.
-     * @return array<string, mixed>
-     */
-    private function allowlisted(array $frontmatter): array
-    {
-        $out = [];
-
-        foreach (self::FRONTMATTER_ALLOWLIST as $key) {
-            if (array_key_exists($key, $frontmatter)) {
-                $out[$key] = $frontmatter[$key];
-            }
-        }
-
-        return $out;
     }
 
     /**

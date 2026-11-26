@@ -158,3 +158,59 @@
     template additions push the CSS bundle past Astro's inline threshold,
     so asserting the token in the built CSS requires following the
     stylesheet link (assertion adapted, gate unchanged).
+
+## Presets become products — proposal 163 (in progress, 2026-11-24)
+
+All six presets today (`blog`, `storefront`, `portfolio`, `landing`, `docs`,
+`minimal`) point at template `blog` and differ **only** in collection profile
+and surface toggles. That invariant is what keeps the blog template byte-
+identical and must not be broken casually.
+
+Proposal 163 adds `eca`, the first preset that carries an **information
+architecture**, not a layout: catalogue + facets, activity detail, stage /
+day / category landings, calendar, timetable grid, term dates, search,
+shortlist, and `.ics` feeds. In other words a preset stops being a *layout
+choice* and becomes a *product shape*. Three consequences worth knowing
+before touching `lib/presets.ts`:
+
+- **`suggestPreset()` cannot see toolkits yet.** It fingerprints on
+  `woocommerce` plus a portfolio-slug regex. `eca` needs a collection
+  `restBase` match (`wp/v2/mcp_ai_eca`). The generalisation — a
+  toolkit→preset registry keyed on CPT + meta schema — is the follow-on, since
+  the Pro toolkit ships many CPTs and each is a product shape in waiting.
+- **`verify` only gates design fidelity.** Bands, chrome facts, route keys,
+  SEO, text and geometry are all "does it look like the original". A product
+  preset needs a second gate class: *content integrity* — every record
+  validates against the format, every record is reachable from at least one
+  landing, facet counts match the records, no empty landings, no orphan
+  terms. Planned as `verify --eca`.
+- **A preset with its own detail route must declare `canonicalPath`.** The
+  generic extra-collection route is `/<base>/<id>/<slug>/`; the ECA preset
+  serves `/<base>/<slug>/`. The redirect map is built from the collection's
+  shape, so without `WpCollection.canonicalPath: 'slug'` every legacy
+  `/eca/<slug>/` 301 pointed at `/<base>/<id>/<slug>/` — a path the build never
+  wrote. Verified the hard way: 105 redirects into 404s, invisible until the
+  mirrored artifact was inspected. Belt and braces, the detail route also
+  emits the `<id>/<slug>` alias and canonicalises to the short form.
+- **Toolkit meta needs TWO opt-ins, and fails silently without them.**
+  `wp/v2/mcp_ai_eca` *does* expose all 18 `_eca_*` keys — but only when the
+  request names `meta` in `_fields` **and** the collection declares it as
+  `passthrough`. `createWpLoader` deliberately projects a fixed field set, so a
+  collection without `passthrough` ships every record with no schedule, price
+  or capacity **and no build error** — the catalogue renders, just empty. Both
+  halves were hit on eca.directory: a `meta`-less `_fields` list, then a
+  generator that never emitted `passthrough` into `content.config.ts`.
+  `WpCollection.passthrough` names the extra REST keys (`meta`, taxonomy ids,
+  the raw body); the scaffold serialises it; the consuming page re-sanitises,
+  because passthrough bypasses the loader's sanitiser. Validate a new preset by
+  asserting a *known meta fact* reaches the page (`data-type` on a card), never
+  by asserting the page built.
+
+**Dual-origin needs no work** — do not add any. `deploy.publicOrigin` /
+`ASTRO_SITE` is the canonical public origin and is explicitly *not* the
+WordPress origin (`lib/types.ts` 344–368; `templates/blog/src/lib/media.ts`),
+so "live WP on the real domain + forged site on a Velocity node URL" builds
+correctly as-is.
+
+Spec: `docs/project/proposals/163-eca-frontend-research.md`, `…-proposal.md`,
+`…-implementation-plan.md`.

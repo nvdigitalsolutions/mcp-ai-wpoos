@@ -13,6 +13,15 @@ namespace Nvoos\Core\Tool;
 
 class HuggingFaceDatasetListSplitsTool extends AbstractHuggingFaceTool
 {
+    /**
+     * The datasets-server endpoint this tool calls.
+     *
+     * Public because the dataset browser derives its catalogue from it:
+     * one declaration, two readers, and an endpoint change cannot leave
+     * the page describing a route that no longer exists.
+     */
+    public const ENDPOINT = '/splits';
+
     public function getSlug(): string
     {
         return 'huggingface_dataset_list_splits';
@@ -52,7 +61,7 @@ class HuggingFaceDatasetListSplitsTool extends AbstractHuggingFaceTool
         }
         try {
             $data = $this->apiGet(
-                '/splits',
+                self::ENDPOINT,
                 array(
                     'dataset' => $dataset,
                     'config'  => $this->stringParam($arguments, 'config', 'default'),

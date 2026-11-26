@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Select field — native <select> with an explicit first option when the
  * value is empty, so the control never claims a value the user did not

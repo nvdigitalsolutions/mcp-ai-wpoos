@@ -63,6 +63,10 @@ final class ToolProbesTest extends TestCase {
 			array( 'recall_memory', array( 'agent_id' => '7', 'wing' => 'test-wing' ), 'success', array( 'memories', 'count' ) ),
 			array( 'search_attachments', array( 'query' => 'zzz-no-such-attachment' ), 'success', array() ),
 
+			// §164.53 — the refusal path: the test host configures no media worker,
+			// so the tool must name the absence rather than fail mid-render.
+			array( 'capture_webpage_screenshot', array( 'url' => 'https://example.com' ), 'error', array() ),
+
 			// 090-M Phase 2, batch 5 — the pure family.
 			array( 'base64', array( 'text' => 'hello' ), 'success', array( '*' ) ),
 			array( 'color_convert', array( 'color' => '#ff0000', 'to_format' => 'rgb' ), 'success', array( '*' ) ),
@@ -114,6 +118,132 @@ final class ToolProbesTest extends TestCase {
 			array( 'scope_memory', array( 'assistant_id' => 7, 'task_class' => 'math', 'wing' => 'test-wing' ), 'success', array( 'tags' ) ),
 			array( 'validate_tool_schema', array( 'schema' => array( 'type' => 'object', 'properties' => array() ) ), 'success', array( '*' ) ),
 			array( 'verify_information', array( 'claim' => 'The sky is blue.', 'sources' => array( array( 'content' => 'The sky is blue during the day.', 'url' => 'https://example.com', 'credibility' => 'high' ) ) ), 'success', array( 'sources_checked' ) ),
+
+			// 090-M §24-§25 — the content ranking and the local file check. Both read
+			// real tables, so they are probed here rather than faked.
+			array( 'content_recommendation_engine', array( 'content' => 'Widget installation guide.' ), 'success', array( 'recommendations', 'count' ) ),
+			array( 'analyze_file_suitability', array( 'file_id' => 999999 ), 'error', array() ),
+
+			// §164.56 — the deletes refuse an id that is not a record of their type.
+			array( 'delete_eca', array( 'eca_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'delete_student', array( 'student_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.57 — the three ECA reads: two refusals and one empty success.
+			array( 'get_eca_attendance_report', array( 'eca_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_eca_timetable', array( 'view_type' => 'venue', 'view_id' => 'no-such-venue' ), 'success', array( 'total_sessions', 'timetable' ), array( 'user_id' => 1 ) ),
+			array( 'check_eca_conflicts', array( 'check_type' => 'venue', 'venue' => 'nowhere', 'day' => 'Monday', 'start_time' => '09:00', 'end_time' => '10:00' ), 'success', array( 'has_conflicts', 'conflicts' ), array( 'user_id' => 1 ) ),
+			array( 'generate_eca_analytics', array( 'report_type' => 'participation' ), 'success', array( 'summary', 'rows' ), array( 'user_id' => 1 ) ),
+			array( 'generate_eca_participation_report', array( 'scope' => 'school' ), 'success', array( 'columns', 'rows' ), array( 'user_id' => 1 ) ),
+			array( 'export_eca_data', array( 'export_type' => 'ecas' ), 'success', array( 'rows', 'file' ), array( 'user_id' => 1 ) ),
+			array( 'get_student_participation_summary', array( 'student_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.59 — the five ECA writers: four refusals and one empty list.
+			array( 'set_eca_schedule', array( 'eca_id' => 999999, 'sessions' => array( array( 'day' => 'Monday', 'start_time' => '09:00', 'end_time' => '10:00' ) ) ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'manage_eca_term', array( 'action' => 'list' ), 'success', array( 'action', 'total', 'terms' ), array( 'user_id' => 1 ) ),
+			array( 'import_ecas_csv', array( 'csv_content' => "name,type
+Probe Club,club
+", 'dry_run' => true ), 'success', array( 'total_rows', 'created_count', 'dry_run' ), array( 'user_id' => 1 ) ),
+			array( 'send_eca_notification', array( 'eca_id' => 999999, 'notification_type' => 'reminder', 'recipients' => 'all_enrolled' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'send_eca_parent_report', array( 'student_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.60 — the Cloudways reads. No credentials in this environment, so
+			// each proves it reaches the client and the client refuses cleanly.
+			array( 'cloudways_list_servers', array(), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'cloudways_get_server', array( 'server_id' => 1 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'cloudways_list_apps', array( 'server_id' => 1 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'cloudways_get_app', array( 'server_id' => 1, 'app_id' => 1 ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.61 — services, operations and labels. Same reason: no credentials,
+			// so each proves the wiring and the client refusal.
+			array( 'cloudways_service_status', array( 'server_id' => 1 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'cloudways_restart_service', array( 'server_id' => 1, 'service' => 'nginx' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'cloudways_get_operation_status', array( 'operation_id' => 'flex-1' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'cloudways_update_server_label', array( 'server_id' => 1, 'label' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.63 — the CRM company pair. The suite refreshes its database per
+			// test, so the create leaves nothing behind.
+			array( 'create_company', array( 'company_name' => 'Probe Ltd', 'industry' => 'Testing' ), 'success', array( 'company_id', 'company_name' ), array( 'user_id' => 1 ) ),
+			array( 'get_companies', array( 'industry' => 'Testing' ), 'success', array( 'companies', 'total_companies' ), array( 'user_id' => 1 ) ),
+
+			// §164.64 — the interaction timeline and the handover bundle. The
+			// timeline answers empty for an unknown contact; the handover refuses an
+			// unknown deal rather than assembling a bundle with no subject.
+			array( 'get_contact_interactions', array( 'contact_id' => 999999 ), 'success', array( 'contact_id', 'total_count', 'interactions' ), array( 'user_id' => 1 ) ),
+			array( 'get_crm_handover', array( 'entity' => 'deal', 'entity_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.65 — the contact pair. The manager refuses an id that is not a
+			// toolkit contact; the scanner answers on an empty corpus.
+			array( 'manage_crm_contact', array( 'action' => 'read', 'contact_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'scan_duplicate_contacts', array(), 'success', array( 'match_field', 'total_contacts', 'duplicate_groups', 'duplicates' ), array( 'user_id' => 1 ) ),
+
+			// §164.66 — the hygiene pair. Both default to a dry run; the archive
+			// reports on an empty corpus and the scorer refuses an unknown contact.
+			array( 'archive_stale_contacts', array(), 'success', array( 'archived_count', 'skipped_count', 'contacts' ), array( 'user_id' => 1 ) ),
+			array( 'recalculate_engagement_scores', array( 'contact_ids' => array( 999999 ) ), 'success', array( 'scored_count', 'failed_count', 'contacts' ), array( 'user_id' => 1 ) ),
+
+			// §164.67 — the lead email search. The working invocation is
+			// lead_status=all with a date sort; the defaults find nothing by design.
+			array( 'crm_email_search_leads', array( 'lead_status' => 'all', 'orderby' => 'date' ), 'success', array( 'leads', 'total', 'filters', 'scoring' ), array( 'user_id' => 1 ) ),
+
+			// §164.68 — the accounting search. Defaults are benign here: all
+			// filters plus a date sort, so an empty corpus is a clean success.
+			array( 'crm_email_search_accounting', array(), 'success', array( 'records', 'total', 'filters', 'summary' ), array( 'user_id' => 1 ) ),
+
+			// §164.69 — the correspondence search. The default mode plus the meta
+			// sort answers an empty corpus with an empty list.
+			array( 'crm_email_search_correspondence', array(), 'success', array( 'contacts', 'total', 'filters' ), array( 'user_id' => 1 ) ),
+
+			// §164.70 — the capture writes through the bound memory store. The
+			// wing slug proves the sanitize_key step: Acme Corp is account/acmecorp.
+			array( 'crm_capture_interaction', array( 'account_id' => 'Acme Corp', 'room' => 'interactions', 'content' => 'Probe capture.' ), 'success', array( 'wing', 'room', 'tier', 'memory_id', 'expires_at' ), array( 'user_id' => 1 ) ),
+
+			// §164.71 — the F&B table pair. No table is mapped in this
+			// environment, so each proves it names the absence instead of
+			// fabricating a matrix.
+			array( 'fnb_read_table', array( 'table_id' => '3.0' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'fnb_search_table', array( 'table_id' => '3.0' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.72 — the engine. The metric call reaches a table and refuses;
+			// the comparison degrades to its two split rows, as WordPress does.
+			array( 'fnb_calculate_metric', array( 'metric_id' => 'M-01', 'month' => '2026-09' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'fnb_compare_periods', array( 'month' => '2026-09', 'prev_month' => '2026-08' ), 'success', array( 'month', 'prev_month', 'metrics' ), array( 'user_id' => 1 ) ),
+
+			// §164.73 — the three table-reading tools. M-14 and M-12 answer zeros
+			// on an unmapped corpus (the engine does not surface a table error for
+			// them); the ledger scan refuses.
+			array( 'fnb_days_of_cover', array( 'ingredient_id' => 'ING-1' ), 'success', array( 'ingredient_id', 'shelf_life_days', 'over_ordering_flag', 'value' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_weekend_demand', array( 'friday' => '2026-09-25' ), 'success', array( 'weekend', 'per_day', 'supplier_cutoffs' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_duplicate_invoice_scan', array(), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.74 — the ten metric wrappers. None surfaces the unmapped table as
+			// a tool error: each metric answers a zeroed or empty shape carrying its
+			// own `error`, and the wrapper merges it, exactly as WordPress does.
+			// The probe therefore asserts the shape the wrapper assembles, which is
+			// the wrapper's own work.
+			array( 'fnb_budget_variance', array( 'month' => '2026-09' ), 'success', array( 'month', 'rows', 'source' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_dish_margin', array( 'item_id' => 'IT-1', 'month' => '2026-09' ), 'success', array( 'item_id', 'value' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_expected_use', array( 'ingredient_id' => 'ING-1', 'month' => '2026-09' ), 'success', array( 'ingredient_id', 'month', 'value' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_labour_analysis', array( 'month' => '2026-09' ), 'success', array( 'total_payroll', 'm09_overtime_per_100', 'm10_labour_pct' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_price_change_impact', array( 'month' => '2026-09' ), 'success', array( 'month', 'value', 'changes' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_stock_used', array( 'ingredient_id' => 'ING-1' ), 'success', array( 'ingredient_id', 'value' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_stock_variance', array( 'ingredient_id' => 'ING-1' ), 'success', array( 'ingredient_id', 'value' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_utilities_per_cover', array( 'month' => '2026-09' ), 'success', array( 'meters', 'costed', 'per_cover', 'covers' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_variance_split', array( 'month' => '2026-09', 'prev_month' => '2026-08' ), 'success', array( 'month', 'prev_month', 'total_change', 'lines' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_waste_analysis', array( 'month' => '2026-09' ), 'success', array( 'month', 'value', 'waste_value', 'by_reason' ), array( 'user_id' => 1 ) ),
+
+			// §164.75 — the report path. A report and a draft list degrade rather
+			// than refuse on an unmapped corpus; CSV writes through the file
+			// registry; PDF refuses because no renderer is bound here.
+			array( 'fnb_generate_report', array( 'report_id' => 'R-05', 'month' => '2026-09' ), 'success', array( 'report_id', 'sections', 'draft' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_export_report', array( 'report_id' => 'R-05', 'format' => 'csv', 'month' => '2026-09' ), 'success', array( 'report_id', 'mode', 'filename' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_export_report', array( 'report_id' => 'R-05', 'format' => 'pdf', 'month' => '2026-09' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'fnb_save_draft', array( 'title' => 'F&B probe draft', 'content' => 'Probe body' ), 'success', array( 'location', 'status' ), array( 'user_id' => 1 ) ),
+			array( 'fnb_list_drafts', array(), 'success', array( 'drafts', 'count' ), array( 'user_id' => 1 ) ),
+
+			// §164.76 — the audit viewer. The adapter package binds no
+			// SystemLogInterface, so the honest "no queryable log" answer is the
+			// probe; the entry filter and act-tier flag are pinned in lib/core.
+			array( 'fnb_audit_log', array(), 'success', array( 'entries', 'count', 'sources' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
@@ -125,6 +255,23 @@ final class ToolProbesTest extends TestCase {
 	 */
 	#[DataProvider( 'probes' )]
 	public function test_promoted_tool_does_its_own_work( string $slug, array $arguments, string $expect, array $keys, array $context = array() ): void {
+		// The ECA export is the one probe that writes through the file store,
+		// which refuses bytes it cannot sniff. A host without ext-fileinfo cannot
+		// honour that tool, so the claim is skipped rather than failed. The F&B
+		// CSV export is the same case: the registry sniffs the CSV bytes before
+		// storing them, and its own work (the rows) is pinned in lib/core.
+		if ( 'export_eca_data' === $slug && ! \function_exists( 'finfo_open' ) ) {
+			$this->markTestSkipped( 'export_eca_data needs ext-fileinfo: the file store cannot sniff without it.' );
+		}
+
+		if (
+			'fnb_export_report' === $slug
+			&& 'csv' === ( $arguments['format'] ?? '' )
+			&& ! \function_exists( 'finfo_open' )
+		) {
+			$this->markTestSkipped( 'fnb_export_report (CSV) needs ext-fileinfo: the file store cannot sniff without it.' );
+		}
+
 		$registry = $this->app->make( ToolRegistry::class );
 
 		$this->assertTrue( $registry->has( $slug ), "Promoted tool '{$slug}' is not registered." );

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // motion-doc.test.ts — MOTION.md (Proposal 136 §4.4).
 //
@@ -42,6 +43,17 @@ describe( 'renderMotionDoc', () => {
 		const first = renderMotionDoc( input );
 		expect( renderMotionDoc( input ) ).toBe( first );
 		expect( first ).not.toMatch( /\d{4}-\d{2}-\d{2}T/ );
+	} );
+
+	it( 'marks a horizontal piece so a reviewer can spot an axis regression', () => {
+		// The doc is the human review gate: an X piece rendered as a vertical
+		// drift was invisible here until the axis was named.
+		const doc = renderMotionDoc(
+			profile( {
+				entries: [ { id: 'a1b2c3d', kind: 'parallax', speed: 2, pieces: [ { axis: 'x', depth: 0.1 } ] } ],
+			} )
+		);
+		expect( doc ).toContain( '±48px (horizontal) × 1 piece' );
 	} );
 
 	it( 'names the piece count on a piece-level parallax band', () => {

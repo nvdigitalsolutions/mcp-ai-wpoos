@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Docs Hub API client — fetches data from the REST backend.
  *

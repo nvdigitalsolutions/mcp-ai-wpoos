@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * MediaTab — Main sidebar tab for browsing the WordPress Media Library.
  *

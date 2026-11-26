@@ -469,6 +469,12 @@ class Test_Regulatory_Registration_Agentic_Workflow extends WP_UnitTestCase {
 
 			$result = $tool->execute( $args, array( 'user_id' => $this->user_id ) );
 
+			// A failure now travels as WP_Error, not as an array with a false flag.
+			if ( is_wp_error( $result ) ) {
+				$this->assertNotSame( '', $result->get_error_code(), "Tool {$tool_slug} WP_Error should carry a code" );
+				continue;
+			}
+
 			// Verify standard response structure.
 			$this->assertIsArray( $result, "Tool {$tool_slug} should return array" );
 			$this->assertArrayHasKey( 'success', $result, "Tool {$tool_slug} should have success key" );
@@ -476,9 +482,6 @@ class Test_Regulatory_Registration_Agentic_Workflow extends WP_UnitTestCase {
 			// Success responses should have data.
 			if ( $result['success'] ) {
 				$this->assertGreaterThan( 1, count( $result ), "Tool {$tool_slug} should return data on success" );
-			} else {
-				// Failed responses should have error.
-				$this->assertArrayHasKey( 'error', $result, "Tool {$tool_slug} should have error key on failure" );
 			}
 		}
 	}

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // wireframes.ts — per-page wireframe extraction (Proposal 115 §3/§4).
 //

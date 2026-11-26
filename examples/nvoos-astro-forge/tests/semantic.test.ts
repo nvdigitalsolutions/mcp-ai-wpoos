@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // semantic.test.ts — the builder-structure classifier (Proposal 114 P2):
 // Elementor widget sections, wp-block fallbacks, slot extraction, and the
@@ -13,6 +14,131 @@ const SECTION = ( inner: string ) =>
 
 const WIDGET = ( name: string, inner: string ) =>
 	`<div class="elementor-widget elementor-widget-${ name }"><div class="elementor-widget-container">${ inner }</div></div>`;
+
+describe( 'classifyHtml — an h1 inside a card widget', () => {
+	it( 'is the band title, not a grid card', () => {
+		// eca.directory's hero publishes its h1 inside an Elementor icon-box
+		// (`elementor-icon-box-title`). Treating the widget as an item demoted the
+		// page's only h1 to an <h3> inside a grid and titled the band after a
+		// rating label instead ("Parent ratings", 2026-11-24).
+		const html = SECTION(
+			WIDGET(
+				'icon-box',
+				`<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h1 class="elementor-icon-box-title"><span>ECA Management for British School in Colombo</span></h1><p class="elementor-icon-box-description">Real-time enrolment, instant parent updates.</p></div></div>`
+			) +
+				WIDGET( 'text-editor', '<p>4.8</p>' ) +
+				WIDGET( 'text-editor', '<p>+1k</p>' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].slots.title ).toBe( 'ECA Management for British School in Colombo' );
+		expect( sections[ 0 ].slots.titleLevel ).toBe( 1 );
+		expect( sections[ 0 ].slots.body ).toContain( 'Real-time enrolment, instant parent updates.' );
+		// The headline must not also appear as a card.
+		const titles = ( sections[ 0 ].slots.items ?? [] ).map( ( item ) => item.title );
+		expect( titles ).not.toContain( 'ECA Management for British School in Colombo' );
+	} );
+
+	it( 'leaves an h2 or h3 card caption alone', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Our benefits</h2>' ) +
+				WIDGET(
+					'icon-box',
+					`<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h3 class="elementor-icon-box-title">Live ECA Catalogue</h3><p class="elementor-icon-box-description">Browse by day.</p></div></div>`
+				) +
+				WIDGET(
+					'icon-box',
+					`<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h3 class="elementor-icon-box-title">Instant Notifications</h3><p class="elementor-icon-box-description">SMS alerts.</p></div></div>`
+				)
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].slots.title ).toBe( 'Our benefits' );
+		expect( ( sections[ 0 ].slots.items ?? [] ).map( ( item ) => item.title ) ).toEqual( [
+			'Live ECA Catalogue',
+			'Instant Notifications',
+		] );
+	} );
+} );
+
+describe( 'classifyHtml — Elementor counters', () => {
+	// The widget animates from 0, so its DOM text is always "0"; the real figure
+	// is in `data-to-value`. about-us (`14c60321`) published "0 / %" and
+	// "0 / Term" until this read the attribute (2026-11-24).
+	const COUNTER = ( title: string, to: string, prefix = '', suffix = '' ) =>
+		WIDGET(
+			'counter',
+			`<div class="elementor-counter"><div class="elementor-counter-title">${ title }</div><div class="elementor-counter-number-wrapper"><span class="elementor-counter-number-prefix">${ prefix }</span><span class="elementor-counter-number" data-to-value="${ to }" data-from-value="0">0</span><span class="elementor-counter-number-suffix">${ suffix }</span></div></div>`
+		);
+
+	it( 'reads data-to-value, the prefix and the suffix instead of the "0" text', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Why choose our platform</h2>' ) +
+				COUNTER( 'Hour allocation time', '48', '≤' ) +
+				COUNTER( 'Parents updated within 5 minutes', '100', '', '%' )
+		);
+		const stats = classifyHtml( html )[ 0 ].stats?.items ?? [];
+		expect( stats ).toEqual( [
+			{ value: '≤48', label: 'Hour allocation time' },
+			{ value: '100', unit: '%', label: 'Parents updated within 5 minutes' },
+		] );
+	} );
+
+	it( 'keeps a suffix phrase as the unit rather than the label', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Why choose our platform</h2>' ) +
+				COUNTER( 'Routine ECA admin emails', '80', '', '% less' ) +
+				COUNTER( 'Pilot implementation', '3', '', 'Term' )
+		);
+		const stats = classifyHtml( html )[ 0 ].stats?.items ?? [];
+		expect( stats.map( ( item ) => [ item.value, item.unit, item.label ] ) ).toEqual( [
+			[ '80', '% less', 'Routine ECA admin emails' ],
+			// A WORD suffix gets a space ("1Term" reads as a typo); a symbol does not.
+			[ '3', ' Term', 'Pilot implementation' ],
+		] );
+	} );
+} );
+
+describe( 'classifyHtml — WordPress placeholder content', () => {
+	// WordPress installs "Hello world!" (slug hello-world) and "Sample Page"
+	// on every site. A builder's posts widget renders them as a real card, so a
+	// rebuild published one as the school's only story (eca.directory, 2026-11-24).
+	const POSTS_WIDGET = ( title: string, body = '' ) =>
+		WIDGET(
+			'posts',
+			`<div class="elementor-posts-container elementor-posts"><div class="elementor-post"><h3 class="elementor-post__title">${ title }</h3>${ body }</div></div>`
+		);
+
+	it( 'drops a card that is only the default post title', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Our Updates</h2>' ) +
+				WIDGET( 'text-editor', '<h3>News &amp; Insights</h3><p>Follow along as we roll out live enrolment.</p>' ) +
+				POSTS_WIDGET( 'Hello world!' )
+		);
+		const sections = classifyHtml( html );
+		const titles = ( sections[ 0 ].slots.items ?? [] ).map( ( item ) => item.title );
+		expect( titles ).not.toContain( 'Hello world!' );
+		expect( titles ).toContain( 'News & Insights' );
+	} );
+
+	it( 'keeps a card that carries copy, even when the title reads like one', () => {
+		// An article ABOUT the default content is copy, not a placeholder.
+		const html = SECTION(
+			WIDGET( 'text-editor', '<h3>Hello world!</h3><p>Why every WordPress site starts with this post.</p>' ) +
+				WIDGET( 'text-editor', '<h3>News &amp; Insights</h3><p>Follow along as we roll out live enrolment.</p>' )
+		);
+		const titles = ( classifyHtml( html )[ 0 ].slots.items ?? [] ).map( ( item ) => item.title );
+		expect( titles ).toContain( 'Hello world!' );
+	} );
+
+	it( 'keeps a real post card next to the placeholder', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Our Updates</h2>' ) +
+				POSTS_WIDGET( 'Hello world!' ) +
+				POSTS_WIDGET( 'Michaelmas fixtures published' )
+		);
+		const titles = ( classifyHtml( html )[ 0 ].slots.items ?? [] ).map( ( item ) => item.title );
+		expect( titles ).toEqual( [ 'Michaelmas fixtures published' ] );
+	} );
+} );
 
 describe( 'classifyHtml — vendor-prefixed widget families (Phlox/Auxin)', () => {
 	it( 'rebuilds aux_* widgets like the core Elementor ones', () => {
@@ -406,6 +532,55 @@ describe( 'classifyHtml — accordion bands', () => {
 		const sections = classifyHtml( html );
 		expect( sections[ 0 ].kind ).not.toBe( 'accordion' );
 	} );
+
+	it( 'splits an opening <strong> out as the panel’s lead-in', () => {
+		// The source bolds the first clause and leaves the rest plain. Flattening
+		// the panel to textContent printed it as ordinary copy, so the paragraph
+		// lost the only thing separating its first clause (virtuallysrilanka's
+		// features band).
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Features</h2>' ) +
+				WIDGET(
+					'accordion',
+					`<div class="elementor-accordion">
+						<div class="elementor-accordion-item"><div class="elementor-tab-title"><a class="elementor-accordion-title">Custom Landing Page</a></div>
+						<div class="elementor-tab-content"><p><strong>Advertise Your Business</strong> with your own Wi-Fi Start Page.</p></div></div>
+						<div class="elementor-accordion-item"><div class="elementor-tab-title"><a class="elementor-accordion-title">Coupon System</a></div>
+						<div class="elementor-tab-content"><p>Easy-to-use, multi-role software.</p></div></div>
+					</div>`
+				)
+		);
+		const sections = classifyHtml( html );
+		const items = sections[ 0 ].slots.items ?? [];
+		expect( items[ 0 ] ).toMatchObject( {
+			title: 'Custom Landing Page',
+			lead: 'Advertise Your Business',
+			body: 'with your own Wi-Fi Start Page.',
+		} );
+		// No opening bold → no lead, and the body is untouched.
+		expect( items[ 1 ]?.lead ).toBeUndefined();
+		expect( items[ 1 ]?.body ).toBe( 'Easy-to-use, multi-role software.' );
+	} );
+
+	it( 'keeps an emphasised phrase mid-paragraph as body copy', () => {
+		// Only a PREFIX is a lead-in; splitting on a mid-sentence bold would print
+		// the clause twice.
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Features</h2>' ) +
+				WIDGET(
+					'accordion',
+					`<div class="elementor-accordion">
+						<div class="elementor-accordion-item"><div class="elementor-tab-title"><a class="elementor-accordion-title">One</a></div>
+						<div class="elementor-tab-content"><p>Display <strong>ads/promotion</strong> before login.</p></div></div>
+						<div class="elementor-accordion-item"><div class="elementor-tab-title"><a class="elementor-accordion-title">Two</a></div>
+						<div class="elementor-tab-content"><p>Second panel.</p></div></div>
+					</div>`
+				)
+		);
+		const items = classifyHtml( html )[ 0 ].slots.items ?? [];
+		expect( items[ 0 ]?.lead ).toBeUndefined();
+		expect( items[ 0 ]?.body ).toBe( 'Display ads/promotion before login.' );
+	} );
 } );
 
 describe( 'classifyHtml — multi-column bands', () => {
@@ -435,6 +610,28 @@ describe( 'classifyHtml — multi-column bands', () => {
 		);
 		const sections = classifyHtml( html );
 		expect( sections[ 0 ].kind ).toBe( 'text' );
+	} );
+
+	it( 'keeps a column’s separate paragraphs as paragraphs', () => {
+		// A services panel publishes four blocks 20px apart. Joined into one
+		// `body`, the card rendered a single wall of prose with none of the
+		// source's inter-paragraph rhythm (virtuallysrilanka's black column).
+		const html = ROW(
+			COLUMN(
+				WIDGET(
+					'text-editor',
+					'<p>Our mission it to create professional web design.</p><p>We endeavor to help web entrepreneurs.</p>'
+				)
+			) + COLUMN( WIDGET( 'text-editor', '<p>Single paragraph.</p>' ) )
+		);
+		const items = classifyHtml( html )[ 0 ].slots.items ?? [];
+		expect( items[ 0 ]?.paragraphs ).toEqual( [
+			'Our mission it to create professional web design.',
+			'We endeavor to help web entrepreneurs.',
+		] );
+		// One block is not a paragraph LIST — the card keeps the plain body path.
+		expect( items[ 1 ]?.paragraphs ).toBeUndefined();
+		expect( items[ 1 ]?.body ).toBe( 'Single paragraph.' );
 	} );
 } );
 
@@ -696,5 +893,195 @@ describe( 'classifyHtml — vendor-agnostic band split (Proposal 137, render hal
 		const sections = classifyHtml( html );
 		expect( sections ).toHaveLength( 3 );
 		expect( sections.map( ( section ) => section.kind ) ).toEqual( [ 'text', 'text', 'form' ] );
+	} );
+} );
+
+describe( 'container-page text recovery (eca.directory, 2026-11-23)', () => {
+	it( 'reads a builder icon list one item per entry', () => {
+		const html = SECTION(
+			WIDGET(
+				'icon-list',
+				'<ul class="elementor-icon-list-items">' +
+					'<li class="elementor-icon-list-item"><a href="#"><span class="elementor-icon-list-icon"><i class="fas fa-check"></i></span><span class="elementor-icon-list-text">Branding &amp; SSO setup</span></a></li>' +
+					'<li class="elementor-icon-list-item"><a href="#"><span class="elementor-icon-list-icon"><i class="fas fa-check"></i></span><span class="elementor-icon-list-text">Analytics dashboards</span></a></li>' +
+					'</ul>'
+			)
+		);
+		const sections = classifyHtml( html );
+		const items = sections[ 0 ].slots.items ?? [];
+		expect( items.map( ( item ) => item.title ) ).toEqual( [ 'Branding & SSO setup', 'Analytics dashboards' ] );
+		expect( items.every( ( item ) => item.icon ) ).toBe( true );
+	} );
+
+	it( 'reads a Heading widget that renders as a div', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<div class="elementor-heading-title elementor-size-default">Compare User Roles</div>' ) +
+				WIDGET( 'text-editor', '<p>Students and parents see different views.</p>' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].slots.title ).toBe( 'Compare User Roles' );
+		expect( sections[ 0 ].slots.body ).toContain( 'Students and parents see different views.' );
+	} );
+
+	it( 'reads an icon box whose title is a div (the counter pattern)', () => {
+		const html = SECTION(
+			WIDGET(
+				'icon-box',
+				'<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-icon"><span class="elementor-icon"><i class="fas fa-star"></i></span></div>' +
+					'<div class="elementor-icon-box-content"><div class="elementor-icon-box-title"><span>4.8</span></div>' +
+					'<p class="elementor-icon-box-description">Ratings</p></div></div>'
+			)
+		);
+		const sections = classifyHtml( html );
+		const item = ( sections[ 0 ].slots.items ?? [] )[ 0 ];
+		expect( item?.title ).toBe( '4.8' );
+		expect( item?.body ).toBe( 'Ratings' );
+	} );
+
+	it( 'never emits an item with no title, copy or media', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Band title</h2>' ) +
+				WIDGET( 'spacer', '<div class="elementor-spacer"><div class="elementor-spacer-inner"></div></div>' )
+		);
+		const sections = classifyHtml( html );
+		const items = sections[ 0 ].slots.items ?? [];
+		expect( items.every( ( item ) => Boolean( item.title || item.body || item.media ) ) ).toBe( true );
+	} );
+} );
+
+describe( 'items[].bullets — a list INSIDE a card', () => {
+	// A card's list is the card's COPY. Turning each entry into a sibling card
+	// (the icon-list path) or dropping it (the column path) both lose the card;
+	// eca.directory's phased-delivery band lost 17 entries this way.
+	it( 'keeps a plain list inside an icon box as the card’s bullets', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Phased Delivery</h2>' ) +
+				WIDGET(
+					'icon-box',
+					`<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h3 class="elementor-icon-box-title">Pilot Setup</h3><p class="elementor-icon-box-description">Weeks 1–6</p><ul><li>Branding &amp; SSO setup</li><li>Enrolment &amp; waitlists</li></ul></div></div>`
+				)
+		);
+		const items = classifyHtml( html )[ 0 ].slots.items ?? [];
+		const card = items.find( ( item ) => item.title === 'Pilot Setup' );
+		expect( card?.bullets ).toEqual( [ 'Branding & SSO setup', 'Enrolment & waitlists' ] );
+		// The entries are NOT cards of their own.
+		expect( items.map( ( item ) => item.title ) ).not.toContain( 'Branding & SSO setup' );
+	} );
+
+	it( 'never swallows a navigation menu into a card', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Contact</h2>' ) +
+				WIDGET(
+					'icon-box',
+					`<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h3 class="elementor-icon-box-title">Find us</h3><nav class="site-nav"><ul><li>Home</li><li>About</li></ul></nav></div></div>`
+				)
+		);
+		const items = classifyHtml( html )[ 0 ].slots.items ?? [];
+		const card = items.find( ( item ) => item.title === 'Find us' );
+		expect( card?.bullets ).toBeUndefined();
+	} );
+} );
+
+describe( 'flex-container card rows (Elementor 4.x)', () => {
+	// eca.directory's phased-delivery band: an intro row, a row of three phase
+	// cards (kicker + title + weeks + icon list + button), and a comparison table
+	// whose cells are the same `e-con-full e-child` containers. The flat merge
+	// produced 20 bare items for those 6 cards and `FeatureGrid` drew empty lanes.
+	const CARD = ( label: string, title: string, weeks: string, bullets: string[], button: string ) => `
+		<div class="e-con-full e-child">
+			<div class="e-con-full e-child">
+				<div class="elementor-widget elementor-widget-heading"><div class="elementor-widget-container"><h3 class="elementor-heading-title">${ label }</h3></div></div>
+				<div class="elementor-widget elementor-widget-icon-box"><div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h4 class="elementor-icon-box-title">${ title }</h4></div></div></div>
+				<div class="elementor-widget elementor-widget-text-editor"><div class="elementor-widget-container"><p>${ weeks }</p></div></div>
+			</div>
+			<div class="elementor-widget elementor-widget-icon-list"><div class="elementor-widget-container"><ul class="elementor-icon-list-items">${ bullets
+				.map( ( b: string ) => `<li class="elementor-icon-list-item"><span class="elementor-icon-list-text">${ b }</span></li>` )
+				.join( '' ) }</ul></div></div>
+			<div class="elementor-widget elementor-widget-button"><div class="elementor-widget-container"><a class="elementor-button" href="/${ label }"><span class="elementor-button-text">${ button }</span></a></div></div>
+		</div>`;
+	const CELL = ( text: string ) => `
+		<div class="e-con-full e-child">
+			<div class="elementor-widget elementor-widget-heading"><div class="elementor-widget-container"><div class="elementor-heading-title">${ text }</div></div></div>
+		</div>`;
+
+	const band = `
+		<div class="elementor-element elementor-element-77f4271d e-flex e-con-boxed e-con e-parent">
+			<div class="e-con-inner">
+				<div class="e-con-boxed e-child"><div class="e-con-inner">
+					<div class="elementor-widget elementor-widget-heading"><div class="elementor-widget-container"><h2 class="elementor-heading-title">Phased Delivery</h2></div></div>
+					<div class="elementor-widget elementor-widget-text-editor"><div class="elementor-widget-container"><p>The pilot positions the school as a local leader.</p></div></div>
+				</div></div>
+				<div class="e-con-full e-child">
+					${ CARD( 'Phase 1', 'Pilot Setup', 'Weeks 1–6', [ 'Branding &amp; SSO setup', 'Staff training' ], 'Pilot Demo' ) }
+					${ CARD( 'Phase 2', 'Automation & AI', 'Weeks 7–10', [ 'AI Assistant', 'Analytics dashboards' ], 'Discuss' ) }
+					${ CARD( 'Phase 3', 'Optimization', 'Ongoing', [ 'Language packs', 'Extra integrations' ], 'View Roadmap' ) }
+				</div>
+				<div class="e-con-full e-child">
+					${ CELL( 'Compare User Roles' ) }${ CELL( 'Student' ) }${ CELL( 'Parent' ) }
+				</div>
+			</div>
+		</div>`;
+
+	it( 'rebuilds one item per card, keeps the kicker before the title, and keeps the table copy', () => {
+		const section = classifyHtml( band )[ 0 ];
+		const items = section.slots.items ?? [];
+		expect( section.kind ).toBe( 'feature-grid' );
+		expect( items ).toHaveLength( 3 );
+		expect( items.map( ( item ) => item.kicker ) ).toEqual( [ 'Phase 1', 'Phase 2', 'Phase 3' ] );
+		expect( items.map( ( item ) => item.title ) ).toEqual( [ 'Pilot Setup', 'Automation & AI', 'Optimization' ] );
+		expect( items.map( ( item ) => item.columnIndex ) ).toEqual( [ 0, 1, 2 ] );
+		expect( items[ 0 ].bullets ).toEqual( [ 'Branding & SSO setup', 'Staff training' ] );
+		expect( items[ 0 ].body ).toBe( 'Weeks 1–6' );
+		// The table's copy is not a card, and it is not lost.
+		expect( items.map( ( item ) => item.title ) ).not.toContain( 'Student' );
+		expect( section.slots.body ).toContain( 'The pilot positions the school as a local leader.' );
+		expect( section.slots.body ).toContain( 'Student' );
+	} );
+} );
+
+// ---------------------------------------------------------------------------
+// Elementor's own vocabulary (2026-11-25).
+//
+// `posts` was unseeded, and an unseeded name resolves to `content` — which
+// forces the band to `low` confidence by the `effectiveConfidence` rule and
+// says nothing about the band being a QUERY LOOP. A posts band is a recognised
+// widget, not an unknown one: it gets its own `list` role, which names the loop
+// without claiming its cards are authored.
+// ---------------------------------------------------------------------------
+describe( 'seeded Elementor vocabulary', () => {
+	it( 'knows the posts widget and marks the band as a dynamic list', () => {
+		expect( SEEDED_WIDGET_ROLES.posts?.kind ).toBe( 'list' );
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>News &amp; Insights</h2>' ) +
+				WIDGET(
+					'posts',
+					'<div class="elementor-posts-container"><article class="elementor-post"><h3 class="elementor-post__title"><a>Hello world!</a></h3></article></div>'
+				)
+		);
+		const [ band ] = classifyHtml( html );
+		expect( band.dynamicList ).toBe( true );
+		// A recognised loop is not an "unknown widget": confidence stays as measured.
+		expect( band.confidence ).not.toBe( 'low' );
+		// The placeholder card is still suppressed.
+		expect( band.slots.items ?? [] ).toEqual( [] );
+	} );
+
+	it( 'does not mark an authored card grid as a dynamic list', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Phases</h2>' ) +
+				WIDGET( 'icon-box', '<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h3 class="elementor-icon-box-title">Phase 1</h3><p>Pilot setup.</p></div></div>' )
+		);
+		const [ band ] = classifyHtml( html );
+		expect( band.dynamicList ).toBeUndefined();
+	} );
+
+	it( 'reads a tab set as an accordion (its titles are controls, not buttons)', () => {
+		expect( SEEDED_WIDGET_ROLES.tabs?.kind ).toBe( 'accordion' );
+		const tab = ( title: string, body: string ) =>
+			`<div class="elementor-tab-title">${ title }</div><div class="elementor-tab-content">${ body }</div>`;
+		const html = SECTION( WIDGET( 'tabs', tab( 'One', 'First pane copy.' ) + tab( 'Two', 'Second pane copy.' ) ) );
+		const [ band ] = classifyHtml( html );
+		expect( band.kind ).toBe( 'accordion' );
+		expect( ( band.slots.items ?? [] ).map( ( item ) => item.title ) ).toEqual( [ 'One', 'Two' ] );
 	} );
 } );

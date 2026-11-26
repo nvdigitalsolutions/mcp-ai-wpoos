@@ -211,7 +211,7 @@ class Test_WP_CLI_New_Commands extends WP_UnitTestCase {
 	}
 
 	/**
-	 * is_tool_registered returns false for an unknown slug.
+	 * Is_tool_registered returns false for an unknown slug.
 	 */
 	public function test_tool_is_registered_false_for_unknown_slug() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
@@ -454,7 +454,7 @@ class Test_WP_CLI_New_Commands extends WP_UnitTestCase {
 	}
 
 	/**
-	 * can_prune_error_log returns a boolean.
+	 * Can_prune_error_log returns a boolean.
 	 */
 	public function test_log_can_prune_returns_boolean() {
 		if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {

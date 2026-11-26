@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // cart-api.ts — the bridge cart proxy client (Proposal 108 Phase 2).
 //

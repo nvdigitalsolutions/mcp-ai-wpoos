@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! `VisionController`: the resident detect→track loop that feeds the webview,
 //! with an optional local-VLM label-polish layer (Proposal 076).
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // checkout.test.ts — Proposal 106 P3: buildCheckoutUrl is a pure function
 // (unit-tested without WooCommerce — the comma-form claim is pinned here).
 import { describe, expect, it } from 'vitest';

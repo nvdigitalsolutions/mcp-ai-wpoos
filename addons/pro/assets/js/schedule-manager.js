@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /* global wpMcpAiScheduleManager */
 /**
  * Pro Schedule Manager — Admin UI
@@ -205,8 +206,29 @@
 				} )
 				.fail( function ( jqXHR, textStatus, errorThrown ) {
 					// eslint-disable-next-line no-console
-					console.error( '[NV oOS Schedule Manager] AJAX ← ERROR', action, textStatus, errorThrown );
-					callback( wpMcpAiScheduleManager.strings.error );
+					console.error( '[NV oOS Schedule Manager] AJAX ← ERROR', action, jqXHR.status, textStatus, errorThrown );
+
+					const strings = wpMcpAiScheduleManager.strings || {};
+
+					// 524/504 mean an edge proxy (Cloudflare, Nginx) gave up waiting for
+					// the origin. The response body is the proxy's HTML page, not JSON,
+					// so there is nothing useful to parse — but the PHP worker is very
+					// likely still running. Say so instead of "please try again".
+					if ( 524 === jqXHR.status || 504 === jqXHR.status ) {
+						callback( strings.gatewayTimeout || strings.error );
+						return;
+					}
+
+					if ( jqXHR.status ) {
+						const detail = errorThrown || textStatus || '';
+						callback(
+							( strings.error || 'Request failed.' ) +
+							' (HTTP ' + jqXHR.status + ( detail ? ': ' + detail : '' ) + ')'
+						);
+						return;
+					}
+
+					callback( strings.error );
 				} );
 		},
 
@@ -287,6 +309,10 @@
 				statusLabel = strings.statusFailure;
 			} else if ( 'pending' === s.last_run_status ) {
 				statusLabel = strings.statusPending;
+			} else if ( 'running' === s.last_run_status ) {
+				statusLabel = strings.statusRunning || strings.statusPending;
+			} else if ( 'timeout' === s.last_run_status ) {
+				statusLabel = strings.statusTimeout || strings.statusFailure;
 			} else {
 				statusLabel = strings.statusNever;
 			}
@@ -322,7 +348,7 @@
 			row += '<td class="column-last-status">';
 			row += '<span class="wp-mcp-ai-sm-status ' + statusClass + '">';
 			row += SM.esc( statusLabel );
-			if ( 'failure' === s.last_run_status && s.last_error ) {
+			if ( ( 'failure' === s.last_run_status || 'timeout' === s.last_run_status ) && s.last_error ) {
 				row += ' <abbr title="' + SM.esc( s.last_error ) + '">(?)</abbr>';
 			}
 			row += '</span>';
@@ -346,7 +372,7 @@
 
 			// Actions (icon-only buttons with title tooltips).
 			row += '<td class="column-actions">';
-			row += '<button type="button" class="button button-small" data-sm-action="trigger" data-sm-id="' + s.id + '" title="Run" aria-label="Run">' +
+			row += '<button type="button" class="button button-small wp-mcp-ai-sm-trigger" data-sm-action="trigger" data-sm-id="' + s.id + '" title="' + SM.esc( strings.runNow || 'Run' ) + '" aria-label="' + SM.esc( strings.runNow || 'Run' ) + '">' +
 				'&#9654;</button> ';
 			row += '<button type="button" class="button button-small" data-sm-action="edit" data-sm-id="' + s.id + '" title="Edit" aria-label="Edit">' +
 				'&#9998;</button> ';
@@ -711,17 +737,18 @@
 			const self = this;
 			const $row = $( 'tr[data-sm-id="' + id + '"]' );
 			$row.addClass( 'wp-mcp-ai-sm-running' );
+			$row.find( '.wp-mcp-ai-sm-trigger' ).prop( 'disabled', true );
 
 			// eslint-disable-next-line no-console
-			console.log( '[NV oOS Schedule Manager] Triggering schedule:', id );
+			console.log( '[NV oOS Schedule Manager] Queueing schedule:', id );
 
 			this.ajax(
 				'wp_mcp_ai_sm_trigger_schedule',
 				{ schedule_id: id },
 				function ( err, data ) {
-					$row.removeClass( 'wp-mcp-ai-sm-running' );
-
 					if ( err ) {
+						$row.removeClass( 'wp-mcp-ai-sm-running' );
+						$row.find( '.wp-mcp-ai-sm-trigger' ).prop( 'disabled', false );
 						// eslint-disable-next-line no-console
 						console.error( '[NV oOS Schedule Manager] Trigger failed:', id, err );
 						alert( err );
@@ -729,18 +756,182 @@
 					}
 
 					// eslint-disable-next-line no-console
-					console.log( '[NV oOS Schedule Manager] Trigger completed:', id, data );
+					console.log( '[NV oOS Schedule Manager] Run queued:', id, data );
 
-					// Surface debug output if present.
-					if ( data && data.debug_output ) {
-						// eslint-disable-next-line no-console
-						console.warn( '[NV oOS Schedule Manager] Debug output from trigger:', data.debug_output );
-					}
+					// Optimistic row update while the worker spins up.
+					self.showRunNotice( data.message || wpMcpAiScheduleManager.strings.triggerQueued, 'info' );
 
-					// Reload to show updated status.
-					self.loadSchedules();
+					// Optimistic row update while the worker spins up. Deliberately no
+					// table reload here: renderTable() replaces the <tbody>, detaching the
+					// row this poller paints into and re-enabling its trigger button.
+					// The table is refreshed once the run reaches a terminal state.
+					self.paintStatus( $row, 'pending' );
+
+					self.pollRunStatus( id, data.run_id, 0 );
 				}
 			);
+		},
+
+		/**
+		 * Paint a status pill in a row without a full table reload.
+		 *
+		 * @param {jQuery} $row  Row element.
+		 * @param {string} status Run status slug.
+		 */
+		paintStatus: function ( $row, status ) {
+			const strings = wpMcpAiScheduleManager.strings || {};
+			const labels  = {
+				pending: strings.statusPending,
+				running: strings.statusRunning || strings.statusPending,
+				success: strings.statusSuccess,
+				failure: strings.statusFailure,
+				timeout: strings.statusTimeout || strings.statusFailure,
+			};
+
+			const $cell = $row.find( 'td.column-last-status' ).first();
+			if ( ! $cell.length ) {
+				return;
+			}
+
+			$cell.html(
+				'<span class="wp-mcp-ai-sm-status wp-mcp-ai-sm-status-' +
+					status +
+					'">' +
+					SM.esc( labels[ status ] || status ) +
+					'</span>'
+			);
+		},
+
+		/**
+		 * Show a transient inline notice above the schedule table.
+		 *
+		 * @param {string} message Message text.
+		 * @param {string} [type]  Notice kind: info, success, warning, or error.
+		 */
+		showRunNotice: function ( message, type ) {
+			const $host = $( '#wp-mcp-ai-sm-run-notice' );
+			if ( ! $host.length ) {
+				return;
+			}
+
+			const kinds = [ 'info', 'success', 'warning', 'error' ];
+			const kind  = kinds.indexOf( type ) === -1 ? 'info' : type;
+
+			$host
+				.removeClass( 'notice-info notice-success notice-warning notice-error' )
+				.addClass( 'notice-' + kind )
+				.text( message )
+				.show();
+		},
+
+		/**
+		 * Resolve a schedule's row.
+		 *
+		 * renderTable() replaces the whole <tbody>, so any cached jQuery row
+		 * reference goes stale on the next reload. Always re-resolve before
+		 * painting.
+		 *
+		 * @param {string} id Schedule ID.
+		 * @return {jQuery} The row, or an empty collection when it is not listed.
+		 */
+		rowFor: function ( id ) {
+			return $( 'tr[data-sm-id="' + id + '"]' ).first();
+		},
+
+		/**
+		 * Poll a queued run until it reaches a terminal state.
+		 *
+		 * Background runs can take minutes (provider round trips), well past any
+		 * edge timeout, so the client polls instead of holding a request open.
+		 * Backs off from 2 s to 10 s and gives up after ~5 minutes of wall clock,
+		 * at which point the run is left to finish and the user is told so.
+		 *
+		 * @param {string} scheduleId Schedule ID.
+		 * @param {string} runId      Run ID returned by the trigger call.
+		 * @param {number} attempts   Number of polls already issued.
+		 */
+		pollRunStatus: function ( scheduleId, runId, attempts ) {
+			const self    = this;
+			const MAX     = 40;
+			const delay   = Math.min( 2000 + attempts * 500, 10000 );
+			const strings = wpMcpAiScheduleManager.strings || {};
+
+			window.setTimeout( function () {
+				self.ajax(
+					'wp_mcp_ai_sm_get_run_status',
+					{ schedule_id: scheduleId, run_id: runId },
+					function ( err, data ) {
+						if ( err ) {
+							// Transient poll failures (timeouts, 5xx) should not abort the
+							// wait — the run itself is unaffected by the browser.
+							// eslint-disable-next-line no-console
+							console.warn( '[NV oOS Schedule Manager] Run status poll failed:', runId, err );
+
+							if ( attempts + 1 >= MAX ) {
+								self.finishRunPolling( self.rowFor( scheduleId ), strings.runStillRunning || strings.error );
+								self.loadSchedules();
+								return;
+							}
+
+							self.pollRunStatus( scheduleId, runId, attempts + 1 );
+							return;
+						}
+
+						// eslint-disable-next-line no-console
+						console.log( '[NV oOS Schedule Manager] Run status:', runId, data.status );
+
+						if ( data.finished ) {
+							self.finishRunPolling( self.rowFor( scheduleId ), data );
+							self.loadSchedules();
+							return;
+						}
+
+						if ( 'running' === data.status ) {
+							self.paintStatus( self.rowFor( scheduleId ), 'running' );
+						}
+
+						if ( attempts + 1 >= MAX ) {
+							self.finishRunPolling( self.rowFor( scheduleId ), strings.runStillRunning || strings.error );
+							self.loadSchedules();
+							return;
+						}
+
+						self.pollRunStatus( scheduleId, runId, attempts + 1 );
+					}
+				);
+			}, delay );
+		},
+
+		/**
+		 * Stop polling and reflect the outcome in the row.
+		 *
+		 * @param {jQuery}        $row    Row element.
+		 * @param {Object|string} result  Finished run payload, or a message string.
+		 */
+		finishRunPolling: function ( $row, result ) {
+			$row.removeClass( 'wp-mcp-ai-sm-running' );
+			$row.find( '.wp-mcp-ai-sm-trigger' ).prop( 'disabled', false );
+
+			if ( 'string' === typeof result ) {
+				this.showRunNotice( result, 'info' );
+				return;
+			}
+
+			const strings = wpMcpAiScheduleManager.strings || {};
+			this.paintStatus( $row, result.status );
+
+			if ( 'success' === result.status ) {
+				const seconds = result.duration ? ' — ' + Math.round( result.duration * 10 ) / 10 + 's' : '';
+				this.showRunNotice( ( strings.statusSuccess || 'Success' ) + seconds, 'success' );
+				return;
+			}
+
+			const timed_out = 'timeout' === result.status;
+			const label     = timed_out
+				? ( strings.statusTimeout || 'Timed out' )
+				: ( strings.statusFailure || 'Failed' );
+
+			this.showRunNotice( label + ( result.error ? ': ' + result.error : '' ), timed_out ? 'warning' : 'error' );
 		},
 
 		deleteSchedule: function ( id ) {
@@ -859,7 +1050,14 @@
 
 					// ── run history table ──────────────────────────────────
 					const rows = history.map( function ( entry, idx ) {
-						const cls = 'success' === entry.status ? 'wp-mcp-ai-sm-status-success' : 'wp-mcp-ai-sm-status-failure';
+						const statusClass = {
+							success: 'wp-mcp-ai-sm-status-success',
+							failure: 'wp-mcp-ai-sm-status-failure',
+							pending: 'wp-mcp-ai-sm-status-pending',
+							running: 'wp-mcp-ai-sm-status-running',
+							timeout: 'wp-mcp-ai-sm-status-timeout',
+						};
+						const cls = statusClass[ entry.status ] || 'wp-mcp-ai-sm-status-failure';
 						const dur = entry.duration ? ' (' + parseFloat( entry.duration ).toFixed( 3 ) + 's)' : '';
 						const errHtml = entry.error
 							? '<br><small class="wp-mcp-ai-sm-error-text">' + SM.esc( entry.error ) + '</small>'

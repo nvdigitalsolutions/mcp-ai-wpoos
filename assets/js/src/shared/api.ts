@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Typed build functions for NV oOS REST API endpoints.
  *

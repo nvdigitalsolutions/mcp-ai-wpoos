@@ -13,7 +13,10 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
-class MathEvalTool extends AbstractTool
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
+
+class MathEvalTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function getSlug(): string
     {
@@ -103,5 +106,18 @@ class MathEvalTool extends AbstractTool
         }
         $r = (float)$tokens[0];
         return $r == (int)$r ? (int)$r : $r;
+    }
+
+    /**
+     * Capability flags — Proposal 149 §153.
+     *
+     * Pure in-process computation: no file, no service, no state. Same input,
+     * same output.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::PURE_LOCAL;
     }
 }

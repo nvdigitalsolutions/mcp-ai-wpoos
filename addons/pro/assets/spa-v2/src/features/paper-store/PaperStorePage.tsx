@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * PaperStorePage — Paper Store management surface (Proposal 084 console port).
  *

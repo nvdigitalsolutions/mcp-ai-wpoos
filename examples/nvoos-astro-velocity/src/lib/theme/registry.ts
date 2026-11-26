@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Theme registry — Proposal 104 §1.2. The selectable theme list derives from
 // the generated ADS bundle (tokens.generated.ts → adsThemeNames), never from

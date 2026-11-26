@@ -14,7 +14,13 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [ 18.x, 20.x ]
+        # Node 18 reached EOL on 2025-04-30 and cannot require() an ES module,
+        # which @wordpress/eslint-plugin@25 does inside
+        # rules/no-unknown-ds-tokens.js (ERR_REQUIRE_ESM). require(esm) is
+        # available unflagged from Node 20.19 / 22.12, so 20.x (latest) works
+        # and 18.x cannot. Every other workflow in this repo is on 20, 22 or
+        # 24; this was the last 18.
+        node-version: [ 20.x, 22.x ]
 
     steps:
       - name: Checkout repository

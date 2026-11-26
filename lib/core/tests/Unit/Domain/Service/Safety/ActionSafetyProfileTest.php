@@ -54,7 +54,12 @@ final class ActionSafetyProfileTest extends TestCase
             array(0.25, 'helpful', 'allow', 0.75, false),
             array(0.5, 'helpful', 'warn', 1.0, false),
             array(0.75, 'helpful', 'approval_required', 1.25, true),
-            array(1.0, 'helpful', 'block', 1.5, true),
+            // §156: was 'block'. `classifyNecessity()` cannot return `essential`
+            // without an explicit classifier override, so `helpful` is the
+            // ceiling — which made this cell a hard block on every permanent
+            // action (send_group_email, delete_post). A needed, well-formed
+            // permanent action is the case a human should be asked about.
+            array(1.0, 'helpful', 'approval_required', 1.5, true),
 
             array(0.0, 'optional', 'warn', 0.75, false),
             array(0.25, 'optional', 'warn', 1.0, false),
@@ -125,6 +130,13 @@ final class ActionSafetyProfileTest extends TestCase
             'read-only is not cancelled by external-api' => array(array('read-only', 'external-api'), 0.0),
             'write alone is not state-changing' => array(array('write'), 0.5),
             'write + state-changing' => array(array('write', 'state-changing'), 0.5),
+            'write + underscore state_changing' => array(array('write', 'state_changing'), 0.5),
+            'outbound write is high' => array(array('external-api', 'write'), 0.75),
+            'underscore outbound state change is high' => array(array('external_api', 'state_changing'), 0.75),
+            'underscore side effect aliases to a send' => array(array('external_side_effect'), 0.75),
+            'read-only network lookup stays benign' => array(array('read-only', 'network-dependent'), 0.0),
+            'mass mail is high' => array(array('mass-email'), 0.75),
+            'a contradictory read-only write does not score zero' => array(array('read-only', 'write'), 0.5),
             'reversible write' => array(array('write', 'state-changing', 'reversible'), 0.25),
             'irreversible trumps everything' => array(array('irreversible'), 1.0),
             'financial impact' => array(array('financial-impact'), 0.75),

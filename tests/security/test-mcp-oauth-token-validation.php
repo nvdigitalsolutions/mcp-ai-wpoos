@@ -67,7 +67,7 @@ class WP_MCP_AI_MCP_OAuth_Token_Validation_Test extends WP_UnitTestCase {
 
 		// Opacity is guaranteed by HMAC construction: the id never encodes the
 		// email or name. (A hex id can coincidentally contain digit substrings
-		// of a user id, so substring checks against the numeric id are void.)
+		// of a user id, so substring checks against the numeric id are void.).
 		$this->assertStringStartsWith( 'prf_', $profile['id'] );
 		$this->assertStringNotContainsString( 'bridge-user', $profile['id'] );
 		$this->assertSame( 20, strlen( $profile['id'] ) );

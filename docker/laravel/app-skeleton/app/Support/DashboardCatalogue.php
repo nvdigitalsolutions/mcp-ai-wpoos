@@ -5,12 +5,14 @@ namespace App\Support;
 /**
  * The console's dashboard catalogue for this runtime.
  *
- * WordPress builds this catalogue from ten dashboards, each gated by a plugin
- * settings flag and fed by its own admin-page gatherer. This runtime owns one
- * of those stores — the classroom/ECA family (090-e) — so exactly one
- * dashboard is served and the rest are reported as `disabled`, carrying the
- * toolkit flag that would enable them. That is the same shape WordPress uses
- * for a switched-off toolkit, so the console's empty state works unchanged.
+ * WordPress builds this catalogue from **seven** dashboards (158 D1 merged the
+ * original ten: `ezuite` + `shopify` + `flowhub` → `connectors`, and `health` +
+ * `vitals` → `members`), each gated by one or more plugin settings flags and fed
+ * by its own admin-page gatherer. This runtime owns one of those stores — the
+ * classroom/ECA family (090-e) — so exactly one dashboard is served and the rest
+ * are reported as `disabled`, carrying the toolkit flags that would enable them.
+ * That is the same shape WordPress uses for a switched-off toolkit, so the
+ * console's empty state works unchanged.
  *
  * Adding a dashboard is two jobs, and the second is the real work:
  *   1. an entry below, and
@@ -18,7 +20,9 @@ namespace App\Support;
  *      against a store this runtime actually owns.
  *
  * Labels and descriptions are shared with `WP_MCP_AI_Pro_Dashboards_REST_Controller`
- * so a dashboard reads the same on both runtimes.
+ * so a dashboard reads the same on both runtimes. `ALIASES` is shared for the
+ * same reason: a catalogue split across two runtimes cannot disagree about what
+ * an id means.
  */
 final class DashboardCatalogue
 {
@@ -35,25 +39,25 @@ final class DashboardCatalogue
             'label' => 'CRE Debt Portfolio',
             'description' => 'Commercial real-estate loan portfolio: balances, averages and distributions with loan-type and status filters.',
             'icon' => '🏦',
-            'toolkit_flag' => 'enable_cre_debt_toolkit',
+            'toolkit_flags' => ['enable_cre_debt_toolkit'],
         ],
         'law' => [
             'label' => 'Law Firm',
             'description' => 'Active matters, clients, time entries and trust transactions.',
             'icon' => '⚖️',
-            'toolkit_flag' => 'enable_law_firm_toolkit',
+            'toolkit_flags' => ['enable_law_firm_toolkit'],
         ],
         'registration' => [
             'label' => 'Registration',
             'description' => 'Product registrations by status and country.',
             'icon' => '📋',
-            'toolkit_flag' => 'enable_regulatory_registration_toolkit',
+            'toolkit_flags' => ['enable_regulatory_registration_toolkit'],
         ],
         'eca' => [
             'label' => 'ECA',
             'description' => 'Extra-curricular activities: enrollments, capacity, participation and attendance.',
             'icon' => '🏫',
-            'toolkit_flag' => 'enable_eca_management',
+            'toolkit_flags' => ['enable_eca_management'],
             'filters' => [
                 [
                     'key' => 'day',
@@ -134,41 +138,32 @@ final class DashboardCatalogue
                 ],
             ],
         ],
-        'health' => [
-            'label' => 'Health & Wellness',
-            'description' => 'Daily health metrics history per member (steps, water, sleep, calories, mood).',
+        // 158 D1 — Member metrics. `health` and `vitals` were one dashboard in
+        // two pieces: identical filters, identical structure, differing only in
+        // columns and in which toolkit toggle reveals them. The toggles survive
+        // as per-section visibility on the WordPress side; this runtime serves
+        // neither section, so the merged row is metadata only.
+        'members' => [
+            'label' => 'Member metrics',
+            'description' => 'Health and vital-sign history per member. Each section follows its own toolkit toggle.',
             'icon' => '🫀',
-            'toolkit_flag' => 'enable_health_wellness_management',
+            'toolkit_flags' => ['enable_health_wellness_management', 'enable_medical_vitals'],
         ],
-        'vitals' => [
-            'label' => 'Medical Vitals',
-            'description' => 'Vital signs history per member (heart rate, temperature, blood pressure, weight).',
-            'icon' => '🩺',
-            'toolkit_flag' => 'enable_medical_vitals',
-        ],
-        'ezuite' => [
-            'label' => 'EZuite Inventory',
-            'description' => 'EZuite ERP inventory health: stock buckets, cached rows, total value and top warehouses.',
+        // 158 D1 — Connector health. `ezuite` and `flowhub` published a
+        // byte-identical render spec; `shopify` shared the framing and added its
+        // GraphQL cost budget. One surface, one section per connector, keys
+        // namespaced by connector.
+        'connectors' => [
+            'label' => 'Connector health',
+            'description' => 'Inventory stock buckets, sync freshness and GraphQL budget, one section per connector.',
             'icon' => '🏭',
-            'toolkit_flag' => 'enable_ezuite_toolkit',
-        ],
-        'shopify' => [
-            'label' => 'Shopify Sync',
-            'description' => 'Shopify GraphQL cost budget, cached items and sync health per connection.',
-            'icon' => '🛍️',
-            'toolkit_flag' => 'enable_shopify_sync_toolkit',
-        ],
-        'flowhub' => [
-            'label' => 'FlowHub Inventory',
-            'description' => 'FlowHub POS inventory health: stock buckets, cached rows, total value and top locations. Read-mostly — compliance reporting stays in FlowHub.',
-            'icon' => '🌿',
-            'toolkit_flag' => 'enable_flowhub_toolkit',
+            'toolkit_flags' => ['enable_ezuite_toolkit', 'enable_shopify_sync_toolkit', 'enable_flowhub_toolkit'],
         ],
         'observability' => [
             'label' => 'AI Observability',
             'description' => 'Chat annotation totals and recent GenAI span counts from the audit activity log.',
             'icon' => '📡',
-            'toolkit_flag' => '',
+            'toolkit_flags' => [],
         ],
     ];
 
@@ -183,6 +178,25 @@ final class DashboardCatalogue
     private const AVAILABLE = ['eca'];
 
     /**
+     * Dashboard ids retired by the 10 → 7 merge (158 D1).
+     *
+     * Published in the schema envelope and honoured by the data endpoint, so a
+     * client carrying a saved id resolves instead of 404ing. Must match
+     * `WP_MCP_AI_Pro_Dashboards_REST_Controller::aliases()` — the two runtimes
+     * answer the same catalogue, and an alias present on one only is a parity
+     * break on the first request.
+     *
+     * @var array<string, string>
+     */
+    private const ALIASES = [
+        'health' => 'members',
+        'vitals' => 'members',
+        'ezuite' => 'connectors',
+        'shopify' => 'connectors',
+        'flowhub' => 'connectors',
+    ];
+
+    /**
      * @return array<string, array<string, mixed>>
      */
     public static function all(): array
@@ -192,17 +206,76 @@ final class DashboardCatalogue
 
     public static function isAvailable(string $id): bool
     {
-        return in_array($id, self::AVAILABLE, true);
+        return in_array(self::resolveAlias($id), self::AVAILABLE, true);
+    }
+
+    /**
+     * The dashboards this runtime can actually feed, in catalogue order.
+     *
+     * The panel iterates this rather than `all()`: a dashboard whose store does
+     * not exist here is not "disabled", it is absent. Disabling asserts
+     * "available in principle, not right now" — and there is nothing an estate
+     * administrator could switch on to make `connectors` exist on this runtime.
+     * That is the same line §104 drew for inapplicable settings and S-3 drew for
+     * unlicensed toolkits.
+     *
+     * @return list<string>
+     */
+    public static function servable(): array
+    {
+        return array_values(array_filter(
+            array_keys(self::DASHBOARDS),
+            static fn (string $id): bool => self::isAvailable($id)
+        ));
+    }
+
+    /**
+     * The retired ids and what replaced them.
+     *
+     * @return array<string, string>
+     */
+    public static function aliases(): array
+    {
+        return self::ALIASES;
+    }
+
+    /**
+     * Resolve a retired id to the surface that replaced it.
+     *
+     * Idempotent for a live id, and for an id that never existed — the caller
+     * still performs its own unknown-id check.
+     */
+    public static function resolveAlias(string $id): string
+    {
+        return self::ALIASES[$id] ?? $id;
+    }
+
+    /**
+     * Every settings flag that would enable a dashboard.
+     *
+     * A merged dashboard has several, which is why this is a list. Empty means
+     * ungated (`observability`).
+     *
+     * @return list<string>
+     */
+    public static function flags(string $id): array
+    {
+        $id = self::resolveAlias($id);
+
+        return array_values((array) (self::DASHBOARDS[$id]['toolkit_flags'] ?? []));
     }
 
     /**
      * The settings flag that would enable a dashboard.
      *
-     * Empty for an ungated dashboard (`observability`), matching WordPress's
-     * `effective_flag_key()`.
+     * First-of-list, for the single-flag guidance the console's empty state has
+     * always rendered; `flags()` answers with all of them. Empty for an ungated
+     * dashboard (`observability`), matching WordPress's `effective_flag_key()`.
      */
     public static function flag(string $id): string
     {
-        return (string) (self::DASHBOARDS[$id]['toolkit_flag'] ?? '');
+        $flags = self::flags($id);
+
+        return $flags[0] ?? '';
     }
 }

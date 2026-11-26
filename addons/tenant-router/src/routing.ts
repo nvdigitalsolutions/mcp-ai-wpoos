@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tenant routing — KV-backed tenant→origin resolution.
  *

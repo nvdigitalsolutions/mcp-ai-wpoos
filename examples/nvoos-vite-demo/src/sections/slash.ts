@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { CommandAutocomplete } from '@nvdigitalsolutions/nvoos-slash-commands';
 
 /**

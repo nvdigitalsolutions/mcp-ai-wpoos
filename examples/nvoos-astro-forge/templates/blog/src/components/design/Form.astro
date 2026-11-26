@@ -1,4 +1,5 @@
 ---
+// SPDX-License-Identifier: MIT
 // Form — the rebuilt form component (Proposal 114 §3.9). Renders the
 // classified FormInfo as an ADS form on the token layer, never the source
 // markup:
@@ -19,6 +20,13 @@ import SectionTitle from './SectionTitle.astro';
 // omit the block — read it through an explicit shape.
 const manifest = manifestJson as {
 	forms?: { endpoint?: string; searchForms?: string[]; delivery?: 'bridge' | 'direct'; turnstile?: { siteKey?: string; action?: string } };
+	contact?: {
+		heading?: string;
+		blurb?: string;
+		email?: string;
+		people?: Array< { label?: string; role?: string; email?: string } >;
+		links?: Array< { label?: string; href?: string } >;
+	};
 };
 
 interface Props {
@@ -29,6 +37,13 @@ interface Props {
 const { section, theme } = Astro.props;
 const { title, body, links } = section.slots;
 const form = section.form;
+// The contact band's people (issue #7549 + the ECA preset). A degraded band is
+// a form this build cannot post: rather than shipping the shell of one, name
+// the people who answer instead. Derived by the scaffold from `eca.contacts`,
+// so the home band and `/help/` cannot disagree about an address.
+const contact = manifest.contact;
+const people = ( contact?.people ?? [] ).filter( ( person ) => person.label || person.email || person.role );
+const contactLinks = contact?.links ?? [];
 
 const configuredEndpoint = (
 	import.meta.env.NVOOS_FORGE_FORMS_ENDPOINT ||
@@ -151,7 +166,54 @@ const degradeToCta = Boolean(form) && !isSearch && !isSubmit;
 				<p class="ds-form-status" role="status" aria-live="polite" hidden></p>
 			</form>
 		)}
-		{degradeToCta && links && links.length > 0 && (
+		{degradeToCta && ( people.length > 0 || Boolean( contact?.email ) ) && (
+			<>
+				{/*
+				 * `<!--email_off-->` is Cloudflare's documented opt-out for Email Address
+				 * Obfuscation. The zone rewrites the `href` of EVERY mailto anchor (a tag
+				 * hrefs are explicitly in scope) into /cdn-cgi/l/email-protection and
+				 * replaces the address text with "[email protected]", then restores it with
+				 * JS. The link works for a JS visitor and is dead for everyone else —
+				 * and a school contact band exists to hand over an address. The markers
+				 * are inert markup on any other host.
+				 */}
+				<!--email_off-->
+				<div class="ds-contact-direct">
+				{people.length > 0 ? (
+					<ul class="ds-contact-people" role="list">
+						{people.map((person) => (
+							<li class="ds-contact-person">
+								{person.email ? (
+									<a class="ds-contact-mail" href={`mailto:${person.email}`}>
+										{person.label || person.email}
+									</a>
+								) : (
+									<span class="ds-contact-name">{person.label}</span>
+								)}
+								{person.role && <span class="ds-contact-role">{person.role}</span>}
+								{person.email && person.label && <span class="ds-contact-email">{person.email}</span>}
+							</li>
+						))}
+					</ul>
+				) : (
+					<p class="ds-contact-single">
+						<a class="ds-contact-mail" href={`mailto:${contact?.email}`}>{contact?.email}</a>
+					</p>
+				)}
+				{contactLinks.length > 0 && (
+					<div class="ds-links">
+						{contactLinks.map((link) => (
+							<a class="ds-button" href={link.href || '/'}>
+								{link.label || 'Learn more'}
+							</a>
+						))}
+					</div>
+				)}
+				</div>
+				<!--/email_off-->
+			</>
+		)}
+		{degradeToCta && people.length === 0 && !contact?.email && links && links.length > 0 && (
 			<div class="ds-links">
 				{links.map((link) => (
 					<a class="ds-button" href={link.href ?? '#'}>
@@ -176,8 +238,14 @@ const degradeToCta = Boolean(form) && !isSearch && !isSubmit;
 		const honeypot = formEl.elements.namedItem('honeypot') as HTMLInputElement | null;
 		if (honeypot && honeypot.value.trim() !== '') return; // Bot floor — silently drop.
 
-		const payload: { form: string; fields: Record<string, string>; honeypot: string; timestamp: number; page: string } = {
+		// `post_id` is the Elementor carrier post the form widget lives on. The
+		// handler resolves the widget through that document, so omitting it makes
+		// every submit answer "the form is invalid" (the widget is still found by
+		// the bridge's existence check, which searches all posts).
+		const postIdEl = formEl.elements.namedItem('post_id') as HTMLInputElement | null;
+		const payload: { form: string; post_id?: number; fields: Record<string, string>; honeypot: string; timestamp: number; page: string } = {
 			form: (formEl.elements.namedItem('form') as HTMLInputElement).value,
+			...(postIdEl && postIdEl.value ? { post_id: Number(postIdEl.value) || 0 } : {}),
 			fields: {},
 			honeypot: '',
 			timestamp: Date.now(),

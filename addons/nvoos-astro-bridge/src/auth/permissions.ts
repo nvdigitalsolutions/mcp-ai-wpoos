@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Capability-driven gating for the Astro CMS — the console's
  * auth/permissions.ts pattern (Proposal 084 Phase 0).

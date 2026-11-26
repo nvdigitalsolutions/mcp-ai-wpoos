@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Legacy HTTP+SSE (2024-11-05) bridge — PENDING THE TRANSPORT SPIKE.
 //!
 //! rmcp deliberately ships no legacy HTTP+SSE transport (it targets

@@ -234,7 +234,7 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
-	 * @return array
+	 * @return array|WP_Error OCR results, or WP_Error on failure.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$start_time = microtime( true );
@@ -242,37 +242,20 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Check user permissions.
 		$user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $user_id || ! user_can( $user_id, 'upload_files' ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'permission_denied',
-				'report'  => __(
-					'❌ **Permission Denied**
-
-You do not have permission to perform OCR operations. The workflow will continue with other tasks.',
-					'mcp-ai-wpoos-pro'
-				),
+			return new WP_Error(
+				'wp_mcp_ai_forbidden',
+				__( 'You do not have permission to perform OCR operations.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
 			);
 		}
 
 		// Parse arguments.
 		$source = isset( $arguments['source'] ) ? $arguments['source'] : array();
 		if ( empty( $source ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'missing_source',
-				'report'  => __(
-					'❌ **Missing Source**
-
-Source document(s) required. Provide one of:
-- `attachment_id` (single ID)
-- `attachment_ids` (array of IDs)
-- `url` (single URL)
-- `urls` (array of URLs)
-- `file_ids` (array of OpenAI file IDs)
-
-✅ The workflow will continue with other tasks.',
-					'mcp-ai-wpoos-pro'
-				),
+			return new WP_Error(
+				'wp_mcp_ai_missing_source',
+				__( 'Source document(s) are required. Provide attachment_id, attachment_ids, url, urls, or file_ids.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
 			);
 		}
 
@@ -296,42 +279,14 @@ Source document(s) required. Provide one of:
 		// Resolve source documents to processable items.
 		$documents = $this->resolve_documents( $source );
 		if ( is_wp_error( $documents ) ) {
-			return array(
-				'success'    => false,
-				'error'      => 'resolve_failed',
-				'error_code' => $documents->get_error_code(),
-				'report'     => sprintf(
-					/* translators: %s: error message */
-					__(
-						'❌ **Failed to Resolve Documents**
-
-%s
-
-Please check your source parameters and try again.
-
-✅ The workflow will continue with other tasks.',
-						'mcp-ai-wpoos-pro'
-					),
-					$documents->get_error_message()
-				),
-			);
+			return $documents;
 		}
 
 		if ( empty( $documents ) ) {
-			return array(
-				'success' => false,
-				'error'   => 'no_documents',
-				'report'  => __(
-					'❌ **No Valid Documents**
-
-No valid documents found to process. Please check your source parameters:
-- Verify attachment IDs exist
-- Ensure URLs are accessible
-- Check file IDs are valid
-
-✅ The workflow will continue with other tasks.',
-					'mcp-ai-wpoos-pro'
-				),
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'No valid documents found to process. Verify attachment IDs exist, URLs are accessible, and file IDs are valid.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
 			);
 		}
 
@@ -807,7 +762,7 @@ No valid documents found to process. Please check your source parameters:
 	 *
 	 * @param array $response Response data.
 	 * @param array $options  Processing options.
-	 * @return array Formatted response.
+	 * @return array|WP_Error Formatted response, or WP_Error when every document failed.
 	 */
 	private function format_response( $response, $options ) {
 		// If all documents failed, return error message with report.
@@ -819,28 +774,34 @@ No valid documents found to process. Please check your source parameters:
 				$error_summary  = '- ' . implode( "\n- ", $error_list ); // Add leading dash.
 			}
 
-			return array(
-				'success' => false,
-				'error'   => 'all_failed',
-				'details' => $response['errors'],
-				'report'  => sprintf(
-					/* translators: 1: failed count, 2: error summary */
-					__(
-						'❌ **All OCR Operations Failed**
+			return new WP_Error(
+				'wp_mcp_ai_ocr_failed',
+				sprintf(
+					/* translators: %d: number of documents */
+					__( 'OCR failed for all %d document(s).', 'mcp-ai-wpoos-pro' ),
+					(int) $response['failed']
+				),
+				array(
+					'status'  => 500,
+					'error'   => 'all_failed',
+					'details' => $response['errors'],
+					'report'  => sprintf(
+						/* translators: 1: failed count, 2: error summary */
+						__(
+							'❌ **All OCR Operations Failed**
 
 Failed to process all %1$d document(s).
 
 **Common Errors:**
 %2$s
 
-This may be due to provider issues, invalid documents, or connectivity problems.
-
-✅ The workflow will continue with other tasks.',
-						'mcp-ai-wpoos-pro'
+This may be due to provider issues, invalid documents, or connectivity problems.',
+							'mcp-ai-wpoos-pro'
+						),
+						$response['failed'],
+						$error_summary
 					),
-					$response['failed'],
-					$error_summary
-				),
+				)
 			);
 		}
 

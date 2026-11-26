@@ -4108,7 +4108,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		if ( empty( $username ) || empty( $password ) ) {
 			return rest_ensure_response(
 				array(
-					'success' => false,
+					'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 					'message' => __( 'Username and password are required.', 'mcp-ai-wpoos-pro' ),
 				)
 			);
@@ -4120,7 +4120,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		if ( is_wp_error( $target_user ) ) {
 			return rest_ensure_response(
 				array(
-					'success' => false,
+					'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 					'message' => __( 'Invalid username or password.', 'mcp-ai-wpoos-pro' ),
 				)
 			);
@@ -4133,7 +4133,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		if ( ! empty( $existing_tg_id ) && $existing_tg_id !== $current_tg_id ) {
 			return rest_ensure_response(
 				array(
-					'success' => false,
+					'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 					'message' => __( 'This WordPress account is already linked to a different Telegram user.', 'mcp-ai-wpoos-pro' ),
 				)
 			);

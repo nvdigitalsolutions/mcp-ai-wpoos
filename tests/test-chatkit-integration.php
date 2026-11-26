@@ -103,8 +103,19 @@ class Test_ChatKit_Integration extends WP_UnitTestCase {
 		WP_MCP_AI_ChatKit_Integration::maybe_bootstrap();
 
 		$manager = new class() {
+			/**
+			 * Value received by the addon registration.
+			 *
+			 * @var mixed
+			 */
 			public $received = null;
 
+			/**
+			 * Capture an addon registration.
+			 *
+			 * @param array $definition Addon definition.
+			 * @return void
+			 */
 			public function register_addon( $definition ) {
 				$this->received = $definition;
 			}

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Dashboard page — tenant overview with real execution stats.
  */

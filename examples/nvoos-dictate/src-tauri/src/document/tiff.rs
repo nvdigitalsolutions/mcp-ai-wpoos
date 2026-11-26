@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Multi-page TIFF decode (Proposal 109, D7).
 //!
 //! The `image` crate (and its `image-tiff` backend) decodes only the FIRST

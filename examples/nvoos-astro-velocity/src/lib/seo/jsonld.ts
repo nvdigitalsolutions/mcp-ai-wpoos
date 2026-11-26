@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // JSON-LD generators — Proposal 092 §5.3 / D10, extended by 104 P3 (D5).
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forge-e2e.test.ts — the exit gate (096 §4): fixture WP → scaffold → build.
 //
@@ -13,18 +14,48 @@
 import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
 import http from 'node:http';
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { mkdtemp, readFile, stat } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { chromium } from 'playwright';
+
 import { scaffold } from '../lib/scaffold.ts';
 import type { SiteProfile } from '../lib/types.ts';
+import { rmTemp } from './helpers/tmp.ts';
 
 const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const FIXTURE_SERVER = path.join(FORGE_ROOT, 'scripts', 'wp-fixture-server.mjs');
+
+/** Chromium is the devDependency the other browser suites use; skip if absent. */
+const hasChromium = ( () => {
+	try {
+		return Boolean( chromium.executablePath() );
+	} catch {
+		return false;
+	}
+} )();
+
+/** Enough MIME types to serve a built Astro artifact to a browser. */
+const MIME: Record< string, string > = {
+	'.html': 'text/html; charset=utf-8',
+	'.css': 'text/css; charset=utf-8',
+	'.js': 'text/javascript; charset=utf-8',
+	'.mjs': 'text/javascript; charset=utf-8',
+	'.json': 'application/json',
+	'.svg': 'image/svg+xml',
+	'.jpg': 'image/jpeg',
+	'.jpeg': 'image/jpeg',
+	'.png': 'image/png',
+	'.webp': 'image/webp',
+	'.avif': 'image/avif',
+	'.woff2': 'font/woff2',
+	'.xml': 'application/xml',
+	'.txt': 'text/plain; charset=utf-8',
+};
 
 let server: ReturnType<typeof spawn> | undefined;
 let origin = '';
@@ -150,9 +181,34 @@ const PROFILE: SiteProfile = {
 					pieces: [
 						{ id: 'a10001', index: 0, depth: -0.1, origin: 'bottom', off: 1024, direction: 'negative', speed: 2, range: { start: 0, end: 100 }, devices: [ 'desktop', 'tablet', 'mobile' ] },
 						{ id: 'a10002', index: 1, depth: 0.1, origin: 'bottom', off: 1024, speed: 2 },
+						// The AXIS fixture (2026-11-17): a THIRD piece on the HORIZONTAL axis.
+						// The fixture has only two collage photos, so this carrier emits the X
+						// channel without a rendered element — the BINDING is owned by
+						// parallax-browser.test.ts. What this proves is narrower and
+						// end-to-end: a real scaffold → build executes the axis branch instead
+						// of silently collapsing it into a vertical drift.
+						{ id: 'a10003', index: 2, axis: 'x', speed: 2, direction: 'positive' },
 					],
 				},
 				{ id: 'a1b2c3d', kind: 'reveal', effect: 'fade-up' },
+			],
+		},
+	},
+	// The per-ELEMENT surface/pinned-height facts (Proposal 114 `elements`).
+	// The emitted rule must stay ANCHORED to the raw band's own root: measured
+	// from the source's band element the path starts one level BELOW it, and the
+	// rebuild nests that root inside `.post-body`. Unanchored, the leading
+	// `div:nth-child(2)` is a DESCENDANT selector that also matches a
+	// `.text-box`'s first `<div>` and the banner's link overlay, so the band's
+	// surface and pinned height paint over the hero photo.
+	bandFacts: {
+		b4c5d6e: {
+			elements: [
+				{
+					path: 'div:nth-child(2) > div:nth-child(1)',
+					bg: 'background-color:rgb(221, 51, 51)',
+					height: 900,
+				},
 			],
 		},
 	},
@@ -382,6 +438,20 @@ describe('forge e2e — emitted site', () => {
 
 		const robots = await readFile(path.join(workDir, 'dist', 'robots.txt'), 'utf8');
 		expect(robots).toContain(`Sitemap: ${origin}/sitemap.xml`);
+
+		// Proposal 165 — the gate pages are always compiled; with the verdict off
+		// they are NOT published. They must be self-contained and noindex, so the
+		// gate never depends on the site's own stylesheet or scripts.
+		for (const route of ['maintenance', 'coming-soon']) {
+			const page = await readFile(path.join(workDir, 'dist', route, 'index.html'), 'utf8');
+			expect(page).toContain('<meta name="robots" content="noindex, nofollow"');
+			expect(page).not.toContain('<script');
+			expect(page).not.toContain('<link');
+			expect(page).not.toContain('http-equiv="refresh"');
+			expect(page.match(/<h1[\s>]/g)?.length ?? 0).toBe(1);
+		}
+		// ...and with the verdict off the real site is the published document.
+		expect(index).not.toContain("We'll be back shortly");
 	});
 
 	it('renders the storefront listing with prices, sales and categories', async () => {
@@ -521,6 +591,91 @@ describe('forge e2e — emitted site', () => {
 		expect(detail).toContain(`<link rel="canonical" href="${origin}/posts/4/studio-notes-autumn/"`);
 	});
 
+	it('carries the parallax AXIS through scaffold → build', async () => {
+		// The scaffold fact: the analyzed axis reaches the generated module.
+		const generated = await readFile(path.join(workDir, 'src', 'lib', 'behaviors.generated.ts'), 'utf8');
+		expect(generated).toContain("axis: 'x'");
+
+		// The build fact: the renderer's axis branch emits the X CHANNEL (and
+		// freezes Y, or a horizontal piece would drift on both axes).
+		const index = await readFile(path.join(workDir, 'dist', 'index.html'), 'utf8');
+		expect(index).toContain('--ds-parallax-x-from:');
+		expect(index).toContain('--ds-parallax-x-to:');
+		expect(index).toContain('--ds-parallax-from:0px');
+		expect(index).toContain('--ds-parallax-to:0px');
+	});
+
+	// KNOWN DEFECT FIXED (2026-11-17): the animation-inventory rule used to win
+	// the `animation-name` cascade on a carrier that also carried a parallax
+	// piece, so `ds-parallax-media` never bound and the computed `translate`
+	// stayed `none`. `animationRebuildCss` now COMPOSES both names; the browser
+	// assertion below is the proof, and it is the only check that could see it.
+
+	it.skipIf(!hasChromium)('COMPOSES the inventory keyframe and the parallax on the built carrier', async () => {
+		const dist = path.join(workDir, 'dist');
+		const staticServer = http.createServer(async (request, response) => {
+			const rel = (request.url ?? '/').split('?')[0].replace(/^\/+/, '') || 'index.html';
+			const file = path.join(dist, rel);
+			try {
+				const body = await readFile(file);
+				response.writeHead(200, { 'content-type': MIME[path.extname(file).toLowerCase()] ?? 'application/octet-stream' });
+				response.end(body);
+			} catch {
+				response.writeHead(404);
+				response.end('not found');
+			}
+		});
+		await new Promise< void >((resolve) => staticServer.listen(0, '127.0.0.1', resolve));
+		const address = staticServer.address();
+		const port = typeof address === 'object' && address ? address.port : 0;
+
+		const browser = await chromium.launch();
+		try {
+			const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+			await page.goto(`http://127.0.0.1:${port}/`);
+
+			// Registration is the claim here: BEFORE the fix the parallax name was
+			// dropped from the cascade, so `getAnimations()` listed only the
+			// inventory keyframe. The scroll DELTA is asserted in
+			// parallax-browser.test.ts against a sized fixture — this built page's
+			// collage carriers collapse to ~1px under a minimal static server, which
+			// makes a `cover` range degenerate rather than broken.
+			const probe = await page.evaluate(() => {
+				const el = document.querySelector('[data-section-id="a1b2c3d"] .ds-media') as HTMLElement | null;
+				if (!el) {
+					return null;
+				}
+				const computed = window.getComputedStyle(el);
+				return {
+					names: computed.animationName,
+					timelines: computed.animationTimeline,
+					running: el.getAnimations().map((animation) => ({
+						name: (animation as CSSAnimation).animationName ?? '',
+						timeline: animation.timeline?.constructor?.name ?? '',
+					})),
+				};
+			});
+			if (!probe) {
+				throw new Error('the split hero rendered no .ds-media carrier');
+			}
+
+			// Both names in one declaration list — the composition, end to end.
+			expect(probe.names).toContain('forge-anim-');
+			expect(probe.names, 'the parallax name was not composed in').toContain('ds-parallax-media');
+			expect(probe.timelines, 'the parallax tuple must keep its own scroll timeline').toContain('scroll(root)');
+
+			// Both animations are REGISTERED, each on the timeline it needs.
+			const inventory = probe.running.find((animation) => animation.name.startsWith('forge-anim-'));
+			const parallax = probe.running.find((animation) => animation.name === 'ds-parallax-media');
+			expect(inventory, 'the source keyframe stopped running').toBeDefined();
+			expect(parallax, 'the composed parallax never registered').toBeDefined();
+			expect(parallax?.timeline).toBe('ScrollTimeline');
+		} finally {
+			await browser.close();
+			await new Promise< void >((resolve) => staticServer.close(() => resolve()));
+		}
+	}, 120_000);
+
 	it('applies the design tokens, RSS, 404 and the redirect map', async () => {
 		// tokens_apply: the accent override is baked into the built CSS. The
 		// theme-policy additions (105) pushed the bundle past Astro's inline
@@ -621,6 +776,15 @@ describe('forge e2e — emitted site', () => {
 			expect(css).toMatch(/\.ds-hero-collage\s*\{[^}]*grid-template-columns:\s*repeat\(\s*auto-fit\s*,\s*minmax\(\s*9rem\s*,\s*1fr\s*\)\s*\)/);
 			expect(css).toMatch(/\.ds-collage-shape\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/);
 			expect(css).toMatch(/\.ds-collage-shape\[data-fluid\]\s*\{[^}]*aspect-ratio:\s*var\(--ds-shape-ratio\)/);
+			// A phone keeps a zero-gutter band's copy INSET. A source band that
+			// measured `--ds-pad-x: 0px` (a full-bleed hero photo) ran its form,
+			// fields and Turnstile widget edge-to-edge on a phone, and a CENTRED
+			// band's submit hugged the left edge. The floor is mobile-only;
+			// desktop keeps the measured fact. It is the floor MINUS the band's own
+			// side padding, so a band that already carries its measured 30px gutter
+			// is not topped up to 46 (eca.directory's day pages).
+			expect(css).toMatch(/padding-left:\s*max\(\s*calc\(\s*var\(--forge-space\)\s*-\s*var\(--ds-band-pad-x\s*,\s*0px\s*\)\s*\)\s*,\s*var\(--ds-pad-x\s*,\s*0px\s*\)\s*\)/);
+			expect(css).toMatch(/\.ds-form\s+\.ds-button\s*,\s*\.ds-form\s+\.cf-turnstile\s*\{[^}]*justify-self:\s*center/);
 		} else {
 			expect(index).toMatch(/--forge-accent:\s*#0b5f4e/);
 		}
@@ -775,6 +939,28 @@ describe('forge e2e — emitted site', () => {
 		expect(audit.audit.failures).toEqual([]);
 	});
 
+	it('anchors per-element design facts to the raw band (Proposal 114 `elements`)', async () => {
+		const index = await readFile(path.join(workDir, 'dist', 'index.html'), 'utf8');
+		// The measured path starts at the SOURCE band root's children; the raw band
+		// nests that root one level inside `.post-body`. Emitted unanchored, the
+		// leading `div:nth-child(2)` is a descendant selector that also matched a
+		// `.text-box`'s first `<div>` and the banner's link overlay — the section's
+		// surface and pinned height then painted over the hero photo and every
+		// band flattened to one solid colour.
+		expect(index).toContain(
+			'[data-section-id="b4c5d6e"] .post-body > * > div:nth-child(2) > div:nth-child(1){'
+		);
+		// The floor must publish the `--ds-col-min-h` bridge: a centred band's
+		// wrapper rule re-states `min-height: var(--ds-col-min-h, 0)` at a higher
+		// specificity, so a pinned stage without the bridge rendered at 0 (both
+		// photo columns collapsed).
+		expect(index).toContain('--ds-col-min-h:900px;min-height:900px');
+		// …and the element's own subtree must not inherit the floor.
+		expect(index).toContain(
+			'[data-section-id="b4c5d6e"] .post-body > * > div:nth-child(2) > div:nth-child(1) > *{--ds-col-min-h:initial}'
+		);
+	});
+
 	it('ships the deploy-branch build report as an artifact (README.md)', async () => {
 		const readme = await readFile(path.join(workDir, 'dist', 'README.md'), 'utf8');
 
@@ -818,7 +1004,9 @@ describe('forge e2e — emitted site', () => {
 		const result = spawnSync(
 			process.execPath,
 			[path.join(FORGE_ROOT, 'scripts', 'forge.mjs'), 'analyze', origin, '--write', discoveredPath],
-			{ cwd: FORGE_ROOT, encoding: 'utf8', timeout: 60_000 }
+			// The fixture is loopback: `analyze` now probes the rendered page, which
+			// needs the CLI's documented dev exemption (Proposal 152).
+			{ cwd: FORGE_ROOT, encoding: 'utf8', timeout: 60_000, env: { ...process.env, NVOOS_FORGE_ALLOW_LOOPBACK: '1' } }
 		);
 		const stdout = result.stdout ?? '';
 		const stderr = result.stderr ?? '';
@@ -879,7 +1067,7 @@ describe('forge e2e — emitted site', () => {
 
 describe('forge e2e — long-tail content tools against the fixture', () => {
 	it('audits, previews, maps redirects, and renders configs from a registered site', async () => {
-		const { mkdir, writeFile, rm } = await import('node:fs/promises');
+		const { mkdir, writeFile } = await import('node:fs/promises');
 		const { SitesStore } = await import('../lib/sites.ts');
 		const { SITE_TOOLS } = await import('../mcp/tools/sites.ts');
 		const { CONTENT_TOOLS } = await import('../mcp/tools/content.ts');
@@ -955,7 +1143,7 @@ describe('forge e2e — long-tail content tools against the fixture', () => {
 			expect(configData.block).toContain('wc/v3/products');
 			expect(configData.block).toContain('defineCollection');
 		} finally {
-			await rm(home, { recursive: true, force: true });
+			await rmTemp(home);
 		}
 	});
 });
@@ -995,7 +1183,7 @@ describe( 'forge e2e — theme policy + hybrid local (Proposals 105 §4 / 106 P2
 			expect(base).toContain('forge-theme-policy');
 			expect(base).toContain('policy === \'light\' || policy === \'dark\'');
 		} finally {
-			await rm(darkDir, { recursive: true, force: true });
+			await rmTemp(darkDir);
 		}
 	} );
 
@@ -1033,7 +1221,10 @@ describe( 'forge e2e — theme policy + hybrid local (Proposals 105 §4 / 106 P2
 		expect(yoastPost).toContain('property="og:title" content="How to care for natural fibres"');
 		expect(yoastPost).toContain('property="og:type" content="article"');
 		expect(yoastPost).toContain('name="twitter:card" content="summary_large_image"');
-		expect(yoastPost).toContain('property="og:image" content="' + origin + '/wp-content/uploads/care.png"');
+		// The Yoast image is carried but LOCALIZED (Proposal 138): media
+		// localization mirrors it and re-points the tag at the public origin, so
+		// the card no longer references the source CMS path.
+		expect(yoastPost).toMatch(/property="og:image" content="[^"]*\/media\/[^"]*care\.png"/);
 		// The site graph is rebuilt around the page node (never Yoast's @graph).
 		expect(yoastPost).toContain('"@graph"');
 		expect(yoastPost).toContain('"Organization"');
@@ -1085,7 +1276,7 @@ describe( 'forge e2e — theme policy + hybrid local (Proposals 105 §4 / 106 P2
 			const listing = await readFile(path.join(offlineDir, 'dist', 'posts', 'index.html'), 'utf8');
 			expect(listing).not.toContain('Fjord merino sweater');
 		} finally {
-			await rm(offlineDir, { recursive: true, force: true });
+			await rmTemp(offlineDir);
 		}
 	}, 600_000);
 } );
@@ -1129,6 +1320,66 @@ it( 'emits the agent stubs, copy tables, seo builder and theme module', async ()
 	} );
 } );
 
+describe('forge e2e — eca preset scaffold (the flagship template gate)', () => {
+	// The ECA preset shipped 12 `astro check` errors because NO job ever
+	// scaffolded it: `test:e2e` checks the default scaffold only, and
+	// `eca-scaffold.test.ts` asserts generated strings without installing. The
+	// broken files were static generated components, so a scaffold + check is
+	// all this needs — no browser, no build.
+	const ECA_PROFILE: SiteProfile = {
+		...PROFILE,
+		url: 'https://fixture.test/',
+		name: 'Fixture School',
+		eca: {
+			basePath: '/activities',
+			schoolName: 'Fixture School',
+			timezone: 'UTC',
+			currency: 'GBP',
+			currencySymbol: '£',
+			stages: [
+				{
+					id: 'junior-school',
+					label: 'Junior School',
+					yearGroups: { from: 1, to: 6 },
+					match: ['junior'],
+					blurb: 'Activities for Years 1 to 6.',
+				},
+				{
+					id: 'senior-school',
+					label: 'Senior School',
+					yearGroups: { from: 7, to: 13 },
+					match: ['senior'],
+					blurb: 'Activities for Years 7 to 13.',
+				},
+			],
+			contacts: [ { label: 'ECA Coordinator', role: 'Programme', email: 'eca@example.com' } ],
+		},
+		forms: { delivery: 'bridge' },
+	};
+
+	it('scaffolds the eca preset and passes astro check', async () => {
+		const ecaDir = await mkdtemp(path.join(os.tmpdir(), 'forge-eca-preset-'));
+		try {
+			await scaffold({ profile: { ...ECA_PROFILE, url: origin }, targetDir: ecaDir, template: 'blog', preset: 'eca' });
+
+			// The preset's own surfaces and generated modules exist (the check below
+			// is what proves they COMPILE — this just fails fast when the preset
+			// silently degrades to the plain blog scaffold).
+			await expect(stat(path.join(ecaDir, 'src', 'lib', 'eca-site.ts'))).resolves.toBeTruthy();
+			await expect(stat(path.join(ecaDir, 'src', 'pages', 'activities', 'index.astro'))).resolves.toBeTruthy();
+			await expect(stat(path.join(ecaDir, 'src', 'pages', 'calendar', 'index.astro'))).resolves.toBeTruthy();
+			await expect(stat(path.join(ecaDir, 'src', 'pages', 'terms', 'index.astro'))).resolves.toBeTruthy();
+
+			const install = run(ecaDir, 'npm', ['install', '--no-audit', '--no-fund']);
+			expect(install.status, `npm install failed:\n${install.stderr}`).toBe(0);
+			const check = run(ecaDir, 'npm', ['run', 'check'], { WP_SITE_URL: origin });
+			expect(check.status, `astro check failed:\n${check.stdout}\n${check.stderr}`).toBe(0);
+		} finally {
+			await rmTemp(ecaDir);
+		}
+	}, 420_000);
+});
+
 describe('forge e2e — minimal preset scaffold (Proposal 104 §4.3)', () => {
 	it('scaffolds the minimal preset and passes astro check + build', async () => {
 		const minimalDir = await mkdtemp(path.join(os.tmpdir(), 'forge-minimal-'));
@@ -1158,7 +1409,7 @@ describe('forge e2e — minimal preset scaffold (Proposal 104 §4.3)', () => {
 			expect(index).toContain('At Fixture Wares we serve the fjords.');
 			expect(index).not.toContain('href="/search/"');
 		} finally {
-			await rm(minimalDir, { recursive: true, force: true });
+			await rmTemp(minimalDir);
 		}
 	}, 600_000);
 } );
@@ -1240,7 +1491,7 @@ describe('forge e2e — SSR render variant (Proposal 104 Q4 + Q5)', () => {
 			expect(missing.status).toBe(404);
 		} finally {
 			serverProc?.kill();
-			await rm(ssrDir, { recursive: true, force: true });
+			await rmTemp(ssrDir);
 		}
 	}, 600_000);
 } );
@@ -1304,8 +1555,8 @@ describe('forge e2e — setup_wizard (Phase 4 exit: URL → built, deploy-ready)
 		const builtIndex = await readFile(path.join(wizardTarget, 'dist', 'index.html'), 'utf8');
 		expect(builtIndex).not.toMatch(/ck_test|cs_test/);
 
-		await rm(wizardHome, { recursive: true, force: true });
-		await rm(wizardTarget, { recursive: true, force: true });
+		await rmTemp(wizardHome);
+		await rmTemp(wizardTarget);
 	}, 600_000);
 });
 
@@ -1315,7 +1566,7 @@ describe( 'forge e2e — tracking capture (Proposal 130)', () => {
 
 	afterAll( async () => {
 		if ( trackingDir ) {
-			await rm( trackingDir, { recursive: true, force: true } );
+			await rmTemp( trackingDir );
 		}
 	} );
 

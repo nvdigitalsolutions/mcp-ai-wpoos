@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Runtime configuration builder for the standalone Pro SPA.
  *
@@ -130,11 +131,12 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		approvals: `${core}/approvals`,
 		triggers: `${core}/orchestration/triggers`,
 		teams: `${core}/teams`,
-		// Laravel-only contracts: WordPress has neither a profession catalogue
-		// route nor org-team storage, so both surfaces stay hidden rather than
-		// firing requests that 404.
-		professions: '',
-		orgTeams: '',
+		// Profession catalogue (090-p W1) — served by the base plugin's REST
+		// surface, so the assistant editor's selector works on WordPress too.
+		professions: `${core}/professions`,
+		// Org teams (users with roles) — served by the base plugin's REST
+		// surface (090-p W7); the agent-team catalogue stays at `teams`.
+		orgTeams: `${core}/org/teams`,
 		portability: `${core}/assistants`,
 		security: `${core}/security`,
 		operations: `${core}/operations`,
@@ -154,9 +156,9 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		workflowRuns: `${core}/orchestration/runs`,
 		wpBase: `${api}/wp/v2`,
 		recordsSchema: `${pro}/records/schema`,
-		// The manifest-driven toolkit engine is Laravel-only for now; leave the
-		// key empty so the pages render their unavailable state on WordPress.
-		toolkits: '',
+		// The manifest-driven toolkit engine (Proposal 090-B §8) lives at
+		// `/toolkit-manifests`; `/toolkits` is the schedule-anything base.
+		toolkits: `${pro}/toolkit-manifests`,
 		dashboardsSchema: `${pro}/dashboards/schema`,
 		chatChannels: `${pro}/chat-channels`,
 		remoteSites: `${pro}/remote-sites`,

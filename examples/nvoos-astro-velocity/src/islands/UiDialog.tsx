@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // UiDialog.tsx — modal dialog island built on the Zag.js dialog state
 // machine (@zag-js/dialog + @zag-js/react). Zag owns the hard a11y behavior:

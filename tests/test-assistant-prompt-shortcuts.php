@@ -481,6 +481,7 @@ class Test_Assistant_Prompt_Shortcuts extends WP_UnitTestCase {
 
 class WP_MCP_AI_Test_Prompt_Shortcut_Tool implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
 	use WP_MCP_AI_Tool_Default_Capability;
+
 	/**
 	 * Get the tool slug.
 	 *
@@ -528,6 +529,11 @@ class WP_MCP_AI_Test_Prompt_Shortcut_Tool implements WP_MCP_AI_Tool_Interface, W
 		return array();
 	}
 
+	/**
+	 * Return the shortcut tasks.
+	 *
+	 * @return array
+	 */
 	public function get_shortcut_tasks() {
 		return array(
 			array(

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // mcp-env.mjs — the /mcp env snapshot seeding rule for the BFF boot
 // (Proposal 095). The handler's manager-session gate and the tools' base

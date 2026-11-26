@@ -25,6 +25,7 @@
  *   php bin/audit-tool-readiness.php --write        # add missing rows as `unverified`
  *   php bin/audit-tool-readiness.php --classify=map.json  # apply readiness decisions
  *   php bin/audit-tool-readiness.php --manifest=/tmp/x.php  # audit another manifest
+ *   php bin/audit-tool-readiness.php --tools=/tmp/tools     # scan another tool tree
  *   php bin/audit-tool-readiness.php --report       # always exit 0 (CI report mode)
  *
  * `--write` never overwrites an existing decision: it only inserts rows for
@@ -37,7 +38,9 @@
  * @since   2.6.0
  */
 
+use Nvoos\Core\Application\Tool\ToolClassScanner;
 use Nvoos\Core\Application\Tool\ToolReadiness;
+use Nvoos\Core\Domain\Contract\LlmSanitizerInterface;
 
 $root = dirname( __DIR__ );
 
@@ -47,6 +50,7 @@ $options = array(
 	'report'   => false,
 	'classify' => '',
 	'manifest' => '',
+	'tools'    => '',
 );
 
 foreach ( array_slice( $argv, 1 ) as $argument ) {
@@ -56,6 +60,8 @@ foreach ( array_slice( $argv, 1 ) as $argument ) {
 		$options['write'] = true;
 	} elseif ( 0 === strpos( $argument, '--manifest=' ) ) {
 		$options['manifest'] = substr( $argument, 11 );
+	} elseif ( 0 === strpos( $argument, '--tools=' ) ) {
+		$options['tools'] = substr( $argument, 8 );
 	} elseif ( 0 === strpos( $argument, '--classify=' ) ) {
 		$options['classify'] = substr( $argument, 11 );
 	} elseif ( '--report' === $argument ) {
@@ -100,128 +106,10 @@ if ( '' !== $options['manifest'] ) {
 	$manifest_path = $options['manifest'];
 }
 
-/**
- * Read the parameters of a method, by balanced parentheses.
- *
- * @param string $source Class source.
- * @param string $method Method name.
- * @return array<int, string> Short type names, in declaration order.
- */
-function nvoos_audit_params( string $source, string $method ): array {
-	if ( ! preg_match( '/function\s+' . preg_quote( $method, '/' ) . '\s*\(/', $source, $match, PREG_OFFSET_CAPTURE ) ) {
-		return array();
-	}
+$tools_path = $root . '/lib/core/src/Tool';
 
-	$open  = strpos( $source, '(', (int) $match[0][1] );
-	$depth = 0;
-	$end   = $open;
-	$length = strlen( $source );
-
-	for ( $i = $open; $i < $length; $i++ ) {
-		if ( '(' === $source[ $i ] ) {
-			$depth++;
-		} elseif ( ')' === $source[ $i ] ) {
-			$depth--;
-			if ( 0 === $depth ) {
-				$end = $i;
-				break;
-			}
-		}
-	}
-
-	$raw   = substr( $source, $open + 1, $end - $open - 1 );
-	$parts = array();
-	$buffer = '';
-	$depth = 0;
-
-	foreach ( str_split( $raw ) as $char ) {
-		if ( in_array( $char, array( '(', '[', '<' ), true ) ) {
-			$depth++;
-		} elseif ( in_array( $char, array( ')', ']', '>' ), true ) ) {
-			$depth--;
-		}
-
-		if ( ',' === $char && 0 === $depth ) {
-			$parts[] = $buffer;
-			$buffer  = '';
-			continue;
-		}
-
-		$buffer .= $char;
-	}
-
-	if ( '' !== trim( $buffer ) ) {
-		$parts[] = $buffer;
-	}
-
-	$types = array();
-	foreach ( $parts as $part ) {
-		if ( preg_match( '/([\\\\\w?]+)\s+&?\$\w+/', $part, $type ) ) {
-			$name    = ltrim( $type[1], '?' );
-			$types[] = substr( $name, (int) strrpos( '\\' . $name, '\\' ) );
-		}
-	}
-
-	return $types;
-}
-
-/**
- * Collect every class that declares a tool contract.
- *
- * @param string $directory Tool directory.
- * @return array<string, array{class: string, fqcn: string, file: string, slug: string, ctor: array<int, string>}>
- */
-function nvoos_audit_scan( string $directory ): array {
-	$classes = array();
-	$iterator = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $directory ) );
-
-	foreach ( $iterator as $file ) {
-		if ( 'php' !== $file->getExtension() ) {
-			continue;
-		}
-
-		$source = file_get_contents( $file->getPathname() );
-
-		if ( preg_match( '/abstract\s+class/', $source ) ) {
-			continue;
-		}
-
-		if ( ! preg_match( '/^class\s+(\w+)/m', $source, $class_match ) ) {
-			continue;
-		}
-
-		$declares_tool = preg_match( '/extends\s+AbstractTool/', $source )
-			|| preg_match( '/implements\s+ToolInterface/', $source )
-			|| preg_match( '/function\s+getSlug\s*\(/', $source );
-
-		if ( ! $declares_tool ) {
-			continue;
-		}
-
-		$namespace = '';
-		if ( preg_match( '/^namespace\s+([^;]+);/m', $source, $ns_match ) ) {
-			$namespace = trim( $ns_match[1] );
-		}
-
-		$slug = '';
-		if ( preg_match( "/function\\s+getSlug\\s*\\([^)]*\\)\\s*:\\s*string\\s*\\{.*?return\\s+(['\"])([^'\"]+)\\1/s", $source, $slug_match ) ) {
-			$slug = $slug_match[2];
-		}
-
-		$class = $class_match[1];
-
-		$classes[ $file->getPathname() ] = array(
-			'class' => $class,
-			'fqcn'  => ( '' === $namespace ? '' : $namespace . '\\' ) . $class,
-			'file'  => $file->getPathname(),
-			'slug'  => $slug,
-			'ctor'  => nvoos_audit_params( $source, '__construct' ),
-		);
-	}
-
-	ksort( $classes );
-
-	return $classes;
+if ( '' !== $options['tools'] ) {
+	$tools_path = $options['tools'];
 }
 
 /**
@@ -352,7 +240,7 @@ PHP;
 
 // ─── Scan ────────────────────────────────────────────────────────────────
 
-$classes   = nvoos_audit_scan( $root . '/lib/core/src/Tool' );
+$classes   = ( new ToolClassScanner() )->scan( $tools_path );
 $wordpress = nvoos_audit_wordpress_slugs( $root );
 
 $existing = array();
@@ -432,6 +320,7 @@ $violations = array(
 	'vocabulary'   => array(),
 	'slug_mismatch' => array(),
 	'shadowed'     => array(),
+	'replacement'  => array(),
 );
 
 $decisions = array();
@@ -459,6 +348,16 @@ foreach ( $existing as $slug => $row ) {
 	$probe = (string) ( $row['probe'] ?? '' );
 	if ( '' !== $probe && ! in_array( $probe, array( 'call', 'validate_only', 'dry_run' ), true ) ) {
 		$violations['vocabulary'][] = $slug . ' => probe \'' . $probe . '\' is outside the probe vocabulary';
+	}
+
+	// `replaced_by` names the canonical slug on the WordPress host, not a row
+	// here. A target no host serves is a 404 for the reader who follows it, so
+	// it must resolve against the WordPress corpus (or, for a future port, a
+	// row in this manifest).
+	$replaced_by = (string) ( $row['replaced_by'] ?? '' );
+
+	if ( '' !== $replaced_by && ! isset( $wordpress[ $replaced_by ] ) && ! isset( $existing[ $replaced_by ] ) ) {
+		$violations['replacement'][] = $slug . ' => replaced_by \'' . $replaced_by . '\' is not a WordPress tool or a manifest row';
 	}
 
 	$fqcn = (string) ( $row['class'] ?? '' );
@@ -510,6 +409,71 @@ foreach ( $existing as $row ) {
 
 $total_violations = array_sum( array_map( 'count', $violations ) );
 
+// ─── Context contract: encoded payloads ──────────────────────────────────
+//
+// A `ready` tool whose result carries an encoded payload should keep it out of
+// the model's context. The runtime backstop (`ToolResultSanitizer`) already drops
+// these keys at any depth, so rows that *rely* on it are baselined rather than
+// failing. The list can only shrink: remove an entry when the tool declares its
+// own `sanitizeForLlm()`. A row outside the baseline is a warning, not a failure —
+// the point is that a new one cannot appear silently.
+$sanitizer_baseline = array(
+	'create_image_variation',
+	'edit_openai_image',
+	'generate_cloudflareai_image',
+	'generate_music',
+	'generate_openai_image',
+	'generate_openai_speech',
+	'generate_openai_speech_validated',
+);
+
+$sanitizer = array(
+	'baselined'  => array(),
+	'undeclared' => array(),
+);
+
+foreach ( $existing as $slug => $row ) {
+	if ( 'ready' !== (string) ( $row['readiness'] ?? '' ) ) {
+		// `pure` rows such as `base64` encode on purpose; their payload is the
+		// product, so they are exempt rather than baselined.
+		continue;
+	}
+
+	$fqcn = (string) ( $row['class'] ?? '' );
+
+	if ( '' === $fqcn || ! class_exists( $fqcn ) ) {
+		continue;
+	}
+
+	try {
+		$file = ( new ReflectionClass( $fqcn ) )->getFileName();
+	} catch ( Throwable $e ) {
+		continue;
+	}
+
+	if ( false === $file || ! is_file( $file ) ) {
+		continue;
+	}
+
+	$source = (string) file_get_contents( $file );
+
+	if ( ! preg_match( '/b64_json|audio_base64|image_base64|inline_data|inlineData/', $source ) ) {
+		continue;
+	}
+
+	if ( is_subclass_of( $fqcn, LlmSanitizerInterface::class ) ) {
+		continue;
+	}
+
+	if ( in_array( $slug, $sanitizer_baseline, true ) ) {
+		$sanitizer['baselined'][] = $slug;
+	} else {
+		$sanitizer['undeclared'][] = $slug;
+	}
+}
+
+$warnings = count( $sanitizer['undeclared'] );
+
 if ( $options['json'] ) {
 	fwrite(
 		STDOUT,
@@ -521,6 +485,7 @@ if ( $options['json'] ) {
 				'added'      => $added,
 				'counts'     => $counts,
 				'violations' => $violations,
+				'sanitizer'  => $sanitizer,
 			),
 			JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
 		) . "\n"
@@ -547,6 +512,7 @@ if ( $options['json'] ) {
 		'vocabulary'    => 'G2 readiness outside the vocabulary',
 		'slug_mismatch' => 'G2 manifest slug disagrees with the class',
 		'shadowed'      => 'O3 servable core tool shadows a WordPress slug without a parity claim',
+		'replacement'   => 'G2 replaced_by names a slug no host serves',
 	);
 
 	foreach ( $labels as $key => $label ) {
@@ -561,6 +527,20 @@ if ( $options['json'] ) {
 	}
 
 	fwrite( STDOUT, "\n" . ( 0 === $total_violations ? "OK — no violations.\n" : "FAIL — {$total_violations} violation(s).\n" ) );
+
+	if ( array() !== $sanitizer['baselined'] ) {
+		fwrite(
+			STDOUT,
+			'context contract      : ' . count( $sanitizer['baselined'] ) . " row(s) return an encoded payload and rely on the runtime backstop.\n"
+		);
+	}
+
+	if ( 0 !== $warnings ) {
+		fwrite( STDOUT, "\nG6 encoded payload with no sanitizer (warning, does not fail the gate):\n" );
+		foreach ( $sanitizer['undeclared'] as $slug ) {
+			fwrite( STDOUT, '  - ' . $slug . "\n" );
+		}
+	}
 }
 
 if ( 0 === $total_violations || $options['report'] ) {

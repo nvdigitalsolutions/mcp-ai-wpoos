@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Central error type for the NV oOS Cognition core.
 //!
 //! Every fallible core operation returns `AppResult<T>`. IPC handlers map
@@ -99,8 +100,8 @@ impl From<keyring::Error> for AppError {
 
 #[cfg(any(
     feature = "vision",
+    feature = "gestures",
     feature = "moonshine",
-    feature = "silero-vad",
     feature = "snippet-onnx",
     feature = "memory"
 ))]

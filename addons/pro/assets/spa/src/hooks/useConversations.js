@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useConversations — Chat transport via /mcp-ai/v1/chat-client.
  *

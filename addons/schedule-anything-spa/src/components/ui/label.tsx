@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Label — Radix Label primitive with shadcn styling.
  */

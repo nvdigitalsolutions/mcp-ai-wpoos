@@ -1,0 +1,82 @@
+{
+  "slug": "regulatory-registration",
+  "name": "Regulatory Registration",
+  "version": "1.0.0",
+  "description": "Authority, alerting, document generation and validation defaults for the Regulatory Registration toolkit.",
+  "icon": "🏛️",
+  "feature": "regulatory-registration",
+  "screens": ["settings"],
+  "settings": [
+    {
+      "key": "default_regulatory_authority",
+      "label": "Default regulatory authority",
+      "type": "select",
+      "default": "nmra",
+      "options": ["nmra", "mohap", "sfda", "qatar", "kuwait", "oman", "india"],
+      "description": "Authority applied to new registrations when none is chosen."
+    },
+    {
+      "key": "enable_expiry_alerts",
+      "label": "Enable document expiry alerts",
+      "type": "boolean",
+      "default": true,
+      "description": "Notify when documents and registrations are close to expiry."
+    },
+    {
+      "key": "expiry_alert_days",
+      "label": "Expiry alert days",
+      "type": "number",
+      "default": 30,
+      "description": "How many days before expiry the alert is sent."
+    },
+    {
+      "key": "enable_pdf_generation",
+      "label": "Enable PDF generation",
+      "type": "boolean",
+      "default": true,
+      "description": "Generate dossiers, cover letters and certificates. Requires the PDFKit npm package."
+    },
+    {
+      "key": "enable_excel_export",
+      "label": "Enable Excel export",
+      "type": "boolean",
+      "default": true,
+      "description": "Export registration data and reports to Excel. Requires the ExcelJS npm package."
+    },
+    {
+      "key": "enable_inci_validation",
+      "label": "Enable INCI validation",
+      "type": "boolean",
+      "default": true,
+      "description": "Validate ingredient names against the INCI standard."
+    },
+    {
+      "key": "enable_hs_code_validation",
+      "label": "Enable HS code validation",
+      "type": "boolean",
+      "default": true,
+      "description": "Validate Harmonized System codes used for import and export classification."
+    },
+    {
+      "key": "enable_api_sync",
+      "label": "Enable API sync",
+      "type": "boolean",
+      "default": false,
+      "description": "Sync registration status directly with authority APIs. Requires API credentials."
+    },
+    {
+      "key": "auto_generate_product_code",
+      "label": "Auto-generate product code",
+      "type": "boolean",
+      "default": true,
+      "description": "Assign a unique product code to new products automatically."
+    },
+    {
+      "key": "product_code_prefix",
+      "label": "Product code prefix",
+      "type": "text",
+      "default": "REG",
+      "description": "Prefix for generated product codes, for example REG-2024-001."
+    }
+  ]
+}

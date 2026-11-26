@@ -91,7 +91,7 @@ class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 		// Should detect that gpt-4o price changed from 0.001/0.002 to current values.
 		$gpt4o_change = null;
 		foreach ( $changes as $change ) {
-			if ( $change['model'] === 'gpt-4o' ) {
+			if ( 'gpt-4o' === $change['model'] ) {
 				$gpt4o_change = $change;
 				break;
 			}
@@ -169,7 +169,7 @@ class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 		ob_start();
 		try {
 			WP_MCP_AI_Model_Pricing_Checker::update_model_costs();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$output = ob_get_clean();
@@ -193,7 +193,7 @@ class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 		ob_start();
 		try {
 			WP_MCP_AI_Model_Pricing_Checker::update_model_costs();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$output = ob_get_clean();
@@ -220,7 +220,7 @@ class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 		ob_start();
 		try {
 			WP_MCP_AI_Model_Pricing_Checker::update_model_costs();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$output = ob_get_clean();
@@ -273,7 +273,7 @@ class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 		ob_start();
 		try {
 			WP_MCP_AI_Model_Pricing_Checker::update_model_costs();
-		} catch ( WPAjaxDieContinueException $e ) {
+		} catch ( WPAjaxDieContinueException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 			// Expected.
 		}
 		$output = ob_get_clean();

@@ -19,8 +19,10 @@ namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class IncrementCacheTool extends AbstractTool
+class IncrementCacheTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(
         ErrorFactoryInterface $errors,
@@ -98,5 +100,18 @@ class IncrementCacheTool extends AbstractTool
                 'new_value' => $newValue,
             ),
         );
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Writes to a local store with state the caller can undo — derived
+     * cache entries, cancellable queue entries.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::LOCAL_WRITE_REVERSIBLE;
     }
 }

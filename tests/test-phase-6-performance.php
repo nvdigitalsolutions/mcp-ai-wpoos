@@ -143,7 +143,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		}
 
 		$end_time   = microtime( true );
-		$total_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds
+		$total_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds.
 		$avg_per_op = $total_time / 10;
 
 		// Average time per operation should be reasonable.
@@ -208,7 +208,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$processed = array_filter(
 			$dataset,
 			function ( $item ) {
-				return $item['id'] % 2 === 0; // Filter even IDs.
+				return 0 === $item['id'] % 2; // Filter even IDs.
 			}
 		);
 
@@ -394,7 +394,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 			);
 
 			// Clear some data periodically to simulate cleanup.
-			if ( $i % 1000 === 0 ) {
+			if ( 0 === $i % 1000 ) {
 				$data = array_slice( $data, -500 ); // Keep only last 500 items.
 			}
 		}

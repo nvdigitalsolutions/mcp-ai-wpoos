@@ -206,7 +206,7 @@ jobs:
             --exclude 'build-full'
             --exclude 'svn-*'
             --exclude '.eslintrc.json'
-            --exclude '.eslintignore'
+            --exclude 'eslint.config.cjs'
             --exclude '.gitignore'
             --exclude '.gitattributes'
             --exclude '.editorconfig'

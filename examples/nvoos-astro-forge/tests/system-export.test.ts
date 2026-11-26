@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // system-export.test.ts — the standalone-bundle core (Proposal 136 §4.3).
 //

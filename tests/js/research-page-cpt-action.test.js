@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Test suite for research page CPT action event handling.
  * Verifies that native CustomEvents are properly caught by the event listeners.

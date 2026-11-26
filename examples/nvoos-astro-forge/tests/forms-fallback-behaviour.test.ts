@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forms-fallback-behaviour.test.ts — the emitted fallback route, EXECUTED.
 //

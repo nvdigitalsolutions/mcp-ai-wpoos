@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Toast — sonner mount point. Mount once in the app root.
  */

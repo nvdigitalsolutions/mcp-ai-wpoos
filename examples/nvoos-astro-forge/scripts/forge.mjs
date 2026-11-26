@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forge.mjs — the Forge CLI (Proposal 096; commander + @clack/prompts since
 // Proposal 104 §4.3).
@@ -31,44 +32,59 @@
 // ---------------------------------------------------------------------------
 
 import { readFile, readdir, mkdir, stat, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
-import { join } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { confirm, isCancel, select, spinner, text } from '@clack/prompts';
+import { confirm, isCancel, password as passwordPrompt, select, spinner, text } from '@clack/prompts';
 import { Command } from 'commander';
 
-import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasuredHeader, diffDesignFacts, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
+import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasuredChromeSize, applyMeasuredHeader, applyMeasuredHeaderActions, applyMeasuredNavStyle, diffDesignFacts, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
 import { auditBands, formatBandReport } from '../lib/band-audit.ts';
 import { compareBuildIdentity, parseBuildMarker } from '../lib/build-identity.ts';
 import { countAnimations, diffAnimations, measureAnimations, planAnimationRebuild } from '../lib/animations.ts';
 import { auditClassCoverage } from '../lib/class-audit.ts';
-import { resolveContentDir, resolveMediaDir } from '../lib/content-source.ts';
+import { isMaterializedContent, resolveContentDir, resolveMediaDir } from '../lib/content-source.ts';
 import { computeLock, describeLock, isLocked, lockDrift, readLock, removeLock, writeLock } from '../lib/lock.ts';
-import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
+import { DEPLOY_RUNTIMES, emitDeployConfig, resolveRuntime, resolveSiteUrl } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
+import { openGate } from '../lib/gate.ts';
+import { offPublication, resolveLivePublication } from '../lib/gate-publish.ts';
 import { applyDesignPins, findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureChromeGeometry, measureFooterBrand, measureFooterSocials, measureGeometry, measureMobileNav, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureChromeGeometry, measureFooterBrand, measureFooterSocials, measureGeometry, measureHeaderActions, measureMobileNav, loadChromium, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
 import { measurePageBands } from '../lib/page-bands.ts';
 import { countInteractionStates, describeInteractionDeviation, diffInteractionStates, measureInteractions } from '../lib/interactions.ts';
+import { describePropertyCoverage, propertyCoverage } from '../lib/property-coverage.ts';
+import { collectAmbiguousBoxes, describeAmbiguousBoxes } from '../lib/box-ambiguity.ts';
+import { describeInertDeclarations, findInertDeclarations } from '../lib/css-lint.ts';
+import { bandCoverage, describeBandCoverage } from '../lib/band-coverage.ts';
+import { auditChromeFacts, describeChromeFacts } from '../lib/chrome-fact-audit.ts';
+import { compareFacts, describeCompare, describeCompareVerdict, measureCompareSpecs } from '../lib/compare.ts';
 import { measureBandDiff } from '../lib/band-diff.ts';
 import { gateNote, resolveGateMode, resolvePixelMasks, validateVerifyBlock } from '../lib/gate-policy.ts';
 import { measureIconFonts, usedDroppedFamilies } from '../lib/font-audit.ts';
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
-import { applyBandSurfaces, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors, measureRegionColorsDetailed, normalizeColorModes, unresolvedChromeRegions } from '../lib/region-colors.ts';
+import { ecaDataPages } from '../lib/eca-ui.ts';
+import { applyBandSurfaces, applyChromeSurfaces, bandRegionName, bandRegionSelector, builtBandSelectors, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors, measureRegionColorsDetailed, normalizeColorModes, unresolvedChromeRegions } from '../lib/region-colors.ts';
 import { compareChromeGeometry, compareFooterBrand, compareMobileNav } from '../lib/chrome-audit.ts';
 import { duplicateIds, inPageTargets } from '../lib/html-ids.ts';
+import { auditFormBands, describeFormProblems } from '../lib/forms-gate.ts';
+import { describeHealth, fetchFormsHealth, sendFormProbe } from '../lib/forms-check.ts';
 import { captureDist, capturePage } from '../lib/screenshot.ts';
+import { parseStructureCache, runStructurePass, serializeStructureCache, STRUCTURE_DEVICES } from '../lib/structure-pass.ts';
+import { analyzePageDesigns } from '../lib/page-design.ts';
+import { auditSurfaces, describeSurfaceCoverage } from '../lib/surface-coverage.ts';
+import { boxGateFailures, runBoxGate } from '../lib/box-parity.ts';
 import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
-import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy } from '../lib/presets.ts';
+import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy, suggestedVariant } from '../lib/presets.ts';
 import { collectProjectFiles, slugify } from '../lib/project-files.ts';
-import { auditTokenBlock, mergeTokens, rewriteGlobalCss, scaffold } from '../lib/scaffold.ts';
+import { accentFamilyOf, auditTokenBlock, mergeTokens, REGEN_MODULES, regenGenerated, rewriteGlobalCss, scaffold, TEMPLATE_VARIANTS } from '../lib/scaffold.ts';
 import { auditSeo, scanSeoHtml } from '../lib/seo-audit.ts';
 import { analyzeTracking, mergeTrackingDraft, renderTrackingReport, trackingFromReport } from '../lib/tracking.ts';
 import { auditTracking } from '../lib/tracking-audit.ts';
@@ -85,6 +101,48 @@ const DEPLOY_MODES = [ 'github-pages', 'cloudflare-pages', 'velocity' ];
 function fail( message ) {
 	console.error( message );
 	process.exit( 2 );
+}
+
+/**
+ * The endpoint the profile's forms should post to — the same default the
+ * scaffold bakes into `manifest.forms` (`<url>/wp-json/nvoos-forge/v1`).
+ *
+ * `undefined` when the profile declares no `forms` block: the bands then degrade
+ * to contact cards BY DESIGN, and the forms gates report that instead of failing.
+ */
+function profileFormsEndpoint( profile ) {
+	const forms = profile?.forms;
+	if ( ! forms ) {
+		return undefined;
+	}
+	const declared = typeof forms.endpoint === 'string' ? forms.endpoint.trim() : '';
+	if ( declared !== '' ) {
+		return declared;
+	}
+	const origin = String( profile.url ?? '' ).trim().replace( /\/+$/, '' );
+	return origin === '' ? undefined : `${ origin }/wp-json/nvoos-forge/v1`;
+}
+
+/** Every built `.html` file under `<target>/dist`, recursively. */
+function builtHtmlFiles( target ) {
+	const found = [];
+	const walk = ( dir ) => {
+		if ( ! existsSync( dir ) ) {
+			return;
+		}
+		for ( const entry of readdirSync( dir, { withFileTypes: true } ) ) {
+			const path = `${ dir }/${ entry.name }`;
+			if ( entry.isDirectory() ) {
+				walk( path );
+				continue;
+			}
+			if ( /\.html$/i.test( entry.name ) ) {
+				found.push( path );
+			}
+		}
+	};
+	walk( join( target, 'dist' ) );
+	return found;
 }
 
 function failDeployMode( mode ) {
@@ -196,6 +254,18 @@ function assertProfile( profile ) {
 		console.error( `site.json verify block: ${ verifyProblems.join( '; ' ) }` );
 		process.exit( 1 );
 	}
+	// The transport cap is baked into the generated content.config as a fallback,
+	// so a typo here would silently ship the 15s default to a source that needs
+	// 26s — the exact failure this field exists to prevent.
+	if ( profile.fetch !== undefined ) {
+		const timeoutMs = profile.fetch?.timeoutMs;
+		if ( timeoutMs !== undefined ) {
+			if ( ! Number.isFinite( timeoutMs ) || timeoutMs <= 0 || timeoutMs > 600000 ) {
+				console.error( 'site.json fetch.timeoutMs must be a positive number of milliseconds (max 600000)' );
+				process.exit( 1 );
+			}
+		}
+	}
 }
 
 // -- modes -------------------------------------------------------------------
@@ -260,6 +330,28 @@ async function applyWritePins( design, writePath ) {
 	}
 }
 
+/** Print the gate probe — evidence + remediation, never a secret (152). */
+function printGateProbe( gate, indent = '' ) {
+	const { probe } = gate;
+	const { mechanism } = gate.describe();
+	if ( probe.state === 'open' && mechanism.length === 0 ) {
+		return;
+	}
+	console.log(
+		`${ indent }gate: ${ probe.state }${ probe.fingerprint ? ` (${ probe.fingerprint })` : '' }` +
+			` \u2014 HTTP ${ probe.status }` +
+			`${ probe.retryAfter !== undefined ? `, Retry-After ${ probe.retryAfter }s` : '' }` +
+			`${ probe.restHealthy ? ', /wp-json/ 200' : '' }`
+	);
+	for ( const line of probe.evidence.slice( 0, 4 ) ) {
+		console.log( `${ indent }  \u00b7 ${ line }` );
+	}
+	if ( probe.remediation.length > 0 ) {
+		console.log( `${ indent }  remediation:` );
+		probe.remediation.forEach( ( line, index ) => console.log( `${ indent }    ${ index + 1 }. ${ line }` ) );
+	}
+}
+
 async function runAnalyze( url, options ) {
 	if ( ! url || ! /^https?:\/\//.test( url ) ) {
 		fail( 'analyze needs an https?:// URL.' );
@@ -280,6 +372,43 @@ async function runAnalyze( url, options ) {
 		const report = await analyzeSite( new WpClient( { baseUrl: url.replace( /\/+$/, '' ) } ) );
 		console.log( renderReport( report ) );
 		profile = profileFromDiscovery( report );
+	}
+
+	// Proposal 152 — the page gate. A pre-launch site gates its RENDERED HTML
+	// (503 + Retry-After, or a 200 holding page) while /wp-json/ stays open, so
+	// every pass below would silently measure the coming-soon page. Open ONE
+	// session here; when it cannot be opened, STOP — a warning plus a scaffold
+	// ships the holding page, the one artifact this pipeline must never produce.
+	const gate = await openGate( profile, {
+		allowLoopback: process.env.NVOOS_FORGE_ALLOW_LOOPBACK === '1',
+	} );
+	printGateProbe( gate, '  ' );
+	// Record what was ACTUALLY measured. A gated source measured without
+	// credentials yields a plausible-looking but wrong design block, and nothing
+	// downstream can tell afterwards — this is the only trace.
+	if ( profile.gateProbe === undefined || gate.probe.state !== 'open' ) {
+		profile.gateProbe = {
+			state: gate.probe.state,
+			...( gate.probe.fingerprint ? { fingerprint: gate.probe.fingerprint } : {} ),
+			...( typeof gate.probe.status === 'number' ? { status: gate.probe.status } : {} ),
+			restHealthy: gate.probe.restHealthy === true,
+			measuredAt: new Date().toISOString(),
+		};
+	}
+	if ( gate.blocked ) {
+		if ( ! options.allowBlocked ) {
+			console.error(
+				`The source is ${ gate.probe.state } and could not be opened \u2014 refusing to forge the holding page.\n` +
+					'  Re-run with --allow-blocked to continue anyway (the design block will be empty),\n' +
+					'  or follow the remediation above.'
+			);
+			// Graceful exit: process.exit() races undici's teardown on Windows
+			// (UV_HANDLE_CLOSING / 0xC0000409) after the probe's requests.
+			process.exitCode = 2;
+			gate.close();
+			return;
+		}
+		console.warn( '  \u26a0 --allow-blocked: continuing with a gated source \u2014 the design/geometry blocks may be empty.' );
 	}
 
 	// --design (114 P1): run the design-language extraction and attach the v2
@@ -544,6 +673,14 @@ async function runAnalyze( url, options ) {
 						selectors,
 					} );
 					profile.bandFacts = bandFacts.bands;
+					// FAIL LOUD: a pass that resolved nothing measured NOTHING, which is
+					// not the same as a homepage with no facts.
+					{
+						const coverage = describeBandCoverage( 'band facts (front page)', bandCoverage( ids, bandFacts.bands ) );
+						if ( coverage ) {
+							console.warn( `  ${ coverage }` );
+						}
+					}
 					if ( bandFacts.pageBackground ) {
 						profile.pageBackground = bandFacts.pageBackground;
 					}
@@ -584,7 +721,13 @@ async function runAnalyze( url, options ) {
 							profile.bandFacts[ id ] = { ...( profile.bandFacts[ id ] ?? {} ), interactions: facts };
 						}
 					}
-					const states = countInteractionStates( interactions );
+					{
+						const coverage = describeBandCoverage( 'interaction states (front page)', bandCoverage( ids, interactions ) );
+						if ( coverage ) {
+							console.warn( `  ${ coverage }` );
+						}
+					}
+				const states = countInteractionStates( interactions );
 					if ( states > 0 ) {
 						console.log(
 							`\u2713 Interaction states: ${ states } state(s) on ${ bandsWithStates } band(s) — hover, focus, focus-visible, active.`
@@ -657,6 +800,46 @@ async function runAnalyze( url, options ) {
 						profile.design = profile.design ?? {};
 						profile.design.chrome = profile.design.chrome ?? {};
 						profile.design.chrome.geometry = geometry;
+						// The nav LINK’s type, computed. The stylesheet harvest reads a
+						// relative size against the 16px root, so a menu defined in `em`
+						// shipped one step too large (monicarajiv, 2026-11-21).
+						if ( applyMeasuredNavStyle( profile.design.chrome, geometry ) ) {
+							const measured = geometry.navStyle;
+							console.log( `✓ Nav type: ${ measured.size } ${ measured.weight }${ measured.transform ? ` ${ measured.transform }` : "" }${ measured.letterSpacing ? `, ${ measured.letterSpacing } tracking` : "" }.` );
+						}
+							// The header's labelled CTA pills, computed. The harvest resolves a
+							// builder var against the first declaration it finds, so a pill's real
+							// colour can be a foreign palette entry (eca.directory's accent pill
+							// read `#d9534f`).
+							try {
+								const actions = await measureHeaderActions( { url: profile.url } );
+								if ( actions.length > 0 ) {
+									profile.chromeActions = actions;
+									if ( applyMeasuredHeaderActions( profile.design?.chrome, actions ) ) {
+										console.log( `✓ Header pills measured: ${ actions.map( ( action ) => `${ action.text } (${ action.fill ?? 'no fill' })` ).join( ', ' ) }.` );
+									}
+								}
+							} catch ( error ) {
+								console.warn( `\u26a0 Header pills skipped: ${ error instanceof Error ? error.message : error }` );
+							}
+						// The copyright bar’s computed size — the stylesheet harvest reads a
+						// DECLARATION, so `1.125rem` shipped the footer 2px large
+						// (monicarajiv, 2026-11-21).
+						if ( applyMeasuredChromeSize( profile.design.chrome, geometry ) ) {
+							console.log( `✓ Chrome type: ${ geometry.chromeSize }.` );
+						}
+						// A distinct menu face is a DESIGN ROLE: it reaches the shim through
+						// `--forge-font-ui`, and the webfont builder then loads the family.
+						const navFamily = ( geometry.navFamily ?? "" ).trim();
+						if ( navFamily ) {
+							const roles = [ profile.design.typography?.body, profile.design.typography?.display ]
+								.map( ( name ) => String( name ?? "" ).trim().toLowerCase() )
+								.filter( Boolean );
+							if ( ! roles.includes( navFamily.toLowerCase() ) ) {
+								profile.design.typography = { ...( profile.design.typography ?? {} ), ui: navFamily };
+								console.log( `✓ Menu face: ${ navFamily } (design.typography.ui).` );
+							}
+						}
 						const describe = ( box ) =>
 							`${ box.measure ? `${ box.measure }px box` : 'full-bleed' }${ box.padX !== undefined ? `, ${ box.padX }px inset` : '' }`;
 						// `wide` carries the cap when it only binds above 1440 (jayainc's 1670).
@@ -791,6 +974,24 @@ async function runAnalyze( url, options ) {
 				} );
 				profile.pageBands = measured;
 				console.log( `\u2713 Per-page bands: ${ Object.keys( measured ).length } page(s) measured.` );
+				// Every page's own per-element rules ride the same scoped sheet (see
+				// `ForgePageBands.elementCss`): a sub-page's layer classes differ from the
+				// front page's even when the layout is identical, so the homepage harvest
+				// alone leaves its copy at full width.
+				if ( profile.design ) {
+					const merged = new Map();
+					for ( const rule of profile.design.elementCss ?? [] ) {
+						merged.set( `${ rule.media ?? '' }|${ rule.selector }|${ rule.declarations }`, rule );
+					}
+					for ( const page of Object.values( measured ) ) {
+						for ( const rule of page.elementCss ?? [] ) {
+							merged.set( `${ rule.media ?? '' }|${ rule.selector }|${ rule.declarations }`, rule );
+						}
+					}
+					if ( merged.size > 0 ) {
+						profile.design.elementCss = [ ...merged.values() ];
+					}
+				}
 				// A class whose box was dropped is invisible in the rebuild — the band
 				// simply has no rule for it and the symptom (a band at twice its source
 				// height) points everywhere except the silent omission. Named here,
@@ -874,7 +1075,8 @@ async function runAnalyze( url, options ) {
 		try {
 			const modes = parseColorModes( options.colorsModes );
 			// The band surfaces matter as much as the chrome: measure one region per
-			// renderable band anchor, with the composited background.
+			// renderable band (its anchor, else its vendor id), with the composited
+			// background.
 			const regions = [ ...DEFAULT_COLOR_REGIONS, ...bandColorRegions( renderableBands( profile.design ) ) ];
 			const measured = await measureRegionColorsDetailed( { url: profile.url, modes, regions, effective: true } );
 			profile.colors = measured.modes;
@@ -895,16 +1097,45 @@ async function runAnalyze( url, options ) {
 			}
 			// Bake the measured band SURFACES into the homepage's band facts: a
 			// gradient painted on a child layer is invisible to the CSS harvest (the
-			// sanitizer drops the `<style>` that declared it), and an outline band
-			// carries no facts at all. Pinned facts win — `applyBandSurfaces` never
-			// overwrites a surface that is already set.
+			// sanitizer drops the `<style>` that declared it), and the harvest can
+			// read a rule for a layer or variant the page never renders. Measurement
+			// WINS; operator pins are re-applied after the analysis (`applyDesignPins`
+			// on merge), so a pin still beats it.
 			const light = profile.colors.light ?? {};
 			if ( profile.design ) {
+				// A pinned surface is operator-owned: `applyDesignPins` re-applies it on
+				// every merge, but this pass runs BEFORE the merge, so name the pinned
+				// bands here rather than letting the measurement win and lose the pin.
+				const pinnedBands = new Set(
+					( profile.pins ?? [] )
+						.map( ( pin ) => /^sections\.([^.]+)\.(?:bgColor|bgGradient|bgImage)$/.exec( pin.path )?.[ 1 ] )
+						.filter( Boolean )
+				);
 				applyBandSurfaces(
 					profile.design.sections ?? [],
-					( section ) => ( section.anchor ? light[ `band:${ section.anchor }` ] : undefined ),
-					light.body?.background
+					( section ) => {
+						const name = bandRegionName( section );
+						return name ? light[ name ] : undefined;
+					},
+					light.body?.background,
+					{ preserve: ( section ) => Boolean( section.id && pinnedBands.has( section.id ) ) }
 				);
+				// The same rule for CHROME: the stylesheet harvest reads declarations a
+				// layer or variant may never paint (eca.directory's `#d30c5c` header and
+				// footer bar, its accent footer ink), while the browser reads the paint.
+				// Pins survive through `preserve` and `applyDesignPins` on the merge.
+				const pinnedChrome = new Set(
+					( profile.pins ?? [] )
+						.map( ( pin ) => /^chrome\.(\w+)$/.exec( pin.path )?.[ 1 ] )
+						.filter( Boolean )
+						.map( ( field ) => `chrome.${ field }` )
+				);
+				const chromeApplied = applyChromeSurfaces( profile.design.chrome, profile.colors, {
+					preserve: ( path ) => pinnedChrome.has( path ),
+				} );
+				if ( chromeApplied.length > 0 ) {
+					console.log( `\u2713 Chrome surfaces from the browser: ${ chromeApplied.join( ', ' ) }.` );
+				}
 			}
 		} catch ( error ) {
 			console.warn( `\u26a0 Colour baseline skipped: ${ error instanceof Error ? error.message : error }` );
@@ -945,6 +1176,17 @@ async function runAnalyze( url, options ) {
 	// background that a transparent variation overrides — only the browser knows).
 	const reconcileHeader = ( target ) => {
 		applyMeasuredHeader( target?.design?.chrome, target?.stickyHeader ?? profile.stickyHeader );
+		// The measured menu type outranks the stylesheet harvest on every re-forge,
+		// not only on the analyze pass that recorded it.
+		applyMeasuredNavStyle( target?.design?.chrome, target?.design?.chrome?.geometry );
+		// The copyright bar's measured size outranks the stylesheet harvest for the
+		// same reason the menu's does.
+		applyMeasuredChromeSize( target?.design?.chrome, target?.design?.chrome?.geometry );
+		// The header pills' paint, measured. A `--design`-only re-harvest re-reads
+		// the stylesheets and re-resolves a builder var against the wrong
+		// declaration (eca.directory's accent pill → `#d9534f`), so the stored
+		// measurement must win again here.
+		applyMeasuredHeaderActions( target?.design?.chrome, target?.chromeActions ?? profile.chromeActions );
 		return target;
 	};
 	reconcileHeader( profile );
@@ -996,6 +1238,71 @@ async function runAnalyze( url, options ) {
 	}
 	// Graceful exit — process.exit() races undici's teardown on Windows and
 	// dies with the libuv UV_HANDLE_CLOSING assertion (0xC0000409).
+	gate.close();
+}
+
+/** `forge gate <profile>` — diagnose the page gate (Proposal 152). */
+async function runGate( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	const allowLoopback = process.env.NVOOS_FORGE_ALLOW_LOOPBACK === '1';
+
+	// Interactive entry: values live in THIS process's env and, with --vault,
+	// in the encrypted vault. They are never written to the profile.
+	if ( options.login ) {
+		if ( ! isInteractive() ) {
+			fail( '--login needs an interactive terminal — set WP_GATE_USERNAME/WP_GATE_PASSWORD instead.' );
+		}
+		const username = await text( { message: 'WordPress username', placeholder: 'forge-reader' } );
+		if ( isCancel( username ) ) {
+			fail( 'Cancelled.' );
+		}
+		const secret = await passwordPrompt( { message: 'WordPress password' } );
+		if ( isCancel( secret ) ) {
+			fail( 'Cancelled.' );
+		}
+		process.env.WP_GATE_USERNAME = String( username );
+		process.env.WP_GATE_PASSWORD = String( secret );
+		if ( options.vault ) {
+			const vault = new Vault();
+			const host = new URL( profile.url ).hostname.replace( /[^a-z0-9.-]/gi, '-' );
+			await vault.set( `gate.${ host }.username`, String( username ) );
+			await vault.set( `gate.${ host }.password`, String( secret ) );
+			console.log( `\u2713 Stored the gate credential in the vault (gate.${ host }.password = ${ maskSecret( String( secret ) ) }).` );
+		}
+	}
+
+	const gate = await openGate( profile, { allowLoopback } );
+	const description = gate.describe();
+	if ( options.json ) {
+		console.log( JSON.stringify( { ...gate.probe, ...description }, null, '\t' ) );
+	} else {
+		console.log( `site:      ${ profile.url }` );
+		console.log( `gate:      ${ gate.probe.state }${ gate.probe.fingerprint ? ` (${ gate.probe.fingerprint })` : '' }` );
+		console.log( `http:      ${ gate.probe.status }${ gate.probe.retryAfter !== undefined ? ` (Retry-After ${ gate.probe.retryAfter }s)` : '' }` );
+		console.log( `rest:      ${ gate.probe.restHealthy ? '200 ( /wp-json/ is open )' : 'not 200' }` );
+		console.log( `mechanism: ${ description.mechanism.join( ', ' ) }` );
+		for ( const line of gate.probe.evidence ) {
+			console.log( `  \u00b7 ${ line }` );
+		}
+		if ( gate.probe.remediation.length > 0 ) {
+			console.log( 'remediation:' );
+			gate.probe.remediation.forEach( ( line, index ) => console.log( `  ${ index + 1 }. ${ line }` ) );
+		}
+	}
+	const exitCode =
+		gate.probe.state === 'open'
+			? 0
+			: gate.probe.state === 'gated'
+			? 3
+			: gate.probe.state === 'edge-auth'
+			? 4
+			: gate.probe.state === 'rate-limited'
+			? 5
+			: 6;
+	gate.close();
+	// Set the code, do not call process.exit(): an explicit exit after the
+	// probe's requests trips the Windows libuv assertion (0xC0000409).
+	process.exitCode = exitCode;
 }
 
 async function runSiteAdd( name, profilePath, options ) {
@@ -1094,6 +1401,10 @@ async function runDeploy( profileRef, options ) {
 	const profile = await loadProfile( profileRef );
 	assertProfile( profile );
 
+	// The MEASURED chrome facts outrank the stylesheet harvest on a re-forge too —
+	// see runScaffold for why the design block alone is not enough.
+	applyMeasuredChromeSize( profile.design?.chrome, profile.design?.chrome?.geometry );
+
 	// 1. Scaffold (idempotent — an existing forge project is reused).
 	//    The preset (when passed) applies its collection profile + surfaces
 	//    inside scaffold() — no pre-application needed here.
@@ -1121,13 +1432,16 @@ async function runDeploy( profileRef, options ) {
 
 	// 2. Emit the deploy pipeline (adapter-generic — rebuild wrapper, deploy
 	//    workflow, and the fail-closed dispatch verifier).
+	//    The runtime is derived from the profile: a site that names a
+	//    managed-only feature must never be emitted as a static tree.
+	const runtime = resolveRuntime( profile, options.runtime );
 	const emitted = await emitDeployConfig( options.target, {
 		mode,
 		siteUrl: resolveSiteUrl( profile, options.siteUrl ),
 		cloudflareProject: options.cloudflareProject,
 		mirrorRepo: options.mirrorRepo,
 		siteBranch: options.siteBranch,
-		runtime: options.runtime,
+		runtime,
 	} );
 	for ( const file of emitted.files ) {
 		console.log( `  + ${ file }` );
@@ -1248,7 +1562,7 @@ async function runTokens( profileRef, options ) {
 	if ( css === null ) {
 		fail( `Cannot read ${ cssPath} — is that a forged project?` );
 	}
-	const tokens = mergeTokens( profile.design, profile.tokens, profile.colors );
+	const tokens = mergeTokens( profile.design, profile.tokens, profile.colors, accentFamilyOf( profile ) );
 	const audit = auditTokenBlock( css, tokens );
 	if ( ! audit.markers ) {
 		fail( 'global.css has no FORGE:tokens span — re-scaffold the project.' );
@@ -1284,6 +1598,13 @@ async function runScaffold( profileRef, options ) {
 	assertThemePolicy( options.themePolicy );
 	const profile = await loadProfile( profileRef );
 	assertProfile( profile );
+	// The MEASURED chrome facts outrank the stylesheet harvest on a re-scaffold
+	// too: a `--geometry` pass stores them on `chrome.geometry`, but the design
+	// block keeps the harvested guess (`chromeSizeFrom` reads `body {
+	// font-size: 1.125rem }` — a declaration, not a computed value), so a
+	// scaffold that only reads the design block shipped the wrong footer type
+	// (monicarajiv, 2026-11-21).
+	applyMeasuredChromeSize( profile.design?.chrome, profile.design?.chrome?.geometry );
 
 	if ( options.check ) {
 		const clean = await checkProfile( profile );
@@ -1321,10 +1642,16 @@ async function runScaffold( profileRef, options ) {
 			profilePath: profilePathOf( profileRef ),
 			explicit: options.mediaSnapshot,
 		} );
+	// Proposal 165 — resolve the CMS's publication state into the artifact.
+	// Offline unless the profile opted in (`gatePublish`) or `--gate` was given;
+	// a bridge failure publishes the real site rather than blocking a build.
+	const gate = await resolveGateForScaffold( profile, options.gate );
+
 	const result = await scaffold( {
 		profile,
 		targetDir: options.target,
 		template: options.template,
+		variant: options.variant,
 		overwrite: options.overwrite === true,
 		preset: options.preset,
 		render: options.render,
@@ -1337,10 +1664,18 @@ async function runScaffold( profileRef, options ) {
 		contentDir: contentDirFor(),
 		mediaDir: mediaDirFor(),
 		siteSlug,
+		gate,
 	} );
 	console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
+	const materialized = isMaterializedContent( profile );
 	for ( const collection of result.manifest.collections ) {
-		console.log( `  - ${ collection.slug } <- ${ collection.restBase }` );
+		console.log( `  - ${ collection.slug } <- ${ materialized ? 'materialized content (no CMS)' : collection.restBase}` );
+	}
+	// A variant is never guessed (the probe cannot see a `model3d` field), so
+	// surface the one this preset can carry instead of silently omitting it.
+	const variantHint = suggestedVariant( options.preset ?? 'blog' );
+	if ( variantHint && ! options.variant ) {
+		console.log( `  hint: this preset can carry --variant ${ variantHint }` );
 	}
 	for ( const warning of result.warnings ) {
 		console.warn( `\u26a0 ${ warning }` );
@@ -1348,7 +1683,37 @@ async function runScaffold( profileRef, options ) {
 	console.log( 'Next: cd into the project, `npm install`, `npm run dev` (or `npm run build`).' );
 }
 
+/**
+ * Proposal 165 — the publication verdict for a scaffold.
+ *
+ * Only a profile that opted in (`gatePublish`) or an explicit `--gate` reads
+ * the bridge. Everything else stays offline and publishes the real site, so a
+ * legacy profile costs no network call and no behaviour change.
+ */
+async function resolveGateForScaffold( profile, override ) {
+	const allowed = new Set( [ 'auto', 'off', 'maintenance', 'coming_soon' ] );
+	const explicit = typeof override === 'string' && override !== '' ? override : 'auto';
+	if ( ! allowed.has( explicit ) ) {
+		fail( `--gate must be auto | off | maintenance | coming_soon (got "${ explicit }").` );
+	}
+	if ( ! profile.gatePublish && explicit === 'auto' ) {
+		return offPublication();
+	}
+	return resolveLivePublication( {
+		profile,
+		override: explicit === 'auto' ? 'auto' : explicit,
+	} );
+}
+
 async function checkProfile( profile ) {
+	// A materialized profile declares the CMS GONE: there is no source to probe.
+	// Hitting the dead origin only produces a confusing 404 — or a 200 carrying
+	// whatever now serves the domain (run #102, 2026-11-15). The build itself
+	// never fetches, so neither does the check.
+	if ( isMaterializedContent( profile ) ) {
+		console.log( `\u2713 ${ profile.url} — content is materialized (no CMS to check; ${ profile.collections.length } collection(s) read the committed snapshot).` );
+		return true;
+	}
 	const client = WpClient.fromProfile( profile );
 	let clean = true;
 	try {
@@ -1385,9 +1750,12 @@ async function runDeployConfig( profileRef, options ) {
 	assertMirrorOptions( options );
 	assertRuntime( options );
 	let siteUrl = options.siteUrl;
+	let runtime = options.runtime;
 	if ( profileRef ) {
 		const profile = await loadProfile( profileRef );
 		siteUrl = resolveSiteUrl( profile, options.siteUrl );
+		// Refuse a static tree for a profile that needs the managed runtime.
+		runtime = resolveRuntime( profile, options.runtime );
 	}
 	try {
 		const emitted = await emitDeployConfig( options.target, {
@@ -1396,7 +1764,7 @@ async function runDeployConfig( profileRef, options ) {
 			cloudflareProject: options.cloudflareProject,
 			mirrorRepo: options.mirrorRepo,
 			siteBranch: options.siteBranch,
-			runtime: options.runtime,
+			runtime,
 		} );
 		console.log( `\u2713 Emitted the deploy pipeline into ${ options.target }:` );
 		for ( const file of emitted.files ) {
@@ -1569,16 +1937,21 @@ async function runWizard( url, options ) {
  * a transparent header and skipped the very surface that was wrong.
  */
 function bandColorRegions( bands ) {
-	const anchors = bands
-		.map( ( band ) => band.anchor )
-		.filter( ( anchor, index, list ) => Boolean( anchor ) && list.indexOf( anchor ) === index );
-	// `descendantFill`: a builder paints a band's surface on a child layer, so the
-	// ancestor walk alone reads the page body for every band.
-	return anchors.map( ( anchor ) => ( {
-		name: `band:${ anchor }`,
-		selectors: [ `#${ anchor }` ],
-		descendantFill: true,
-	} ) );
+	const regions = [];
+	const named = new Set();
+	for ( const band of bands ) {
+		// An anchor when the source exposes one, else the vendor's element class:
+		// a builder band with no anchor was previously unmeasurable, so its
+		// harvested surface shipped unopposed.
+		const selector = bandRegionSelector( band );
+		const name = bandRegionName( band );
+		if ( ! selector || ! name || named.has( name ) ) {
+			continue;
+		}
+		named.add( name );
+		regions.push( { name, selectors: [ selector ], descendantFill: true } );
+	}
+	return regions;
 }
 
 /**
@@ -1632,6 +2005,99 @@ async function runColors( profileRef, options ) {
 	} else {
 		console.log( '\n(dry run \u2014 pass --write to save the baseline)' );
 	}
+}
+
+/**
+ * `forge structure` — the opt-in vision structure pass (Proposal 163 §P6).
+ *
+ * Labels the bands a deterministic detector could not measure, using a
+ * screenshot per band at the two ends the template renders. Never a build step:
+ * it runs after `build`, it is advisory, and it stores nothing without
+ * `--write`. A missing vision endpoint or browser degrades to a printed skip.
+ */
+async function runStructure( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	if ( ! profile.design ) {
+		console.error( 'This profile has no design block \u2014 run `analyze <url> --write <profile>` first.' );
+		process.exitCode = 1;
+		return;
+	}
+	const target = resolve( options.target );
+	if ( ! existsSync( join( target, 'dist' ) ) ) {
+		console.error( `No dist/ in ${ target } \u2014 run \`npm run build\` in the project first.` );
+		process.exitCode = 1;
+		return;
+	}
+	const wanted = String( options.devices ?? 'desktop,mobile' )
+		.split( ',' )
+		.map( ( name ) => name.trim() )
+		.filter( Boolean );
+	const viewports = STRUCTURE_DEVICES.filter( ( device ) => wanted.includes( device.name ) );
+	if ( viewports.length === 0 ) {
+		console.error( `Unknown --devices: ${ wanted.join( ', ' ) } (known: ${ STRUCTURE_DEVICES.map( ( d ) => d.name ).join( ', ' ) }).` );
+		process.exitCode = 1;
+		return;
+	}
+	const cachePath = options.cache
+		? resolve( options.cache )
+		: join( target, '.forge', 'structure-cache.json' );
+	let cache = new Map();
+	if ( existsSync( cachePath ) ) {
+		cache = parseStructureCache( await readFile( cachePath, 'utf8' ) );
+	}
+	console.log( `\u2713 Structure pass \u2014 ${ profile.url } (${ viewports.map( ( d ) => d.name ).join( ', ' ) })` );
+	const outcome = await runStructurePass( profile, {
+		target,
+		path: options.path ?? '/',
+		viewports,
+		minConfidence:
+			options.minConfidence !== undefined && Number.isFinite( Number( options.minConfidence ) )
+				? Number( options.minConfidence )
+				: undefined,
+		cache,
+		onProgress: ( message ) => console.log( message ),
+	} );
+	if ( outcome.skipped ) {
+		// Opt-in by contract: an unconfigured pass is not a failure.
+		console.log( `\u2013 structure pass skipped (${ outcome.skipped })` );
+		console.log( '  Set NVOOS_FORGE_VISION_KEY/BASE_URL/MODEL, or run a local Ollama model.' );
+		return;
+	}
+	if ( options.json ) {
+		console.log( JSON.stringify( { ...outcome, profile: undefined, cache: undefined }, null, 2 ) );
+	} else {
+		console.log( `  model ${ outcome.model } \u00b7 ${ outcome.shots } screenshot(s)` );
+		for ( const band of outcome.bands ) {
+			if ( band.skipped ) {
+				console.log( `  = ${ band.id.padEnd( 10 ) } already measured${ band.type ? ` (${ band.type })` : '' } \u2014 detector wins` );
+				continue;
+			}
+			const label = band.type === 'unknown' ? 'unknown' : `${ band.type } ${ Math.round( band.confidence * 100 ) }%`;
+			// The model's own evidence, so a human can judge a label without
+			// re-running the pass — the dry run is the product here.
+			const note = band.note ? ` — ${ band.note.slice( 0, 90 ) }` : '';
+			console.log( `  ${ band.type === 'unknown' ? '?' : '\u2022' } ${ band.id.padEnd( 10 ) } ${ band.device.padEnd( 8 ) } ${ label }${ band.cached ? ' (cached)' : '' }${ note }` );
+		}
+		console.log(
+			`  ${ outcome.labelled } labelled \u00b7 ${ outcome.unknown } unnamed \u00b7 ${ outcome.asked } asked \u00b7 ${ outcome.cached } cached \u00b7 ${ outcome.failed } failed${ outcome.conflicts > 0 ? ` \u00b7 ${ outcome.conflicts } conflicted` : '' }`
+		);
+	}
+	if ( ! options.write ) {
+		console.log( '\n(dry run \u2014 pass --write to store the labels in the profile)' );
+		return;
+	}
+	const profilePath = profilePathOf( profileRef );
+	if ( ! profilePath ) {
+		console.error( 'Cannot write: pass a site.json path (not a registered name) or run from the forge root.' );
+		process.exitCode = 1;
+		return;
+	}
+	await writeFile( profilePath, `${ JSON.stringify( outcome.profile, null, '\t' ) }\n`, 'utf8' );
+	await mkdir( dirname( cachePath ), { recursive: true } );
+	await writeFile( cachePath, `${ JSON.stringify( serializeStructureCache( outcome.cache ), null, '\t' ) }\n`, 'utf8' );
+	console.log( `\n\u2713 ${ outcome.labelled } label(s) written to ${ profilePath }` );
+	console.log( `  cache: ${ cachePath }` );
+	console.log( '  Next: `forge regen <profile> --target <dir> --only sections` to emit them.' );
 }
 
 /** Every built HTML page (homepage first), bounded — the SEO gate walks them. */
@@ -1861,6 +2327,11 @@ async function runMediaBudgetVerify( target ) {
 	const isLegacy = /\.(?:jpe?g|png)$/i;
 	const images = entries.filter( ( entry ) => isImage.test( String( entry.file ?? '' ) ) );
 	const legacy = images.filter( ( entry ) => isLegacy.test( String( entry.file ?? '' ) ) );
+	// A SOCIAL image (og:image / twitter:image) keeps its original format by
+	// design — some card scrapers do not read WebP — so it is not an
+	// un-optimized leftover. The localizer marks those entries.
+	const social = legacy.filter( ( entry ) => entry.social === true );
+	const leftover = legacy.filter( ( entry ) => entry.social !== true );
 	// Documents (Proposal 139 §documents) land in the same list; they are never
 	// re-encoded, so they are reported by weight only — a 50 MB catalogue is a
 	// deploy-size fact, not a failure.
@@ -1875,10 +2346,15 @@ async function runMediaBudgetVerify( target ) {
 		`${ images.length } image(s), ${ Math.round( bytes / 1024 ) } KB shipped` +
 		( documents.length > 0 ? ` + ${ documents.length } document(s), ${ Math.round( documentBytes / 1024 ) } KB` : '' ) +
 		( saved > 0 ? `, ${ Math.round( saved / 1024 ) } KB saved by re-encoding` : '' );
-	if ( legacy.length === 0 ) {
-		return { status: 'pass', note };
+	if ( leftover.length === 0 ) {
+		return {
+			status: 'pass',
+			note:
+				note +
+				( social.length > 0 ? `; ${ social.length } social image(s) kept in their original format` : '' ),
+		};
 	}
-	return { status: 'warn', note: `${ note }; ${ legacy.length } JPEG/PNG still shipped`, legacy };
+	return { status: 'warn', note: `${ note }; ${ leftover.length } JPEG/PNG still shipped`, legacy: leftover };
 }
 
 /**
@@ -1924,9 +2400,15 @@ const GATE_ORDER = [
 	'band flow',
 	'nav anchors',
 	'built ids',
+	'route keys',
+	'forms',
 	'fact consumption',
+	'chrome facts',
 	'font coverage',
 	'media budget',
+	'retired cms',
+	'property coverage',
+	'inert declarations',
 	'font render',
 	'deployed build',
 	'text parity',
@@ -1934,6 +2416,7 @@ const GATE_ORDER = [
 	'mobile menu',
 	'tracking',
 	'SEO head',
+	'box ambiguity',
 	'box geometry',
 	'interaction states',
 	'pixel parity',
@@ -2101,9 +2584,148 @@ async function hasSourceSeam( dir ) {
 	return files.some( ( file ) => /^source-.+\.png$/.test( file ) );
 }
 
+/**
+ * `forge forms check` — the LIVE half of the enquiry contract.
+ *
+ * `verify --forms` can prove the build renders a form with a field, at the right
+ * endpoint, with a carrier that can resolve. It cannot prove the endpoint ACCEPTS
+ * it. On 2026-11-24 every forged Elementor form answered HTTP 200 with
+ * `{"ok":false}` and recorded nothing, and every unit test missed it because they
+ * all drive the dispatch-seam filters. This is the check that closes that gap.
+ *
+ * Read-only by default. `--send` posts one clearly-labelled probe, because the
+ * dispatch question only has a live answer — and a real submission with real mail
+ * is a decision, never a default.
+ */
+async function runFormsCheck( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	const endpoint = profileFormsEndpoint( profile );
+	if ( ! endpoint ) {
+		fail(
+			`The profile declares no \`forms\` block, so there is nothing to check. Add \`"forms": { "delivery": "bridge" }\` and re-scaffold (Proposal 163 ��6).`
+		);
+	}
+	if ( ! existsSync( options.target ) ) {
+		fail( `No build at ${ options.target } — run \`npm run build\` in the project first (or pass --target).` );
+	}
+
+	const origin = String( options.origin ?? profile?.deploy?.publicOrigin ?? profile.url ?? '' )
+		.trim()
+		.replace( /\/+$/, '' );
+	if ( ! /^https?:\/\//i.test( origin ) ) {
+		fail( `Cannot resolve the submitting origin (got "${ origin }") — pass --origin https://your.static.host` );
+	}
+
+	// `builtHtmlFiles` returns paths under `<target>/dist`; resolve the target so
+	// a relative `--target .` still produces a matching prefix. Labels are then
+	// build-root relative (`index.html` = the front page), which is also what the
+	// probe records as its page.
+	const buildRoot = `${ resolve( options.target ).replace( /\\/g, '/' ) }/dist/`;
+	const built = builtHtmlFiles( options.target ).map( ( file ) => ( {
+		file: resolve( file ).replace( /\\/g, '/' ).replace( buildRoot, '' ),
+		html: readFileSync( file, 'utf8' ),
+	} ) );
+	const report = auditFormBands( built, { endpoint } );
+	// Probe the FRONT PAGE's form first: it is the site's main enquiry path, and
+	// `builtHtmlFiles` walks directories alphabetically (so `contact-us/` would
+	// otherwise win). Everything else follows in document order.
+	const surfaceRank = ( file ) => ( file === 'index.html' ? 0 : 1 );
+	const submits = report.bands
+		.flatMap( ( band ) =>
+			band.forms.filter( ( form ) => form.method !== 'get' && form.fields.length > 0 ).map( ( form ) => ( { band, form } ) )
+		)
+		.sort( ( a, b ) => surfaceRank( a.band.file ) - surfaceRank( b.band.file ) );
+
+	const health = await fetchFormsHealth( endpoint );
+	const result = {
+		endpoint,
+		origin,
+		surfaces: report.bands.length,
+		submitForms: submits.length,
+		contract: { status: report.status, note: report.note, problems: describeFormProblems( report ) },
+		health,
+		probe: null,
+	};
+	let blocking = report.status === 'fail' || health.formsEnabled === false || ! health.formsConfigured;
+
+	if ( options.send ) {
+		const first = submits[ 0 ];
+		if ( ! first ) {
+			result.probe = { status: 0, ok: false, message: 'no submit form in the build to probe' };
+			blocking = true;
+		} else {
+			const carriers = first.form.carriers;
+			const page = `${ origin }/${ first.band.file.replace( /index\.html$/i, '' ) }`;
+			result.probe = await sendFormProbe( {
+				endpoint,
+				origin,
+				form: carriers.form ?? '',
+				postId: carriers.post_id ? Number( carriers.post_id ) : undefined,
+				fields: first.form.fields,
+				page,
+			} );
+			result.probe.surface = `${ first.band.file } ${ first.band.sectionId || '(no id)' }`;
+			blocking = blocking || ! result.probe.ok;
+		}
+	}
+
+	if ( options.json ) {
+		console.log( JSON.stringify( result, null, 2 ) );
+	} else {
+		console.log( `Forms endpoint: ${ endpoint }` );
+		console.log( `  origin  : ${ origin }` );
+		console.log( `  surfaces: ${ result.surfaces } (${ result.submitForms } submit form(s))` );
+
+		if ( report.problems.length > 0 ) {
+			for ( const line of result.contract.problems ) {
+				console.warn( `  \u2717 ${ line }` );
+			}
+		} else {
+			console.log( `  \u2713 ${ report.note || 'contract intact' }` );
+		}
+
+		for ( const line of describeHealth( health ) ) {
+			const bad = /DISABLED|no static origin|empty|unreachable/.test( line );
+			console.log( `  ${ bad ? '\u2717' : '\u2713' } health: ${ line }` );
+		}
+
+		if ( options.send ) {
+			const probe = result.probe;
+			if ( probe?.ok ) {
+				console.log( `  \u2713 probe: ${ probe.message || 'accepted' } (${ probe.surface })` );
+			} else {
+				const detail = probe?.code ? `${ probe.code }: ${ probe.message }` : probe?.message ?? 'no reply';
+				console.warn( `  \u2717 probe: ${ detail }${ probe?.transportError ? ` (${ probe.transportError })` : '' }` );
+			}
+		} else {
+			console.log( '  \u00b7 probe: skipped (pass --send to submit one labelled probe)' );
+		}
+	}
+
+	if ( blocking ) {
+		process.exitCode = 1;
+	}
+}
+
 async function runVerify( profileRef, options ) {
 	const profile = await loadProfile( profileRef );
 	assertProfile( profile );
+	// A gated source measured WITHOUT credentials yields the holding page, and
+	// the mismatch is invisible: the build is compared against a coming-soon
+	// screen and every gate reports drift that is not drift. The analyze run
+	// records what it measured (`gateProbe`); when this run has no credentials
+	// for the same gate, say so before the scorecard rather than after it.
+	if (
+		profile.gateProbe &&
+		profile.gateProbe.state !== 'open' &&
+		! process.env.WP_GATE_USERNAME &&
+		profile.gate?.mode !== 'off'
+	) {
+		console.warn(
+			`⚠ The profile records this source as ${ profile.gateProbe.state }${ profile.gateProbe.fingerprint ? ` (${ profile.gateProbe.fingerprint })` : '' } and no gate credential is set.\n` +
+				'  Any measurement below may be reading the holding page, not the site. Set WP_GATE_USERNAME/WP_GATE_PASSWORD.'
+		);
+	}
 	// Every applicable gate runs by default: putting a site through the forge
 	// should produce the complete scorecard without a human remembering six
 	// flags. `--minimal` keeps only the deterministic, browser-free gates (the
@@ -2197,7 +2819,7 @@ async function runVerify( profileRef, options ) {
 		process.exitCode = 1;
 		record( 'token block', 'fail', 'global.css unreadable' );
 	} else {
-		const audit = auditTokenBlock( tokenSource, mergeTokens( profile.design, profile.tokens, profile.colors ) );
+		const audit = auditTokenBlock( tokenSource, mergeTokens( profile.design, profile.tokens, profile.colors, accentFamilyOf( profile ) ) );
 		if ( ! audit.markers ) {
 			console.warn(
 				'\u2717 Token block: global.css has no FORGE:tokens span — the tokens were never applied (re-scaffold, or run tokens_apply).'
@@ -2411,6 +3033,48 @@ async function runVerify( profileRef, options ) {
 			);
 		}
 	}
+	// Route keys (2026-11-22): a duplicate URL is INVISIBLE after a build — the
+	// loser was overwritten. Astro's glob loader already warns and drops an
+	// EXACT duplicate slug in one collection (a build failure under
+	// `build.strictRoutes`); this gate reads the post-sync store, which still
+	// holds what that check does not compare — case variants, WordPress-side
+	// duplicates and two collections mapping one path. Skipped, never passed,
+	// when the store is absent.
+	try {
+		const { findRouteKeyConflicts, readContentStore } = await import( '../lib/route-keys.ts' );
+		const store = readContentStore( options.target );
+		if ( 'error' in store ) {
+			record( 'route keys', 'skip', store.error );
+		} else {
+			const report = findRouteKeyConflicts( store.root, profile.collections ?? [] );
+			if ( report.conflicts.length === 0 ) {
+				console.log(
+					`\u2713 Route keys: ${ report.entries } entr(ies) across ${ report.collections.length } collection(s) \u2014 every URL is claimed once.`
+				);
+				record( 'route keys', 'pass', `${ report.entries } entr(ies), no duplicate URL` );
+			} else {
+				for ( const conflict of report.conflicts.slice( 0, 8 ) ) {
+					console.warn(
+						`\u2717 Route keys: ${ conflict.collection } \u2014 ${ conflict.route } is claimed by ids ${ conflict.ids.join(
+							', '
+						) } (${ conflict.kind })`
+					);
+				}
+				if ( report.conflicts.length > 8 ) {
+					console.warn( `  \u2026 ${ report.conflicts.length - 8 } more.` );
+				}
+				process.exitCode = 1;
+				record(
+					'route keys',
+					'fail',
+					`${ report.conflicts.length } duplicate URL/document claim(s)`
+				);
+			}
+		}
+	} catch ( error ) {
+		// A gate that cannot be evaluated is SKIPPED, never passed.
+		record( 'route keys', 'skip', error instanceof Error ? error.message : String( error ) );
+	}
 	// Fact consumption (the "a component ignored the fact" class): every fact a
 	// band declares must leave its marker in that band's built HTML — jayainc's
 	// titleStyle/titleDivider/titleAlign were baked in and never rendered.
@@ -2433,6 +3097,25 @@ async function runVerify( profileRef, options ) {
 			);
 		}
 	}
+	// The CHROME half of fact consumption. A chrome fact that reaches the profile
+	// and stops is indistinguishable, to every other gate, from a fact the source
+	// never had — which is how the header mark and then the header icons shipped
+	// unrendered (2026-11-20).
+	if ( indexHtml ) {
+		const missingChrome = auditChromeFacts( profile.design?.chrome, indexHtml );
+		const chromeNote = describeChromeFacts( missingChrome );
+		if ( ! chromeNote ) {
+			console.log( '\u2713 Chrome facts: every declared chrome fact renders.' );
+			record( 'chrome facts', 'pass', 'all declared chrome facts rendered' );
+		} else {
+			console.warn( `\u2717 Chrome facts: ${ chromeNote }` );
+			if ( options.strictFacts ) {
+				process.exitCode = 1;
+			}
+			record( 'chrome facts', options.strictFacts ? 'fail' : 'warn', `${ missingChrome.length } unrendered chrome fact(s)` );
+		}
+	}
+
 	// Proposal 140 — what the artifact actually ships. The design gates prove
 	// the site LOOKS like the source; this one proves the bytes are local and
 	// modern, which is what the CMS-independence promise depends on.
@@ -2457,6 +3140,86 @@ async function runVerify( profileRef, options ) {
 			fontCoverage.note
 		);
 	}
+/**
+ * Every CSS declaration string the profile carries.
+ *
+ * A fact that reaches the profile but not the stylesheet is invisible to the
+ * band audit, which only knows what was DECLARED: `line-height` was measured at
+ * rest and dropped by the paint allowlist, so an outline button shipped 41px
+ * where the source is 43px and every gate stayed green (2026-11-20).
+ */
+function collectFactDeclarations( profile ) {
+	const out = [];
+	const push = ( value ) => {
+		if ( typeof value === 'string' && value.length > 0 ) {
+			out.push( value );
+		}
+	};
+	const addBox = ( box ) => {
+		if ( ! box ) {
+			return;
+		}
+		for ( const device of [ 'base', 'tablet', 'mobile' ] ) {
+			push( box[ device ] );
+		}
+	};
+	const addBand = ( band ) => {
+		if ( ! band ) {
+			return;
+		}
+		for ( const value of Object.values( band.box ?? {} ) ) {
+			addBox( value );
+		}
+		for ( const value of Object.values( band.media ?? {} ) ) {
+			addBox( value );
+		}
+		for ( const element of band.elements ?? [] ) {
+			push( element.bg );
+			push( element.veil );
+		}
+		for ( const fact of band.interactions ?? [] ) {
+			for ( const key of [ 'base', 'transition', 'hover', 'focus', 'focusVisible', 'active' ] ) {
+				push( fact[ key ] );
+			}
+			for ( const child of fact.children ?? [] ) {
+				for ( const key of [ 'base', 'pseudo', 'transition', 'hover', 'focus', 'focusVisible', 'active' ] ) {
+					push( child[ key ] );
+				}
+			}
+		}
+	};
+	for ( const band of Object.values( profile.bandFacts ?? {} ) ) {
+		addBand( band );
+	}
+	for ( const page of Object.values( profile.pageBands ?? {} ) ) {
+		for ( const band of Object.values( page.bandFacts ?? {} ) ) {
+			addBand( band );
+		}
+	}
+	return out;
+}
+
+/** Every built HTML file under `<target>/dist`, recursively (absolute paths). */
+function readBuiltStyles( target ) {
+	const parts = [];
+	const walk = ( dir ) => {
+		if ( ! existsSync( dir ) ) {
+			return;
+		}
+		for ( const entry of readdirSync( dir, { withFileTypes: true } ) ) {
+			const path = `${ dir }/${ entry.name }`;
+			if ( entry.isDirectory() ) {
+				walk( path );
+				continue;
+			}
+			if ( /\.(?:css|html)$/i.test( entry.name ) ) {
+				parts.push( readFileSync( path, 'utf8' ) );
+			}
+		}
+	};
+	walk( target );
+	return parts.join( '\n' );
+}
 	const media = await runMediaBudgetVerify( options.target );
 	if ( media.status === 'skip' ) {
 		record( 'media budget', 'skip', media.note );
@@ -2474,8 +3237,147 @@ async function runVerify( profileRef, options ) {
 			}
 		}
 		record( 'media budget', options.strictMedia && media.status !== 'pass' ? 'fail' : media.status, media.note );
+
+		// A property the profile measured but the stylesheet never declares. Report
+		// only: the emitter can legitimately drop a no-op (`line-height:normal`).
+		try {
+			const coverage = propertyCoverage( collectFactDeclarations( profile ), readBuiltStyles( options.target ) );
+			const note = describePropertyCoverage( coverage );
+			if ( note ) {
+				console.warn( `\u26a0 Property coverage: ${ note }` );
+				record( 'property coverage', 'warn', `${ coverage.unrendered.length } measured property(ies) unrendered` );
+			} else if ( coverage.measured.length === 0 ) {
+				record( 'property coverage', 'skip', 'the profile carries no declarations to check' );
+			} else {
+				console.log( `\u2713 Property coverage: all ${ coverage.measured.length } measured properties are declared.` );
+				record( 'property coverage', 'pass', `${ coverage.measured.length } property(ies) covered` );
+			}
+		} catch {
+			// A missing build directory is already reported by the gates above.
+		}
 	}
 
+	// A box property on a `display: contents` element is INERT: the element has no
+	// box to place, pad or paint, so the rule reads correctly and does nothing.
+	// `.site-header--brand-center .site-nav-shell { grid-column: 1 }` was written to
+	// put the header disclosure on the left and moved nothing (monicarajiv,
+	// 2026-11-20). The stylesheet gets linted, not read.
+	if ( typeof css === 'string' && css.length > 0 ) {
+		const inert = findInertDeclarations( css );
+		const note = describeInertDeclarations( inert );
+		if ( ! note ) {
+			console.log( '\u2713 Inert declarations: no box property sits on a box-less element.' );
+			record( 'inert declarations', 'pass', 'no box property on a display:contents element' );
+		} else {
+			console.warn( `\u2717 Inert declarations: ${ note }` );
+			if ( options.strictFacts ) {
+				process.exitCode = 1;
+			}
+			record(
+				'inert declarations',
+				options.strictFacts ? 'fail' : 'warn',
+				`${ inert.length } inert rule(s)`
+			);
+		}
+	}
+
+	// A measured box the profile could NOT record. `collectBandBoxFacts` drops a
+	// class that measures differently on two instances of a band — one rule cannot
+	// express both. The drop is right, but the value then vanishes: the rebuild
+	// renders the template default, which no other gate can tell from a source that
+	// never declared a box. `.col-inner` went this way and every column in the
+	// Rajiv band rendered flush (monicarajiv, 2026-11-20).
+	const hasBoxFacts =
+		Object.keys( profile.bandFacts ?? {} ).length > 0 ||
+		Object.values( profile.pageBands ?? {} ).some(
+			( page ) => Object.keys( page?.bandFacts ?? {} ).length > 0
+		);
+	if ( hasBoxFacts ) {
+		const ambiguous = collectAmbiguousBoxes( profile );
+		const note = describeAmbiguousBoxes( ambiguous );
+		if ( ! note ) {
+			console.log( '\u2713 Box ambiguity: every measured box was recorded.' );
+			record( 'box ambiguity', 'pass', 'no dropped box' );
+		} else {
+			// Reported, never silently absorbed. A utility that matches elements of
+			// different shapes (Flatsome's `.hide-for-small` over a banner) is a
+			// legitimate hit: the box belonged to the element, not the token.
+			console.warn( `\u26a0 Box ambiguity: ${ note }` );
+			if ( options.strictFacts ) {
+				process.exitCode = 1;
+			}
+			record( 'box ambiguity', options.strictFacts ? 'fail' : 'warn', `${ ambiguous.length } band(s) with a dropped box` );
+		}
+	}
+
+
+	// The enquiry contract — an OUTPUT gate, like the retired-CMS one below.
+	// A `form` band can render a heading and no form, a form with nothing to
+	// fill in, or a form posting nowhere, and the band/fact/text gates are all
+	// blind to it: the ECA front end scored 13/14 gates with no enquiry form
+	// anywhere on the site (2026-11-24). This judges the contract a browser or
+	// a no-JS visitor would use. Whether the endpoint actually DISPATCHES is a
+	// different question — `forge forms check --send`.
+	if ( options.forms !== false ) {
+		const declaredForms = profileFormsEndpoint( profile );
+		const rootPrefix = `${ String( options.target ).replace( /\\/g, '/' ).replace( /\/+$/, '' ) }/`;
+		const builtForms = builtHtmlFiles( options.target ).map( ( file ) => ( {
+			file: String( file ).replace( /\\/g, '/' ).replace( rootPrefix, '' ),
+			html: readFileSync( file, 'utf8' ),
+		} ) );
+		const formsReport = auditFormBands( builtForms, { endpoint: declaredForms } );
+		if ( formsReport.status === 'fail' ) {
+			for ( const line of describeFormProblems( formsReport ).slice( 0, 8 ) ) {
+				console.warn( `\u2717 Forms: ${ line }` );
+			}
+			const hidden = describeFormProblems( formsReport ).length - 8;
+			if ( hidden > 0 ) {
+				console.warn( `  \u2026 ${ hidden } more.` );
+			}
+			process.exitCode = 1;
+			record( 'forms', 'fail', formsReport.note );
+		} else if ( formsReport.status === 'na' ) {
+			record( 'forms', 'na', formsReport.note );
+		} else {
+			console.log( `\u2713 Forms: ${ formsReport.note }.` );
+			record( 'forms', 'pass', formsReport.note );
+		}
+	}
+
+	// A materialized profile is a PROMISE that the CMS is gone, so nothing the
+	// build ships may still address it. The search is for ASSET paths, not the
+	// host: every page legitimately points its canonical/og:url at the public
+	// origin, which is usually the same hostname the CMS answered on. JSON-LD
+	// `Organization.logo` went out pointing at the retired `wp-content` URL on
+	// every page, and no gate looked (monicarajiv, 2026-11-21).
+	if ( isMaterializedContent( profile ) ) {
+		const RETIRED = /(?:https?:)?\/\/[^"'\s)]+\/wp-(?:content|includes)\//gi;
+		const hits = [];
+		const collectFrom = ( name, text ) => {
+			for ( const match of String( text ?? "" ).matchAll( RETIRED ) ) {
+				hits.push( `${ name }: ${ match[ 0 ] }` );
+			}
+		};
+		if ( typeof css === "string" ) {
+			collectFrom( "css", css );
+		}
+		for ( const file of builtHtmlFiles( options.target ) ) {
+			collectFrom( file, readFileSync( file, "utf8" ) );
+		}
+		if ( hits.length === 0 ) {
+			console.log( "\u2713 Retired cms: no asset path addresses the CMS this profile declared gone." );
+			record( "retired cms", "pass", "no wp-content/wp-includes reference" );
+		} else {
+			for ( const hit of hits.slice( 0, 8 ) ) {
+				console.warn( `\u2717 Retired cms: ${ hit }` );
+			}
+			if ( hits.length > 8 ) {
+				console.warn( `  \u2026 ${ hits.length - 8 } more.` );
+			}
+			process.exitCode = 1;
+			record( "retired cms", "fail", `${ hits.length } reference(s) to a retired CMS` );
+		}
+	}
 	// Content parity (the words gate): the design-language score and the fact
 	// audit both pass while copy goes missing. Coverage of the SOURCE is the
 	// gate (w-shingles, Manning/Schütze §19.6); added copy only informs.
@@ -2660,11 +3562,23 @@ async function runVerify( profileRef, options ) {
 				profile.pageBands && options.pages !== false && options.bands !== false;
 			if ( runsPageBands ) {
 				const pageBandsPolicy = resolveGateMode( 'page bands', profile.verify );
+				// Pages the ECA preset REBUILDS as data views (a day timetable, a stage
+				// list). The source's band ids do not exist in the build because the
+				// route renders the catalogue, not the builder page — so this gate has
+				// no opinion on them, and says so instead of reporting 3 "missing"
+				// bands per page (eca.directory, 2026-11-24).
+				const claimedPages = new Set( ecaDataPages( profile ).map( ( page ) => page.slug ) );
+				let claimed = 0;
 				let compared = 0;
 				let pageFailures = 0;
 				let pageWarnings = 0;
 				let columnAdvisories = 0;
 				for ( const [ slug, page ] of Object.entries( profile.pageBands ) ) {
+					if ( claimedPages.has( slug ) ) {
+						claimed += 1;
+						console.log( `  \u2013 page bands /${ slug }/: data view (claimed by the eca preset \u2014 compared against the record set, not the builder's bands)` );
+						continue;
+					}
 					const pageIds = Object.keys( page.geometry ?? {} );
 					if ( pageIds.length === 0 ) {
 						continue;
@@ -2711,6 +3625,11 @@ async function runVerify( profileRef, options ) {
 					const detail = `${ pageFailures } fail, ${ pageWarnings } warn across ${ compared } band(s)${
 						columnAdvisories > 0 ? `, ${ columnAdvisories } lane advisory(ies)` : ''
 					}`;
+					if ( claimed > 0 ) {
+						console.log(
+							`  page bands: ${ claimed } page(s) rebuilt as data views (eca preset) — not band-compared`
+						);
+					}
 					console.log( `  page bands: ${ detail }` );
 					if ( columnAdvisories > 0 && ! options.strictPages ) {
 						console.warn(
@@ -3303,7 +4222,14 @@ async function runVerify( profileRef, options ) {
 			// `descendantFill`: the source baseline was measured that way, so the
 			// build must be too — a rebuilt band's surface can sit on the wrap or on
 			// a child layer, and a gradient has no `background-color` at all.
-			...bandNames.map( ( name ) => ( { name, selectors: [ `#${ name.slice( 5 ) }` ], descendantFill: true } ) ),
+			...bandNames.map( ( name ) => ( {
+				name,
+				// Built bands carry `data-section-id`, not `id`, and a builder hash
+				// cannot be a CSS identifier anyway — `builtBandSelectors` is the one
+				// place that decides how a rebuilt band is addressed.
+				selectors: builtBandSelectors( name.slice( 5 ) ),
+				descendantFill: true,
+			} ) ),
 		];
 		let builtColors;
 		let builtResolutions = {};
@@ -3696,6 +4622,83 @@ async function runVisualVerify( profile, options ) {
 	}
 }
 
+/**
+ * `forge compare <profile> --target <dir> --elements <spec.json>`
+ *
+ * Measures the SAME selector list on the live source and on the built target,
+ * then prints a property-by-property table. It reads computed styles and
+ * bounding boxes, so it catches the three things a fact audit cannot:
+ *
+ *   - a rule that is declared but OUTRANKED (a measured `img.bg{height}` that
+ *     ties the shim on specificity and wins on order);
+ *   - a value dropped as ambiguous and silently rendered as 0;
+ *   - a layout slot that never engages (`grid-column` on a `display:contents`
+ *     wrapper).
+ *
+ * The spec is `{ "elements": [ { "name", "selector", "properties" } ] }`; a
+ * property is a CSS name or `rect.width|height|left|centre`.
+ */
+async function runCompare( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	const specPath = options.elements;
+	if ( ! specPath ) {
+		console.error( 'compare needs --elements <spec.json>' );
+		process.exitCode = 1;
+		return;
+	}
+	const spec = JSON.parse( await readFile( specPath, 'utf8' ) );
+	const specs = Array.isArray( spec ) ? spec : spec.elements;
+	if ( ! Array.isArray( specs ) || specs.length === 0 ) {
+		console.error( `compare: ${ specPath } declares no elements` );
+		process.exitCode = 1;
+		return;
+	}
+
+	const chromium = await loadChromium();
+	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
+	try {
+		const page = await browser.newPage( {
+			viewport: { width: Number( options.width ?? 1440 ), height: Number( options.height ?? 900 ) },
+		} );
+
+		const against = options.against ?? profile.url;
+		await page.goto( against, { waitUntil: 'load', timeout: 90000 } );
+		await page.waitForTimeout( 600 );
+		const source = await measureCompareSpecs( page, specs );
+
+		const root = await builtStaticRoot( join( options.target, 'dist' ) );
+		const served = await serveDir( root );
+		try {
+			// `served.url` already ends in `/`, so concatenating `--path` made `//`,
+			// which the static server answers 404 — the rebuilt side then measured an
+			// empty page and every property read as missing.
+			const pageUrl = new URL( String( options.path ?? '/' ).replace( /^\/+/, '' ), served.url ).toString();
+			await page.goto( pageUrl, { waitUntil: 'load', timeout: 90000 } );
+			await page.waitForTimeout( 600 );
+			const rebuilt = await measureCompareSpecs( page, specs );
+
+			const rows = compareFacts( specs, source, rebuilt );
+			console.log( `\ncompare ${ against } → ${ options.target }` );
+			for ( const line of describeCompare( rows, Number( options.tolerance ?? 1 ) ) ) {
+				console.log( line );
+			}
+			const verdict = describeCompareVerdict( rows, Number( options.tolerance ?? 1 ) );
+			if ( verdict ) {
+				console.warn( `\n\u26a0 ${ verdict }` );
+				if ( ! options.soft ) {
+					process.exitCode = 1;
+				}
+			} else {
+				console.log( '\n\u2713 every compared property agrees' );
+			}
+		} finally {
+			served.server.close();
+		}
+	} finally {
+		await browser.close();
+	}
+}
+
 // -- program -----------------------------------------------------------------
 
 const pkg = JSON.parse( await readFile( new URL( '../package.json', import.meta.url ), 'utf8' ) );
@@ -3730,8 +4733,20 @@ program
 	.option( '--tracking', 'detect analytics, ad pixels, a CMP and verification tokens; draft the tracking block with every tracker DISABLED (Proposal 130)' )
 	.option( '--tracking-pages <n>', 'how many representative pages to scan for trackers (default 3)', '3' )
 	.option( '--probe', 'with --tracking: also load the page in Playwright and record its network requests, globals and cookie NAMES' )
+	.option( '--allow-blocked', 'forge a source whose page gate could not be opened (a gated source yields an empty design block)' )
 	.action( async ( url, options ) => {
 		await runAnalyze( url, options );
+	} );
+
+program
+	.command( 'gate' )
+	.description( 'diagnose a source\'s maintenance / coming-soon / staging gate (Proposal 152)' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.option( '--login', 'prompt for WP_GATE_USERNAME/WP_GATE_PASSWORD, then probe' )
+	.option( '--vault', 'with --login: store the credential in the encrypted vault' )
+	.option( '--json', 'machine-readable probe output' )
+	.action( async ( profileRef, options ) => {
+		await runGate( profileRef, options );
 	} );
 
 program
@@ -3741,7 +4756,7 @@ program
 	.option( '--target <dir>', 'scaffold target directory (prompted on a TTY when missing)' )
 	.option( '--name <name>', 'registry site name (default: derived from the hostname)' )
 	.option( '--to <mode>', 'deploy mode', 'github-pages' )
-	.option( '--preset <name>', 'blog | storefront | minimal (default: suggested from the analysis)' )
+	.option( '--preset <name>', `${ PRESET_NAMES.join( ' | ' ) } (default: suggested from the analysis)` )
 	.option( '--render <mode>', 'static | ssr (default: static; prompted for storefront on a TTY)' )
 	.option( '--theme-policy <policy>', 'auto | light | dark | brand:<slug> (default: auto)' )
 	.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
@@ -3779,7 +4794,7 @@ program
 	.option( '--repo <name>', 'repository name (default: slugified site name)' )
 	.option( '--org <org>', 'create the repository under an organization' )
 	.option( '--public', 'make the repository public (default: private)' )
-	.option( '--preset <name>', 'blog | storefront | minimal (applied when scaffolding)' )
+	.option( '--preset <name>', `${ PRESET_NAMES.join( ' | ' ) } (applied when scaffolding)` )
 	.option( '--render <mode>', 'static | ssr (applied when scaffolding)' )
 	.option( '--theme-policy <policy>', 'auto | light | dark | brand:<slug> (applied when scaffolding)' )
 	.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
@@ -3795,6 +4810,37 @@ program
 	} );
 
 program
+	.command( 'regen' )
+	.description( 'rewrite the generated modules from the profile — no re-scaffold, no template swap' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--target <dir>', 'an existing forge project directory' )
+	.option(
+		'--only <list>',
+		`comma-separated modules (default: all of ${ REGEN_MODULES.join( ',' ) })`
+	)
+	.action( async ( profileRef, options ) => {
+		const profile = await loadProfile( profileRef );
+		const target = resolve( options.target );
+		const only = String( options.only ?? '' )
+			.split( ',' )
+			.map( ( value ) => value.trim() )
+			.filter( Boolean );
+		const result = await regenGenerated( profile, target, only );
+		if ( result.written.length > 0 ) {
+			console.log( `✓ Rewrote ${ result.written.length } module(s) in ${ target }:` );
+			for ( const name of result.written ) {
+				console.log( `  · ${ name }` );
+			}
+		}
+		if ( result.skipped.length > 0 ) {
+			console.log( `  – not shipped by this project: ${ result.skipped.join( ', ' ) }` );
+		}
+		if ( result.written.length === 0 ) {
+			console.log( 'Nothing to write — is --target a forge project?' );
+		}
+	} );
+
+program
 	.command( 'colors' )
 	.description( 're-record the colour baseline (body, chrome and every band) without re-analyzing the site' )
 	.argument( '<profileRef>', 'site.json path or registered site name' )
@@ -3805,13 +4851,256 @@ program
 		await runColors( profileRef, options );
 	} );
 
+/**
+ * `forge page-design` — give every measured sub-page the design facts the
+ * homepage already has.
+ *
+ * The homepage runs two passes: the browser pass (geometry, band facts, region
+ * colours) and the design pass (`analyzeSections`). Sub-pages only got the
+ * first, so `pageBands[slug].sections` carried an id and a column list and the
+ * rebuild lost the band's surfaces, media and layout — eca.directory's about-us
+ * and contact-us (2026-11-25).
+ */
+async function runPageDesign( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	const pages = Object.keys( profile.pageBands ?? {} );
+	if ( pages.length === 0 ) {
+		console.error( 'This profile has no pageBands \u2014 run `analyze <url> --geometry --pages` first.' );
+		process.exitCode = 1;
+		return;
+	}
+	const slugs = options.slugs
+		? String( options.slugs )
+				.split( ',' )
+				.map( ( slug ) => slug.trim() )
+				.filter( Boolean )
+		: undefined;
+	const gate = await openGate( profile, {} );
+	console.log( `\u2713 Page design \u2014 ${ profile.url } (gate ${ gate.probe.state })` );
+	if ( gate.blocked ) {
+		console.error( 'The source is still gated \u2014 refusing to measure the holding page.' );
+		gate.close();
+		process.exitCode = 2;
+		return;
+	}
+	try {
+		const { profile: next, reports } = await analyzePageDesigns( profile, {
+			slugs,
+			fetchImpl: gate.fetch,
+			onPage: ( report ) => {
+				if ( report.error ) {
+					console.log( `  ! ${ report.slug.padEnd( 18 ) } ${ report.error }` );
+					return;
+				}
+				const added = report.added.length > 0 ? ` \u00b7 added ${ report.added.join( ', ' ) }` : '';
+				const unnamed = report.unnamed.length > 0 ? ` \u00b7 unnamed ${ report.unnamed.join( ', ' ) }` : '';
+				console.log(
+					`  \u2022 ${ report.slug.padEnd( 18 ) } ${ report.bands } band(s) \u00b7 ${ report.matched } matched${ added }${ unnamed }`
+				);
+			},
+		} );
+		if ( options.json ) {
+			console.log( JSON.stringify( reports, null, 2 ) );
+		}
+		if ( ! options.write ) {
+			console.log( '\n(dry run \u2014 pass --write to store the page design facts)' );
+			return;
+		}
+		const profilePath = profilePathOf( profileRef );
+		if ( ! profilePath ) {
+			console.error( 'Cannot write: pass a site.json path (not a registered name) or run from the forge root.' );
+			process.exitCode = 1;
+			return;
+		}
+		await writeFile( profilePath, `${ JSON.stringify( next, null, '\t' ) }\n`, 'utf8' );
+		const total = reports.reduce( ( sum, report ) => sum + report.matched, 0 );
+		console.log( `\n\u2713 ${ total } section(s) updated in ${ reports.length } page(s) \u2014 ${ profilePath }` );
+		console.log( '  Next: `forge regen <profile> --target <dir> --only pages`, then rebuild.' );
+	} finally {
+		gate.close();
+	}
+}
+
+/**
+ * `forge surfaces` — did the build PAINT the surfaces the profile declares?
+ *
+ * The gate the pipeline was missing: every other check asked whether a fact was
+ * present, so a dropped band image (or an invalid declaration the browser
+ * discards) kept the scorecard green. Deterministic and browser-free.
+ */
+async function runSurfaces( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	const target = resolve( options.target );
+	const dist = existsSync( join( target, 'dist', 'index.html' ) )
+		? join( target, 'dist' )
+		: join( target, 'dist', 'client' );
+	const readPage = ( page ) => {
+		const file = page === '/' ? join( dist, 'index.html' ) : join( dist, page, 'index.html' );
+		try {
+			return readFileSync( file, 'utf8' );
+		} catch {
+			return undefined;
+		}
+	};
+	const report = auditSurfaces( profile, readPage );
+	console.log( `\u2713 Surface coverage \u2014 ${ profile.url } (${ dist })` );
+	for ( const line of describeSurfaceCoverage( report ) ) {
+		console.log( line );
+	}
+	if ( report.checked === 0 ) {
+		console.log( '  no band image or panel is declared \u2014 nothing to check' );
+		return;
+	}
+	const painted = report.checked - report.gaps.length;
+	console.log( `\n${ painted }/${ report.checked } declared surface(s) painted` );
+	if ( report.gaps.length > 0 ) {
+		process.exitCode = 1;
+	}
+}
+
+program
+	.command( 'structure' )
+	.description(
+		'label band STRUCTURES with a vision model (opt-in, advisory; a deterministic detector always wins)'
+	)
+	.argument( '<profileRef>', 'site.json path or registered site name (must carry a design block)' )
+	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
+	.option( '--path <path>', 'the built page to read', '/' )
+	.option( '--devices <devices>', 'device ends to ask, comma-separated', 'desktop,mobile' )
+	.option( '--min-confidence <n>', 'drop a label below this confidence (default: the merge contract\u2019s 0.7)' )
+	.option( '--cache <file>', 'verdict cache (default <target>/.forge/structure-cache.json)' )
+	.option( '--write', 'store the labels in the profile and the cache (default: report only)' )
+	.option( '--json', 'print the machine-readable report' )
+	.action( async ( profileRef, options ) => {
+		await runStructure( profileRef, options );
+	} );
+
+program
+	.command( 'page-design' )
+	.description(
+		'give measured sub-pages the design facts the homepage already has (surfaces, media, layout)'
+	)
+	.argument( '<profileRef>', 'site.json path or registered site name (must carry pageBands)' )
+	.option( '--slugs <list>', 'only these page slugs, comma-separated' )
+	.option( '--write', 'store the facts in the profile (default: dry run)' )
+	.option( '--json', 'print the machine-readable report' )
+	.action( async ( profileRef, options ) => {
+		await runPageDesign( profileRef, options );
+	} );
+
+async function runBoxes( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	const target = resolve( options.target );
+	const tolerance = Number.parseFloat( options.tolerance ?? '2' );
+	const slugs = options.pages ? String( options.pages ).split( ',' ).map( ( slug ) => slug.trim() ).filter( Boolean ) : undefined;
+	console.log( `\u2713 Box parity \u2014 ${ profile.url } (tolerance ${ tolerance }px)` );
+	const reports = await runBoxGate( profile, {
+		target,
+		slugs,
+		tolerance,
+		onPage: ( report ) => {
+			if ( report.error ) {
+				console.log( `  \u26a0 ${ report.slug }: ${ report.error }` );
+				return;
+			}
+			const label = report.slug === 'home' ? '/' : `/${ report.slug }/`;
+			const flag = report.deviations.length === 0 ? '\u2713' : '\u2717';
+			console.log(
+				`  ${ flag } ${ label } \u2014 ${ report.compared }/${ report.bands } band(s) compared` +
+					( report.missing.length > 0 ? `, ${ report.missing.length } missing` : '' ) +
+					( report.textless.length > 0 ? `, ${ report.textless.length } textless` : '' )
+			);
+			for ( const deviation of report.deviations ) {
+				console.log(
+					`      ${ deviation.id } ${ deviation.edge.padEnd( 6 ) } ${ String( deviation.source ).padStart( 5 ) } \u2192 ${ String( deviation.built ).padStart( 5 ) }  (${ deviation.delta >= 0 ? '+' : '' }${ deviation.delta })`
+				);
+			}
+			for ( const id of report.missing ) {
+				console.log( `      ${ id } MISSING in the build` );
+			}
+		},
+	} );
+	if ( options.json ) {
+		await writeFile( resolve( options.json ), `${ JSON.stringify( reports, null, 2 ) }\n` );
+		console.log( `\n  report written to ${ options.json }` );
+	}
+	const failures = boxGateFailures( reports );
+	const compared = reports.reduce( ( total, report ) => total + report.compared, 0 );
+	console.log(
+		failures === 0
+			? `\n\u2713 ${ compared } band(s) within ${ tolerance }px on every edge`
+			: `\n\u2717 ${ failures } box deviation(s) over ${ tolerance }px across ${ reports.length } page(s)`
+	);
+	if ( failures > 0 && ! options.warn ) {
+		process.exitCode = 1;
+	}
+}
+
+program
+	.command( 'surfaces' )
+	.description( 'check that every band image / panel the profile declares is actually PAINTED in the build' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
+	.action( async ( profileRef, options ) => {
+		await runSurfaces( profileRef, options );
+	} );
+
+program
+	.command( 'boxes' )
+	.description(
+		'diff each band\u2019s measured BOX (ink inset + height) between the source and the build'
+	)
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
+	.option( '--pages <list>', 'page slugs to compare, comma-separated (default: every measured page + home)' )
+	.option( '--tolerance <px>', 'allowed per-edge difference in px', '2' )
+	.option( '--warning', 'report deviations without failing the command' )
+	.option( '--warn', 'alias for --warning' )
+	.option( '--json <path>', 'write the per-page report as JSON' )
+	.action( async ( profileRef, options ) => {
+		await runBoxes( profileRef, { ...options, warn: options.warn || options.warning } );
+	} );
+
+program
+	.command( 'compare' )
+	.description( 'measure the same elements on the source and the rebuilt site, and print the difference' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--target <dir>', 'scaffold target directory (its dist/ is served)' )
+	.requiredOption( '--elements <spec>', 'JSON spec: { elements: [{ name, selector, properties }] }' )
+	.option( '--against <url>', 'measure this URL as the source (default: the profile URL)' )
+	.option( '--path <path>', 'the built page to compare', '/' )
+	.option( '--width <px>', 'viewport width', '1440' )
+	.option( '--height <px>', 'viewport height', '900' )
+	.option( '--tolerance <px>', 'px difference treated as agreement', '1' )
+	.option( '--soft', 'report differences without failing the command' )
+	.action( async ( profileRef, options ) => {
+		await runCompare( profileRef, options );
+	} );
+
+const formsCommand = program
+	.command( 'forms' )
+	.description( 'inspect the enquiry path a forged site depends on (Proposal 163 §6)' );
+formsCommand
+	.command( 'check' )
+	.description(
+		'check the built forms and the live bridge — the contract the page emits, whether the endpoint accepts submissions, and with --send a real dispatch through the native handler'
+	)
+	.argument( '<profileRef>', 'site.json path or registered site name (must carry a forms block)' )
+	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
+	.option( '--origin <url>', 'the static origin the bridge allowlists (default: deploy.publicOrigin, then the profile url)' )
+	.option( '--send', 'POST one clearly-labelled probe submission — it creates a real record and may send real mail' )
+	.option( '--json', 'print the machine-readable report' )
+	.action( async ( profileRef, options ) => {
+		await runFormsCheck( profileRef, options );
+	} );
+
 program
 	.command( 'verify' )
 	.description( 'score design-language parity between the source site and the built frontend (Proposal 114)' )
 	.argument( '<profileRef>', 'site.json path or registered site name (must carry a design block)' )
 	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
 	.option( '--all', 'enable every gate (default \u2014 kept as an explicit alias)' )
-	.option( '--minimal', 'run only the deterministic, browser-free gates (language, tokens, band flow, nav anchors, facts, font coverage, text, SEO, tracking)' )
+	.option( '--minimal', 'run only the deterministic, browser-free gates (language, tokens, band flow, nav anchors, facts, route keys, forms, font coverage, text, SEO, tracking)' )
 	.option( '--no-bands', 'skip the per-band audit (presence · surface · content · facts · text · geometry per band)' )
 	.option( '--bands-warn', 'report per-band failures as warnings instead of failing the run' )
 	.option( '--bands-json <path>', 'where to write the per-band report (default <target>/verify-artifacts/bands.json)' )
@@ -3852,6 +5141,8 @@ program
 	.option( '--colors-modes <modes>', 'with --colors: colour schemes to measure, comma-separated (default light,dark)', 'light,dark' )
 	.option( '--strict-colors', 'with --colors: fail when a region the source had is missing from the build, or resolved to an empty element' )
 	.option( '--chrome', 'gate chrome STATES the colour gate cannot see \u2014 the opened mobile menu\u0027s surface and ink, and the header\u0027s container cap and gutter vs the source (needs `analyze --geometry`; requires Playwright)' )
+	.option( '--forms', 'gate the enquiry contract in the built pages: a form band must render a form, with a fillable field, posting at the configured endpoint, and an Elementor carrier post that can dispatch (on by default)' )
+	.option( '--no-forms', 'skip the enquiry-contract gate' )
 	.option( '--strict-facts', 'fail when a declared band fact did not reach the built HTML (default: report only)' )
 	.option( '--strict-media', 'fail when the artifact still ships a JPEG/PNG the localizer could not re-encode (Proposal 140)' )
 	.option( '--fonts', 'render-check every icon font family the built page uses (requires Playwright; on by default outside --minimal)' )
@@ -4137,7 +5428,8 @@ function scaffoldOptions( cmd ) {
 		.argument( '<profileRef>', 'site.json path or registered site name' )
 		.option( '--target <dir>', 'scaffold target directory' )
 		.option( '--template <nameOrPath>', 'built-in template name or a directory path' )
-		.option( '--preset <name>', 'blog | storefront | minimal' )
+		.option( '--variant <name>', `additive template variant: ${ TEMPLATE_VARIANTS.join( ' | ' ) }` )
+		.option( '--preset <name>', PRESET_NAMES.join( ' | ' ) )
 		.option( '--render <mode>', 'static | ssr (default: the preset\'s render mode, static)' )
 		.option( '--theme-policy <policy>', 'auto | light | dark | brand:<slug> (default: auto)' )
 		.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
@@ -4146,6 +5438,7 @@ function scaffoldOptions( cmd ) {
 		.option( '--media-snapshot <dir>', 'committed media snapshot copied into media-snapshot/ (default: sites/<name>.media when media.snapshot is true)' )
 		.option( '--unlock', 're-forge a target that is LOCKED for hand-editing (destroys custom work)' )
 		.option( '--check', 'verify collection sizes against the page caps (no scaffold)' )
+		.option( '--gate <mode>', 'publication gate: auto | off | maintenance | coming_soon (default: auto when the profile has gatePublish)' )
 		.option( '--strict-contrast', 'fail the build when a rendered pair fails WCAG (designAudit: strict)' )
 		.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' )
 		.option( '--demo-content', 'keep the template placeholder post/page (off by default: a real site must not ship them)' );
@@ -4180,27 +5473,67 @@ program
 	.command( 'materialize' )
 	.description( "recover a built artifact's baked content into local content files (a site that outlived its CMS)" )
 	.argument( '<profileRef>', 'site.json path or registered site name' )
-	.requiredOption( '--from <dir>', 'the built project that carries dist/server' )
+	.option( '--from <dir>', 'the built project that carries dist/server' )
+	.option( '--from-wp', 'capture the LIVE WordPress instead (a static build carries no content store)' )
 	.option( '--out <dir>', 'where to write (default: <profile>.content beside the profile)' )
 	.action( async ( profileRef, options ) => {
-		const { findContentStore, materializeContent } = await import( '../lib/materialize.ts' );
-		const storeFile = await findContentStore( options.from );
-		if ( ! storeFile ) {
-			console.error( `No baked content store under ${ options.from }/dist/server/chunks/ — is that a built forge project?` );
-			process.exit( 1 );
-		}
+		const { findContentStore, materializeContent, materializeFromWordPress } = await import( '../lib/materialize.ts' );
 		const profilePath = profilePathOf( profileRef );
-		const outDir = options.out ?? ( profilePath ? profilePath.replace( /\.json$/, '.content' ) : undefined );
+		const derivedOut = profilePath ? profilePath.replace( /\.json$/, '.content' ) : undefined;
+		const outDir = options.out ?? derivedOut;
 		if ( ! outDir ) {
 			console.error( 'Could not derive the output directory from the profile — pass --out.' );
 			process.exit( 1 );
 		}
-		const documents = await materializeContent( { storeFile, outDir } );
+		if ( options.fromWp && options.from ) {
+			console.error( 'Pass either --from <built project> or --from-wp, not both.' );
+			process.exit( 1 );
+		}
+		if ( ! options.fromWp && ! options.from ) {
+			console.error( 'Pass --from <built project> (recover a built artifact) or --from-wp (capture the live CMS).' );
+			process.exit( 1 );
+		}
+
+		let documents;
+		if ( options.fromWp ) {
+			const profile = await loadProfile( profileRef );
+			const auth =
+				process.env.WP_APPLICATION_USER && process.env.WP_APPLICATION_PASSWORD
+					? {
+							type: 'basic',
+							username: process.env.WP_APPLICATION_USER,
+							password: process.env.WP_APPLICATION_PASSWORD,
+						  }
+					: undefined;
+			console.log( `Capturing ${ profile.url } (live CMS) → ${ outDir }` );
+			documents = await materializeFromWordPress( {
+				profile,
+				auth,
+				outDir,
+				log: ( line ) => console.log( `  ${ line }` ),
+			} );
+		} else {
+			const storeFile = await findContentStore( options.from );
+			if ( ! storeFile ) {
+				console.error( `No baked content store under ${ options.from }/dist/server/chunks/ — is that a built forge project? A static build carries none: use --from-wp instead.` );
+				process.exit( 1 );
+			}
+			documents = await materializeContent( { storeFile, outDir } );
+		}
+
 		console.log( `\u2713 Materialized ${ documents.length } document(s) into ${ outDir }` );
 		for ( const doc of documents ) {
-			console.log( `  - ${ doc.collection }/${ doc.slug } — ${ doc.htmlBytes } B body` );
+			// A shared slug is now renamed in BOTH the filename and the frontmatter,
+			// so `file` always equals `slug`; the provenance field is the signal.
+			const renamed = doc.slugRenamedFrom
+				? ` (was "${ doc.slugRenamedFrom }" — the slug is shared; both documents kept)`
+				: '';
+			console.log( `  - ${ doc.collection }/${ doc.slug } — ${ doc.htmlBytes } B body${ renamed }` );
 		}
-		console.log( `\nNext: forge <profile> --target <dir> --content ${ outDir }` );
+		// The flag is the DECLARATION that the CMS is gone, so the operator makes
+		// it deliberately: setting it turns every collection local-only.
+		console.log( '\nNext: declare "content": { "source": "materialized" } in the profile (every collection then reads the snapshot and never fetches), then:' );
+		console.log( `  forge ${ profileRef } --target <dir>${ outDir === derivedOut ? '' : ` --content ${ outDir }` }` );
 	} );
 
 program
@@ -4209,6 +5542,7 @@ program
 	.argument( '<profileRef>', 'site.json path or registered site name' )
 	.requiredOption( '--from <dir>', 'the built project carrying .forge-cache/media-localize.json' )
 	.option( '--out <dir>', 'where to write (default: <profile>.media beside the profile)' )
+	.option( '--strict', 'exit 1 when the snapshot carries advisory warnings (CI)' )
 	.action( async ( profileRef, options ) => {
 		const { writeMediaSnapshot } = await import( '../lib/media-snapshot.ts' );
 		const profilePath = profilePathOf( profileRef );
@@ -4218,7 +5552,11 @@ program
 			process.exit( 1 );
 		}
 		try {
-			const result = await writeMediaSnapshot( { projectDir: options.from, outDir } );
+			const result = await writeMediaSnapshot( {
+				projectDir: options.from,
+				outDir,
+				strict: Boolean( options.strict ),
+			} );
 			console.log(
 				`\u2713 Snapshotted ${ result.count } URL(s) / ${ result.files } file(s) (${ ( result.bytes / 1024 / 1024 ).toFixed( 1 ) } MB) into ${ outDir }`
 			);
@@ -4227,6 +5565,12 @@ program
 			}
 			if ( result.missing.length > 10 ) {
 				console.warn( `  \u2026and ${ result.missing.length - 10 } more (the build report names them).` );
+			}
+			for ( const warning of result.warnings.slice( 0, 10 ) ) {
+				console.warn( `  \u26a0 ${ warning }` );
+			}
+			if ( result.warnings.length > 10 ) {
+				console.warn( `  \u2026and ${ result.warnings.length - 10 } more warning(s).` );
 			}
 			console.log( '\nNext: set "media": { "snapshot": true } on the profile, then rebuild.' );
 		} catch ( error ) {

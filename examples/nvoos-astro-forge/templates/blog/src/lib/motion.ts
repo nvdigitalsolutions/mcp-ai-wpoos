@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // motion.ts — piece-level parallax CSS (Proposal 121 + the element pass).
 //
@@ -135,6 +136,15 @@ function carrierSelectors( kind: string, scoped: string, ordinal: number ): stri
 }
 
 /**
+ * The axis a piece travels on. Absent facts mean vertical — every Phlox piece
+ * is vertical and Elementor's translateY is the common case — so only an
+ * explicit `x` is horizontal.
+ */
+export function parallaxAxis( piece: ParallaxPiece ): 'x' | 'y' {
+	return piece.axis === 'x' ? 'x' : 'y';
+}
+
+/**
  * One piece → one scoped rule. The rule only sets custom properties; the band's
  * `ds-parallax` animation consumes them, so a `background`-type piece (the
  * source animates `background-position`) is skipped rather than faked.
@@ -151,7 +161,18 @@ export function parallaxPieceCss(
 	}
 	const ordinal = piece.index ?? fallbackIndex;
 	const { from, to } = parallaxEndpoints( piece, entrySpeed );
-	const declarations = [ `--ds-parallax-from:${ from }px`, `--ds-parallax-to:${ to }px` ];
+	// A HORIZONTAL piece writes the X channel and FREEZES Y at 0. The endpoints
+	// stay a single scalar pair — the axis only decides which channel of
+	// `translate` consumes them — so emitting both would double the drift.
+	const declarations =
+		parallaxAxis( piece ) === 'x'
+			? [
+					`--ds-parallax-x-from:${ from }px`,
+					`--ds-parallax-x-to:${ to }px`,
+					'--ds-parallax-from:0px',
+					'--ds-parallax-to:0px',
+			  ]
+			: [ `--ds-parallax-from:${ from }px`, `--ds-parallax-to:${ to }px` ];
 	// Elementor's affectedRange narrows the source's viewport window. The
 	// default 0-100 is already the base rule's `cover 0% cover 100%`, so only a
 	// non-default range needs a declaration.

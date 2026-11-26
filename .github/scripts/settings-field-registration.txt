@@ -1,0 +1,73 @@
+# Baseline: settings fields that are defined but registered in no sub-tab.
+#
+# WHY THIS FILE EXISTS
+# A sub-tabbed settings section renders and saves ONLY the keys named in
+# `get_subtab_groups()`: `render()` iterates the active group's `fields`, and
+# `sanitize_with_subtabs()` whitelists input to the same list. A field declared
+# in `get_fields()` but absent from every group therefore renders nowhere and is
+# dropped on save, silently — the two methods are individually well-formed, so
+# neither PHPCS nor a code review reliably catches it.
+#
+# `.github/scripts/check-settings-field-registration.php` fails when it finds a
+# field in that position. This file is the BASELINE: the entries below predate
+# the gate. They are recorded, not approved. Each one needs one of two outcomes:
+#
+#   1. Register it in the sub-tab where it belongs, then DELETE its line here.
+#   2. Confirm it is written only programmatically (an integration, a migration,
+#      an internal flag) and keep it listed.
+#
+# The gate fails on a STALE entry — a listed field that is now registered — so
+# this file cannot rot, and fixing a field forces the line's removal.
+#
+# Format:  <repo-relative-path>:<field-key>
+# Lines starting with '#' and trailing ' # ...' comments are ignored.
+#
+# Notable clusters as recorded (39 entries):
+#   - authentication.php  3 x pseudo-fields (2 `heading`, 1 `html`) that no
+#                   group references, so they render nowhere. Same registration
+#                   work as the Security headings, which are now fixed.
+#   - tools.php     credential and feature-flag fields with no UI group. Some
+#                   are almost certainly written by integrations rather than the
+#                   admin form; each needs confirmation before it is either
+#                   registered or kept listed.
+#
+# (Section table and counts: run the script.)
+includes/admin/sections/class-wp-mcp-ai-section-advanced.php:profession_default_tool_count
+includes/admin/sections/class-wp-mcp-ai-section-authentication.php:_guest_scope_info
+includes/admin/sections/class-wp-mcp-ai-section-authentication.php:_heading_destructive_ops
+includes/admin/sections/class-wp-mcp-ai-section-authentication.php:_heading_oauth_dcr
+includes/admin/sections/class-wp-mcp-ai-section-chat-client.php:chat_preset_applied
+includes/admin/sections/class-wp-mcp-ai-section-integrations.php:ita_tariff_api_key
+includes/admin/sections/class-wp-mcp-ai-section-integrations.php:plaid_client_id
+includes/admin/sections/class-wp-mcp-ai-section-integrations.php:plaid_environment
+includes/admin/sections/class-wp-mcp-ai-section-integrations.php:plaid_secret
+includes/admin/sections/class-wp-mcp-ai-section-providers.php:enable_omni_api
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:cloudflare_api_token
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:cloudflare_zone_id
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:cloudways_api_key
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:cloudways_email
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:enable_site_creator
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:github_access_token
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:github_username
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:gmail_client_id
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:gmail_client_secret
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:gmail_refresh_token
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:gmail_user_email
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:google_analytics_credentials
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:google_analytics_property_id
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:mailjet_api_key
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:mailjet_api_secret
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:markup_enabled
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:ocr_default_provider
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:ocr_enable_preprocessing
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:ocr_max_pages_default
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:quickbooks_api_key
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:quickbooks_client_id
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:quickbooks_client_secret
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:removebg_api_key
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:site_creator_allow_elementor_kit_import
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:site_creator_allow_option_updates
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:site_creator_allow_plugin_install
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:site_creator_allow_theme_install
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:site_creator_allow_wp_cli_tools
+includes/admin/sections/class-wp-mcp-ai-section-tools.php:wp_mcp_ai_phi_acknowledged

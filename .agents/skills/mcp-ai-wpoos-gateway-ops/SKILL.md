@@ -17,15 +17,16 @@ description: "Operational guide for the NV oOS MCP Gateway (addons/mcp-gateway �
 | Slug | Site | Visibility |
 |---|---|---|
 | `demo` | `https://nvoos.pro` | Public — demo key, listings |
-| `sascha` | `https://nirmanawellness.nvdigital.solutions` | Private client — own key |
-| `ideabits` | `https://ideabits.nvdigital.solutions` | Private client — own key |
+| `client-a` | `<client-site-1>` | Private client — own key |
+| `client-b` | `<client-site-2>` | Private client — own key |
 | `console` | `https://console.nvoos.cloud` | (not bound at time of writing) |
 
 - `PUBLIC_SITE_SLUGS=demo` — public `/health` reports only `demo`; `/health/full` (keyed) reports every site.
 - **OAuth 2.1 is configured** (Auth0 tenant `https://nvoos.us.auth0.com`) —
   see the OAuth section below; static keys + OAuth coexist.
 - Demo key (published in directory listings, **never in the repo**): bound to `demo` only, allowlisted `get_environment_status` + `deep_research`.
-- Client sites carry their **own** public keys (one key may bind both ideabits+sascha when the same client owns them).
+- Client sites carry their **own** public keys (one key may bind both sites when the same client owns them).
+- Real slug → site mapping is kept in the local ops skill, not here.
 
 ## Public keys — GATEWAY_PUBLIC_KEYS
 
@@ -211,7 +212,7 @@ this is the directory discoverability layer). Plan doc:
   verified 2026-11-03) — re-run `mcp-publisher publish` at 0.3.0 before/at
   submission so directory imports reflect the deployed version.
 - **Walkthrough recording (D.2)**: gateway-side demo recorded
-  `C:\Users\rasta\Videos\nvoos-gateway-walkthrough.mp4` (H.264, ~47 s: demo
+  `C:\Users\%USERNAME%\Videos\nvoos-gateway-walkthrough.mp4` (H.264, ~47 s: demo
   page live calls → `/health` → OAuth well-known → Pages listing). Recording
   tricks: the CDP screencast emits frames on change only (idle-compressed,
   AV1) — transcode with ffmpeg to H.264 before upload; browser demos of live
@@ -262,7 +263,7 @@ yet recorded end-to-end from Claude Code.
 
 ## Registry publishing (mcp-publisher)
 
-- Binary: `C:/Users/rasta/.mcp-publisher/mcp-publisher.exe` (device-flow
+- Binary: `%USERPROFILE%/.mcp-publisher/mcp-publisher.exe` (device-flow
   session stored on the machine; **the JWT expires — re-run
   `mcp-publisher login github` before publish**; the flow prints a GitHub
   device code and polls).

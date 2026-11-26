@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // CartView island — full cart rendering (client-only state). The cart page
 // shell is server-rendered; lines hydrate from the nanostores cart.

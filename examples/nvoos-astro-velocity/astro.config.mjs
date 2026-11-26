@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { defineConfig, memoryCache } from 'astro/config';
 import node from '@astrojs/node';
 import react from '@astrojs/react';

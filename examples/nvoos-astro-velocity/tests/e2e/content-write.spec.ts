@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // content-write.spec.ts — Proposal 107 e2e gates: the content write path,
 // the approval ladder (draft → publish), the Portable Text render pipeline,

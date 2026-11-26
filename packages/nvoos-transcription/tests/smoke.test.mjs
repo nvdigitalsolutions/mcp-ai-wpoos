@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import svc, { configure, TranscriptionService } from '../dist/nvoos-transcription.js';
 
 console.assert(svc === TranscriptionService, 'default === named');

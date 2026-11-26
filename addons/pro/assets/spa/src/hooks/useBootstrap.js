@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { useState, useEffect } from '@wordpress/element';
 import { loadBootstrap } from '../services/bootstrap';
 

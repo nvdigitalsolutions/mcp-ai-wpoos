@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // server.ts — nvoos-astro-mcp registry factory (Proposal 095 §3.3).
 // One McpServer per connection (the SDK's per-request model for HTTP); the

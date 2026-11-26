@@ -18,7 +18,10 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
-class VerifyInformationTool extends AbstractTool
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
+
+class VerifyInformationTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function getSlug(): string
     {
@@ -173,5 +176,17 @@ class VerifyInformationTool extends AbstractTool
         }
 
         return 'Insufficient data to verify - more sources needed';
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Pure in-process computation: no store, no service, no network.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::PURE_LOCAL;
     }
 }

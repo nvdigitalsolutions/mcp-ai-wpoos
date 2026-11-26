@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // a11y.spec.ts — axe-core gate (Proposal 104 D6). Machine-checkable WCAG
 // 2.2 assertions per route: accessible names, landmarks, colour contrast.

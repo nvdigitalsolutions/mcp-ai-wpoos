@@ -1,6 +1,13 @@
+// SPDX-License-Identifier: MIT
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import manifest from '../../nvoos.json';
+import {
+	fetchBridgeRedirects,
+	PORTABLE_STATUSES,
+	type RedirectRow,
+	type RedirectStatus,
+} from '../lib/bridge-redirects.ts';
 
 /**
  * /redirects.json — the structured redirect map for the generated site.
@@ -17,28 +24,41 @@ import manifest from '../../nvoos.json';
  * Prerendered in both render modes — `scripts/postbuild.mjs` materializes
  * the host-agnostic `dist/_redirects` from this document after `astro build`.
  * This document keeps the FAITHFUL status from the source; postbuild projects
- * it onto the status set the static hosts actually honour. A missing bridge is
- * a console warning, never a build failure.
+ * it onto the status set the static hosts actually honour.
+ *
+ * A missing bridge is a console warning, never a build failure — that promise
+ * is enforced in `lib/bridge-redirects.ts`, which also refuses to call the old
+ * origin when the profile says the CMS is gone.
  */
 export const prerender = true;
 
-type RedirectStatus = 301 | 302 | 303 | 307 | 308 | 404 | 410;
-type RedirectRow = { from: string; to: string; status: RedirectStatus };
-
-/** Statuses a static host can express in `_redirects`. */
-const PORTABLE_STATUSES: ReadonlySet<number> = new Set([301, 302, 303, 307, 308, 404, 410]);
-
 export const GET: APIRoute = async () => {
-	const redirects = new Map<string, RedirectRow>();
-	const push = (source: string, target: string, status: RedirectStatus = 301) => {
-		if (source && source !== '/' && source !== target) {
-			redirects.set(source, { from: source, to: target, status });
+	const redirects = new Map< string, RedirectRow >();
+	const push = ( source: string, target: string, status: RedirectStatus = 301 ) => {
+		if ( source && source !== '/' && source !== target ) {
+			redirects.set( source, { from: source, to: target, status } );
 		}
 	};
 
 	// 1. Stored rules from the source site's redirect plugin (via the bridge).
-	for (const entry of await fetchStoredRedirects()) {
-		push(entry.from, entry.to, entry.status);
+	//    `bridge-redirects.ts` never throws: a dead origin, an HTML body or a
+	//    payload of the wrong shape each degrade to this URL-structure map.
+	const stored = await fetchBridgeRedirects( {
+		base:
+			import.meta.env.NVOOS_FORGE_REDIRECTS_ENDPOINT ||
+			import.meta.env.WP_SITE_URL ||
+			manifest.url ||
+			'',
+		token: import.meta.env.NVOOS_FORGE_REDIRECTS_TOKEN,
+		// `materialized` means the CMS is GONE: nothing may contact the old
+		// origin, which is now this very site.
+		contentSource: ( manifest as { contentSource?: string } ).contentSource,
+	} );
+	if ( stored.warning ) {
+		console.warn( `[forge] ${ stored.warning }` );
+	}
+	for ( const entry of stored.rows ) {
+		push( entry.from, entry.to, entry.status );
 	}
 
 	// 2. The rebuild's own URL structure.
@@ -72,6 +92,42 @@ export const GET: APIRoute = async () => {
 		}
 	}
 
+	// 2b. Extra (CPT) collections move as well: the scaffold builds them under
+	//     `basePath` (default `/<slug>`) as `/<base>/<id>/<slug>/`, so
+	//     `/eca/art-and-craft/` must 301 to `/eca/10784/art-and-craft/` — not
+	//     to `/posts/…`, which is what a posts-only map produced.
+	const CORE = new Set(['posts', 'pages', 'products']);
+	const loadCollection = getCollection as unknown as (name: string) => Promise<Array<any>>;
+	for (const declared of manifest.collections) {
+		if (CORE.has(declared.slug)) continue;
+		const base = ((declared as { basePath?: string }).basePath ?? `/${declared.slug}`).replace(/\/+$/, '');
+		const entries = await loadCollection(declared.slug);
+		for (const entry of entries) {
+			const source = pathnameOf(entry.data.link);
+			if (!source) continue;
+			push(source, `${base}/${entry.id}/${entry.data.slug ?? entry.id}/`);
+		}
+	}
+
+	// 3. Operator-declared redirects — LAST so they win on conflict. These are
+	//    the cutover leftovers the URL structure cannot see: a front page's own
+	//    slug, a retired landing page, a path the host still answers with 403.
+	const declared = (manifest as { redirects?: unknown }).redirects;
+	if (Array.isArray(declared)) {
+		for (const raw of declared) {
+			if (typeof raw !== 'object' || raw === null) continue;
+			const entry = raw as { from?: unknown; to?: unknown; status?: unknown };
+			if (typeof entry.from !== 'string' || !entry.from.startsWith('/')) continue;
+			const status =
+				typeof entry.status === 'number' && PORTABLE_STATUSES.has(entry.status)
+					? (entry.status as RedirectStatus)
+					: 301;
+			// A 4xx rule carries no target; anything else needs one.
+			if (status < 400 && typeof entry.to !== 'string') continue;
+			push(entry.from, typeof entry.to === 'string' ? entry.to : '', status);
+		}
+	}
+
 	// Deterministic output — same content, same file, stable diffs.
 	const sorted = [...redirects.values()].sort((a, b) => a.from.localeCompare(b.from));
 	return new Response(`${JSON.stringify(sorted, null, '\t')}\n`, {
@@ -90,76 +146,4 @@ function pathnameOf(link: string | undefined): string | undefined {
 	} catch {
 		return undefined;
 	}
-}
-
-/**
- * Fetch the redirect plugins' stored rules from the Forge Bridge.
- *
- * Endpoint resolution is env-first (deploy override), then WP_SITE_URL (the
- * build's real source), then the manifest URL. A 404 means "bridge not
- * installed" and stays silent; other failures warn and fall back to the
- * URL-structure map so the build always ships.
- */
-async function fetchStoredRedirects(): Promise<RedirectRow[]> {
-	const base = (
-		import.meta.env.NVOOS_FORGE_REDIRECTS_ENDPOINT ||
-		import.meta.env.WP_SITE_URL ||
-		manifest.url ||
-		''
-	).replace(/\/+$/, '');
-	if (!base) {
-		return [];
-	}
-
-	const token = import.meta.env.NVOOS_FORGE_REDIRECTS_TOKEN;
-	const headers: Record<string, string> = { accept: 'application/json' };
-	if (token) {
-		headers['x-forge-redirects-token'] = token;
-	}
-
-	let response: Response;
-	try {
-		response = await fetch(`${base}/wp-json/nvoos-forge/v1/redirects`, { headers });
-	} catch (error) {
-		console.warn(
-			`[forge] stored redirects unavailable (${error instanceof Error ? error.message : String(error)}) — using the URL-structure map only.`
-		);
-		return [];
-	}
-
-	if (!response.ok) {
-		if (response.status !== 404) {
-			console.warn(`[forge] stored redirects unavailable (HTTP ${response.status}) — using the URL-structure map only.`);
-		}
-		return [];
-	}
-
-	const body = (await response.json()) as unknown;
-	const rawList = typeof body === 'object' && body !== null ? (body as { redirects?: unknown }).redirects : undefined;
-	if (!Array.isArray(rawList)) {
-		console.warn('[forge] stored redirects returned an unexpected payload — using the URL-structure map only.');
-		return [];
-	}
-
-	const rows: RedirectRow[] = [];
-	const seen = new Set<string>();
-	for (const raw of rawList) {
-		if (typeof raw !== 'object' || raw === null) {
-			continue;
-		}
-		const record = raw as Record<string, unknown>;
-		const from = typeof record.source === 'string' ? record.source : '';
-		const to = typeof record.target === 'string' ? record.target : '';
-		const status = typeof record.type === 'number' ? record.type : 301;
-		if (!from.startsWith('/') || from === '/' || from === to || seen.has(from)) {
-			continue;
-		}
-		if (!PORTABLE_STATUSES.has(status) || (status < 400 && !to)) {
-			continue;
-		}
-		seen.add(from);
-		rows.push({ from, to, status: status as RedirectStatus });
-	}
-
-	return rows;
 }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * RightPanel — Context-sensitive right panel showing entity details.
  *

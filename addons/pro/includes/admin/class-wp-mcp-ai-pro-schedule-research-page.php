@@ -636,7 +636,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 		}
 
 		/**
-		 * AJAX handler — manually trigger a schedule via Schedule_Manager::trigger_now().
+		 * AJAX handler — queue a schedule run.
+		 *
+		 * Uses the background trigger: executing a workflow inline here would be
+		 * cut off by any edge proxy timeout (HTTP 524) while the worker kept
+		 * running server-side.
 		 */
 		public static function ajax_run_now() {
 			check_ajax_referer( 'wp_mcp_ai_research_pro_schedule', 'nonce' );
@@ -656,12 +660,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Research_Page' ) ) {
 				wp_send_json_error( array( 'message' => __( 'A schedule_id is required.', 'mcp-ai-wpoos-pro' ) ), 400 );
 			}
 
-			$result = WP_MCP_AI_Pro_Schedule_Manager::trigger_now( $schedule_id, get_current_user_id() );
+			$result = WP_MCP_AI_Pro_Schedule_Manager::trigger_now_async( $schedule_id, get_current_user_id() );
 			if ( is_wp_error( $result ) ) {
 				wp_send_json_error( array( 'message' => $result->get_error_message() ), 400 );
 			}
 
-			wp_send_json_success( array( 'schedule_id' => $schedule_id ) );
+			wp_send_json_success(
+				array(
+					'schedule_id' => $schedule_id,
+					'run_id'      => $result['run_id'],
+					'queued'      => true,
+				)
+			);
 		}
 
 		/**

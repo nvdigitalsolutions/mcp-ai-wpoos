@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * The local-content catalogue entry (Proposal 135 §D4).
  *

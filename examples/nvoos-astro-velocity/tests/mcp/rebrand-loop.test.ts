@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // rebrand-loop.test.ts — the assistant-style rebrand loop (Proposal 095
 // Phase 4.3), hermetic: the real fixture backend serves the commerce

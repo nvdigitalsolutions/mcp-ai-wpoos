@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Money formatting — Proposal 092 §3.4 / Q7 (currency: USD default, env-
 // overridable per deployment until the contract grows a currency field).

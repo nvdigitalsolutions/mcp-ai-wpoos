@@ -367,7 +367,10 @@ class Test_Typesafe_Decide_Tool extends WP_UnitTestCase {
 							'answers' => array(
 								'department' => array(
 									'choice'        => 'billing',
-									'probabilities' => array( 'billing' => 0.5, 'technical' => 0.5 ),
+									'probabilities' => array(
+										'billing'   => 0.5,
+										'technical' => 0.5,
+									),
 									'confidence'    => 0.2,
 								),
 								'urgent'     => array( 'noul' => 0.83 ),
@@ -386,7 +389,10 @@ class Test_Typesafe_Decide_Tool extends WP_UnitTestCase {
 					'department' => array(
 						'type'         => 'choice',
 						'instructions' => 'Which team?',
-						'criteria'     => array( 'billing' => 'Billing', 'technical' => 'Technical' ),
+						'criteria'     => array(
+							'billing'   => 'Billing',
+							'technical' => 'Technical',
+						),
 					),
 					'urgent'     => array(
 						'type'         => 'noul',
@@ -454,7 +460,10 @@ class Test_Typesafe_Decide_Tool extends WP_UnitTestCase {
 						'criteria'     => array( 'Low', 'Mid', 'High' ),
 					),
 				),
-				'weights'   => array( 'clarity' => 0.75, 'relevance' => 0.25 ),
+				'weights'   => array(
+					'clarity'   => 0.75,
+					'relevance' => 0.25,
+				),
 			),
 			array( 'user_id' => $user_id )
 		);
@@ -484,7 +493,12 @@ class Test_Typesafe_Decide_Tool extends WP_UnitTestCase {
 			static function () {
 				return array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.9 ) ) ) ),
+					'body'     => wp_json_encode(
+						array(
+							'model'   => 'jev-1.13.0',
+							'answers' => array( 'q' => array( 'noul' => 0.9 ) ),
+						)
+					),
 				);
 			},
 			10
@@ -515,7 +529,13 @@ class Test_Typesafe_Decide_Tool extends WP_UnitTestCase {
 	 */
 	public function test_execute_marks_cached_responses() {
 		$user_id = $this->set_admin_user();
-		update_option( 'wp_mcp_ai_settings', array( 'typesafe_api_key' => 'sk-ts-test', 'enable_typesafe_cache' => true ) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'typesafe_api_key'      => 'sk-ts-test',
+				'enable_typesafe_cache' => true,
+			)
+		);
 
 		$calls = 0;
 		add_filter(
@@ -525,7 +545,13 @@ class Test_Typesafe_Decide_Tool extends WP_UnitTestCase {
 
 				return array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'model' => 'jev-1.13.0', 'answers' => array( 'q' => array( 'noul' => 0.9 ) ), 'usage' => array( 'input_tokens' => 40 ) ) ),
+					'body'     => wp_json_encode(
+						array(
+							'model'   => 'jev-1.13.0',
+							'answers' => array( 'q' => array( 'noul' => 0.9 ) ),
+							'usage'   => array( 'input_tokens' => 40 ),
+						)
+					),
 				);
 			},
 			10
@@ -569,7 +595,12 @@ class Test_Typesafe_Decide_Tool extends WP_UnitTestCase {
 
 				return array(
 					'response' => array( 'code' => 200 ),
-					'body'     => wp_json_encode( array( 'model' => 'jev-latest', 'answers' => array( 'q' => array( 'noul' => 0.9 ) ) ) ),
+					'body'     => wp_json_encode(
+						array(
+							'model'   => 'jev-latest',
+							'answers' => array( 'q' => array( 'noul' => 0.9 ) ),
+						)
+					),
 				);
 			},
 			10,

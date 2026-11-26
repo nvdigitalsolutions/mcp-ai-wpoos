@@ -149,6 +149,13 @@ class ToolkitContractTest extends TestCase
         $this->actAsUser();
 
         foreach ($this->families() as $slug => $manifest) {
+            // A settings-only family (CRM, chat channels) owns no engine
+            // records — its real entities live on CPT/REST surfaces. There is
+            // no lifecycle to drive here, so skip instead of inventing one.
+            if (array() === $manifest->entities()) {
+                continue;
+            }
+
             $entity = $manifest->entities()[0];
             $entityKey = (string) $entity['key'];
             $id = 'CT-'.$slug;

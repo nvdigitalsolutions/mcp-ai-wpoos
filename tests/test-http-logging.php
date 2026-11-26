@@ -55,6 +55,9 @@ class WP_MCP_AI_HTTP_Logging_Tests extends WP_UnitTestCase {
 		return $entry;
 	}
 
+	/**
+	 * A successful HTTP response is logged.
+	 */
 	public function test_logs_successful_http_response() {
 		$request_args = array(
 			'method'  => 'GET',
@@ -112,6 +115,9 @@ class WP_MCP_AI_HTTP_Logging_Tests extends WP_UnitTestCase {
 		$this->assertSame( '[redacted]', $inbound['context']['request_headers']['authorization'] );
 	}
 
+	/**
+	 * Logging respects the setting.
+	 */
 	public function test_respects_logging_setting() {
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array( 'enable_logging' => false ) );
 
@@ -149,6 +155,9 @@ class WP_MCP_AI_HTTP_Logging_Tests extends WP_UnitTestCase {
 		$this->assertEmpty( $this->captured_entries, 'Logging should be skipped when disabled.' );
 	}
 
+	/**
+	 * Transport errors are logged.
+	 */
 	public function test_logs_transport_errors() {
 		$error = new WP_Error( 'http_request_failed', 'cURL error 28: Connection timed out' );
 

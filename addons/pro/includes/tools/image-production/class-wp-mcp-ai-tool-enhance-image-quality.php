@@ -302,7 +302,7 @@ class WP_MCP_AI_Tool_Enhance_Image_Quality extends WP_MCP_AI_Tool_Image_Base imp
 	public function sanitize_for_llm( $result ) {
 		if ( is_wp_error( $result ) ) {
 			return array(
-				'success' => false,
+				'success' => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- WP_Error serialised for the prompt, not a tool envelope.
 				'error'   => array(
 					'code'    => $result->get_error_code(),
 					'message' => $result->get_error_message(),

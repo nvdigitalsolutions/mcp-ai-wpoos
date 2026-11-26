@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { useWizardStore } from '../state/wizardStore';
 import { Field } from '../components/Field';
 

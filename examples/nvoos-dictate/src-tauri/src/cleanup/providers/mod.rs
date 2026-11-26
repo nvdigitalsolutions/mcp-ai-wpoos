@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Stage-2 LLM polish providers.
 //!
 //! Each provider receives text only (plus the target-app category) — never

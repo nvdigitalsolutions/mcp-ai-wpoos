@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // responsive-facts.test.ts — device-scoped facts must not flatten.
 //

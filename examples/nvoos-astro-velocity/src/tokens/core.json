@@ -9,7 +9,10 @@
 		"line-strong": { "$type": "color", "$value": "#767676", "$description": "Strong border for form fields (SC 1.4.11 3:1). Additive — not referenced by legacy aliases, so the 092 look is preserved." },
 		"accent": { "$type": "color", "$value": "#0f6b4f", "$description": "Brand accent (matches the legacy --nv-accent)" },
 		"accent-ink": { "$type": "color", "$value": "#ffffff", "$description": "Text on accent (matches the legacy --nv-accent-ink)" },
-		"danger": { "$type": "color", "$value": "#b3261e", "$description": "Danger/promo (matches the legacy --nv-danger)" }
+		"danger": { "$type": "color", "$value": "#b3261e", "$description": "Danger/promo (matches the legacy --nv-danger)" },
+		"success": { "$type": "color", "$value": "#2e7d32", "$description": "Success state text/border (additive 2026-11-16, Proposal 149 Q-4). 5.13:1 on surface — SC 1.4.3. Deliberately a grass green so it is distinguishable by hue from the teal-green brand accent, not only by shade." },
+		"warning": { "$type": "color", "$value": "#8a5300", "$description": "Warning state text/border (additive 2026-11-16). 6.33:1 on surface — SC 1.4.3. Amber reads as caution at AA contrast without the yellow-on-white failure." },
+		"info": { "$type": "color", "$value": "#0b5fa5", "$description": "Informational state text/border (additive 2026-11-16). 6.57:1 on surface — SC 1.4.3. Distinct from both brand accent and danger." }
 	},
 	"radius": {
 		"sm": { "$type": "dimension", "$value": "4px" },

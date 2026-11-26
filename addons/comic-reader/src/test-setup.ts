@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /** @jsxImportSource react */
 import '@testing-library/jest-dom/vitest';
 import { beforeAll } from 'vitest';

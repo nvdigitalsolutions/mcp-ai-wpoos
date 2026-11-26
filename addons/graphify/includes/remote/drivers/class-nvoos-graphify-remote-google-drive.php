@@ -106,26 +106,20 @@ class NV_oOS_Graphify_Remote_Google_Drive extends NV_oOS_Graphify_Remote_Source_
 	public function test_connection() {
 		$token = $this->resolve_token();
 		if ( is_wp_error( $token ) ) {
-			return array(
-				'success' => false,
-				'message' => $token->get_error_message(),
-			);
+			return $token;
 		}
 		$result = $this->get_http()->get(
 			self::API_BASE . '/about?fields=user',
 			array( 'headers' => $this->auth_headers( $token ) )
 		);
 		if ( is_wp_error( $result ) ) {
-			return array(
-				'success' => false,
-				'message' => $result->get_error_message(),
-			);
+			return $result;
 		}
 		if ( $result['status'] < 200 || $result['status'] >= 300 ) {
-			return array(
-				'success' => false,
+			return new WP_Error(
+				'nvoos_graphify_connection_failed',
 				/* translators: %d HTTP status. */
-				'message' => sprintf( __( 'Google Drive returned HTTP %d.', 'nvoos-graphify' ), (int) $result['status'] ),
+				sprintf( __( 'Google Drive returned HTTP %d.', 'nvoos-graphify' ), (int) $result['status'] )
 			);
 		}
 		return array(

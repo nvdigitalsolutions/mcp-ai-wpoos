@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Workflow graph model — catalog, converters, validation (Phase 3b W10.2b).
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // github.test.ts — Phase 3.2: repo create (private by default), git-data
 // commit/push, redacted outputs, sanitized errors. Zero network: the octokit

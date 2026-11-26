@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // discovery.ts — site_analyze: one command turns a WordPress URL into a
 // draft site profile (Proposal 096 §1, tools/discover).
@@ -319,7 +320,49 @@ export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): 
 	// like that must never clobber an analyzed design (2026-11-11: a plain
 	// `analyze --geometry --write` left the profile with `design: { chrome }`).
 	if ( fresh.design && isAnalyzedDesign( fresh.design ) ) {
-		merged.design = applyDesignPins( fresh.design, existing.pins );
+		const withPins = applyDesignPins( fresh.design, existing.pins ) ?? fresh.design;
+		const design = withPins;
+		// A MEASUREMENT outlives a harvest-only refresh. `--design` without
+		// `--geometry` re-harvests the chrome from CSS and carries no geometry, so
+		// the measured facts (menu type, chrome size) were silently downgraded to
+		// unresolved builder vars — eca.directory's nav became
+		// `var( --e-global-typography-…-font-size )` on the second pass. Carry the
+		// previous measurement; `reconcileHeader` re-derives the styles from it.
+		if ( ! design.chrome?.geometry && existing.design?.chrome?.geometry ) {
+			design.chrome = { ...design.chrome, geometry: existing.design.chrome.geometry };
+		}
+		// Band SURFACES outlive a refresh that changed the BAND MODEL. The outline
+		// model derives its bands from the vendor's row wrappers and carries the
+		// backgrounds it can read from CSS; the section model reads them per
+		// `elementor-element-*` rule. When the model flips, the surviving list
+		// silently loses `bgColor`/`bgGradient` per band — eca.directory's
+		// phased-delivery gradient went that way, and nothing warned (2026-11-25).
+		// A surface the source genuinely removed still disappears: only bands whose
+		// ID survives AND whose new section states no surface are carried forward,
+		// and `diffDesignFacts` reports every carry-forward as a drop the operator
+		// can confirm against the live site.
+		if (
+			existing.design?.bandSource &&
+			design.bandSource &&
+			existing.design.bandSource !== design.bandSource &&
+			( existing.design.sections?.length ?? 0 ) > 0
+		) {
+			const priorById = new Map( ( existing.design.sections ?? [] ).map( ( section ) => [ section.id, section ] ) );
+			design.sections = ( design.sections ?? [] ).map( ( section ) => {
+				const prior = section.id ? priorById.get( section.id ) : undefined;
+				if ( ! prior ) {
+					return section;
+				}
+				const carried: typeof section = { ...section };
+				for ( const key of [ 'bgColor', 'bgGradient', 'bgImage', 'overlay', 'panel' ] as const ) {
+					if ( carried[ key ] === undefined && prior[ key ] !== undefined ) {
+						( carried as Record< string, unknown > )[ key ] = prior[ key ];
+					}
+				}
+				return carried;
+			} );
+		}
+		merged.design = design;
 	} else if ( fresh.design?.chrome && existing.design?.chrome ) {
 		// A `--geometry` run measures CHROME facts (the top strip, the mobile menu,
 		// the nav disclosure) but carries no design block, so the merge kept the
@@ -366,6 +409,12 @@ export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): 
 	// re-analysis (an operator pin on `design.behavior` still drives the classes).
 	if ( fresh.stickyHeader ) {
 		merged.stickyHeader = fresh.stickyHeader;
+	}
+	// The header pills' computed paint — a measured source fact like the sticky
+	// header. A `--geometry` re-forge refreshes it; `reconcileHeader` re-applies
+	// it to the design block that actually ships.
+	if ( fresh.chromeActions ) {
+		merged.chromeActions = fresh.chromeActions;
 	}
 	// The animated-effect inventory (142) is a source fact too. Only a draft
 	// that MEASURED it replaces the stored one; a `--geometry` run must not wipe

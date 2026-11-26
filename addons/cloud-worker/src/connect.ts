@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Public connect flow — no Connect Token required (this is how a site GETS
  * one).

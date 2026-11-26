@@ -85,18 +85,18 @@ class Test_SSE_Stream_Offload extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Elapsed below the threshold: no offload.
+	 * Silent gap below the threshold: no offload.
 	 */
 	public function test_deadline_check_under_threshold() {
 		$rest   = $this->build_rest();
-		$method = new ReflectionMethod( WP_MCP_AI_REST::class, 'sse_offload_deadline_exceeded' );
+		$method = new ReflectionMethod( WP_MCP_AI_REST::class, 'sse_offload_threshold_reached' );
 		$method->setAccessible( true );
 
-		$this->assertFalse( $method->invoke( $rest, microtime( true ) ) );
+		$this->assertFalse( $method->invoke( $rest, 0.5 ) );
 	}
 
 	/**
-	 * Elapsed past the threshold: offload.
+	 * Silent gap past the threshold: offload.
 	 */
 	public function test_deadline_check_past_threshold() {
 		add_filter(
@@ -107,10 +107,41 @@ class Test_SSE_Stream_Offload extends WP_UnitTestCase {
 		);
 
 		$rest   = $this->build_rest();
-		$method = new ReflectionMethod( WP_MCP_AI_REST::class, 'sse_offload_deadline_exceeded' );
+		$method = new ReflectionMethod( WP_MCP_AI_REST::class, 'sse_offload_threshold_reached' );
 		$method->setAccessible( true );
 
-		$this->assertTrue( $method->invoke( $rest, microtime( true ) - 6 ) );
+		$this->assertTrue( $method->invoke( $rest, 6 ) );
+	}
+
+	/**
+	 * The handler records the longest silent gap between two writes.
+	 *
+	 * This is the figure the offload decision reads. Proxies reset their read
+	 * timer on every byte, so a long turn that keeps writing (streamed tokens,
+	 * keepalives) is safe; a single blocking step that emits nothing is the
+	 * actual reset risk.
+	 */
+	public function test_handler_records_the_longest_silent_gap_between_writes() {
+		$handler = new WP_MCP_AI_SSE_Handler();
+
+		$this->assertSame( 0.0, $handler->get_max_idle_gap(), 'A stream that has not written yet reports no gap.' );
+
+		// Discarding buffer: the handler flushes after every frame, so keep those
+		// bytes out of PHPUnit's own output capture (the callback returns an
+		// empty string, so a flush emits nothing).
+		ob_start(
+			static function () {
+				return '';
+			}
+		);
+
+		$handler->send_sse_comment();
+		usleep( 30000 ); // 30 ms of silence — the stretch a blocking step would produce.
+		$handler->send_sse_comment();
+
+		ob_end_clean();
+
+		$this->assertGreaterThanOrEqual( 0.02, $handler->get_max_idle_gap(), 'The silent gap between the two writes must be recorded.' );
 	}
 
 	/**
@@ -125,26 +156,19 @@ class Test_SSE_Stream_Offload extends WP_UnitTestCase {
 		);
 
 		$rest   = $this->build_rest();
-		$method = new ReflectionMethod( WP_MCP_AI_REST::class, 'sse_offload_deadline_exceeded' );
+		$method = new ReflectionMethod( WP_MCP_AI_REST::class, 'sse_offload_threshold_reached' );
 		$method->setAccessible( true );
 
-		$this->assertFalse( $method->invoke( $rest, microtime( true ) - 3600 ) );
+		$this->assertFalse( $method->invoke( $rest, 3600 ) );
 	}
 
 	/**
-	 * A stream past the deadline offloads BEFORE the blocking tool runs:
-	 * job_offload + done on the stream, no tool result, snapshot + queue job
-	 * created with the pending tool batch.
+	 * A stream whose longest silent step already consumed the idle budget
+	 * offloads BEFORE the blocking tool runs: job_offload + done on the
+	 * stream, no tool result, snapshot + queue job created with the pending
+	 * tool batch.
 	 */
 	public function test_stream_offloads_before_blocking_tool() {
-		add_filter(
-			'wp_mcp_ai_sse_offload_elapsed_seconds',
-			function () {
-				// Effectively always over: the first boundary check triggers.
-				return 0.0001;
-			}
-		);
-
 		$router = $this->createMock( WP_MCP_AI_Language_Model_Router::class );
 		$router->method( 'create_chat_completion' )->willReturn(
 			array(
@@ -188,7 +212,11 @@ class Test_SSE_Stream_Offload extends WP_UnitTestCase {
 			'provider' => 'openai',
 			'model'    => 'gpt-4o-mini',
 		);
-		$config   = array( 'tools' => array( self::STUB_SLUG ) );
+		// The previous blocking step sat silent past the 110 s default, so the
+		// next one must hand off rather than risk a proxy reset.
+		$handler->max_idle_gap = 150.0;
+
+		$config = array( 'tools' => array( self::STUB_SLUG ) );
 
 		$method = new ReflectionMethod( WP_MCP_AI_REST::class, 'handle_chat_request_with_streaming' );
 		$method->setAccessible( true );
@@ -523,6 +551,22 @@ class Test_SSE_Stream_Offload extends WP_UnitTestCase {
 			 * @var array
 			 */
 			public $calls = array();
+
+			/**
+			 * Longest silent gap this stream has observed, in seconds.
+			 *
+			 * @var float
+			 */
+			public $max_idle_gap = 0.0;
+
+			/**
+			 * Report the configured silent gap to the offload decision.
+			 *
+			 * @return float
+			 */
+			public function get_max_idle_gap() {
+				return (float) $this->max_idle_gap;
+			}
 
 			/**
 			 * Record header emission.

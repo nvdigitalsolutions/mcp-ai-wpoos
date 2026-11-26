@@ -35,6 +35,16 @@ class RunSchedules extends Command
             return self::SUCCESS;
         }
 
+        // Reap before anything else: a wedged schedule is precisely the case
+        // where nothing is due, so this must not sit behind the early return.
+        // A worker that died hard never wrote a terminal row, and leaving the
+        // clock in the past would re-fire a handler that kills its process.
+        $reaped = $runner->reapStale();
+
+        if ($reaped > 0) {
+            $this->warn(sprintf('%d stale run(s) marked timed out.', $reaped));
+        }
+
         if ([] === $due) {
             return self::SUCCESS;
         }

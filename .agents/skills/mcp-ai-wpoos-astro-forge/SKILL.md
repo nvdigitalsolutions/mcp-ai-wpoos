@@ -18,7 +18,7 @@ notes below). Full context: `docs/project/proposals/096-astro-forge-wp-generator
 
 ## Architecture decisions (do NOT re-litigate)
 
-- **Content-layer loaders, not materialized content files** — `content_materialize` stays opt-in (096 §2.3).
+- **Content-layer loaders, not materialized content files** — `content_materialize` stays opt-in (096 §2.3). When it IS opted in, snapshot **while the CMS is live**: `forge materialize <profile> --from-wp` drives the production loader, because `--from <build>` needs a `dist/server` store a `static` runtime never has. Details: `reference/cms-removal-materialized-content.md`.
 - **REST-first**: `wp/v2` + `wc/v3`, **never WPGraphQL**. `_fields` pruning + `_embed` are the anti-N+1 discipline.
 - **Sanitization is mandatory, versioned, allowlisted, never a passthrough** — all WordPress HTML passes `lib/sanitize.ts` before `set:html` (096 §2.4).
 - **No plaintext credentials** — auth comes from `.env` (`WP_APPLICATION_USER`/`WP_APPLICATION_PASSWORD`), never from the profile or the generated repo. SSRF-safe by construction: the CLI consumes operator-written site profiles only (the open-world fetch surface is the `/mcp` `design_analyze` guard, Proposal 098).
@@ -86,6 +86,43 @@ node scripts/forge.mjs site.json --target ./out           # scaffold the project
 
 Pick a preset with `--preset blog|storefront|minimal` (or let the wizard
 suggest one from the analysis — Woo/products detected → `storefront`).
+
+## Gated sources — maintenance / coming-soon / staging auth (152, shipped 2026-11-20)
+
+The forge fetches two planes: `wp/v2` (Application Password) and the RENDERED
+HTML (a `wp-login.php` **session**). An Application Password cannot log into
+`wp-login.php`, so a pre-launch site that answers `503 + Retry-After` (or a
+`200` holding page) on HTML while `/wp-json/` stays open used to skip the design
+pass with a warning and scaffold the coming-soon page. Now:
+
+- **`lib/gate.ts`** — `openGate(profile)` probes, logs in once (or takes a
+  cookie/storageState/bypass token), and installs a **host-scoped** global
+  fetch wrapper plus the Playwright cookies (`gateContextOptions()`).
+  `gate.blocked` is the verdict; `gate.close()` uninstalls.
+- **Credentials as variables** (env → vault → prompt, never the profile or the
+  generated repo): `WP_GATE_USERNAME` / `WP_GATE_PASSWORD`, `WP_GATE_COOKIE`,
+  `WP_GATE_STORAGE_STATE`, `WP_GATE_QUERY`, `WP_GATE_HEADERS_JSON`,
+  `CF_ACCESS_CLIENT_ID` / `_SECRET`, `WP_GATE_HTTP_AUTH`.
+- **`forge gate <profile>`** diagnoses (exit `3` gated, `4` edge-auth, `5`
+  rate-limited); `--login [--vault]` stores the credential encrypted. `analyze`
+  **refuses** a blocked source (`--allow-blocked` overrides); the wizard never
+  allows it; MCP gains the read-only `gate_probe` and `design_apply` fails
+  closed with the remediation ladder.
+- **The bridge corroborates the probe (P4).** Every probe also asks
+  `GET /wp-json/nvoos-forge/v1/gate` on the **forge bridge** plugin (v0.3.4).
+  A `404` means the plugin is absent; a JSON verdict (`maintenance`, `mode`,
+  `plugin`, `checkedAt`) turns an `open` **anonymous** HTML read into `gated` —
+  the cached-anonymous-page case HTML alone cannot distinguish. The bridge
+  reports the site's **anonymous** mode, so it must never downgrade an
+  authenticated read (a real login unlocks what the anonymous visitor sees).
+- **Never** spoof a crawler UA, solve a JS challenge, forge a cookie, or
+  disable a production gate to make a build pass.
+
+Full contract, the probe classification table, the bridge route, the fixture's
+`WP_FIXTURE_GATE` / `WP_FIXTURE_BRIDGE_GATE` modes and the implementation
+gotchas (async spawn vs an in-process fixture; `process.exit()` →
+`0xC0000409`; `<const T>` for `gateContextOptions`):
+[`reference/gated-sources.md`](reference/gated-sources.md).
 
 ## The exit gate (CI-enforced)
 
@@ -173,6 +210,19 @@ before touching the CLI, the scaffold or the sanitizer. The highest-traffic ones
   would pin responsive copy).
 - **The class-coverage audit must include the page's inline `<style>`** and treat
   `[class~=…]`/`[class*=…]` as coverage, or correctly-styled bands read as missing.
+- **Check the element EXISTS in the build before fixing its CSS.** A
+  component-class fix is a silent no-op on a raw-HTML site: `grep -c
+  'class="ds-title' dist/*.html` before touching the `.ds-title` rules. Per-
+  element type on those bands is a CLASS BOX FACT (`bandFacts[id].box`), not
+  `design.elementCss`, and `bandBoxCss`'s `.post-body .section-content .col .x`
+  selector is a five-class specificity floor no reordering can beat.
+- **`profile.url` is not always the rebuild.** A "detached" site can still have
+  its URL pointing at live WordPress while a preview host serves the Astro
+  build — check for `wp-content` / `<meta name="forge-build">` before deciding
+  that a re-measure is circular.
+- **`sites/` is enumerated as site profiles**, so an artefact parked there is
+  scaffolded as a site and fails `assertProfile`. `forge compare` specs live in
+  `compare/<site>.json`.
 
 ## Template contract (FORGE markers)
 
@@ -294,178 +344,52 @@ gates, visual-regression practice).
 
 ## Proposal 114 §3.9 — form bridge P7 (shipped 2026-11-05)
 
-Forms integrate like WooCommerce: **content at build time, behavior proxied
-through WordPress.**
+Moved to [`reference/form-bridge.md`](reference/form-bridge.md) — content unchanged
+(split out 2026-11-17 to keep this file under Zed's load limit).
+## Proposal 165 — the publication gate (managed tier)
 
-- **Render half (the forge):** `sanitize.ts` gains the form allowlist —
-  `form`/`label`/`input`/`textarea`/`select`/`option`/`optgroup`/`button`/
-  `fieldset`/`legend` + functional attributes only (`action`/`method`/
-  `on*`/`formaction`/`style` are never allowed; `javascript:` `value`s die in
-  transformTags) — `SANITIZE_VERSION = 2`. `semantic.ts` gains the `form`
-  section kind + `FormInfo` (kind search|submit|cta, handler, formId,
-  formName, postId, fields, submitLabel): forms are extracted FIRST, before
-  the builder-section pipeline, from the top-level nodes; search forms = one
-  search-ish input (`type=search` / name s|search|query|q / `role=search` /
-  the profile's `forms.searchForms` names) or a hidden-ID carrier
-  (`form_id` → elementor, `_jet_engine_booking_form_id` → jetformbuilder,
-  `_wpcf7` → wpcf7; `post_id`/`__queried_post_id` → postId); no resolvable ID
-  → `cta` (title/links band, dropped when empty — never a dead endpoint).
-  `classifyHtml(html, options)` — the no-forms path is byte-identical to
-  pre-P7 (all 297 unit tests pin it). `Form.astro` (pure Astro, NO islands):
-  search → GET `/search/?q=`; submit → POST to `{NVOOS_FORGE_FORMS_ENDPOINT ||
-  manifest.forms.endpoint}/forms/submit` with hidden `form`/`post_id?`/
-  `honeypot`/`timestamp`/`_redirect` + delegated fetch enhancement (Astro
-  hoists + dedupes identical bundled scripts); the no-JS floor is the
-  ordinary form POST + `?form=ok|error` status script. `search.astro`
-  prefills + auto-runs from `?q=`.
-- **Config:** `types.ts` `ForgeForms` (endpoint/origin/searchForms) on
-  `SiteProfile` + `ForgeManifest`; scaffold emits `manifest.forms` (endpoint
-  defaults to `<profile.url>/wp-json/nvoos-forge/v1`) and `.env.example`
-  (`NVOOS_FORGE_FORMS_ENDPOINT`, `NVOOS_FORGE_FORMS_ORIGIN`).
-- **Behavior half (`plugins/nvoos-forge-bridge` 0.2.0):**
-  `includes/rest/class-nvoos-forge-bridge-forms.php` — one public route
-  `POST /nvoos-forge/v1/forms/submit` (permission `__return_true` — public
-  by design; the gates are CSRF/abuse controls, NOT authorization — see the
-  invariants below): disabled→404; origin allowlist (Origin header,
-  Referer fallback, normalized via `Settings::normalize_origin`)→403;
-  per-IP rate limit (transient, 5/10min)→429; honeypot non-empty or
-  timestamp outside ±2h (JSON path; optional on the no-JS form-encoded
-  floor)→silent 200 discard; optional Turnstile with `action`=
-  `nvoos_forge_form` + hostname pinned to the allowlisted origin (fails
-  closed on network errors); server-side `sanitize_textarea_field` on every
-  field (count/length caps). Dispatch ladder: JFB (`jet_fb_handler()->
-  process_form()` driven through the `_jet_engine_booking_form_id` +
-  `_jet_engine_refer` `$_POST` carriers, `is_ajax = true` for the JSON
-  response; form-id resolution via the `jet-form-builder` CPT) → Elementor
-  Pro (`ElementorPro\Modules\Forms\Classes\Ajax_Handler::ajax_send_form()`
-  with the admin-ajax contract emulated in-process: `action`/`form_id`/
-  `post_id`/`queried_id`/`form_fields` + a fresh `wp_create_nonce(
-  'elementor_pro_forms')`; form existence via a bounded `_elementor_data`
-  LIKE) → typed 404 `nvoos_forge_form_not_found` / 501
-  `nvoos_forge_no_form_handler`. Both native dispatches are wrapped in
-  `capture_json()`: it filters `wp_doing_ajax` true (otherwise `wp_send_json`
-  calls `die` directly and no die-handler filter runs), swaps
-  `wp_die_ajax_handler`/`wp_die_json_handler` for a sentinel thrower, and
-  buffers the echoed JSON (both `{status,…}` JFB and `{success,data}` shapes
-  map into the envelope `{ok,message,errors?}`). Version-drift seams: `nvoos_forge_bridge_forms_
-  jfb_available|elementor_available` (bool filters) + `…_jfb_dispatch|
-  elementor_dispatch` (return an envelope array or WP_Error to pin a
-  specific plugin release; null = native). Audit seam: the
-  `nvoos_forge_bridge_form_submission` action (accepted|rejected). No-JS
-  floor: form-encoded bodies redirect (302) to the allowlisted `_redirect`
-  with `?form=ok|error` (open-redirect guarded). Settings: `OPTION_FORMS_*`
-  (enabled, origins textarea, captcha provider/site key/secret) + UI
-  section + `option_keys()` + redacted health fields.
-- **Security invariants (0.3.1, do not regress):** only `post_status = publish`
-  + empty `post_password` forms resolve (JFB by ID and title; Elementor
-  `_elementor_data` lookup joins `wp_posts`); non-public forms return the same
-  404 as missing ones (no draft enumeration). The rate-limit IP is
-  `REMOTE_ADDR` unless the direct peer is in the
-  `nvoos_forge_bridge_trusted_proxies` filter, then the rightmost untrusted
-  hop. The route is public by design, so the origin allowlist is a CSRF gate,
-  never authorization. A submitted field can never re-target the dispatch:
-  JFB's routing carriers (`_jet_engine_booking_form_id` / `_jet_engine_refer`)
-  are stripped from the fields and re-asserted last.
-- **Tests:** forge — sanitizer form allowlist + XSS vectors, semantic form
-  classification (search/submit/cta/JFB/CF7/postId/options), scaffold forms
-  emission, e2e fixture forms (xss-trap search+Elementor form, contact JFB
-  form) asserting the rebuilt `action`es + honeypot + no carrier/vector
-  leaks. Bridge — `tests/test-forms.php` zero-HTTP: origin/rate/spam gates,
-  404/501/400/429 contracts, both dispatch seams + sanitization capture,
-  captcha via intercepted `pre_http_request`, no-JS 302 + open-redirect
-  guard.
-- **Gotchas (each cost a fix 2026-11-05, P7):** the generated project's
-  frontmatter context cannot resolve DOM type NAMES (`HTMLInputTypeAttribute`
-  → ts(2304)) — cast input `type` to a literal union instead; `is:inline`
-  scripts are PLAIN JS — TS assertions (`as unknown as`) fail the check
-  (ts(8016)); a type error in one template file makes `astro check` emit
-  cascading ts(7027) "unreachable code" noise on unrelated inline scripts —
-  fix the root error, not the warnings; `nvoos.json` has no `forms` key on
-  form-less profiles — read it through an explicit cast shape; `--overwrite`
-  re-scaffold wipes `node_modules` (reinstall); `classifyHtml` must split
-  forms from the TOP-LEVEL nodes in document order or non-form content
-  re-renders forms twice; the JFB `form_id` carrier is a hidden INPUT NAME
-  (`_jet_engine_booking_form_id`), Elementor's is `form_id` + `post_id`
-  hidden inputs — no `data-*` surface needed; bridge PHPUnit needs the
-  Docker `oos-wp` env (wp-tests-config targets the compose network) — phpcs
-  + `php -l` run anywhere, PHPUnit does not.
+A forged managed site can mimic Elementor: the public sees a holding page, a
+signed-in manager sees the real site. Two modules, two questions — `lib/gate.ts`
+is how the FORGE enters a gated source; `lib/gate-publish.ts` + `lib/gate-runtime.ts`
+are how the BUILT site behaves while the CMS is gated. `gate.generated.json` is
+always emitted (it is the runtime boot state), `trust: bridge` refuses to gate on
+HTML inference alone, and a gate page stripped from the build falls back to a
+built-in copy rather than 500.
+
+Full contract, the `honor` policy, the session HMAC recipe and the artifact rules:
+[`reference/proposal-165-publication-gate.md`](reference/proposal-165-publication-gate.md).
+
+**A prerendered page only answers at its slashed URL** (since 2026-11-26,
+#8330). `build.format 'directory'` writes `dist/client/<slug>/index.html` and
+nothing else, so `/about-us` matched no route and 404'd on a managed build —
+while WordPress 301s that exact form, so every legacy inbound link broke.
+`createStatic` now probes `<path>/index.html` and 301s to it, query preserved.
+Recognise it by: `/about-us/` = 200 and `/about-us` = 404 for the SAME document,
+with SSR routes (`/manage`, `/api/*`) unaffected. A live page that 404s is worth
+re-checking with the slash before suspecting content, the gate or the build.
+
+## Manage sign-in (Proposal 165, hardened 2026-11-26)
+
+`/manage` has three doors and five failure codes; the code names the layer.
+Read `?error=` before touching the credential.
+
+| Code | Meaning |
+|---|---|
+| `config` | no signing key (env, or the provisioned `.forge-gate-secret`) |
+| `origin` | browser Origin not accepted — proxy Host rewrite vs `security.checkOrigin` |
+| `credentials` | WordPress rejected the credential |
+| `permission` | authenticated, but no `edit_posts` / `manage_astro` |
+| `upstream` | the CMS did not answer in time |
+
+Doors, the key-provisioning rule, the `allowedDomains` + `x-forwarded-host` fix
+and why the bridge needs no new endpoint:
+[`reference/manage-sign-in.md`](reference/manage-sign-in.md).
 
 ## Shared-mirror deploy (branch per site, 2026-11-06)
 
-Owner decision: forged client sites deploy through ONE private mirror repo
-(`nvdigitalsolutions/nvoos-forge-sites`) — one `site/<name>` branch per
-client, built `dist/` at the branch ROOT (force-pushed, flat; `main` holds
-only the README clone anchor). Velocity apps connect the mirror and select
-Branch = `site/<name>` (Root directory = repo root — Velocity supports
-per-app Branch + Root Directory per the official deployment docs). Never
-commit generated sites into the monorepo: `sites/<name>.json` profiles are
-the only committed artifact per site.
-
-- **Forge:** `deploy`/`deploy-config` gain `--mirror-repo <owner/repo>` +
-  `--site-branch <branch>` (paired, validated). Mirror mode emits
-  `scripts/mirror-push.mjs` next to the workflows (single template in
-  `lib/deploy-config.ts` `mirrorPushScript()` — orphan-branch checkout +
-  force push; the workflow and the CLI run the SAME emitted file, no
-  drift). `deploy --mirror-repo` skips repo creation and mirrors a prebuilt
-  `dist/` (operator staging path; needs `GITHUB_TOKEN`). Legacy velocity
-  shape (per-site repo, `deploy` branch under `site/`) is unchanged.
-- **Monorepo pipeline:** `.github/workflows/forge-sites.yml` — push on
-  `sites/**`/templates/libs, `workflow_dispatch` (`site` input), and
-  `repository_dispatch` `nvoos-forge-content-changed` (bridge-fired; HMAC
-  verified by the committed `.github/forge/verify-dispatch.mjs`, generated
-  by `emitDeployConfig`). Per site: scaffold → deploy-config → build →
-  mirror-push. Unset `NVOOS_FORGE_MIRROR_*` secrets degrade to build-only
-  (never a red job). Needs repo variable `NVOOS_FORGE_MIRROR_REPO` +
-  secrets `NVOOS_FORGE_MIRROR_URL`/`_TOKEN`, `FORGE_WEBHOOK_SECRET`.
-- Full runbook + research: `docs/project/proposals/114-shared-mirror-deploy-addendum.md`.
-- **Adding a client site:** seed the branch on the mirror —
-  `gh api repos/nvdigitalsolutions/nvoos-forge-sites/git/refs -f ref=refs/heads/site/<name> -f sha=<main sha>`
-  (read the sha via `gh api …/git/refs/heads/main --jq .object.sha`) — commit
-  `sites/<name>.json`, merge → the workflow mirrors on the next run. The
-  mirror's `main` README lists the convention (update it via the
-  `contents` API PUT — base64 content + the current file `sha`).
-- **Operational learnings (2026-11-06, first live mirror push):** the
-  Windows self-hosted runner's `npm install` phase runs ~15 min — a quiet
-  job is NOT a hang, check `gh run view <id> --log` before touching code.
-  The WCAG scaffold warnings fix in the PROFILE, not the template: the
-  TOP-LEVEL `tokens` keys are the `--forge-*` names minus the prefix (`ink`,
-  `muted`, `line-strong`, …) — a `design.tokens` block does NOT exist and is
-  silently ignored (the merge is `defaults ← designToTokens(design) ←
-  profile.tokens`). Pick values from the source's own unassigned pool that
-  PASS — the audit's one-size suggestion (same dark color for all three)
-  flattens hierarchy, `#505050` muted and `#666666` line-strong both clear
-  4.5:1/3:1 and keep it. GitHub intermittently rejects the orphan force
-  push with `remote: fatal error in commit_refs` — the emitted script
-  retries 3× with a 5s `Atomics.wait` sleep (cross-platform). Mirror CI
-  secrets on the monorepo:
-  `NVOOS_FORGE_MIRROR_URL` + `NVOOS_FORGE_MIRROR_TOKEN` + variable
-  `NVOOS_FORGE_MIRROR_REPO` — set via `gh auth token | gh secret set …` so
-  the token never lands in a transcript. A prebuilt local `dist/` stages
-  instantly: run the generated `scripts/mirror-push.mjs` with `MIRROR_URL`/
-  `MIRROR_TOKEN`/`SITE_BRANCH` env.
-- **Local preview of a built site** (a `dist/` exists): the Zed terminal
-  reaps backgrounded children, so detach the server —
-  `powershell.exe -NoProfile -Command "Start-Process -FilePath 'node' -ArgumentList 'node_modules/astro/bin/astro.mjs','preview','--port','4199' -WorkingDirectory '<abs target>' -WindowStyle Hidden"`.
-  astro's bin is `bin/astro.mjs` (NOT `astro.js`); `astro preview` binds
-  `localhost` (::1) only — probe `curl http://localhost:<port>/`, not
-  `127.0.0.1`; stop via the PID from `netstat -ano | grep <port> | grep LISTEN`.
-- **Velocity app — build-centric, no static preset (2026-11-06):** Velocity
-  ALWAYS runs `npm install` + a build command; there is no pure static
-  framework option. With `Astro-ssr` selected, a mirror branch (prebuilt
-  flat files, no package.json) fails `ENOENT package.json` (rc=254). The
-  working pattern: the mirror-push emission ships a **no-op package.json
-  stub** (`nvoos-forge-site`, build = `node -e "…"` — quoted: `sh -c` rejects a bare `(`) beside the
-  built files, and the Velocity Deployment Settings set the **Output
-  Directory to the repo root (`.`)** with the default build command
-  (`npm run build` — the no-op). The Cloudways MCP exposes no
-  deployment-settings tool (the apps toolset's web-rules tools are
-  header/redirect rules only) — these are Velocity-console UI settings.
-  The mirror content itself is not the problem: verify with
-  `gh api repos/nvdigitalsolutions/nvoos-forge-sites/contents/?ref=site/<name>`
-  — `index.html` at root means the push is good. A hand-added stub does NOT
-  survive the next mirror force-push (the push replaces branch content) —
-  the stub must come from the emission, so merge the emission fix BEFORE
-  the next forge-sites run.
+Moved to [`reference/shared-mirror-deploy.md`](reference/shared-mirror-deploy.md)
+(content unchanged; split out 2026-11-26 to keep this file under Zed
+load limit).
 
 ## Proposal 135 — two-tier deploy + domain topology (2026-11-09)
 
@@ -817,93 +741,8 @@ keyframes use `translate`/`scale`, never `transform` (it replaces the centering)
 
 ## Proposal 123 — chrome typography pass (2026-11-06)
 
-Header/footer fidelity round: the chrome was rebuild-blind to the source's
-nav/call/footer type facts and its strip colors. All facts verified with
-headless-chromium computed styles against the live source.
-
-- **The shared cascade (`resolveElementRules`):** every chrome fact resolves
-  through the CSS with an own-match-first ladder — `!important` (per
-  DECLARATION, not per rule) > own-token match > context match, spec =
-  `own * 1e6 + context * 1e8 + ruleIndex`. A rule matching NONE of the
-  element's own tokens can only INHERIT — it must lose (the header's
-  `.aux-header-light { color: #fff }` must not paint the call button; its
-  real ink comes from its own classes). Pseudo-states AND state CLASSES
-  skip (`:hover` + `aux-hover` — jayainc's nav had an `!important`
-  `.aux-hover` rule that out-cascaded the resting white). `terminalFill`
-  gates the element-level FILL to rules whose selector ENDS on an own
-  token (the call button's gradient must never leak onto the header).
-  `bgForCss` keeps rgba()/hsla() alpha raw — `rgba(8,26,67,0.9)` and
-  `rgba(255,255,255,0.7)` ARE the facts, hex-flattening loses the look.
-- **The fetch must see the whole sheet set:** MAX_STYLESHEETS 6 silently
-  dropped jayainc's CUSTOMIZER file (`uploads/phlox-pro/custom.css` — the
-  file with every real body/header/footer override). Raised to 40 with a
-  3MB total cap that breaks BETWEEN files; the per-file cap went 512KB →
-  2MB — a 512KB cut landed mid-`@media` in the 886KB main.css and the
-  dangling brace swallowed EVERY stylesheet after it. Inline `<style>`
-  blocks and `<link>` sheets now interleave in DOCUMENT order (WP prints
-  the inline blocks after the links — the inline 16px nav rule must
-  cascade AFTER the linked 0.875em rule).
-- **`topLevelRules` (the splitter):** the flat RULE_RE desyncs on `@media`
-  blocks and on braces/quotes inside `url(data:…)` payloads — one svg data
-  URI ate every later `body { font-family }` rule. The splitter is a
-  char scanner: comments skipped, quoted strings inert-but-accumulated,
-  quotes only open strings OUTSIDE `url(...)` parens, braces inside parens
-  are value bytes. Media bodies stay inert blobs (no element tokens match
-  a media selector).
-- **Typography harvest:** the body font comes from the LAST `body`-selector
-  rule (frequency ranking miscounts Elementor's unused token-layer
-  families — jayainc's body rendered Rubik while the tokens said Roboto);
-  the DISPLAY font from the `h1..h6` rule; `bodyWeight` token (300) from
-  the body rule; `font` emits even when body === display (a single-family
-  source renders BOTH roles in it). @font-face blocks are stripped before
-  family ranking (load evidence, not usage).
-- **New chrome facts (all in `design.chrome`):** `topbarBg/Ink`,
-  `headerBg/Ink`, `navStyle` (weight/size/transform/letterSpacing),
-  `navInk`, `call.style` (padding/radius/weight/size/transform — jayainc:
-  `14px 43px`, `100em` pill, 400, 16px, uppercase), `footerBarBg/Ink` (the
-  dark copyright strip — the bar INK resolves from the COPYRIGHT node, not
-  the footer element), `footerHeadingStyle` (500/29px/capitalize),
-  `chromeSize` (16px — the body rule's `100%` resolves against the html
-  ROOT rule, never the rebuilt 13px content body).
-- **Template wiring:** the facts ride as CSS vars on `<body>`
-  (`--forge-chrome-size`, `--forge-header-bg`, `--forge-nav-transform`,
-  `--forge-call-pad` → falls back to `--forge-cta-pad` → template
-  default, …); `.site-header--themed`/`.site-footer--themed` classes drop
-  the default hairline when a harvested bg exists; the footer splits into
-  two full-width strips (light subfooter + dark bar — the source's rhythm,
-  the inner containers re-measure); **`.site-header--sticky` must chain
-  `var(--forge-header-bg, var(--forge-surface))`** — the sticky variant
-  painted surface over the navy (caught in headless verification).
-- **Verification:** headless chromium + a tiny in-process static server
-  (the MCP browser backends cannot reach this machine's localhost) — dump
-  computed styles per chrome element and diff against the live source.
-  Re-scaffold (not manual CSS copies) after template edits — the
-  `FORGE:tokens` rewrite only runs in the scaffold pipeline.
-- **The top strip's STRUCTURE is measured** (`measureTopbar`, 2026-11-12):
-  items (icon + text, the address's own line break), icon-only socials,
-  alignment, height and the icon/item rhythm — `analyzeChrome` only reads its
-  text lines. Contract + the `tsString` newline gotcha:
-  [`reference/measured-band-facts-and-sticky-header.md`](reference/measured-band-facts-and-sticky-header.md) §11.
-
-### The mobile nav disclosure (`chrome.navToggle`)
-
-The chrome pass captured nav LINKS but nothing about the control that hides
-them; a rebuild without it wrapped six links over three rows at 390px.
-Presence + accessible name are markup facts (`analyzeChrome`); WHERE it appears
-is a browser fact (`measureNavToggle`) — never guess a breakpoint, since Brando
-collapses at 991px and Bootstrap at 768px. The template renders an APG
-disclosure button (Escape closes + returns focus, focus-out closes, resize
-re-syncs) and hides the nav **only** via `data-collapsed`, which JS alone sets,
-so JS-off leaves it inline at every width. A chrome fact needs THREE edits
-(`ForgeChrome`, the emitted interface, the emitted value) or it silently
-disappears — detail: [`reference/mobile-nav-disclosure.md`](reference/mobile-nav-disclosure.md).
-
-**The OPENED panel is a measured SURFACE** (`chrome.mobileNav`), and
-`verify --chrome` diffs it (plus the header BOX — `chrome.geometry` — the footer
-brand ROW — `chrome.footerBrand`: logo/social positions per viewport — and
-colour-region resolution) —
-[`reference/chrome-gates.md`](reference/chrome-gates.md).
-
+Moved to [`reference/chrome-typography.md`](reference/chrome-typography.md) — content unchanged
+(split out 2026-11-17 to keep this file under Zed's load limit).
 ## Proposal 125 — split hero, webfonts, catalog (2026-11-06)
 
 The live jayainc rebuild taught four rebuild gaps; all fixed in the
@@ -1041,6 +880,27 @@ Three passes close the "capture everything beyond content" gap — notes:
 `analyze --geometry` + `verify --geometry`, fact consumption in `verify`,
 `rulesInMedia`, and typecheck-as-a-gate. Full notes:
 `reference/fidelity-gates.md`.
+
+## Measured chrome + band-list fidelity (2026-11-23)
+
+Three rebuild failures, now rules — full detail in
+[`reference/measured-chrome-and-band-fidelity.md`](reference/measured-chrome-and-band-fidelity.md):
+
+- **Chrome surfaces and ink are MEASURED.** `applyChromeSurfaces` overwrites the
+  harvest's header/footer surface + dominant ink from the colour pass (a
+  transparent header takes the BODY surface); `navInk` must appear in the
+  header's ink palette or the palette wins; header CTA pills are measured in the
+  browser (`measureHeaderActions` — computed fill/ink/box + `hideMobile`) and
+  stored as `profile.chromeActions` so `reconcileHeader` re-applies them.
+- **The band list EXCLUDES header/footer chrome.** Elementor renders its
+  header/footer templates into the homepage but the REST page body excludes
+  them, so counting them made 9 bands where the build renders 7 — and every
+  POSITIONAL audit compared band N with band N+2. `allSectionNodes` +
+  `collectBands` both skip a band inside `header`/`footer`/`elementor-location-*`.
+- **Words may never be lost.** A kind that will not paint a slot cannot be the
+  band's kind: `RENDERED_SLOTS` + a <50%-of-source-words check demotes the band
+  to its RAW slice (`kind: 'text'` + `html`), and `sectionHasContent` counts
+  `section.html` or the demoted band loses its measured box.
 
 ## Content, colour and pixel parity gates (2026-11-09)
 
@@ -1195,13 +1055,9 @@ builder themes declare rhythm in classes the sanitizer strips, so
   the template's own 32px rhythm in place.
 - `minHeight` is a floor, never a lock — it closes UNDERSHOOT only. Overshoot is
   a content-scale difference and must be reported as such.
-- **A decoration-only band escapes the 120px strip threshold.**
-  `MIN_MIRRORED_BAND_HEIGHT` assumes a short band's height belongs to the
-  rebuild's type scale — true only when there IS content. A band with no
-  heading, body, media or control is a spacer (jayainc's `dff3f1a`, a lone
-  `widget-spacer`): its measured height is the whole design, so
-  `contentlessBand()` mirrors it at any size. A band whose only content is a
-  control is NOT decoration (`interactions` is part of the test).
+- **A decoration-only band escapes the 120px strip threshold**: with no heading,
+  body, media or control it is a spacer (`contentlessBand()` mirrors it at any
+  size — jayainc's `dff3f1a`); a control-only band is NOT decoration.
 - **A profile `padding`/`minHeight` pin outranks the measurement** — the point
   of a pin, and how a stale one hides. jayainc pinned
   `sections.fd63522.padding: '0px 0px 100px 0px'` against a source box measured
@@ -1209,6 +1065,14 @@ builder themes declare rhythm in classes the sanitizer strips, so
   `paddingBottom`, read `pins[]` before the renderer.
 - `min-height` must be applied **before** the hero early return in `wrapStyle`,
   or the one band a source height pins never gets it.
+- **`bandFacts[].elements` paths are POSITIONAL**, measured from the source band
+  root, which the rebuild nests inside `.post-body`: emit them anchored
+  (`[data-section-id] .post-body > * > <path>`) or the leading `div:nth-child(2)`
+  becomes a DESCENDANT selector that paints the band's surface + pinned height
+  over unrelated nodes (a hero photo vanished under an 810x900 block). Publish
+  `--ds-col-min-h` with the floor too — a centred band wrapper rule re-states
+  `min-height: var(--ds-col-min-h, 0)` above it. See
+  [`reference/render-side-bands.md`](reference/render-side-bands.md) §9.
 - Rows are a **12-column GRID**, not equal-share flex: `grid-column: span N` from
   `vc_col-{lg,md}-N` with `[class~=…]` (whole token). Carousels stay
   `flex-wrap: nowrap` + `flex: 1 1 0`, or 7 logos wrap onto a second row.
@@ -1217,63 +1081,9 @@ builder themes declare rhythm in classes the sanitizer strips, so
 
 ## Measured band typography + the sticky header (2026-11-10)
 
-The two passes that closed "the sections still don't match": the raw-HTML band
-path had NO heading scale (a 40px source `<h3>` rendered at 15.21px = `1.17em`
-of the 13px body), and a sticky header's SCROLLED state was never captured. Both
-are browser facts on `analyze --geometry`, stored as `profile.bandFacts` and
-`profile.stickyHeader`. Full contract:
-[`reference/measured-band-facts-and-sticky-header.md`](reference/measured-band-facts-and-sticky-header.md).
-
-- `bandFacts[id]` = per-heading computed facts (size/weight/line-height/
-  letter-spacing/transform/**text-align**), the body paragraph, and the inner
-  `containerWidth`. Scaffold emits `[data-section-id] h3{…}` + `--ds-title-*`,
-  and derives the band `measure` from the container (fluid bands stop rendering
-  at the site measure).
-- `stickyHeader` = rest vs pinned background/ink/height. `Base.astro` adds
-  `site-header--pinned`; global.css rebuilds it as a `scroll(root)` timeline
-  (rest state is the BASE — a header's finished state is the scrolled one, and a
-  solid strip over the hero at scrollY 0 is the louder error).
-- `bandFacts[id].hidden` = the selectors the SOURCE renders hidden at rest
-  (accordion panels, tab panes, mobile drawers), hidden at BOTH breakpoints and
-  carrying `:not(.in)`-style exclusions so the open panel stays visible. This
-  replaced the hand-written `.panel-collapse.collapse:not(.in)` rule. Reopening
-  is behaviour, not data: `templates/blog/src/components/BuilderAccordion.astro`
-  toggles those classes back — see
-  [`reference/measured-band-facts-and-sticky-header.md`](reference/measured-band-facts-and-sticky-header.md) §3.
-- `verify` runs a **class-coverage audit** (report-only; `--strict-classes`
-  makes it a gate): every class name in the rebuilt bands that matches no rule,
-  written to `verify-artifacts/class-coverage.json`. That list is the inventory
-  behind every hand fix in this arc — read it before adding CSS.
-- **Vendor utilities are DATA, not template CSS** (`BUILDER_ADAPTERS[].utilities`):
-  `text-center`, `text-medium`, `padding-four-all`, `font-weight-600` … are
-  emitted per band, trimmed to the classes the page measured (`bandFacts[].classes`).
-  `global.css` carries none of them, so a Divi site gets Divi's conventions and
-  nothing else. Values are measured. The VALUE-NAMING responsive variants
-  (`xs-padding-40px-tb`, `sm-padding-70px-tb`, `md/sm/xs-text-center`) are mapped;
-  the numeric spacing scale is not — it arrives as a measured box fact instead
-  (see the addendum below).
-- Gotchas: read the pinned snapshot after a real wait (the live page's header
-  colours land a beat after the scroll class); the fact audit cannot see a
-  scoped rule that sits before the band, so its marker needs a `present`
-  predicate over the whole page; and the audit must include the page's INLINE
-  `<style>` blocks and treat `[class~=…]`/`[class*=…]` as coverage, or it
-  reports correctly-styled bands as missing.
-
-### Addendum (2026-11-11) — box facts, header LAYOUT, two sanitizer bugs
-
-Typography and scrolled colours were not sufficient: four more measured facts
-(box facts, header LAYOUT, `stickyHeader.position`, container-per-device) plus
-two sanitizer bugs. The bullets — box diff, `media`, `themeToggle`, the pixel
-gate's source seam, gate policy, the per-device container, the `<p>`-class gap,
-`box`, `stickyHeader.position`, chrome-vs-nav ink and the fluid-band rule — moved
-to
-[`reference/measured-band-facts-and-sticky-header.md`](reference/measured-band-facts-and-sticky-header.md)
-§11 rather than restating the reference here. Read it before touching
-`bandFacts`, `chrome.headerBg` or the gate policy.
-
-Two bugs fixed in that pass: `class` was stripped from `h1`–`h6` (headings lost
-their measured box), and `--dark` set light ink on the WRAP instead of its
-children. virtuallyjamaica: **0 fail** box geometry, **0 drift** colour.
+Moved to [`reference/measured-band-typography-sticky.md`](reference/measured-band-typography-sticky.md)
+(content unchanged; split out 2026-11-26 to keep this file under Zed
+load limit).
 
 ## Interaction states — hover, focus, press (2026-11-11)
 
@@ -1361,7 +1171,7 @@ Four more measured facts (detail:
 The two Astro products share a CONTRACT but not code, so neither suite can see
 the other tree. `bin/check-astro-app-parity.mjs` (CI:
 `.github/workflows/astro-app-parity.yml`, triggered by EITHER app) is the
-record — read it as the spec. Exit 0 = parity, 1 = undeclared drift. It pins:
+record — read it as the spec. Exit 0 = parity, 1 = drift, 2 = cannot verify. It pins:
 
 - **`composeLlmsTxt` is byte-identical** modulo one declared knob: the forge
   always links `.md`, velocity defaults to HTML (`variant: 'markdown'`
@@ -1423,88 +1233,70 @@ emits it in sitemap/llms. The source needs `show_in_rest`. Notes:
 
 ## Proposal 139 — media localization (2026-11-09)
 
-Full notes: `docs/project/proposals/139-forge-media-localization-proposal.md`.
+Moved to [`reference/media-localization.md`](reference/media-localization.md) — content unchanged
+(split out 2026-11-17 to keep this file under Zed's load limit).
 
-A forged site must never hotlink the CMS. Astro's `<Image>` localizes what it
-can see; everything else did not — body-content `<img>`, chrome logos/favicon,
-collage photos, and any host outside `image.domains`. A domain move
-(`jayainc.com` → `cms.jayainc.com`) therefore broke images.
+## Tiny brochure sites — the raw-band hand layer (2026-11-20)
 
-Three layers, one contract:
+A four-page film-production site (one 350px wordmark stage, one 650px stage, a
+white film page with a full-measure still and two credit columns) exposed a
+third path beside "design renderer" and "hand-built holding page": **the
+forge pipeline + a hand-owned page layer**, locked and regenerable-in-part.
+The design renderer classified its hero as a CTA and demoted the `h1` to `h2`;
+that is the classifier being honest about a layout that carries no sections.
 
-- **Authorize** — `image.domains` = CMS host ∪ `profile.media.hosts` ∪
-  `NVOOS_FORGE_MEDIA_HOSTS`; `SmartImage` reads the same rule from
-  `src/lib/media.ts` instead of a single-host comparison.
-- **Repair** — a `/wp-content/` or `/wp-includes/` path whose host is neither
-  the CMS nor an allowlisted media host is re-pointed at the CMS origin
-  (path + query preserved). Do NOT put the old domain in `media.hosts`: the
-  repair is what makes a stale DB work; allowlisting the dead host makes the
-  build fetch from the wrong place.
-- **Mirror** — `scripts/localize-media.mjs` runs after `astro build` (before
-  pagefind). Strategy follows the tier: `nvoos.json runtime: 'static'` →
-  **mirror** every remaining candidate into `dist/media/<hash>-<slug>.<ext>`;
-  `runtime: 'managed'` (bridge/BFF present) → **proxy** uploads to the
-  runtime's same-origin `/media/<rest>` route (a rewrite, no download).
-  **External stylesheets are mirrored with their fonts in BOTH modes**
-  (theme icon sheets, plus the Google Fonts sheet when
-  `NVOOS_FORGE_LOCALIZE_FONTS` is on — the `/media` proxy only matches uploads,
-  so leaving the font chain remote kept a render-blocking cross-origin hop in
-  a supposedly self-contained artifact). Icon glyphs therefore stop depending
-  on the CMS host — and stop tripping a future enforced CSP. A face lists
-  several encodings of the SAME font: one missing derivative must prune only
-  that `src`, never the whole `@font-face` (a dead `.ttf` dropped et-line and
-  its icons on virtuallyjamaica, 2026-11-15). **Linked documents** (an allowlist:
-  pdf/doc/xls/ppt/odt/csv/txt/rtf/epub/ics/zip) are mirrored too, with their
-  own cap and `#page=` fragments preserved; executables are never candidates.
-  Non-image stored facts (the catalogue CTA, `chrome.iconCss`, the JSON-LD
-  logo) are repaired at RENDER time via `repairMediaUrl` instead. Override:
-  `NVOOS_FORGE_MEDIA_MODE=local|proxy|off`. Fail-soft (report in
-  `.forge-cache/media-localize.json`, build never fails), idempotent, honours
-  `WP_FETCH_PROXY`, caps per file (25 MB) and per build (500 MB).
-
-- **Optimize** — Proposal 140 adds WebP re-encode (q82), intrinsic
-  `width`/`height` fill, self-hosted webfonts with `font-display: swap`,
-  dead `preconnect` stripping, and a `media budget` verify gate. Env vars,
-  modes and gotchas:
-  [`reference/performance-budget.md`](reference/performance-budget.md).
-
-- **Font survival + deployed identity (2026-11-15)** — a mirrored sheet can
-  keep its selectors, classes and markup while losing its `@font-face`, which
-  is invisible to every design gate. Three defences: `.forge-cache/media-localize.json`
-  records `droppedFontFamilies` with `used`; `verify` has a browser-free
-  `font coverage` gate in `--minimal` and a browser `font render` gate (both
-  `--strict-fonts` blocking); `Base.astro` marks a genuinely unusable marker
-  `forge-icon-missing` and `global.css` draws a neutral bullet. A CMS-less
-  site should also freeze its media: `forge media-snapshot <profile> --from
-  <built-project>` writes `sites/<name>.media/` (URL-keyed manifest; CSS entries
-  store the SOURCE sheet, so a second pass does not chase its own `/media/…`
-  rewrites). `media.snapshot: true` makes it authoritative; the scaffold
-  refuses a flag with no directory.
-
-- **Stale releases** — a green build proves the artifact, not the live site.
-  Set `FORGE_BUILD_ID` at build time (CI: `${GITHUB_SHA}-${GITHUB_RUN_ID}`);
-  `Base.astro` stamps `<meta name="forge-build">`, `mirror-push` records it in
-  `deploy.json`, and `forge deployed <profile> --target <dir> [--strict]`
-  compares the live marker (with retries for Velocity's async deploy). The
-  monorepo smoke runs it post-push; the generated pipeline emits
-  `scripts/verify-deployed.mjs` as a non-blocking step.
-
-Config: `profile.media { hosts, localize, mode, snapshot, maxFileMb }` → `nvoos.json` +
-`.env.example`; env wins. `media.mode` (`local|proxy|off`) is how a managed
-site — whose default is the bridge’s same-origin `/media` proxy — opts into a
-fully self-contained artifact: `"media": { "localize": true, "mode": "local" }`.
-
-**Never rewrite** `<a href>`, `<meta>` (`og:image` must stay absolute) or
-JSON-LD — a relative path there is invalid, and the catalogue PDF must keep
-working. Gotchas: emit `url(/media/…)` **unquoted** (a nested quote breaks a
-`style="…"` attribute); attribute regexes need `(?:^|\s)` / `(?<![\w-])` so
-`src` does not match inside `data-src`; SSR output lives in `dist/client`;
-and a flaky `EPERM`/`ENOTEMPTY` scaffold timeout under 61 parallel workers is
-the Windows staging race — re-run with `--maxWorkers=4` before debugging code.
-- **In-process fixture server + `spawnSync` deadlocks:** an integration test
-  that serves HTTP from the test process and runs the CLI synchronously
-  hangs until the request timeout — the parent's event loop is blocked,
-  so it can never answer the child. Spawn asynchronously; await the exit.
+- **Keep the pipeline, own the composition.** Content (`wp/v2` loader),
+sanitizer, SEO head/graph, sitemap, media localization and the chrome facts
+stay generated; the page composition becomes a site stylesheet + a small
+`src/lib/<site>.ts` page table (layout kind, and the exact `<head>`
+title/description the source's SEO plugin keeps out of REST). Then `forge lock`.
+- **Render the sanitized body RAW** inside a measured stage. The sanitizer
+keeps `elementor-element-<id>` classes, so the band id is recovered from the
+class and re-attached with its surface facts by the page route — never
+re-derived by hand.
+- **The band gates addressed a `<div>` wrapper; a raw band is a `<section>`.**
+`builtBandBlocks` (band-audit) and `builtBandsOf` (design/band flow) matched
+`<div` only, so every raw band reported "missing from the build" while its
+geometry and colour both passed. Both accept any element carrying
+`data-section-id`.
+- **A band must STATE its facts.** `data-section-id`, the advisory
+`data-section` kind, and `background`/`padding`/`--ds-measure` inline are what
+band flow, the per-band audit and the fact audit read; a stylesheet-only
+surface reads as "background none". `SectionTheme` carries `kind` so the
+scaffold can emit it, and the page route merges the facts into the source's tag
+(sanitisation dropped them).
+- **A single inline `padding` lies when the source re-pads at a breakpoint**
+(the stage is flush on desktop, 25px under 768px). Leave that page's profile
+section `padding` unset and keep the per-device value in CSS.
+- **Nav links need separating whitespace.** `<a>A</a><a>B</a>` extracts as
+`AB`: text parity then reports `projectscontact` and loses every 3-gram across
+the nav (68.8% coverage on a page whose copy was byte-identical). `Base.astro`
+renders the links with a literal space between them (a whitespace-only flex
+item is suppressed by the spec, so the layout is unchanged).
+- **`title.rendered` and `excerpt.rendered` are HTML.** They arrive
+entity-encoded and the template uses both as TEXT sinks — `<title>` rendered
+`We Didn&#8217;t` and `<meta name="description">` shipped a literal `<p>`.
+`plainText()` in `wp-loader.ts` decodes the title and derives a plain-text
+`seoDescription` when the source has no SEO plugin fields in REST.
+- **A body copy difference of one NBSP changes the wrap.** The source's footer
+is `Productions.&nbsp; All rights reserved`; with two plain spaces the line
+fits at 390px and the footer is 121px instead of 148px. Copy source strings
+verbatim — normalised text hides this.
+- **The source's computed header colour can be a lie.** This theme's
+`<header>` computes `#ffffff` and a child layer paints the black band over it,
+so `analyze --colors` records white for a header that renders black. Verify
+with a screenshot/pixel sample and pin the PAINTED value. Reproducing the
+white-then-cover stack to satisfy the raw computed value was tried and
+reverted: the covering pseudo-element is what the gate reads, so it reports
+black anyway, and it did not change the nav's antialiasing.
+- **Pixel parity that is not zero is still a pass** when it is explained: the
+WebP re-encode of a hero still measured mean 2.8/255 channel delta (p99 = 9,
+max 25) and the source's grayscale nav AA costs 0.07% of the desktop page.
+Record the source screenshots (`--pixel-record-source`) and set a site
+threshold with the reason, rather than dropping the gate.
+- **A very small site can pass 18/19 gates.** The remaining advisory is class
+coverage — a raw band keeps the vendor's class names without restating its
+stylesheet, which is the point of the path.
 
 ## Repo conventions
 
@@ -1543,6 +1335,32 @@ the Windows staging race — re-run with `--maxWorkers=4` before debugging code.
   [`reference/interaction-states.md`](reference/interaction-states.md) — the
   CDP forced-pseudo-state mechanism, the rest-paint rule, the WCAG 2.4.13 /
   1.4.11 focus baseline and the measured virtuallyjamaica numbers.
+- Form bridge P7 (render + proxy halves):
+  [`reference/form-bridge.md`](reference/form-bridge.md) — the sanitize
+  allowlist, the WordPress proxy half and the direct-mode boundary.
+- Chrome typography (Proposal 123):
+  [`reference/chrome-typography.md`](reference/chrome-typography.md) — the
+  shared cascade-resolver ladder, terminalFill/bgForCss and the measured
+  nav/call/footer type facts.
+- Media localization (Proposal 139):
+  [`reference/media-localization.md`](reference/media-localization.md) —
+  localizing everything `<Image>` cannot see (body `<img>`, chrome
+  logos/favicon).
+- Builder-4 parity gotchas (a gated Elementor 4 rebuild, 2026-11-24):
+  [`reference/builder-4-parity-gotchas.md`](reference/builder-4-parity-gotchas.md)
+  — hash ids are not CSS identifiers, `--ds-measure` is the content column,
+  a state delta must outrank the positional fact, and a query-loop band is
+  data rather than design.
+- Publication gate (Proposal 165, the managed tier):
+  [`reference/proposal-165-publication-gate.md`](reference/proposal-165-publication-gate.md)
+  — the two gate modules, `honor`, the session HMAC recipe and the
+  directory-index 301.
+- Manage sign-in (hardened 2026-11-26):
+  [`reference/manage-sign-in.md`](reference/manage-sign-in.md) — the three
+  doors, five `?error=` codes, key provisioning and the proxy-Origin trap.
+- Split out verbatim on 2026-11-26 to keep this file under Zed's load limit:
+  [`reference/shared-mirror-deploy.md`](reference/shared-mirror-deploy.md) and
+  [`reference/measured-band-typography-sticky.md`](reference/measured-band-typography-sticky.md).
 
 ## Email delivery
 
@@ -1550,4 +1368,52 @@ the Windows staging race — re-run with `--maxWorkers=4` before debugging code.
 Brevo/Mailjet API). SPF/DKIM/DMARC decide inbox placement. Notes:
 `reference/email-delivery.md` (now also: provider IP allowlists, secret
 hygiene, and why the throttle is proxy-wide). CMS removed, cutover, or
-rebuilding with no WordPress: `reference/cms-removal-materialized-content.md`.
+rebuilding with no WordPress: `reference/cms-removal-materialized-content.md`
+(route parity for posts, the no-CMS image-host rule, snapshot freeze order).
+
+## Proposal 130 — consent-exempt cookieless beacon (2026-11-19)
+
+`cloudflare-web-analytics` was already in the detector's fingerprint table, but
+the template gated **every** vendor behind a stored consent decision, so a
+declared beacon could never fire. The fix is a per-tracker flag, never a blanket
+rule: `trackers[].consentExempt: true` (guarded by `isCookielessVendor()`) makes
+`renderTrackingGenerated` emit `cookieless` + `consentExempt` on the vendor row,
+and `Tracking.astro` renders that vendor as a **static**
+`<script type="module" … data-cf-beacon>` plus a preconnect — outside the
+consent loader, so an exempt-only site ships zero banner machinery (verified: 0
+`nvoos-tracking-loader` nodes, 8/8 pages carrying the tag).
+
+Rules that matter:
+
+- **The exemption is explicit and operator-declared.** `lib/tracking.ts` still
+  treats cookieless analytics as consent-gated by default; the CNIL/EDPB
+  audience-measurement frame (no cookie or device storage, publisher-only, no
+  cross-site) is narrow, so it is a decision, never an inference. The README
+  reports `consentExempt` from the manifest, so it cannot mislabel an exempt
+  beacon as "consent-gated".
+- **A cookie-setting vendor can never be exempt.** The generator drops the flag,
+  so nothing downstream re-enables it; a test pins this.
+- **`spa` is pinned false.** The beacon's default `spa: true` patches
+  `History.pushState` and uses Soft Navigations; a static MPA gains nothing and
+  would double-count if a client router were added later. Set
+  `tracking.spa: true` only for a ClientRouter/SSR site.
+- **One snippet per page.** Cloudflare's edge (automatic) injection plus a
+  manual beacon double-counts — pick one. Automatic injection is skipped
+  entirely when the origin sends `Cache-Control: public, no-transform`.
+- **Manual beacons work on any hostname** (they POST to
+  `cloudflareinsights.com/cdn-cgi/rum`), so a staging URL collects data before
+  the DNS cutover; automatic injection reports to the site's own `/cdn-cgi/rum`
+  and needs traffic through the zone.
+- **GPC is deliberately not consulted** for the beacon: it reports timing
+  metrics only, and a static tag cannot be un-loaded without losing its early
+  start. Disable the tracker if an operator wants the signal honoured.
+- **The scanner keeps the whole `<script src>` opening tag** (`scriptTags`,
+  rebuilt from DECODED attributes). A `src`-only capture cannot see
+  `data-cf-beacon`, and SSR frameworks escape it as `{&quot;token&quot;:…}` —
+  that decoding is what makes a forged site's own beacon round-trip through
+  `analyzeTracking` with the token intact.
+- **CSP:** `script-src https://static.cloudflareinsights.com` +
+  `connect-src https://cloudflareinsights.com`.
+- **Arming:** `"enabled": true` and `"ids": { "token": "<site tag>" }`. A site
+  tag is 32 lowercase hex; the extractor accepts 16–64 and reads both the
+  `data-cf-beacon` attribute and the `?token=` query-string form.

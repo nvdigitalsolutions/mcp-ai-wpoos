@@ -25,6 +25,14 @@ use Nvoos\Core\Domain\Service\Budget\DataBudgetTracker;
 
 $ok   = 0;
 $fail = 0;
+/**
+ * Record a pass or fail for a value comparison.
+ *
+ * @param string $label    Check label.
+ * @param mixed  $expected Expected value.
+ * @param mixed  $actual   Actual value.
+ * @return void
+ */
 function check( string $label, $expected, $actual ): void {
 	global $ok, $fail;
 	if ( $expected === $actual ) {
@@ -34,22 +42,22 @@ function check( string $label, $expected, $actual ): void {
 		}
 }
 
-// Defaults
+// Defaults.
 $t = new DataBudgetTracker();
 check( 'default_req', 1048576, $t->getRequestBudget() );
 check( 'default_pm', 65536, $t->getPerMessageBudget() );
 
-// Custom
+// Custom.
 $t = new DataBudgetTracker( 500000, 32000 );
 check( 'custom_req', 500000, $t->getRequestBudget() );
 check( 'custom_pm', 32000, $t->getPerMessageBudget() );
 
-// Floor
+// Floor.
 $t = new DataBudgetTracker( 500, 200 );
 check( 'floor_req', 1024, $t->getRequestBudget() );
 check( 'floor_pm', 512, $t->getPerMessageBudget() );
 
-// Accounting (use values above floor)
+// Accounting (use values above floor).
 $t = new DataBudgetTracker( 10000, 1000, 'test' );
 check( 'init_consumed', 0, $t->consumed() );
 check( 'init_remaining', 10000, $t->remaining() );
@@ -63,20 +71,20 @@ check( 'spill_small', false, $t->shouldSpill( 500 ) );
 check( 'spill_over_pm', true, $t->shouldSpill( 2000 ) );
 check( 'spill_exhaust', true, $t->shouldSpill( 8000 ) );
 
-// Exhaustion
+// Exhaustion.
 $t2 = new DataBudgetTracker( 10000, 5000 );
 $t2->record( 10000 );
 check( 'exhausted_at_limit', true, $t2->isExhausted() );
 check( 'remaining_at_limit', 0, $t2->remaining() );
 
-// Spill counter
+// Spill counter.
 $t3 = new DataBudgetTracker( 10000, 5000, 'test' );
 check( 'init_spills', 0, $t3->spillCount() );
 $t3->noteSpill();
 $t3->noteSpill();
 check( 'after_notes', 2, $t3->spillCount() );
 
-// Reset
+// Reset.
 $t3->reset( 'fresh' );
 check( 'reset_consumed', 0, $t3->consumed() );
 check( 'reset_spills', 0, $t3->spillCount() );

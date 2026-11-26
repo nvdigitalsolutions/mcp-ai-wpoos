@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import pkg, { getTools, getTool, configure, executeTool, CLIENT_TOOLS } from '../dist/nvoos-client-tools.js';
 
 // Smoke tests

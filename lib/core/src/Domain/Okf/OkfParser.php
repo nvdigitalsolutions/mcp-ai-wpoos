@@ -499,8 +499,13 @@ final class OkfParser implements OkfParserInterface
      */
     private function castScalar(string $value): mixed
     {
-        if (preg_match('/^(["\'])(.*)\1$/', $value, $matches)) {
-            return $matches[2];
+        if (preg_match('/^(["\'])(.*)\1$/s', $value, $matches)) {
+            // The writer escapes these three inside double quotes; unescaping
+            // them here is what makes a description containing a quote or a
+            // newline round-trip instead of keeping the backslash.
+            return '"' === $matches[1]
+                ? \strtr($matches[2], array( '\\\\' => '\\', '\\"' => '"', '\\n' => "\n" ))
+                : $matches[2];
         }
 
         $lower = strtolower($value);

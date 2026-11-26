@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Schedulable tool catalogue hook for the visual builder palette.
  *

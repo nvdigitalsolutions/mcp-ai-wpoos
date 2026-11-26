@@ -189,6 +189,11 @@ class WP_MCP_AI_Tool_Post_To_Multiple_Platforms implements WP_MCP_AI_Tool_Interf
 			'social-media',
 			'external-api',
 			'content-publishing',
+			'external-communication', // A published post reaches people outside this site.
+			'irreversible',           // Seen is seen; deleting the post does not undo that.
+			'requires-capability',
+			'state-changing',
+			'write',
 		);
 	}
 

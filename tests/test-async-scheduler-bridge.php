@@ -9,6 +9,8 @@
  */
 
 /**
+ * Async scheduler bridge tests.
+ *
  * @covers WP_MCP_AI_Async_Scheduler_Bridge
  */
 class Test_Async_Scheduler_Bridge extends WP_UnitTestCase {

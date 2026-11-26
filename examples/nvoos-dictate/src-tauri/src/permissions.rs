@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! macOS TCC permission detection, request, and System Settings deep links
 //! (P5 port, phase M1).
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Optimized images — Proposal 092 Phase 1.7.
 //

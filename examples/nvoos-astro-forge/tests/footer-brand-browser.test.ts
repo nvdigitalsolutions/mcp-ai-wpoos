@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // footer-brand-browser.test.ts — `measureFooterBrand` against a hermetic
 // fixture.
@@ -79,6 +80,62 @@ const FIXTURE_HTML = `<!doctype html>
 /** A footer with no social icons has no brand row to align. */
 const NO_SOCIALS_HTML = FIXTURE_HTML.replace( /<div class="socials">[\s\S]*?<\/div>\s*/u, '' );
 
+/**
+ * The BADGE box and the © line's type, on a builder-shaped footer.
+ *
+ * Kadence's filled social style is a 51px rounded SQUARE (r3) on its palette-7
+ * slot, and it centres its `footer-html` block at 14px/600 in palette-4 ink with
+ * a palette-1 link. The rebuild defaulted to a 2.25rem circle of left-aligned
+ * 17px body copy, so the footer read as a different component entirely
+ * (virtuallysrilanka, 2026-11-20).
+ */
+const CHIP_HTML = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+	*, *::before, *::after { box-sizing: border-box; }
+	html, body { margin: 0; }
+	footer { display: block; padding: 24px 0; color: rgb(45, 55, 72); }
+	.footer-row { display: flex; align-items: center; justify-content: space-between; max-width: 1140px; margin: 0 auto; }
+	.socials { display: flex; gap: 18px; }
+	.socials a {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 51px;
+		height: 51px;
+		border-radius: 3px;
+		background-color: rgb(237, 242, 247);
+		color: rgb(45, 55, 72);
+	}
+	.logo img { width: 200px; height: 40px; vertical-align: middle; }
+	.footer-html-inner p {
+		font-size: 14px;
+		font-weight: 600;
+		color: rgb(45, 55, 72);
+		text-align: center;
+		margin: 0;
+	}
+	.footer-html-inner p a { color: rgb(49, 130, 206); }
+</style>
+</head>
+<body>
+	<footer>
+		<div class="footer-row">
+			<div class="socials">
+				<a href="" aria-label="Facebook">${ ICON }</a>
+				<a href="" aria-label="Instagram">${ ICON }</a>
+			</div>
+			<div class="logo"><img src="/vj-logo.svg" alt="Logo"></div>
+		</div>
+		<div class="footer-html"><div class="footer-html-inner">
+			<p>&copy; 2026 EXAMPLE IS POWERED BY <a href="https://example.test/">EXAMPLE STUDIO.</a></p>
+		</div></div>
+	</footer>
+</body>
+</html>`;
+
 /** One handler for both probes: the HTML fixture plus the brand SVG asset. */
 const serveFixture = ( request: import( 'node:http' ).IncomingMessage, response: import( 'node:http' ).ServerResponse ) => {
 	if ( request.url?.startsWith( '/vj-logo.svg' ) ) {
@@ -86,7 +143,11 @@ const serveFixture = ( request: import( 'node:http' ).IncomingMessage, response:
 		response.end( LOGO_SVG );
 		return;
 	}
-	const body = request.url?.startsWith( '/no-socials' ) ? NO_SOCIALS_HTML : FIXTURE_HTML;
+	const body = request.url?.startsWith( '/no-socials' )
+		? NO_SOCIALS_HTML
+		: request.url?.startsWith( '/chip' )
+			? CHIP_HTML
+			: FIXTURE_HTML;
 	response.writeHead( 200, { 'content-type': 'text/html; charset=utf-8' } );
 	response.end( body );
 };
@@ -129,6 +190,44 @@ const serveFixture = ( request: import( 'node:http' ).IncomingMessage, response:
 
 		it( 'returns no fact when the footer has no social icons', () => {
 			expect( empty ).toEqual( {} );
+		} );
+	} );
+
+	describe.skipIf( ! hasChromium )( 'measureFooterBrand — the badge box and the © line type', () => {
+		let server: Server;
+		let chip: ForgeFooterBrand;
+
+		beforeAll( async () => {
+			server = createServer( serveFixture );
+			await new Promise< void >( ( resolve ) => server.listen( 0, '127.0.0.1', resolve ) );
+			const address = server.address();
+			const port = typeof address === 'object' && address ? address.port : 0;
+			chip = await measureFooterBrand( { url: `http://127.0.0.1:${ port }/chip`, timeout: 30000 } );
+		}, 120000 );
+
+		afterAll( async () => {
+			if ( server ) {
+				await new Promise< void >( ( resolve ) => server.close( () => resolve() ) );
+			}
+		} );
+
+		it( 'records the badge as a SIZE + RADIUS + fill, not a fixed circle', () => {
+			expect( chip.social ).toEqual( {
+				size: '51px',
+				radius: '3px',
+				bg: 'rgb(237, 242, 247)',
+				ink: 'rgb(45, 55, 72)',
+			} );
+		} );
+
+		it( 'records the © line type + alignment and the link ink it carries', () => {
+			expect( chip.text ).toEqual( {
+				size: '14px',
+				weight: '600',
+				ink: 'rgb(45, 55, 72)',
+				linkInk: 'rgb(49, 130, 206)',
+				align: 'center',
+			} );
 		} );
 	} );
 

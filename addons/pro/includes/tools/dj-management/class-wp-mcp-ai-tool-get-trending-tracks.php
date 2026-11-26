@@ -175,9 +175,11 @@ class WP_MCP_AI_Tool_Get_Trending_Tracks implements WP_MCP_AI_Tool_Interface, WP
 		// Check if DJ Management toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_dj_management_toolkit'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'DJ Management Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' ),
+			// Matches the `toolkit_not_available` code the other toolkits use, so a
+			// caller can branch on "disabled" rather than parsing prose.
+			return new WP_Error(
+				'toolkit_not_available',
+				__( 'DJ Management Toolkit is not enabled. Please enable it in Settings → NV oOS → Tools & Features.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

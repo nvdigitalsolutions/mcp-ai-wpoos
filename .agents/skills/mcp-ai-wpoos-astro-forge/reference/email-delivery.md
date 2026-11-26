@@ -142,6 +142,34 @@ cd <dir> && npm install && npx astro check && npx astro build
 A `direct` profile needs `deploy.runtime: managed` AND a `forms.mail` block, or
 the scaffold refuses. Secrets are never in the profile or the manifest.
 
+## Verifying a **delivery**, not a response (2026-11-16)
+
+The endpoint answers `{ ok: true }` for **both** a delivered enquiry and a
+silent drop (honeypot, time trap, harvested payload, missing `page`), and
+`Form.astro` prints "Thank you — your message was sent." for either. The form's
+own status is therefore never evidence of delivery. Check the ESP.
+
+Brevo: the list endpoint **requires** a filter — a bare `?limit=` answers
+`400 missing_parameter` (`Please pass atleast one of the following filters:
+email, messageId, templateId`). Filter on the recipient, then read the detail
+for the body and the event trail:
+
+```sh
+GET /v3/smtp/emails?email=<to>&limit=20&sort=desc   # summary + uuid
+GET /v3/smtp/emails/<uuid>                          # events (sent/delivered/open) + body
+```
+
+Two traps, both measured on virtuallyjamaica:
+
+- **Index lag.** A just-sent message can be absent for tens of seconds; a query
+  run immediately after the send reads as "dropped". The 12:04:56 UTC test
+  delivery was missing from the first query and appeared a minute later — one
+  query away from a false "the gate broke the form" conclusion. Re-query before
+  believing a negative, or compare against the deploy time instead.
+- **Mixed offsets.** The list returns the account timezone (`+05:30` here) and
+  the detail returns `+01:00` for the same instant. Convert both to UTC before
+  lining them up with a deployment timestamp.
+
 ## Provider IP allowlists (2026-11-15)
 
 A key can be scoped to an IP allowlist, and then **the app's egress IP** must be
@@ -200,10 +228,17 @@ What the emitted verifier guarantees:
 - **Order: verify → throttle → send.** A token is free to mint, so letting a
   rejected one consume a real address's slots would let a single bot lock the
   form for everyone behind the same NAT.
-- A **missing** token is accepted unverified with a loud `console.warn`. A
-  widget that never rendered is a CSP/script fault far more often than a bot,
-  and 400ing on it is the silent-drop failure class this endpoint exists to
-  avoid.
+- A **missing** token is rejected (400) by default. The widget renders for
+  every real visitor, so a tokenless POST is a script hitting the route
+  directly — the spam class that hit virtuallyjamaica on 2026-11-16, where a
+  bot posted the old CF7 field list (`your-name`, `your-email`,
+  `your-message`, `submit`, an empty `g-recaptcha-response`) and the
+  accept-unverified branch delivered every one. `requireToken: false` restores
+  the old behaviour for a site that must keep `Form.astro`'s no-JS POST floor;
+  a broken widget is then a CSP/script fault rather than a bot.
+- Harvested-payload noise (`submit`, `g-recaptcha-response`,
+  `h-captcha-response`, `_wpcf7*`) never reaches the body — `NOISE_FIELDS` in
+  `lib/forms.ts` drops it, so a bot's scraper field list cannot pad the email.
 - `onProviderError: "allow"` keeps the enquiry when siteverify itself is
   unreachable (timeout / 5xx / DNS); `"block"` refuses it with a 503 so the
   visitor is not blamed for our outage.
@@ -229,6 +264,39 @@ paired secret goes in the host's runtime environment as `TURNSTILE_SECRET`
 Cloudflare widget's allowed hostnames must include `deploy.publicOrigin`. A
 site key/secret mismatch is a `siteverify` rejection at submit time, not a
 build failure — test a real submission after any rotation.
+
+### A minted token is not a human (2026-11-16)
+
+Requiring a token closes tokenless POSTs, and a site can still receive spam: a
+solver service or a headless browser mints a **real** token for the site key,
+then posts a flat harvested field list at the route. Measured on
+virtuallyjamaica — 11:24 UTC, after the token requirement shipped:
+
+```
+your-name: kr
+your-email: …@zapovedniki.com
+```
+
+`siteverify` can say "this challenge was solved for this site key". It cannot
+say "a person filled this form". Two provenance gates therefore run after
+verification and before the throttle, emitted only when `requireToken` is on:
+
+- **`harvestedField( fields )`** — drops a payload carrying any `NOISE_FIELDS`
+  name (`submit`, `g-recaptcha-response`, `h-captcha-response`, `_wpcf7*`).
+  This form never emits them, so their presence means the field list was
+  scraped from a different form definition.
+- **`carriesPage( fields, siteHost )`** — requires `page` on the expected
+  hostname. `page` is what the form's own script always sends
+  (`page: window.location.href`); a replayed flat payload does not carry it.
+
+Both answer `{ ok: true }` and send nothing — the same silent-drop policy as
+the honeypot. They are not emitted for a profile with `requireToken: false`:
+a no-JS POST floor has no `page` carrier to send.
+
+Neither gate is proof of humanity, and a sender that forges `page` **and**
+mints a token still passes. Treat them as the app-side floor; the durable
+control for a distributed run is a rate rule at the edge
+(`nvoos-forge-deploy` → Cloudflare rate limiting).
 
 ### The payload-envelope trap
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Jest unit config for the NV oOS SaaS Controller addon.
  *

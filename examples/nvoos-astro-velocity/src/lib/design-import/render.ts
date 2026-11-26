@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // render.ts — opt-in rendered capture (Proposal 098 Phase 2.1).
 //

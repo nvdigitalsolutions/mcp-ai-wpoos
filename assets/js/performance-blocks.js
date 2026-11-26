@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Gutenberg blocks for NV oOS Performance Monitoring.
  *

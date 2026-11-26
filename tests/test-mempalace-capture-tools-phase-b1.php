@@ -32,6 +32,9 @@ class WP_MCP_AI_MemPalace_Capture_Tools_Phase_B1_Test extends WP_UnitTestCase {
 	 */
 	protected $events = array();
 
+	/**
+	 * Reset the memory capture state.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
@@ -59,6 +62,9 @@ class WP_MCP_AI_MemPalace_Capture_Tools_Phase_B1_Test extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Reset the memory capture state after each test.
+	 */
 	public function tearDown(): void {
 		remove_all_filters( 'wp_mcp_ai_memory_capture_skip_transient' );
 		remove_all_actions( 'wp_mcp_ai_memory_stored' );
@@ -69,6 +75,9 @@ class WP_MCP_AI_MemPalace_Capture_Tools_Phase_B1_Test extends WP_UnitTestCase {
 	// Base — argument validation
 	// -------------------------------------------------------------------
 
+	/**
+	 * The capture tool requires a wing key.
+	 */
 	public function test_capture_tool_requires_wing_key() {
 		$tool   = new WP_MCP_AI_Tool_CRM_Capture_Interaction();
 		$result = $tool->execute(
@@ -82,6 +91,9 @@ class WP_MCP_AI_MemPalace_Capture_Tools_Phase_B1_Test extends WP_UnitTestCase {
 		$this->assertSame( 'capture_missing_wing_key', $result->get_error_code() );
 	}
 
+	/**
+	 * A room outside the enum is rejected.
+	 */
 	public function test_capture_tool_rejects_room_outside_enum() {
 		$tool   = new WP_MCP_AI_Tool_CRM_Capture_Interaction();
 		$result = $tool->execute(
@@ -96,6 +108,9 @@ class WP_MCP_AI_MemPalace_Capture_Tools_Phase_B1_Test extends WP_UnitTestCase {
 		$this->assertSame( 'capture_invalid_room', $result->get_error_code() );
 	}
 
+	/**
+	 * The wing is built from the prefix and key.
+	 */
 	public function test_capture_tool_builds_wing_from_prefix_and_key() {
 		$tool   = new WP_MCP_AI_Tool_CRM_Capture_Interaction();
 		$result = $tool->execute(
@@ -115,6 +130,9 @@ class WP_MCP_AI_MemPalace_Capture_Tools_Phase_B1_Test extends WP_UnitTestCase {
 	// PM capture — decision-grade defaults
 	// -------------------------------------------------------------------
 
+	/**
+	 * A PM decision is captured at born tier core.
+	 */
 	public function test_pm_capture_decision_is_born_tier_core() {
 		$tool   = new WP_MCP_AI_Tool_PM_Capture_Decision();
 		$result = $tool->execute(
@@ -139,6 +157,9 @@ class WP_MCP_AI_MemPalace_Capture_Tools_Phase_B1_Test extends WP_UnitTestCase {
 	// Healthcare capture — PHI + consent + tier=core
 	// -------------------------------------------------------------------
 
+	/**
+	 * A health encounter is classified PHI with consent.
+	 */
 	public function test_health_capture_encounter_classifies_as_phi_with_consent() {
 		$tool   = new WP_MCP_AI_Tool_Health_Capture_Encounter();
 		$result = $tool->execute(
@@ -163,6 +184,9 @@ class WP_MCP_AI_MemPalace_Capture_Tools_Phase_B1_Test extends WP_UnitTestCase {
 	// Verbatim discipline — non-summarising toolkits cannot flip it off
 	// -------------------------------------------------------------------
 
+	/**
+	 * A non-summarising toolkit cannot disable verbatim.
+	 */
 	public function test_non_summarising_toolkit_cannot_disable_verbatim() {
 		$tool   = new WP_MCP_AI_Tool_CRM_Capture_Interaction();
 		$result = $tool->execute(
@@ -184,6 +208,9 @@ class WP_MCP_AI_MemPalace_Capture_Tools_Phase_B1_Test extends WP_UnitTestCase {
 	// Doc Gen — summarisation discipline (two-record, archival + recall)
 	// -------------------------------------------------------------------
 
+	/**
+	 * A docgen summary writes archival and recall records.
+	 */
 	public function test_docgen_summary_writes_two_records_archival_plus_recall() {
 		$tool   = new WP_MCP_AI_Tool_DocGen_Capture_Style_Memory();
 		$result = $tool->execute(
@@ -230,6 +257,9 @@ class WP_MCP_AI_MemPalace_Capture_Tools_Phase_B1_Test extends WP_UnitTestCase {
 	// Schema — required fields are correctly declared
 	// -------------------------------------------------------------------
 
+	/**
+	 * Schemas declare the correct required fields.
+	 */
 	public function test_schemas_declare_correct_required_fields() {
 		$cases = array(
 			array( new WP_MCP_AI_Tool_CRM_Capture_Interaction(), 'account_id', array( 'interactions', 'objections', 'next-actions' ) ),

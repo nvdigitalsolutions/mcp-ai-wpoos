@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Pro SPA v2 — visual-viewport keyboard inset hook (Proposal 080, Phase 0).
  *

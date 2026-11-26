@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Dictation controller: the orchestration loop.
 //!
 //! Flow (Windows PTT):
@@ -16,7 +17,7 @@
 //! - `e2e_ms` (key-up -> pasted) is recorded per transcript — the
 //!   observability signal for latency regressions.
 
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Instant;
@@ -27,7 +28,7 @@ use tokio::sync::oneshot;
 use crate::audio::capture::MicCapture;
 use crate::cleanup;
 use crate::config::{AppCategory, CaptureMode};
-use crate::error::AppResult;
+use crate::error::{AppError, AppResult};
 use crate::hotkey::{platform_listener, HotkeyEvent, HotkeyListener};
 use crate::state::AppState;
 
@@ -58,6 +59,71 @@ const VAD_FALLBACK_PEAK: f32 = 0.004;
 
 /// Pending MCP `dictate` request (hint + completion channel).
 type PendingDictate = (Option<String>, oneshot::Sender<Result<String, String>>);
+
+/// Where the controller currently is, exposed so gesture actions can request
+/// the correct transition instead of guessing (a `Pressed` on an idle
+/// controller starts a *hold* recording, which is not what a toggle wants).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DictationPhase {
+    Idle,
+    Hold,
+    Toggle,
+}
+
+const PHASE_IDLE: u8 = 0;
+const PHASE_HOLD: u8 = 1;
+const PHASE_TOGGLE: u8 = 2;
+
+static PHASE: AtomicU8 = AtomicU8::new(PHASE_IDLE);
+/// A clone of the controller's event sender, so gesture intents can drive the
+/// same state machine as the hotkey. Set once in [`DictationController::spawn`].
+static REQUEST_TX: OnceLock<Sender<HotkeyEvent>> = OnceLock::new();
+
+/// The controller's current phase.
+pub fn phase() -> DictationPhase {
+    match PHASE.load(Ordering::SeqCst) {
+        PHASE_HOLD => DictationPhase::Hold,
+        PHASE_TOGGLE => DictationPhase::Toggle,
+        _ => DictationPhase::Idle,
+    }
+}
+
+fn set_phase(phase: DictationPhase) {
+    let raw = match phase {
+        DictationPhase::Idle => PHASE_IDLE,
+        DictationPhase::Hold => PHASE_HOLD,
+        DictationPhase::Toggle => PHASE_TOGGLE,
+    };
+    PHASE.store(raw, Ordering::SeqCst);
+}
+
+/// Stop/finish an active dictation using the transition the current phase
+/// requires. A no-op when idle.
+pub fn request_stop() -> AppResult<()> {
+    let event = match phase() {
+        DictationPhase::Idle => return Ok(()),
+        DictationPhase::Hold => HotkeyEvent::Released { shift: false },
+        DictationPhase::Toggle => HotkeyEvent::Pressed,
+    };
+    send(event)
+}
+
+/// Toggle dictation (start when idle, stop when recording).
+pub fn request_toggle() -> AppResult<()> {
+    if phase() != DictationPhase::Idle {
+        return request_stop();
+    }
+    send(HotkeyEvent::DoubleTap)
+}
+
+fn send(event: HotkeyEvent) -> AppResult<()> {
+    let tx = REQUEST_TX
+        .get()
+        .ok_or_else(|| AppError::Unsupported("dictation controller is not running".into()))?;
+    tx.send(event)
+        .map_err(|_| AppError::Other("dictation controller has stopped".into()))
+}
 static PENDING: OnceLock<Mutex<Option<PendingDictate>>> = OnceLock::new();
 
 /// Diagnostics snapshot of the most recent dictation attempt — the
@@ -148,6 +214,14 @@ impl DictationController {
 
         // Resident microphone.
         let settings = state.settings_snapshot();
+        tracing::info!(
+            device = settings
+                .audio
+                .input_device
+                .as_deref()
+                .unwrap_or("<system default>"),
+            "startup: opening microphone"
+        );
         match MicCapture::start(
             settings.audio.ring_capacity_secs,
             settings.audio.input_device.as_deref(),
@@ -165,6 +239,14 @@ impl DictationController {
                 tracing::warn!("no microphone available at startup: {e}");
             }
         }
+
+        let opened_device = state
+            .mic
+            .lock()
+            .unwrap()
+            .as_ref()
+            .map(|m| m.device_name().to_string());
+        tracing::info!(device = ?opened_device, "startup: microphone ready");
 
         // Resident engine, warmed off-thread.
         let app_for_engine = app.clone();
@@ -185,6 +267,9 @@ impl DictationController {
         // Accessibility + Input Monitoring); the default `toggle` mode
         // stays permission-free via the global-shortcut plugin.
         let (tx, rx): (Sender<HotkeyEvent>, Receiver<HotkeyEvent>) = channel();
+        // Gesture intents drive the same state machine as the hotkey. The
+        // sender is process-global because the controller owns the receiver.
+        let _ = REQUEST_TX.set(tx.clone());
         let use_event_tap = cfg!(target_os = "macos") && settings.hotkey.ptt_mode == "hold";
         let mut primary = platform_listener(use_event_tap);
         let primary_result = primary.start(&settings.hotkey, tx.clone());
@@ -241,6 +326,7 @@ impl DictationController {
                     // On-demand capture: wait for audio before opening the window.
                     arm_mic(&app);
                     let press_pos = mic_position(&app);
+                    set_phase(DictationPhase::Hold);
                     emit(&app, UiEvent::Recording { hint });
                     phase = Phase::Recording {
                         toggle: false,
@@ -251,6 +337,7 @@ impl DictationController {
                     let hint = pending_hint();
                     arm_mic(&app);
                     let press_pos = mic_position(&app);
+                    set_phase(DictationPhase::Toggle);
                     emit(&app, UiEvent::Recording { hint });
                     phase = Phase::Recording {
                         toggle: true,
@@ -265,6 +352,7 @@ impl DictationController {
                     HotkeyEvent::Released { shift },
                 ) => {
                     phase = Phase::Idle;
+                    set_phase(DictationPhase::Idle);
                     finalize(&app, shift, press_pos, mic_position(&app));
                 }
                 // Hands-free toggle: the double-tap's own key release must
@@ -280,10 +368,12 @@ impl DictationController {
                     HotkeyEvent::Pressed,
                 ) => {
                     phase = Phase::Idle;
+                    set_phase(DictationPhase::Idle);
                     finalize(&app, false, press_pos, mic_position(&app));
                 }
                 (Phase::Recording { .. }, HotkeyEvent::Esc) => {
                     phase = Phase::Idle;
+                    set_phase(DictationPhase::Idle);
                     resolve_pending(Err("dictation cancelled".into()));
                     emit(&app, UiEvent::Cancelled);
                     schedule_mic_pause(&app);
@@ -871,10 +961,11 @@ fn register_plugin_shortcut(app: &AppHandle, tx: Sender<HotkeyEvent>, combo: &st
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        adaptive_threshold, trim_to_speech_with, vad_empty_fallback, VAD_MAX_THRESHOLD,
-        VAD_MIN_THRESHOLD,
-    };
+    use super::{adaptive_threshold, trim_to_speech_with, vad_empty_fallback, VAD_MIN_THRESHOLD};
+    // Only the energy-VAD test asserts the adapted ceiling; under `silero-vad`
+    // `adaptive_threshold` short-circuits below it.
+    #[cfg(not(feature = "silero-vad"))]
+    use super::VAD_MAX_THRESHOLD;
     use crate::audio::vad::EnergyVad;
 
     fn tone(hz: f32, seconds: f32, rate: usize, amplitude: f32) -> Vec<f32> {
@@ -903,6 +994,11 @@ mod tests {
         assert!(trim_to_speech_with(&vec![0.0f32; 4 * rate], rate, &mut vad2).is_empty());
     }
 
+    /// The energy VAD adapts its gate to the noise floor. Under `silero-vad`
+    /// `adaptive_threshold` short-circuits to the constant floor by design
+    /// (the neural model does its own gating), so this assertion only holds
+    /// for the energy implementation — see the Silero counterpart below.
+    #[cfg(not(feature = "silero-vad"))]
     #[test]
     fn threshold_adapts_to_noise_floor() {
         let rate = 16_000;
@@ -920,6 +1016,24 @@ mod tests {
             adapted > VAD_MIN_THRESHOLD && adapted <= VAD_MAX_THRESHOLD,
             "noise-adapted threshold was {adapted}"
         );
+    }
+
+    /// With the neural VAD the noise-floor gate is deliberately bypassed:
+    /// `adaptive_threshold` must stay at the constant floor even for a loud
+    /// window, because Silero scores speech probability itself.
+    #[cfg(feature = "silero-vad")]
+    #[test]
+    fn silero_keeps_the_constant_floor_threshold() {
+        let rate = 16_000;
+        assert_eq!(crate::audio::vad::implementation(), "silero");
+        for amplitude in [0.0f32, 0.05, 0.5] {
+            let window = tone(120.0, 1.0, rate, amplitude);
+            let adapted = adaptive_threshold(&window, rate / 10);
+            assert!(
+                (adapted - VAD_MIN_THRESHOLD).abs() < 1e-6,
+                "silero threshold must stay at the floor, got {adapted} for amplitude {amplitude}"
+            );
+        }
     }
 
     #[test]

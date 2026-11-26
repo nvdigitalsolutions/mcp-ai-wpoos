@@ -1,0 +1,71 @@
+version = 1
+
+# The repo holds four differently-licensed products in one tree. Source files
+# carry their own SPDX headers (Proposal 166, Phase P8). This file covers only
+# the files that cannot carry a comment header: lockfiles and vendored assets.
+#
+# The authoritative per-file map is .github/docs-scopes.json; the human
+# rationale is Appendix A of
+# docs/project/proposals/166-cross-language-documentation-contract-proposal.md.
+
+# Root and GPL addon lockfiles.
+[[annotations]]
+path = [
+  "composer.lock",
+  "addons/canvas-toolkit/package-lock.json",
+  "addons/chat-spa/package-lock.json",
+  "addons/cloudways-dashboard/package-lock.json",
+  "addons/comic-reader/package-lock.json",
+  "addons/docs-hub/composer.lock",
+  "addons/docs-hub/package-lock.json",
+  "addons/document-editor/package-lock.json",
+  "addons/librechat/package-lock.json",
+  "addons/mcp-gateway/package-lock.json",
+  "addons/mcp-wordpress-gateway/package-lock.json",
+  "addons/media-studio/package-lock.json",
+  "addons/page-agent/package-lock.json",
+  "addons/toolkit-shell/package-lock.json"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "NV Digital Solutions"
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+# MIT example lockfiles.
+[[annotations]]
+path = [
+  "examples/nvoos-astro-forge/package-lock.json",
+  "examples/nvoos-astro-velocity/package-lock.json"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "NV Digital Solutions"
+SPDX-License-Identifier = "MIT"
+
+# Proprietary product lockfiles.
+[[annotations]]
+path = [
+  "addons/cloud-worker/package-lock.json",
+  "addons/media-worker/package-lock.json",
+  "addons/nvoos-astro-bridge/package-lock.json",
+  "addons/pro/assets/spa-v2/package-lock.json",
+  "addons/pro/assets/spa/package-lock.json",
+  "addons/pro/composer.lock",
+  "addons/pro/package-lock.json",
+  "addons/saas-controller/package-lock.json",
+  "addons/schedule-anything-spa/package-lock.json",
+  "addons/tenant-router/package-lock.json",
+  "docker/laravel/app-skeleton/composer.lock",
+  "examples/nvoos-complete-velocity/package-lock.json",
+  "examples/nvoos-dictate/package-lock.json",
+  "examples/nvoos-dictate/src-tauri/Cargo.lock"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "NV Digital Solutions"
+SPDX-License-Identifier = "LicenseRef-Proprietary"
+
+# Vendored canvas library: an MIT artefact inside a proprietary product tree.
+# This is a deliberate exception, not a relicensing bug.
+[[annotations]]
+path = "addons/canvas/assets/canvas/**"
+precedence = "override"
+SPDX-FileCopyrightText = "canvas contributors"
+SPDX-License-Identifier = "MIT"

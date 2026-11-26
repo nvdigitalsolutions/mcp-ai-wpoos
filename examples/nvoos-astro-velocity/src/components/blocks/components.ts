@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // components.ts — the Portable Text component map (Proposal 107
 // DECISION-2, shared in 108 Phase 1.3). Blocks.astro and TabsBlock.astro
@@ -11,6 +12,7 @@
 
 import HeroBlock from './HeroBlock.astro';
 import ImageBlock from './ImageBlock.astro';
+import Model3DBlock from './Model3DBlock.astro';
 import ProductGridBlock from './ProductGridBlock.astro';
 import PromotionBlock from './PromotionBlock.astro';
 import TestimonialBlock from './TestimonialBlock.astro';
@@ -25,6 +27,8 @@ import LinkMark from './LinkMark.astro';
 export const TYPE_COMPONENTS = {
 	hero: HeroBlock,
 	image: ImageBlock,
+	// 3D product viewer — a custom element, so it hydrates nothing.
+	model3d: Model3DBlock,
 	productGrid: ProductGridBlock,
 	promotion: PromotionBlock,
 	testimonial: TestimonialBlock,

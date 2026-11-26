@@ -45,35 +45,83 @@ class Test_REST_Controller_Base extends WP_UnitTestCase {
 
 		// Create concrete implementation for testing abstract class.
 		$this->controller = new class( $this->mock_authenticator, $this->mock_validator ) extends WP_MCP_AI_REST_Controller_Base {
+			/**
+			 * Register the stub routes.
+			 *
+			 * @return void
+			 */
 			public function register_routes() {
 				// Not testing route registration here.
 			}
 
-			// Expose protected methods for testing.
+			/**
+			 * Expose the error helper for testing.
+			 *
+			 * @param string $code    Error code.
+			 * @param string $message Error message.
+			 * @param int    $status  HTTP status.
+			 * @param array  $actions Optional actions.
+			 * @return WP_REST_Response
+			 */
 			public function test_error( $code, $message, $status = 400, $actions = array() ) {
 				return $this->error( $code, $message, $status, $actions );
 			}
 
+			/**
+			 * Expose the success helper for testing.
+			 *
+			 * @param mixed $data   Response data.
+			 * @param int   $status HTTP status.
+			 * @return WP_REST_Response
+			 */
 			public function test_success( $data, $status = 200 ) {
 				return $this->success( $data, $status );
 			}
 
+			/**
+			 * Expose the authenticated permission check.
+			 *
+			 * @param WP_REST_Request $request Request.
+			 * @return bool
+			 */
 			public function test_permissions_check_authenticated( $request ) {
 				return $this->permissions_check_authenticated( $request );
 			}
 
+			/**
+			 * Expose the admin permission check.
+			 *
+			 * @param WP_REST_Request $request Request.
+			 * @return bool
+			 */
 			public function test_permissions_check_admin( $request ) {
 				return $this->permissions_check_admin( $request );
 			}
 
+			/**
+			 * Expose the current user id helper.
+			 *
+			 * @return int
+			 */
 			public function test_get_current_user_id() {
 				return $this->get_current_user_id();
 			}
 
+			/**
+			 * Expose the guest request helper.
+			 *
+			 * @return bool
+			 */
 			public function test_is_guest_request() {
 				return $this->is_guest_request();
 			}
 
+			/**
+			 * Set the auth context for the request.
+			 *
+			 * @param mixed $context Auth context.
+			 * @return void
+			 */
 			public function set_auth_context( $context ) {
 				$this->auth_context = $context;
 			}

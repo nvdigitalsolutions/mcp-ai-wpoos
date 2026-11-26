@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * OCR route — optical character recognition via tesseract.js.
  *

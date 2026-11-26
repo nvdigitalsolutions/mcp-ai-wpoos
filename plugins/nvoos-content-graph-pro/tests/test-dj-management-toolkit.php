@@ -70,16 +70,15 @@ class Test_Dj_Management_Toolkit extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The get-trending-tracks execute() reports the disabled-toolkit state
-	 * through the byte-identical envelope (the base ships the same
-	 * `success => false` shape).
+	 * The get-trending-tracks execute() reports the disabled-toolkit state as a
+	 * WP_Error, matching the base's canonical failure shape.
 	 */
 	public function test_trending_execute_disabled_toolkit(): void {
 		$tool   = new WP_MCP_AI_Tool_Get_Trending_Tracks();
 		$result = $tool->execute( array(), array() );
-		$this->assertIsArray( $result );
-		$this->assertFalse( $result['success'] );
-		$this->assertArrayHasKey( 'error', $result );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'toolkit_not_available', $result->get_error_code() );
 	}
 
 	/**

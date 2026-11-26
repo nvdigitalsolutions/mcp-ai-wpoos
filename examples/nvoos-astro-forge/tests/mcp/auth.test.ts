@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // auth.test.ts — the fail-closed write-tool gate over a real socket: no
 // token = 401 -32001 on write tools, read tools pass unauthenticated, and a

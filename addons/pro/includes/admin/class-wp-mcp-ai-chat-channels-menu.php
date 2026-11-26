@@ -68,9 +68,31 @@ class WP_MCP_AI_Chat_Channels_Menu {
 	}
 
 	/**
+	 * Whether the Chat Channels admin surface is enabled.
+	 *
+	 * The page calls `mcp-ai-pro/v1/chat-channels` (contacts, conversations,
+	 * takeover, tags), but no controller registers that route yet — the surface
+	 * is the deferred communications-toolkit family (090-i decision 2,
+	 * 090-p W5). A menu whose every request fails is worse than a hidden one,
+	 * so it is off by default. Re-enable once the toolkit registers its routes:
+	 *
+	 *     add_filter( 'wp_mcp_ai_chat_channels_enabled', '__return_true' );
+	 *
+	 * @since 1.2.22
+	 * @return bool
+	 */
+	public static function is_enabled() {
+		return (bool) apply_filters( 'wp_mcp_ai_chat_channels_enabled', false );
+	}
+
+	/**
 	 * Register top-level menu and sub-pages.
 	 */
 	public function register_menus() {
+		if ( ! self::is_enabled() ) {
+			return;
+		}
+
 		// Top-level Chat Channels menu – lands on the Dashboard.
 		add_menu_page(
 			__( 'Chat Channels', 'mcp-ai-wpoos-pro' ),
@@ -160,6 +182,10 @@ class WP_MCP_AI_Chat_Channels_Menu {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
+		if ( ! self::is_enabled() ) {
+			return;
+		}
+
 		if ( ! in_array( $hook, $this->get_page_hooks(), true ) ) {
 			return;
 		}

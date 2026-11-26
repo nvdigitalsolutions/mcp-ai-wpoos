@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forms.test.ts — the payload contract BOTH delivery modes share.
 //
@@ -8,9 +9,20 @@
 // function of the payload (same payload → same key → one email).
 // ---------------------------------------------------------------------------
 
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
-import { INTERNAL_FIELDS, MAX_BODY_BYTES, readSubmissionFields, submissionMessage } from '../lib/forms.ts';
+import {
+	INTERNAL_FIELDS,
+	MAX_BODY_BYTES,
+	carriesPage,
+	harvestedField,
+	readSubmissionFields,
+	submissionMessage,
+} from '../lib/forms.ts';
+import { FORGE_ROOT } from '../lib/scaffold.ts';
 
 function jsonRequest( body: unknown ): Request {
 	return new Request( 'https://example.com/api/forms/submit', {
@@ -122,7 +134,76 @@ describe( 'submissionMessage', () => {
 		expect( submissionMessage( { ...fields, honeypot: 'bot' } )?.idempotencyKey ).toBe( first );
 	} );
 
+	it( 'drops harvested-payload noise from the body', () => {
+		// A bot posts the scraper's whole field list; none of it belongs in the
+		// email (virtuallyjamaica's reCAPTCHA-era payload, 2026-11-16).
+		const message = submissionMessage( {
+			...fields,
+			submit: 'Send',
+			'g-recaptcha-response': '',
+			'_wpcf7_version': '6.0',
+		} );
+
+		expect( message?.text ).toContain( 'name: Ada' );
+		expect( message?.text ).not.toContain( 'submit: ' );
+		expect( message?.text ).not.toContain( 'g-recaptcha-response: ' );
+		expect( message?.text ).not.toContain( '_wpcf7_version: ' );
+	} );
+
 	it( 'returns undefined when only reserved fields were submitted', () => {
 		expect( submissionMessage( { honeypot: '', timestamp: '1', form: 'contact' } ) ).toBeUndefined();
+	} );
+} );
+
+describe( 'harvestedField', () => {
+	it( 'flags a field this site never emits', () => {
+		expect( harvestedField( { 'your-name': 'Ea', submit: 'Send' } ) ).toBe( 'submit' );
+		expect( harvestedField( { 'your-email': 'a@b.co', 'g-recaptcha-response': '' } ) ).toBe(
+			'g-recaptcha-response'
+		);
+		expect( harvestedField( { _wpcf7_version: '6.0' } ) ).toBe( '_wpcf7_version' );
+	} );
+
+	it( 'passes a submission from this form', () => {
+		expect(
+			harvestedField( {
+				'your-name': 'Ada',
+				'your-email': 'ada@example.com',
+				'your-message': 'Hello',
+				page: 'https://virtuallyjamaica.com/',
+			} )
+		).toBeUndefined();
+	} );
+} );
+
+describe( 'the component payload', () => {
+	it( 'carries the Elementor carrier post the handler resolves the widget through', async () => {
+		// Elementor Pro finds the form widget inside the document named by
+		// `post_id`. Without it the bridge's all-posts existence check still
+		// resolves the render, then hands the handler post 0 — and the handler
+		// answers "Your submission failed because the form is invalid."
+		const source = await readFile(
+			path.join( FORGE_ROOT, 'templates', 'blog', 'src', 'components', 'design', 'Form.astro' ),
+			'utf8'
+		);
+		expect( source ).toContain( "namedItem('post_id')" );
+		expect( source ).toContain( 'post_id: Number(postIdEl.value)' );
+	} );
+} );
+
+describe( 'carriesPage', () => {
+	it( 'accepts the carrier the form script sends', () => {
+		expect( carriesPage( { page: 'https://virtuallyjamaica.com/' }, 'virtuallyjamaica.com' ) ).toBe( true );
+		expect(
+			carriesPage( { page: 'https://virtuallyjamaica.com/shop/?x=1' }, 'virtuallyjamaica.com' )
+		).toBe( true );
+	} );
+
+	it( 'drops a missing, foreign or unparsable carrier', () => {
+		// A replayed flat payload carries no `page` at all (2026-11-16).
+		expect( carriesPage( {}, 'virtuallyjamaica.com' ) ).toBe( false );
+		expect( carriesPage( { page: 'https://evil.example/' }, 'virtuallyjamaica.com' ) ).toBe( false );
+		expect( carriesPage( { page: 'not a url' }, 'virtuallyjamaica.com' ) ).toBe( false );
+		expect( carriesPage( { page: 'https://virtuallyjamaica.com/' }, '' ) ).toBe( false );
 	} );
 } );

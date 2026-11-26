@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Shared vitest setup for the bridge admin bundle.
  *

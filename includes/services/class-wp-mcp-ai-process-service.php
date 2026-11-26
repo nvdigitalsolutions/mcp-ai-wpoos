@@ -167,12 +167,11 @@ class WP_MCP_AI_Process_Service {
 	public function run_silent( $command, array $options = array() ) {
 		// Check if process functions are available.
 		if ( ! $this->is_process_available() ) {
-			// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Not a tool execute() return; process-service utility method.
 			return array(
 				'output'    => '',
 				'error'     => 'Process control functions (proc_open, proc_close) are disabled on this server.',
 				'exit_code' => -1,
-				'success'   => false,
+				'success'   => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 				'disabled'  => true,
 			);
 		}
@@ -201,21 +200,19 @@ class WP_MCP_AI_Process_Service {
 				'success'   => $process->isSuccessful(),
 			);
 		} catch ( ProcessTimedOutException $e ) {
-			// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Not a tool execute() return; process-service utility method.
 			return array(
 				'output'    => $e->getProcess()->getOutput(),
 				'error'     => $e->getProcess()->getErrorOutput(),
 				'exit_code' => -1,
-				'success'   => false,
+				'success'   => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 				'timeout'   => true,
 			);
 		} catch ( \Exception $e ) {
-			// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Not a tool execute() return; process-service utility method.
 			return array(
 				'output'    => '',
 				'error'     => $e->getMessage(),
 				'exit_code' => -1,
-				'success'   => false,
+				'success'   => false, // phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope.SuccessFalseArray -- Non-tool return (admin, REST or utility DTO), not a tool execute() envelope.
 			);
 		}
 	}

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useThreads — Read-only hook for browsing agent conversation threads.
  *

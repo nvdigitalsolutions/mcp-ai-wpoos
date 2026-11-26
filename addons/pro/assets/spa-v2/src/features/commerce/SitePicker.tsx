@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * SitePicker — commerce page site selector (Proposal 089 Phase B).
  *

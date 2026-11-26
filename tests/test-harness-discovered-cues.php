@@ -16,17 +16,26 @@
  */
 class Test_Harness_Discovered_Cues extends WP_UnitTestCase {
 
+	/**
+	 * Reset the discovered cue registry.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		// Ensure clean state.
 		delete_option( 'wp_mcp_ai_discovered_cues' );
 	}
 
+	/**
+	 * Reset the discovered cue registry after each test.
+	 */
 	public function tearDown(): void {
 		delete_option( 'wp_mcp_ai_discovered_cues' );
 		parent::tearDown();
 	}
 
+	/**
+	 * Registering a discovered cue stores its metadata.
+	 */
 	public function test_register_discovered_cue_stores_metadata() {
 		$library = WP_MCP_AI_Prompt_Cue_Library::get_instance();
 
@@ -55,6 +64,9 @@ class Test_Harness_Discovered_Cues extends WP_UnitTestCase {
 		$library->unregister( 'test_discovered_cue' );
 	}
 
+	/**
+	 * Reading discovered cues returns them with metadata.
+	 */
 	public function test_get_discovered_cues_returns_cues_with_metadata() {
 		$library = WP_MCP_AI_Prompt_Cue_Library::get_instance();
 
@@ -104,6 +116,9 @@ class Test_Harness_Discovered_Cues extends WP_UnitTestCase {
 		$library->unregister( 'discovered_cue_b' );
 	}
 
+	/**
+	 * Updating a discovered cue status changes it.
+	 */
 	public function test_update_discovered_cue_status_changes_status() {
 		$library = WP_MCP_AI_Prompt_Cue_Library::get_instance();
 
@@ -145,11 +160,17 @@ class Test_Harness_Discovered_Cues extends WP_UnitTestCase {
 		$library->unregister( 'status_test_cue' );
 	}
 
+	/**
+	 * Updating an unknown cue returns false.
+	 */
 	public function test_update_nonexistent_cue_returns_false() {
 		$result = WP_MCP_AI_Prompt_Cue_Library::update_discovered_cue_status( 'nonexistent', 'accepted' );
 		$this->assertFalse( $result );
 	}
 
+	/**
+	 * A discovered cue includes its provenance.
+	 */
 	public function test_discovered_cue_includes_provenance() {
 		$library = WP_MCP_AI_Prompt_Cue_Library::get_instance();
 

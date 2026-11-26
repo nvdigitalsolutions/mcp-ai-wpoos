@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * LLM Worker Manager
  *

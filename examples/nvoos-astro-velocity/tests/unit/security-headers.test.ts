@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // security-headers.test.ts — Proposal 104 D12: the per-response CSP builder
 // and the static header set for Astro-handled documents.
 import { describe, expect, it } from 'vitest';

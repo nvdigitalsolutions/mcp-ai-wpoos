@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Toolkit value helpers — formatting and form coercion.
  *

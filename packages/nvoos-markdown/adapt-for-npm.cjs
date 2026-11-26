@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Adaptation script: Convert WordPress plugin markdown renderer to standalone NPM package
 // This script removes WordPress-specific code and makes the module framework-agnostic
 

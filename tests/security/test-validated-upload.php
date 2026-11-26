@@ -26,11 +26,24 @@ class WP_MCP_AI_Validated_Upload_Tests extends WP_UnitTestCase {
 		return new class {
 			use WP_MCP_AI_Trait_Validated_Upload;
 
-			// Expose protected methods for testing.
+			/**
+			 * Expose sanitize_svg_content() for testing.
+			 *
+			 * @param string $svg SVG markup.
+			 * @return string
+			 */
 			public function test_svg_sanitize( $svg ) {
 				return $this->sanitize_svg_content( $svg );
 			}
 
+			/**
+			 * Expose validated_upload_bits() for testing.
+			 *
+			 * @param string $name File name.
+			 * @param string $mime MIME type.
+			 * @param string $bits File contents.
+			 * @return array
+			 */
 			public function test_upload( $name, $mime, $bits ) {
 				return $this->validated_upload_bits( $name, $mime, $bits );
 			}

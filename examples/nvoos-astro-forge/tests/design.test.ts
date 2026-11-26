@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // design.test.ts — the forge design-import module (Proposal 114 P1/P5):
 // deterministic extraction, token mapping, contrast-fix suggestions, and the
@@ -13,6 +14,7 @@ import {
 	analyzeDesignInput,
 	analyzeScrollBehavior,
 	analyzeSections,
+	applyMeasuredHeaderActions,
 	colorDistance,
 	designToTokens,
 	lightnessOf,
@@ -24,7 +26,7 @@ import {
 	stylesheetLinks,
 	verifyBandFlow,
 } from '../lib/design.ts';
-import type { ForgeDesign, ForgeSection } from '../lib/types.ts';
+import type { ForgeChrome, ForgeDesign, ForgeSection } from '../lib/types.ts';
 
 /** A minimal Elementor-ish CSS payload (the page-builder var surface). */
 const ELEMENTOR_CSS = `
@@ -271,6 +273,97 @@ describe( 'analyzeSections / resolveSectionTheme (Proposal 117 §2)', () => {
 		].join( '\n' );
 		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ css ] } );
 		expect( sections[ 0 ]?.measure ).toBe( '1140px' );
+	} );
+
+	it( 'splits a container hero (e-con-inner / e-child, ≥3.16 flexbox)', () => {
+		// Container-only sources (eca.directory) have no `.elementor-container`
+		// and no `.elementor-column` — the legacy detector never split them.
+		const html =
+			'<div class="elementor-element elementor-element-c0f1e00 e-con e-parent">' +
+			'<div class="e-con-inner">' +
+			'<div class="elementor-element elementor-element-c0f1e01 e-con e-child">' +
+			'<div class="elementor-element elementor-element-c0f1e02 elementor-widget elementor-widget-heading"><h2>Every child, every chance</h2></div>' +
+			'<div class="elementor-element elementor-element-c0f1e03 elementor-widget elementor-widget-text-editor"><p>105 activities across seven strands.</p></div>' +
+			'</div>' +
+			'<div class="elementor-element elementor-element-c0f1e04 e-con e-child">' +
+			'<div class="elementor-element elementor-element-c0f1e05 elementor-widget elementor-widget-image"><img src="https://eca.example/hero.jpg" alt="" /></div>' +
+			'</div>' +
+			'</div></div>';
+		const sections = analyzeSections( { url: 'https://eca.example', html, css: [ '' ] } );
+		expect( sections[ 0 ]?.id ).toBe( 'c0f1e00' );
+		expect( sections[ 0 ]?.layout ).toBe( 'split' );
+	} );
+
+	it( 'counts a container hero body columns from its nested container', () => {
+		const html =
+			'<div class="elementor-element elementor-element-c0f2e00 e-con e-parent"><div class="e-con-inner">' +
+			'<div class="elementor-element elementor-element-c0f2e01 e-con e-child">' +
+			'<div class="elementor-element elementor-element-c0f2e02 elementor-widget elementor-widget-heading"><h2>About us</h2></div>' +
+			'<div class="elementor-element elementor-element-c0f2e03 e-con e-child"><div class="e-con-inner">' +
+			'<div class="elementor-element elementor-element-c0f2e04 e-con e-child"><p>one</p></div>' +
+			'<div class="elementor-element elementor-element-c0f2e05 e-con e-child"><p>two</p></div>' +
+			'</div></div>' +
+			'</div>' +
+			'<div class="elementor-element elementor-element-c0f2e06 e-con e-child">' +
+			'<div class="elementor-element elementor-element-c0f2e07 elementor-widget elementor-widget-image"><img src="https://eca.example/about.jpg" alt="" /></div>' +
+			'</div>' +
+			'</div></div>';
+		const sections = analyzeSections( { url: 'https://eca.example', html, css: [ '' ] } );
+		expect( sections[ 0 ]?.layout ).toBe( 'split' );
+		expect( sections[ 0 ]?.bodyColumns ).toBe( 2 );
+	} );
+
+	it( 'treats a titled icon-box as container copy, not media', () => {
+		const html =
+			'<div class="elementor-element elementor-element-c0f3e00 e-con e-parent"><div class="e-con-inner">' +
+			'<div class="elementor-element elementor-element-c0f3e01 e-con e-child">' +
+			'<div class="elementor-element elementor-element-c0f3e02 elementor-widget elementor-widget-icon-box">' +
+			'<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-content"><h3 class="elementor-icon-box-title">A world of choice</h3><p class="elementor-icon-box-description">Seven strands.</p></div></div>' +
+			'</div></div>' +
+			'<div class="elementor-element elementor-element-c0f3e03 e-con e-child">' +
+			'<div class="elementor-element elementor-element-c0f3e04 elementor-widget elementor-widget-image"><img src="https://eca.example/choice.jpg" alt="" /></div>' +
+			'</div>' +
+			'</div></div>';
+		const sections = analyzeSections( { url: 'https://eca.example', html, css: [ '' ] } );
+		expect( sections[ 0 ]?.layout ).toBe( 'split' );
+	} );
+
+	it( 'accepts a container lane background photo as the media column', () => {
+		// An image-less lane with its own background URL is still the media side.
+		const html =
+			'<div class="elementor-element elementor-element-c0f4e00 e-con e-parent"><div class="e-con-inner">' +
+			'<div class="elementor-element elementor-element-c0f4e01 e-con e-child">' +
+			'<div class="elementor-element elementor-element-c0f4e02 elementor-widget elementor-widget-heading"><h2>Join us</h2></div>' +
+			'</div>' +
+			'<div class="elementor-element elementor-element-c0f4e03 e-con e-child" style="background-image:url(https://eca.example/photo.jpg)"></div>' +
+			'</div></div>';
+		const sections = analyzeSections( { url: 'https://eca.example', html, css: [ '' ] } );
+		expect( sections[ 0 ]?.layout ).toBe( 'split' );
+	} );
+
+	it( 'ignores bands inside the header/footer chrome (they are not page content)', () => {
+		// Elementor renders its header/footer templates into the homepage, but the
+		// REST page body the build uses EXCLUDES them. Counting those bands as
+		// content made the profile carry 9 bands where the build renders 7, and
+		// every positional audit compared band N with band N+2.
+		const html =
+			'<header class="elementor elementor-86 elementor-location-header">' +
+			'<div class="elementor-element elementor-element-44d664a5 e-con e-parent"><div class="e-con-inner"><h2>Menu</h2></div></div>' +
+			'</header>' +
+			'<div class="elementor-element elementor-element-6daaaef9 e-con e-parent"><div class="e-con-inner"><h2>Content</h2></div></div>' +
+			'<footer class="elementor elementor-95 elementor-location-footer">' +
+			'<div class="elementor-element elementor-element-14eecb83 e-con e-parent"><div class="e-con-inner"><h2>Footer</h2></div></div>' +
+			'</footer>';
+		// A band is only a SECTION when it carries a fact (a surface, measure,
+		// columns…), so give each one a background rule.
+		const css = [
+			'.elementor-element-44d664a5 { background-color: #eeeeee; }',
+			'.elementor-element-6daaaef9 { background-color: #ffffff; }',
+			'.elementor-element-14eecb83 { background-color: #dddddd; }',
+		].join( '\n' );
+		const sections = analyzeSections( { url: 'https://eca.example', html, css: [ css ] } );
+
+		expect( sections.map( ( section ) => section.id ) ).toEqual( [ '6daaaef9' ] );
 	} );
 
 	it( 'never splits a photo-background hero (the band itself is the media)', () => {
@@ -964,6 +1057,17 @@ describe( 'analyzeChrome (Proposal 120 §2)', () => {
 		expect( styled?.chromeSize ).toBe( '16px' );
 	} );
 
+	it( 'resolves a rem body size against the html root rule', () => {
+		// `1.125rem` ends in "em", and the anchored `em` pattern declines it — so
+		// before the `rem` branch this declaration resolved against NOTHING and the
+		// chain fell through to the element resolution the function avoids
+		// (monicarajiv, 2026-11-21).
+		const html = '<header id="site-header"><nav><a href="#about" class="aux-item-content">About</a></nav></header>';
+		const css = [ 'html { font-size: 16px; }', 'body { font-size: 1.125rem; }' ].join( '\n' );
+		const styled = analyzeChrome( { url: 'https://x.example.com', html, css: [ css ] } );
+		expect( styled?.chromeSize ).toBe( '18px' );
+	} );
+
 	it( 'scopes footer blocks between consecutive headings with an intro block', () => {
 		expect( chrome?.footerBlocks ).toEqual( [
 			{ items: [ 'Jaya Inc supplies plumbing, electrical and hardware lines island-wide.' ] },
@@ -1095,6 +1199,35 @@ describe( 'analyzeScrollBehavior (Proposal 121)', () => {
 		expect( second?.direction ).toBeUndefined();
 	} );
 
+	it( 'records a HORIZONTAL motion_fx piece as axis x', () => {
+		// Pre-2026-11 this collapsed into a VERTICAL drift: the analyzer read the
+		// translateX settings but never recorded which axis produced them.
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-7777777">' +
+			'<div class="elementor-element elementor-element-5555555" data-settings="{&quot;motion_fx_motion_fx_scrolling&quot;:&quot;yes&quot;,&quot;motion_fx_translateX_effect&quot;:&quot;yes&quot;,&quot;motion_fx_translateX_direction&quot;:&quot;negative&quot;,&quot;motion_fx_translateX_speed&quot;:{&quot;unit&quot;:&quot;px&quot;,&quot;size&quot;:3,&quot;sizes&quot;:[]}}"><img src="/x.jpg" alt=""></div>' +
+			'</section>';
+
+		const horizontal = analyzeScrollBehavior( { url: 'https://jayainc.com', html, css: [] } );
+		const piece = horizontal.entries.find( ( entry ) => entry.kind === 'parallax' )?.pieces?.[ 0 ];
+
+		expect( piece ).toMatchObject( { axis: 'x', direction: 'negative', speed: 3 } );
+	} );
+
+	it( 'prefers the VERTICAL reading when both axes are enabled', () => {
+		// Keeping translateY first is what leaves every pre-existing site's
+		// generated facts byte-identical.
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-7777778">' +
+			'<div class="elementor-element elementor-element-5555556" data-settings="{&quot;motion_fx_motion_fx_scrolling&quot;:&quot;yes&quot;,&quot;motion_fx_translateY_effect&quot;:&quot;yes&quot;,&quot;motion_fx_translateY_speed&quot;:{&quot;unit&quot;:&quot;px&quot;,&quot;size&quot;:1,&quot;sizes&quot;:[]},&quot;motion_fx_translateX_effect&quot;:&quot;yes&quot;,&quot;motion_fx_translateX_speed&quot;:{&quot;unit&quot;:&quot;px&quot;,&quot;size&quot;:4,&quot;sizes&quot;:[]}}"><img src="/y.jpg" alt=""></div>' +
+			'</section>';
+
+		const both = analyzeScrollBehavior( { url: 'https://jayainc.com', html, css: [] } );
+		const piece = both.entries.find( ( entry ) => entry.kind === 'parallax' )?.pieces?.[ 0 ];
+
+		expect( piece?.axis ).toBeUndefined();
+		expect( piece?.speed ).toBe( 1 );
+	} );
+
 	it( 'maps the aux reveal effect onto the canonical vocabulary', () => {
 		const entry = pass.entries.find( ( behavior ) => behavior.id === '1111111' );
 		expect( entry ).toEqual( { id: '1111111', kind: 'reveal', effect: 'fade-up' } );
@@ -1167,5 +1300,467 @@ describe( 'analyzeChrome — site-node ranking + footer widgets (jayainc shape)'
 	it( 'captures the footer brand logo and the footer background', () => {
 		expect( chrome?.footerLogo?.src ).toBe( '/footer-logo.png' );
 		expect( chrome?.footerBg ).toBe( '#f3f3f3' );
+	} );
+} );
+
+describe( 'analyzeSections — the band MARK STRIP (ForgeSection.logos)', () => {
+	// A builder's image carousel publishes each logo as a `background-image`
+	// DIV, so no `<img>`-reading classifier can see the wall, and the inline
+	// `style` carrying the URL never survives sanitisation. The fact has to be
+	// measured against the raw source HTML.
+	const carouselHtml = ( extra = '' ) =>
+		'<div class="elementor">' +
+		'<section id="hardware" class="elementor-section elementor-top-section elementor-element elementor-element-a5d0ddc">' +
+		'<h2>Supported hardware</h2>' +
+		extra +
+		'<div class="elementor-carousel-image" style="background-image:url(\'https://src.test/1.png\')"></div>' +
+		'<div class="elementor-carousel-image" style="background-image:url(\'https://src.test/2.png\')"></div>' +
+		'<div class="elementor-carousel-image" style="background-image:url(\'https://src.test/3.png\')"></div>' +
+		'<div class="elementor-carousel-image" style="background-image:url(\'https://src.test/1.png\')"></div>' +
+		'</section>' +
+		'</div>';
+
+	const sectionOf = ( html: string ) =>
+		analyzeSections( { url: 'https://src.test', html, css: [] } ).find( ( s ) => s.id === 'a5d0ddc' );
+
+	it( 'records the background-image slides of a logo wall, deduped', () => {
+		expect( sectionOf( carouselHtml() )?.logos ).toEqual( [
+			{ src: 'https://src.test/1.png' },
+			{ src: 'https://src.test/2.png' },
+			{ src: 'https://src.test/3.png' },
+		] );
+	} );
+
+	it( 'records <img> marks too, keeping the alt', () => {
+		const html =
+			'<div class="elementor">' +
+			'<section id="hardware" class="elementor-section elementor-top-section elementor-element elementor-element-a5d0ddc">' +
+			'<img src="https://src.test/a.png" alt="TP-Link" /><img src="https://src.test/b.png" alt="Linksys" /><img src="https://src.test/c.png" />' +
+			'</section></div>';
+		expect( sectionOf( html )?.logos ).toEqual( [
+			{ src: 'https://src.test/a.png', alt: 'TP-Link' },
+			{ src: 'https://src.test/b.png', alt: 'Linksys' },
+			{ src: 'https://src.test/c.png' },
+		] );
+	} );
+
+	it( 'ignores a band that carries prose (a copy panel is not a mark strip)', () => {
+		expect( sectionOf( carouselHtml( '<p>Choose the access point that works best.</p>' ) )?.logos ).toBeUndefined();
+	} );
+
+	it( 'ignores fewer than three marks (one illustration is not a logo wall)', () => {
+		const html =
+			'<div class="elementor">' +
+			'<section id="hardware" class="elementor-section elementor-top-section elementor-element elementor-element-a5d0ddc">' +
+			'<img src="https://src.test/a.png" /><img src="https://src.test/b.png" />' +
+			'</section></div>';
+		expect( sectionOf( html )?.logos ).toBeUndefined();
+	} );
+
+	it( 'drops non-http marks instead of emitting them', () => {
+		const html =
+			'<div class="elementor">' +
+			'<section id="hardware" class="elementor-section elementor-top-section elementor-element elementor-element-a5d0ddc">' +
+			'<img src="data:image/png;base64,AAAA" /><img src="/relative.png" />' +
+			'<img src="https://src.test/a.png" /><img src="https://src.test/b.png" /><img src="https://src.test/c.png" />' +
+			'</section></div>';
+		expect( sectionOf( html )?.logos ).toEqual( [
+			{ src: 'https://src.test/a.png' },
+			{ src: 'https://src.test/b.png' },
+			{ src: 'https://src.test/c.png' },
+		] );
+	} );
+} );
+
+describe( 'analyzeSections — per-column PANEL surfaces (ForgeSectionColumn)', () => {
+	// The source paints a coloured panel with `var(--e-global-color-accent)` on the
+	// column's populated wrapper — a stylesheet the rebuild never ships. The band
+	// fact has to carry the LITERAL, or the panel cannot be painted at all.
+	const band = ( columns: string ) =>
+		'<div class="elementor">' +
+		'<section id="wifi" class="elementor-section elementor-top-section elementor-element elementor-element-8d6ec26">' +
+		'<div class="elementor-container">' +
+		columns +
+		'</div></section></div>';
+
+	const column = ( id: string ) =>
+		`<div class="elementor-column elementor-col-50 elementor-element elementor-element-${ id }">` +
+		'<div class="elementor-widget-wrap elementor-element-populated"><h2>Copy</h2></div></div>';
+
+	const ROOT = ':root{ --e-global-color-accent: #dd3333; }';
+	const accentRule = ( id: string ) =>
+		`.elementor-5609 .elementor-element.elementor-element-${ id } > .elementor-widget-wrap, ` +
+		`.elementor-5609 .elementor-element.elementor-element-${ id } > .elementor-element-populated { background-color: var( --e-global-color-accent ); }`;
+
+	const sectionOf = ( html: string, css: string ) =>
+		analyzeSections( { url: 'https://src.test', html, css: [ css ] } ).find( ( s ) => s.id === '8d6ec26' );
+
+	it( 'bakes the resolved column surface and derives the panel ink', () => {
+		const found = sectionOf( band( column( '1111111' ) + column( '2222222' ) ), ROOT + accentRule( '2222222' ) );
+
+		expect( found?.columns?.[ 1 ].bgColor ).toBe( '#dd3333' );
+		expect( found?.columns?.[ 0 ].bgColor ).toBeUndefined();
+		expect( found?.panel ).toEqual( { bg: '#dd3333', ink: '#ffffff' } );
+	} );
+
+	it( 'records a photo column as a surface and then refuses the uniform panel', () => {
+		const html = band(
+			'<div class="elementor-column elementor-col-50 elementor-element elementor-element-1111111">' +
+				'<div class="elementor-widget-wrap elementor-element-populated" style="background-image:url(https://src.test/phone.jpg)"><h2>Copy</h2></div></div>' +
+				column( '2222222' )
+		);
+		const found = sectionOf( html, accentRule( '2222222' ) );
+
+		expect( found?.columns?.[ 0 ].bgImage ).toBe( 'https://src.test/phone.jpg' );
+		// A photo column beside a coloured one is a SPLIT panel, not a slab.
+		expect( found?.panel ).toBeUndefined();
+	} );
+
+	it( 'refuses the panel when two columns carry DIFFERENT surfaces', () => {
+		const html = band( column( '1111111' ) + column( '2222222' ) + column( '3333333' ) );
+		const css = ROOT + accentRule( '2222222' ) + '.elementor-element-3333333 > .elementor-element-populated { background-color: #000000; }';
+		const found = sectionOf( html, css );
+
+		expect( found?.columns?.[ 1 ].bgColor ).toBe( '#dd3333' );
+		expect( found?.columns?.[ 2 ].bgColor ).toBe( '#000000' );
+		// Per-column panels are not paintable on the flat rebuilt markup.
+		expect( found?.panel ).toBeUndefined();
+	} );
+} );
+
+describe( 'analyzeChrome — footer LINES that carry LINKS (virtuallysrilanka)', () => {
+	// A Kadence footer publishes the © statement as ONE paragraph with only the
+	// credit anchored. Flattening the line to its text printed the credit as
+	// dead copy — the rebuild could not tell the line had ever been a link.
+	const HTML =
+		'<footer id="colophon" class="site-footer">' +
+		'<div class="site-middle-footer-wrap"><div class="site-footer-row site-footer-row-columns-3">' +
+		'<div class="site-footer-middle-section-1"><div class="footer-widget-area footer-social">' +
+		'<a href="" aria-label="Facebook" class="social-button"><svg></svg></a>' +
+		'<a href="" aria-label="Twitter" class="social-button"><svg></svg></a>' +
+		'</div></div>' +
+		'<div class="site-footer-middle-section-3">' +
+		'<section id="media_image-3" class="widget widget_media_image">' +
+		'<img src="https://src.test/wp-content/uploads/2019/01/VJ-Sri-Lanka-Logo-V5-outline.svg" class="image wp-image-5511 attachment-full size-full" alt="" />' +
+		'</section></div></div></div>' +
+		'<div class="site-bottom-footer-wrap"><div class="footer-html-inner"><p>' +
+		'&copy; 2026 VIRTUALLY SRI LANKA IS POWERED BY ' +
+		'<a class="gray-text" href="http://www.nvdigitalsolutions.com/" target="_blank" rel="noopener">NV DIGITAL SOLUTIONS.</a>' +
+		'</p></div></div>' +
+		'</footer>';
+
+	const chrome = analyzeChrome( { url: 'https://virtuallysrilanka.com', html: HTML, css: [] } );
+
+	it( 'keeps the line a string and records its anchor separately', () => {
+		expect( chrome?.footerBlocks ).toEqual( [
+			{ items: [ '© 2026 VIRTUALLY SRI LANKA IS POWERED BY NV DIGITAL SOLUTIONS.' ] },
+		] );
+		expect( chrome?.footerLinks ).toEqual( [
+			{ text: 'NV DIGITAL SOLUTIONS.', href: 'http://www.nvdigitalsolutions.com/' },
+		] );
+	} );
+
+	it( 'takes the footer mark from a media widget INSIDE the <footer>', () => {
+		// The mark carries no logo class (`image wp-image-5511 …`) and this footer
+		// has no footer-widget <aside>, so the aside-scoped pool never saw it.
+		expect( chrome?.footerLogo?.src ).toContain( 'VJ-Sri-Lanka-Logo-V5-outline.svg' );
+	} );
+
+	it( 'does not treat an href-less social badge as a footer LINE link', () => {
+		expect( chrome?.footerLinks?.every( ( link ) => link.href.length > 0 ) ).toBe( true );
+	} );
+
+	it( 'ignores a fragment anchor and a link outside every captured line', () => {
+		const html =
+			'<footer class="site-footer">' +
+			'<p>© 2026 Site</p>' +
+			'<a href="#top">Back to top</a>' +
+			'<a href="/privacy/">Privacy</a>' +
+			'</footer>';
+		const found = analyzeChrome( { url: 'https://example.test', html, css: [] } );
+		// `Back to top` is a fragment; `Privacy` is its own element, never a
+		// suffix of the © line.
+		expect( found?.footerLinks ).toBeUndefined();
+	} );
+} );
+
+describe( 'design facts prefer the site\'s own sheets over plugin widget UI', () => {
+	// eca.directory: a logged-in page loads the NV oOS chat widget's 149 KB
+	// stylesheet before the Kadence/Elementor kit sheets. Harvesting it turned
+	// the palette Catppuccin (`text` #cdd6f4 on a `surface` #1e1e2e) and the
+	// body face into a monospace leftover — a plugin's UI theme is not the
+	// site's design language.
+	const KIT = `
+:root {
+	--e-global-color-primary: #8764a0;
+	--e-global-color-secondary: #27104a;
+	--e-global-color-text: #747474;
+	--e-global-typography-primary-font-family: "Epilogue";
+	--e-global-typography-text-font-family: "Inter";
+}
+body { font-family: "Inter", sans-serif; color: #747474; background: #ffffff; font-size: 16px; }
+h1, h2, h3 { font-family: "Epilogue", sans-serif; font-size: 48px; }
+`;
+	const CHAT = `
+:root {
+	--wp-mcp-ai-color-text: #cdd6f4;
+	--wp-mcp-ai-color-surface: #1e1e2e;
+	--wp-mcp-ai-color-accent: #89b4fa;
+}
+body { font-family: "Star", monospace; }
+`;
+
+	it( 'resolves the kit palette and type, not the plugin sheet', () => {
+		const design = analyzeDesignInput( {
+			url: 'https://eca.example',
+			html: DESIGN_HTML,
+			css: [ CHAT, KIT ],
+			designCss: [ KIT ],
+		} );
+		expect( design.palette.roles.surface ).toBe( '#ffffff' );
+		expect( design.palette.roles.text ).toBe( '#747474' );
+		expect( design.palette.roles.accent ).toBe( '#8764a0' );
+		expect( design.typography.body ).toBe( 'inter' );
+		expect( design.typography.display ).toBe( 'epilogue' );
+	} );
+
+	it( 'still reads a plugin-only design when no design sheets exist', () => {
+		const design = analyzeDesignInput( { url: 'https://eca.example', html: DESIGN_HTML, css: [ CHAT ] } );
+		expect( design.palette.roles.text ).toBe( '#cdd6f4' );
+	} );
+} );
+
+describe( 'inline widget CSS is not design CSS', () => {
+	it( 'drops a component-scoped inline block from the design facts', () => {
+		const CHAT_INLINE = `
+.wp-mcp-ai-chat { --wp-mcp-ai-color-text: #cdd6f4; --wp-mcp-ai-color-surface: #1e1e2e; font-family: "Star", monospace; }
+.wp-mcp-ai-chat__bubble { color: var(--wp-mcp-ai-color-text); }
+.wp-mcp-ai-chat__form { background: var(--wp-mcp-ai-color-surface); }
+`;
+		const KIT = `:root { --e-global-color-primary: #8764a0; --e-global-color-text: #747474; --e-global-typography-text-font-family: "Inter"; }
+body { font-family: "Inter", sans-serif; color: #747474; }`;
+		// The fetch layer performs this split; the analyzer must honour it.
+		const design = analyzeDesignInput( {
+			url: 'https://eca.example',
+			html: DESIGN_HTML,
+			css: [ CHAT_INLINE, KIT ],
+			designCss: [ KIT ],
+			inlineCss: [],
+		} );
+		expect( design.palette.roles.text ).toBe( '#747474' );
+		expect( design.typography.body ).toBe( 'inter' );
+	} );
+} );
+
+describe( 'icon fonts are never a type pairing', () => {
+	it( 'skips Kadence/WooCommerce `star` and Flatsome `fl-icons`', () => {
+		const css = `
+body { font-family: "Inter", sans-serif; }
+h1, h2 { font-family: "Epilogue", sans-serif; }
+.star-rating { font-family: "star"; }
+.fl-icons { font-family: "fl-icons"; }
+.e-eicon-star::before { font-family: eicons; }
+`;
+		const design = analyzeDesignInput( { url: 'https://x.example', html: DESIGN_HTML, css: [ css ] } );
+		expect( design.typography.body ).toBe( 'inter' );
+		expect( design.typography.display ).toBe( 'epilogue' );
+		expect( JSON.stringify( design.typography ) ).not.toContain( 'star' );
+	} );
+} );
+
+describe( 'font tokens are never read as families', () => {
+	it( 'ignores --…-font-weight values and only reads --…-font-family', () => {
+		const css = `
+:root {
+	--e-global-typography-text-font-family: "Inter";
+	--e-global-typography-accent-font-family: "Epilogue";
+	--e-global-typography-accent-font-weight: normal;
+	--e-global-typography-text-font-style: italic;
+}
+body { font-family: "Inter", sans-serif; }
+`;
+		const design = analyzeDesignInput( { url: 'https://x.example', html: DESIGN_HTML, css: [ css ] } );
+		expect( design.typography.body ).toBe( 'inter' );
+		const families = JSON.stringify( design.typography );
+		expect( families ).not.toContain( 'normal' );
+		expect( families ).not.toContain( 'italic' );
+	} );
+} );
+
+describe( 'a descendant rule is not a body fact', () => {
+	it( 'ignores body.woocommerce … .star-rating when reading the body face', () => {
+		const css = `
+body { font-family: "Inter", sans-serif; color: #747474; }
+body.woocommerce div.product .star-rating { font-family: "star"; }
+body.single-post .entry-title { font-family: "star"; }
+`;
+		const design = analyzeDesignInput( { url: 'https://x.example', html: DESIGN_HTML, css: [ css ] } );
+		expect( design.typography.body ).toBe( 'inter' );
+	} );
+} );
+
+describe( 'a code face is never the accent', () => {
+	it( 'skips a theme code stack (Courier/Monaco/Menlo)', () => {
+		const css = `
+body { font-family: "Inter", sans-serif; }
+h1, h2, h3 { font-family: "Epilogue", sans-serif; }
+code, pre { font-family: "Courier 10 Pitch", Courier, monospace; }
+`;
+		const design = analyzeDesignInput( { url: 'https://x.example', html: DESIGN_HTML, css: [ css ] } );
+		expect( design.typography.body ).toBe( 'inter' );
+		expect( design.typography.display ).toBe( 'epilogue' );
+		expect( design.typography.accent ).not.toBe( 'courier 10 pitch' );
+	} );
+} );
+
+describe( 'analyzeChrome — labelled header CTA pills (eca.directory)', () => {
+	// The source header carries two <a class="elementor-button"> controls
+	// ("Try Demo" / "Sign In") beside the nav. Only icon actions were modelled,
+	// so a rebuild dropped the site's primary conversion controls.
+	const CSS = `
+:root { --e-global-color-primary: #8764a0; --e-global-color-secondary: #27104a; }
+.elementor-button { display: inline-block; padding: 12px 24px; border-radius: 100px; font-size: 16px; font-weight: 500; }
+.elementor-button-link { background-color: var(--e-global-color-primary); color: #ffffff; }
+.elementor-button.elementor-size-sm { background-color: var(--e-global-color-secondary); }
+`;
+	const HTML =
+		'<header id="site-header">' +
+		'<img class="custom-logo" src="/logo.svg" alt="ECA Directory">' +
+		'<nav><a href="/">Home</a><a href="/about-us/">About Us</a></nav>' +
+		'<a class="elementor-button elementor-button-link elementor-size-sm" href="#">Try Demo</a>' +
+		'<a class="elementor-button elementor-button-link elementor-size-sm" href="/login">Sign In</a>' +
+		'</header>' +
+		'<footer id="site-footer"><small>© 2026 ECA Directory</small></footer>';
+	const chrome = analyzeChrome( { url: 'https://eca.example', html: HTML, css: [ CSS ] } );
+
+	it( 'captures the pills as text actions, not icon links', () => {
+		expect( chrome?.headerActions?.map( ( action ) => action.text ) ).toEqual( [ 'Try Demo', 'Sign In' ] );
+		expect( chrome?.headerActions?.[ 1 ]?.href ).toBe( '/login' );
+	} );
+
+	it( 'resolves the fill through the cascade (the later size-sm rule wins)', () => {
+		expect( chrome?.headerActions?.[ 0 ]?.fill?.toLowerCase() ).toContain( '#27104a' );
+		expect( chrome?.headerActions?.[ 0 ]?.ink?.toLowerCase() ).toContain( '#ffffff' );
+	} );
+
+	it( 'carries the pill box (padding + radius + type)', () => {
+		expect( chrome?.headerActions?.[ 0 ]?.style ).toEqual( {
+			padding: '12px 24px',
+			radius: '100px',
+			size: '16px',
+			weight: '500',
+		} );
+	} );
+
+	it( 'prefers the flat pill colour over a translucent hover shade', () => {
+		// Elementor paints every button `background-color: #8764a0` plus
+		// `background-image: linear-gradient(0deg, rgba(0,0,0,.35), transparent
+		// 75%)` (its hover shade). Taking the gradient as the fill shipped a
+		// see-through pill with a 35%-black veil.
+		const html =
+			'<header id="site-header"><nav><a href="/">Home</a></nav>' +
+			'<a class="elementor-button" href="#">Try Demo</a></header>';
+		const css = `
+.elementor-button { background-color: #8764a0; color: #fff;
+  background-image: linear-gradient(0deg, rgba(0,0,0,.35), transparent 75%); }
+`;
+		const found = analyzeChrome( { url: 'https://eca.example', html, css: [ css ] } );
+
+		expect( found?.headerActions?.[ 0 ]?.fill ).toBe( '#8764a0' );
+	} );
+
+	it( 'still takes an OPAQUE gradient as the fill (a real gradient button)', () => {
+		const html =
+			'<header id="site-header"><nav><a href="/">Home</a></nav>' +
+			'<a class="aux-button" href="tel:+9411234">Call Us</a></header>';
+		const css = `.aux-button { background-image: linear-gradient(180deg, #ffcf0e 0%, #ffb70e 100%); color: #242424; }`;
+		const found = analyzeChrome( { url: 'https://eca.example', html, css: [ css ] } );
+
+		expect( found?.call?.bg ).toContain( 'linear-gradient' );
+	} );
+
+	it( 'resolves each pill against its enclosing widget (per-widget colours)', () => {
+		// Elementor scopes a button's colour to `.elementor-element-<widget id>`;
+		// without that token both pills resolved the same generic rule and
+		// eca.directory's accent "Try Demo" came back as its dark "Sign In" colour.
+		const html =
+			'<header id="site-header">' +
+			'<div class="elementor-element elementor-element-aa1111"><a class="elementor-button" href="#">Try Demo</a></div>' +
+			'<div class="elementor-element elementor-element-bb2222"><a class="elementor-button" href="/login">Sign In</a></div>' +
+			'</header>';
+		const css = `
+.elementor-button { background-color: #000000; color: #ffffff; }
+.elementor-element-bb2222 .elementor-button { background-color: #27104a; }
+.elementor-element-aa1111 .elementor-button { background-color: #8764a0; }
+`;
+		const found = analyzeChrome( { url: 'https://eca.example', html, css: [ css ] } );
+
+		expect( found?.headerActions?.[ 0 ]?.fill ).toBe( '#8764a0' );
+		expect( found?.headerActions?.[ 1 ]?.fill ).toBe( '#27104a' );
+	} );
+
+	it( 'ignores a sibling rule that shares only the header wrapper class', () => {
+		// The live markup: both pills sit under `header.elementor-86`, and Sign
+		// In's rule is `.elementor-86 .elementor-element.elementor-element-<id>
+		// .elementor-button`. Scoring any shared context token let that rule win
+		// for the OTHER pill too.
+		const html =
+			'<header id="site-header" class="elementor elementor-86 elementor-location-header">' +
+			'<div class="elementor-element elementor-element-aa1111"><a class="elementor-button" href="#">Try Demo</a></div>' +
+			'<div class="elementor-element elementor-element-bb2222"><a class="elementor-button" href="/login">Sign In</a></div>' +
+			'</header>';
+		const css = `
+.elementor-kit-21 .elementor-button { background-color: #8764a0; color: #ffffff; }
+.elementor-86 .elementor-element.elementor-element-bb2222 .elementor-button { background-color: #27104a; }
+`;
+		const found = analyzeChrome( { url: 'https://eca.example', html, css: [ css ] } );
+
+		expect( found?.headerActions?.[ 0 ]?.fill ).toBe( '#8764a0' );
+		expect( found?.headerActions?.[ 1 ]?.fill ).toBe( '#27104a' );
+	} );
+
+	it( 'overwrites the harvested paint with the browser’s computed facts', () => {
+		// The harvest resolves a builder var against the first declaration it
+		// finds; the browser resolves the cascade. eca.directory's accent pill read
+		// `#d9534f` (a foreign palette entry).
+		const chrome: ForgeChrome = {
+			headerActions: [
+				{ label: 'Try Demo', text: 'Try Demo', href: '#', fill: '#d9534f', ink: '#ffffff' },
+				{ label: 'Sign In', text: 'Sign In', href: '/login', fill: '#27104a', ink: '#ffffff' },
+			],
+		};
+		const applied = applyMeasuredHeaderActions( chrome, [
+			{
+				text: 'Try Demo',
+				fill: 'rgb(135, 100, 160)',
+				ink: 'rgb(255, 255, 255)',
+				style: { padding: '25px 50px', radius: '100px', size: '15px', weight: '400' },
+			},
+		] );
+
+		expect( applied ).toBe( true );
+		expect( chrome.headerActions?.[ 0 ].fill ).toBe( 'rgb(135, 100, 160)' );
+		expect( chrome.headerActions?.[ 0 ].style ).toMatchObject( { size: '15px', weight: '400' } );
+		// An unmatched pill keeps what the harvest found.
+		expect( chrome.headerActions?.[ 1 ].fill ).toBe( '#27104a' );
+	} );
+
+	it( 'creates a pill the harvest missed entirely', () => {
+		const chrome: Record< string, unknown > = {};
+		const applied = applyMeasuredHeaderActions( chrome, [
+			{ text: 'Try Demo', href: '#', fill: '#8764a0', ink: '#ffffff' },
+		] );
+
+		expect( applied ).toBe( true );
+		expect( chrome.headerActions ).toEqual( [
+			{ label: 'Try Demo', text: 'Try Demo', href: '#', fill: '#8764a0', ink: '#ffffff' },
+		] );
+	} );
+
+	it( 'leaves the harvest alone when nothing was measured', () => {
+		const chrome = { headerActions: [ { label: 'Try Demo', text: 'Try Demo', fill: '#d9534f' } ] };
+
+		expect( applyMeasuredHeaderActions( chrome, [] ) ).toBe( false );
+		expect( chrome.headerActions?.[ 0 ].fill ).toBe( '#d9534f' );
 	} );
 } );

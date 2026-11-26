@@ -51,8 +51,6 @@ npm run smoke        # health → 5 seeds → create → 9 steps → live → ca
 | `npm test` | Vitest wizard/UI suite (jsdom) |
 | `npm run test:server` | `node --test` control-plane suite |
 | `npm run smoke` | Full-stack mock-mode end-to-end check |
-| `npm run probe:cloudways` | Read-only live Cloudways API probe (see the verification spike doc) |
-| `npm run probe:mcp` | Cloudways MCP probe — lists tools / calls read-only tools via the Zed-configured server (token read at runtime, never printed) |
 
 ## Modes
 

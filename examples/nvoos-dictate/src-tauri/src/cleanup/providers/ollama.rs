@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Ollama Stage-2 provider: delegates transcript polish to a local model
 //! served by Ollama's OpenAI-compatible endpoint (`http://localhost:11434/v1`
 //! by default). Nothing leaves the machine on the default path.

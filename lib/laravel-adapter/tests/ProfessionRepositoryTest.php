@@ -36,10 +36,12 @@ final class ProfessionRepositoryTest extends TestCase {
 	}
 
 	public function test_the_laravel_catalogue_is_read_only(): void {
-		// The catalogue is code-owned reference data (090-g §4.3). A save()
-		// here would have to write somewhere, and the design says nowhere —
-		// save_profession is registered only on a runtime with a writable
-		// catalogue (the WordPress CPT).
+		// The BASE catalogue is code-owned reference data (090-g §4.3), and the
+		// repository a consumer resolves stays read-only even when a host
+		// provides an overlay: the merge decorator implements the read contract
+		// only, and persistence is `ProfessionWriteInterface`'s separate job
+		// (149 §170). A repository that was also a writer would be two writers
+		// for one catalogue, which is the defect this split exists to prevent.
 		$this->assertNotInstanceOf( ProfessionWriteInterface::class, $this->repo );
 	}
 
@@ -175,9 +177,13 @@ final class ProfessionRepositoryTest extends TestCase {
 		$all = $this->repo->getAll();
 
 		$this->assertCount( 9, $all );
+
+		// The key embeds `catalogueVersion()`, which is the base version plus the
+		// overlay fingerprint (149 §170) — asserting the literal would pin this
+		// test to "no overlay configured" rather than to the caching rule.
 		$this->assertSame(
 			$all,
-			Cache::get( 'nvoos_cache_professions.catalogue.1.0.0.all' )
+			Cache::get( 'nvoos_cache_professions.catalogue.' . $this->repo->catalogueVersion() . '.all' )
 		);
 	}
 

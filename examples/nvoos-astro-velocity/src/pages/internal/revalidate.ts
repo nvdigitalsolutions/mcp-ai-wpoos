@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // /internal/revalidate — Proposal 104 §4.1 (owner Q3, now approved):
 // same-deploy tag-based cache invalidation for the Astro 7 route cache.

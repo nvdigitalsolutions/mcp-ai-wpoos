@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // wp-loader.ts — the Astro content-layer loader for WordPress (Proposal 096).
 //
@@ -43,6 +44,14 @@ export interface WpLoaderOptions {
 	 */
 	userAgent?: string;
 	/**
+	 * Per-request transport cap in ms. Defaults to `WpClient`'s 15s. Raise it
+	 * for a source whose REST payload is large: eca.directory serves 19
+	 * Elementor pages as a single 1.2 MB response that takes ~30s to
+	 * serialise, so a 15s cap aborted the whole build. The scaffolded
+	 * `content.config.ts` reads `WP_FETCH_TIMEOUT_MS`.
+	 */
+	timeoutMs?: number;
+	/**
 	 * Hybrid local content (Proposal 106 P2): a local MDX glob merged under
 	 * the WP entries. Local fills the gaps; WP wins on store-id collision. A
 	 * network-level WP failure (no connection at all) degrades to local-only
@@ -50,8 +59,23 @@ export interface WpLoaderOptions {
 	 * never silent truncation).
 	 */
 	local?: HybridLocalSource;
+	/**
+	 * The profile declares the CMS GONE (`content.source: 'materialized'`),
+	 * so the snapshot in `local` is the ONLY source.
+	 *
+	 * The loader must not touch the network at all: a dead origin answers 404,
+	 * 200 with whatever now serves the domain, or hangs — every one of those
+	 * is "not a source", and run #102 (2026-11-15) died on exactly that 404
+	 * after `forge materialize` had already recovered the content. A
+	 * materialized collection without a local source fails with a message
+	 * that names the misconfiguration instead of blaming the dead server.
+	 */
+	localOnly?: boolean;
 	/** Test seam — the local loader factory (defaults to astro's glob()). */
-	localLoaderFactory?: (source: HybridLocalSource) => Loader;
+	localLoaderFactory?: (
+		source: HybridLocalSource,
+		options?: { preferWpId?: boolean }
+	) => Loader;
 }
 
 /** A local MDX glob merged under the WP entries (106 P2 hybrid local). */
@@ -82,6 +106,25 @@ export const contentSchema = z
 		excerpt: z.string().optional(),
 		description: z.string().optional(),
 		draft: z.boolean().optional(),
+		/**
+		 * Hybrid local only — replace the WordPress document that publishes this
+		 * slug instead of being dropped by it (Proposal 106 P2).
+		 *
+		 * An override must keep the CMS's route: `id` is REQUIRED for the
+		 * collections routed `/<base>/<id>/<slug>/` (posts, products, CPTs), and
+		 * the WordPress slug always wins for the URL. Overriding a page needs no
+		 * id — `/[slug]/` is the page's own slug. Meaningless in a materialized
+		 * snapshot (there is no CMS to override).
+		 */
+		override: z.boolean().optional(),
+		/**
+		 * `lib/materialize.ts` writes this when two source documents shared a slug:
+		 * the snapshot publishes the suffixed slug (`team-3`) and keeps the source's
+		 * own slug here. A HYBRID load merges on it, so the fallback still yields to
+		 * WordPress's `team` instead of appearing as a second page; a materialized
+		 * load has no CMS to merge with and ignores it.
+		 */
+		slugRenamedFrom: z.string().optional(),
 		link: z.string().optional(),
 		author: z.string().optional(),
 		featuredImage: z.string().optional(),
@@ -134,6 +177,7 @@ export const contentSchema = z
 			description: raw.description,
 			draft: raw.draft,
 			link: raw.link,
+			slugRenamedFrom: raw.slugRenamedFrom,
 			author: raw.author,
 			featuredImage: raw.featuredImage,
 			seoTitle: raw.seoTitle,
@@ -176,14 +220,14 @@ function internalOriginsOf(site: SiteProfile): string[] {
  * Astro content-layer loader over one WordPress/WooCommerce REST collection.
  */
 export function createWpLoader(options: WpLoaderOptions): Loader {
-	const { site, collection, auth, local } = options;
+	const { site, collection, auth, local, localOnly } = options;
 	const internalOrigins = internalOriginsOf(site);
 
-	const loader: Loader = {
+	const wpLoader: Loader = {
 		name: 'nvoos-wp',
 		schema: contentSchema,
 		load: async (context: LoaderContext) => {
-			const client = WpClient.fromProfile(site, { auth, userAgent: options.userAgent });
+			const client = WpClient.fromProfile(site, { auth, userAgent: options.userAgent, timeoutMs: options.timeoutMs });
 
 			if (collection.source === 'payload' || collection.source === 'local') {
 				await loadPayloadEntries(context, client, collection, internalOrigins);
@@ -261,6 +305,9 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 				context.store.set({
 					id,
 					data: {
+						// Declared extra keys first, so a collection cannot silently
+						// overwrite a projected field (`title`, `slug`, `id`).
+						...passthroughFields( entry, collection ),
 						id: Number(entry.id),
 						title: raw.title,
 						slug: raw.slug,
@@ -271,7 +318,7 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 						author: raw.author,
 						featuredImage: featured,
 						seoTitle: raw.seoTitle,
-						seoDescription: raw.seoDescription,
+						seoDescription: raw.seoDescription ?? plainText( raw.excerpt ),
 						seo: raw.seo,
 						price: raw.price,
 						regularPrice: raw.regularPrice,
@@ -295,15 +342,43 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 		},
 	};
 
-	if (!local) {
-		return loader;
+	if ( ! local ) {
+		if ( localOnly ) {
+			// The profile says the CMS is gone, but nothing replaced it: name the
+			// misconfiguration instead of letting the build die on a dead origin.
+			return {
+				name: 'nvoos-wp',
+				schema: contentSchema,
+				load: async () => {
+					throw new Error(
+						`[nvoos-wp] ${collection.slug}: content.source is "materialized" (the CMS is gone) but the collection has no local content source. ` +
+							'Scaffold it with a local glob (`src/content/' + collection.slug + '/`) or restore the CMS.'
+					);
+				},
+			};
+		}
+		return wpLoader;
 	}
 
 	// Hybrid local (106 P2): the local glob loads first, the WP loader second
 	// (its clear() + re-set leaves the store WP-owned), then local entries are
 	// re-set where WP produced nothing — WP wins on collision, local fills
 	// the gaps. Drafts never ship (the 106 frontmatter contract).
-	const localLoader = (options.localLoaderFactory ?? defaultLocalLoader)(local);
+	//
+	// COLLISION is keyed on the ROUTE KEY (the collection's slug), not the store
+	// id: a local entry's id is the filename slug while a WordPress entry's id
+	// is numeric, so an id-keyed set can never match (virtuallysrilanka,
+	// 2026-11-22 — every override silently duplicated). `override: true` in the
+	// local frontmatter is the explicit escape hatch (see `adoptLocal`).
+	//
+	// `localOnly` (a materialized profile) short-circuits the WP half entirely:
+	// there is no CMS to ask, so the snapshot is adopted as the whole store.
+	const localLoader = (options.localLoaderFactory ?? defaultLocalLoader)(local, {
+		// A materialized snapshot keys local entries by the source's numeric id:
+		// two documents may share a slug, and Astro's slug-derived default id
+		// would drop one of them at load time.
+		preferWpId: localOnly,
+	});
 	return {
 		name: 'nvoos-wp',
 		schema: contentSchema,
@@ -312,11 +387,191 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 			const localEntries = context.store
 				.entries()
 				.filter(([, entry]) => !isDraftEntry(entry));
+
+			// Local content may ship its body BESIDE the MDX. A materialized
+			// WordPress page is arbitrary HTML (nested block tags inside a
+			// paragraph), which MDX parses as JSX and rejects — so `<id>.html`
+			// next to `<id>.mdx` is the body and the MDX carries only frontmatter.
+			const rootUrl = context.config?.root;
+			const rootDir = rootUrl ? fileURLToPath( rootUrl ) : '';
+			const baseDir =
+				local.base && rootUrl ? resolve( fileURLToPath( rootUrl ), local.base ) : '';
+			/**
+			 * @param wpIds     The store ids WordPress set (second guard).
+			 * @param merge     `adoptWpId` for a materialized snapshot; `wpBySlug` is
+			 *                  the WP slug index — present only when the CMS answered.
+			 */
+			const adoptLocal = (
+				wpIds: ReadonlySet< string >,
+				merge: {
+					adoptWpId?: boolean;
+					wpBySlug?: Map< string, { id: string; slug: string } >;
+				} = {}
+			): void => {
+				const { adoptWpId = false, wpBySlug } = merge;
+				const claimedSlugs = new Set< string >();
+				for ( const [id, entry] of localEntries ) {
+					const data = entry.data as Record< string, unknown >;
+					const slug = ( typeof data.slug === 'string' && data.slug ) || id;
+					// A de-duplicated snapshot publishes `<slug>-N` but originated at
+					// `slug`. In a hybrid load the CMS still owns the original, so the
+					// MERGE key must be the source slug — otherwise the fallback snapshot
+					// would come back as a second page beside the live one. A materialized
+					// load has no CMS to merge with (the renamed slug is the route).
+					const renamedFrom =
+						typeof data.slugRenamedFrom === 'string'
+							? data.slugRenamedFrom.trim()
+							: '';
+					const mergeSlug = ! localOnly && renamedFrom !== '' ? renamedFrom : slug;
+					const override = data.override === true;
+					const slugKey = routeSlug( mergeSlug );
+					const collision = wpBySlug?.get( slugKey );
+					const publishedKey = routeSlug( slug );
+					if ( claimedSlugs.has( publishedKey ) ) {
+						// Two local entries for one URL. The glob loader only warns when
+						// the FILENAMES collide; a frontmatter `slug` can collide while
+						// the ids differ. `verify` fails the run on the duplicate route.
+						context.logger.warn(
+							`[nvoos-wp] ${ collection.slug }: a second local entry ("${ entryFilePath( entry, id ) }") publishes slug "${ slug }" — the route can only hold one.`
+						);
+					}
+					claimedSlugs.add( publishedKey );
+
+					if ( collision && override ) {
+						// Phase 2 — the explicit escape hatch. An override must keep the
+						// route the CMS publishes: the id for `/posts/<id>/<slug>/`
+						// (posts, products, CPTs), the slug for pages. Anything else
+						// would move a live URL, so it is an error, never a guess.
+						if ( routesByStoreId( collection ) ) {
+							const declared = data.id;
+							const expectedRoute = `/${ ( collection.basePath ?? `/${ collection.slug }` ).replace( /^\/+|\/+$/g, '' ) }/${ collision.id }/${ collision.slug }/`;
+							if ( declared === undefined || declared === null || String( declared ) === '' ) {
+								throw new Error(
+									`[nvoos-wp] ${ collection.slug }: "${ entryFilePath( entry, id ) }" sets override: true for WordPress slug "${ collision.slug }" but carries no id. Add "id: ${ collision.id }" so its route stays ${ expectedRoute }.`
+								);
+							}
+							if ( String( declared ) !== collision.id ) {
+								throw new Error(
+									`[nvoos-wp] ${ collection.slug }: "${ entryFilePath( entry, id ) }" declares id ${ String( declared ) } but WordPress publishes slug "${ collision.slug }" as id ${ collision.id }. An override must keep the WordPress id — otherwise the live URL moves.`
+								);
+							}
+						}
+						context.store.delete( collision.id );
+						context.logger.info(
+							`[nvoos-wp] ${ collection.slug }: local "${ entryFilePath( entry, id ) }" overrides WordPress "${ collision.slug }" (id ${ collision.id }).`
+						);
+						context.store.set(
+							localStoreEntry( entry, data, {
+								storeId: routesByStoreId( collection ) ? collision.id : id,
+								// The WordPress slug is the URL contract: a case-different
+								// local slug must not relocate `/about/` to `/About/`.
+								slug: collision.slug,
+								baseDir,
+								rootDir,
+								internalOrigins,
+							} )
+						);
+						continue;
+					}
+
+					if ( collision ) {
+						// The documented contract: WordPress wins on collision. Silent is
+						// what made this a defect, so always name both sources.
+						context.logger.warn(
+							`[nvoos-wp] ${ collection.slug }: local "${ entryFilePath( entry, id ) }" was ignored — WordPress already publishes slug "${ collision.slug }" (id ${ collision.id }). Add "override: true" to its frontmatter to replace it.`
+						);
+						continue;
+					}
+
+					if ( override && wpBySlug ) {
+						context.logger.warn(
+							`[nvoos-wp] ${ collection.slug }: local "${ entryFilePath( entry, id ) }" sets override: true but matches no WordPress document — rendering it as a normal local entry.`
+						);
+					}
+
+					// An `override` that declares a live WordPress id but a different
+					// slug is contradictory: the id says "replace this document", the
+					// slug says "create another". Refuse rather than ship both.
+					if ( override && data.id !== undefined && wpIds.has( String( data.id ) ) ) {
+						throw new Error(
+							`[nvoos-wp] ${ collection.slug }: "${ entryFilePath( entry, id ) }" declares the id of the WordPress document but a different slug — an override must keep the WordPress slug.`
+						);
+					}
+
+					// A MATERIALIZED entry carries the source's numeric id in its
+					// frontmatter (`lib/materialize.ts`), while the glob id is the
+					// filename slug. Adopt it as the store id so every route, feed,
+					// sitemap and redirect consumer keeps the WordPress shape
+					// (`/posts/2228/blog-details/`) across the detach. Hand-written
+					// local MDX has no `id` and keeps the slug id (the hybrid-local
+					// contract).
+					const storeId =
+						adoptWpId && data.id !== undefined && data.id !== null && data.id !== ''
+							? String( data.id )
+							: id;
+					if (wpIds.has(storeId)) {
+						// The second guard: a local entry that claims a store id
+						// WordPress already used (reachable only when `id` equals the
+						// glob id, or in materialized mode with a duplicated snapshot).
+						context.logger.warn(
+							`[nvoos-wp] ${ collection.slug }: local "${ entryFilePath( entry, id ) }" claims store id "${ storeId }" WordPress already set — local entry ignored.`
+						);
+						continue;
+					}
+					context.store.set(
+						localStoreEntry( entry, data, { storeId, slug, baseDir, rootDir, internalOrigins } )
+					);
+				}
+			};
+
+			if ( localOnly ) {
+				// The CMS is declared gone — never contact it. The glob loader
+				// already set the entries; clear and re-adopt so drafts disappear
+				// and deleted files cannot linger (the same "clear up front"
+				// contract the WP path honours).
+				context.store.clear();
+				adoptLocal( new Set(), { adoptWpId: true } );
+				if ( localEntries.length === 0 ) {
+					context.logger.warn(
+						`[nvoos-wp] ${collection.slug}: content.source is "materialized" (the CMS is gone) and ${local.base} has no entries — empty collection.`
+					);
+				}
+				return;
+			}
+
 			let wpIds = new Set<string>();
+			let wpBySlug = new Map< string, { id: string; slug: string } >();
+			let wpAnswered = false;
 			try {
-				await loader.load(context);
-				// The ids WP just set — the collision set the merge honours.
-				wpIds = new Set(context.store.entries().map(([id]) => id));
+				await wpLoader.load(context);
+				wpAnswered = true;
+				// The slug index is the merge key: a local id is the filename slug
+				// while a WP id is numeric, so an id-keyed collision set never
+				// matches (virtuallysrilanka, 2026-11-22).
+				const wpEntries = context.store.entries();
+				wpIds = new Set( wpEntries.map( ([ entryId ]) => entryId ) );
+				for ( const [ entryId, entry ] of wpEntries ) {
+					const data = ( entry.data ?? {} ) as Record< string, unknown >;
+					const slug = typeof data.slug === 'string' ? data.slug : '';
+					if ( slug === '' ) {
+						continue;
+					}
+					const key = routeSlug( slug );
+					const existing = wpBySlug.get( key );
+					if ( existing && existing.id !== entryId ) {
+						// WordPress allows a PAGE slug to repeat across parents; the
+						// rebuild's flat route cannot, and Astro's default conflict
+						// behaviour ("warn", first path wins) hides it. Report it here and
+						// let `verify`'s route-keys gate fail the run.
+						context.logger.warn(
+							`[nvoos-wp] ${ collection.slug }: WordPress publishes slug "${ slug }" twice (ids ${ existing.id }, ${ entryId }) — the flat route cannot hold both. Resolve it in the CMS.`
+						);
+						continue;
+					}
+					if ( ! existing ) {
+						wpBySlug.set( key, { id: entryId, slug } );
+					}
+				}
 			} catch (error) {
 				// Network-level failures = no WP connection at all (refused, DNS):
 				// degrade to local-only with a loud warning so a forged site stays
@@ -329,58 +584,145 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 					`[nvoos-wp] ${collection.slug}: WordPress unreachable (${error instanceof Error ? error.message : String(error)}) — serving local content only.`
 				);
 			}
-			// Local content may ship its body BESIDE the MDX. A materialized
-			// WordPress page is arbitrary HTML (nested block tags inside a
-			// paragraph), which MDX parses as JSX and rejects — so `<id>.html`
-			// next to `<id>.mdx` is the body and the MDX carries only frontmatter.
-			const rootUrl = context.config?.root;
-			const baseDir =
-				local.base && rootUrl ? resolve( fileURLToPath( rootUrl ), local.base ) : '';
-			for (const [id, entry] of localEntries) {
-				if (wpIds.has(id)) {
-					continue; // WP wins on collision.
-				}
-				// The schema transform cannot see the store id — local
-				// frontmatter carries no slug, so fill it from the glob id
-				// (the filename slug) to keep the id/slug route shape. The
-				// digest gets a stable prefix so the store re-writes the
-				// entry once (same-digest re-sets are skipped) and later
-				// incremental builds still dedupe unchanged files.
-				const data = entry.data as Record< string, unknown >;
-				// A local entry has TWO possible bodies and only one of them is HTML:
-				// the sibling `<id>.html` is the rendered body (materialized
-				// WordPress content, `lib/materialize.ts`), while the glob `body` is
-				// the Markdown/MDX SOURCE. Promoting that source to `rendered.html`
-				// shadowed the compiled `<Content />` and rendered a real MDX post as
-				// literal `import` lines and bullets (2026-11-15).
-				const localBody = ( () => {
-					if ( baseDir === '' || basename( id ) !== id ) {
-						return '';
-					}
-					const sibling = resolve( baseDir, `${ id }.html` );
-					return existsSync( sibling ) ? readFileSync( sibling, 'utf8' ).trim() : '';
-				} )();
-				const existingRendered = entry.rendered as { html?: unknown } | undefined;
-				const rendered: { html: string } | undefined =
-					typeof existingRendered?.html === 'string'
-						? { html: existingRendered.html }
-						: localBody === ''
-							? undefined
-							: { html: sanitizeHtml(localBody, { internalOrigins }) };
-				context.store.set( {
-					...entry,
-					digest: entry.digest !== undefined ? `local:${ String( entry.digest ) }` : undefined,
-					rendered,
-					data: { ...data, slug: ( typeof data.slug === 'string' && data.slug ) || id },
-				} );
-			}
+			// An offline CMS cannot judge an override: report "matched nothing" only
+			// when WordPress actually answered (otherwise an offline demo warns on a
+			// perfectly valid local file).
+			adoptLocal( wpIds, wpAnswered ? { wpBySlug } : {} );
 		},
 	};
 }
 
-/** The production local loader — astro's glob() over the source dir. */
-function defaultLocalLoader(source: HybridLocalSource): Loader {
-	return glob({ pattern: source.pattern, base: source.base });
+/**
+ * A local glob entry's id.
+ *
+ * Astro's default is the frontmatter `slug` (else the filename, slugified), so
+ * two documents sharing a slug collapse to one id and the glob loader drops
+ * one. A MATERIALIZED snapshot can legitimately hold two (WordPress page slugs
+ * are unique among siblings only), so a materialized load prefers the source's
+ * numeric `id` — unique by construction — and lets the route gate report the
+ * collision instead of losing a page.
+ */
+export function localEntryId( entry: { entry?: string; data?: Record< string, unknown > } ): string {
+	const data = entry.data ?? {};
+	const id = data.id;
+	if ( id !== undefined && id !== null && String( id ) !== '' ) {
+		return String( id );
+	}
+	if ( typeof data.slug === 'string' && data.slug !== '' ) {
+		return data.slug;
+	}
+	// Astro's default slugifies each path segment with github-slugger; `slugify`
+	// is the repo's slug rule and matches it for ASCII filenames.
+	return String( entry.entry ?? '' )
+		.replace( /\.[^./\\]+$/, '' )
+		.split( /[/\\]/ )
+		.map( ( segment ) => slugify( segment ) )
+		.join( '/' );
+}
+
+/**
+ * The production local loader — astro's glob() over the source dir.
+ *
+ * `preferWpId` (a materialized profile) swaps the default id for
+ * `localEntryId`, so a same-slug snapshot pair survives the load.
+ */
+function defaultLocalLoader(
+	source: HybridLocalSource,
+	options: { preferWpId?: boolean } = {}
+): Loader {
+	return glob( {
+		pattern: source.pattern,
+		base: source.base,
+		...( options.preferWpId ? { generateId: localEntryId } : {} ),
+	} );
+}
+
+/**
+ * The merge key for a hybrid-local collision: the route contract's slug.
+ *
+ * Normalized (trimmed, lower-cased) because the glob id is slugified by Astro
+ * while frontmatter can carry any casing, and WordPress stores a lower-cased
+ * `post_name`.
+ */
+function routeSlug(value: unknown): string {
+	return String(value ?? '').trim().toLowerCase();
+}
+
+/**
+ * Whether the collection's route carries the store id (`/<base>/<id>/<slug>/`).
+ * Pages are the exception: `/[slug]/` routes on the document's own slug.
+ */
+function routesByStoreId(collection: WpCollection): boolean {
+	return collection.kind !== 'page';
+}
+
+/** A local entry's source path for a log line (the glob loader sets it). */
+function entryFilePath(entry: { filePath?: string }, fallback: string): string {
+	const file = entry.filePath;
+	return typeof file === 'string' && file !== '' ? file : `${ fallback }.mdx`;
+}
+
+/**
+ * Build the store entry for an adopted local document.
+ *
+ * A local entry has TWO possible bodies and only one of them is HTML: the
+ * sibling `<id>.html` is the rendered body (materialized WordPress content,
+ * `lib/materialize.ts`), while the glob `body` is the Markdown/MDX SOURCE.
+ * Promoting that source to `rendered.html` shadowed the compiled `<Content />`
+ * and rendered a real MDX post as literal `import` lines and bullets
+ * (2026-11-15).
+ *
+ * The slug is the caller's: the filename slug for a normal local entry, the
+ * WordPress slug for an override (a case-different local slug must not move
+ * `/about/` to `/About/`).
+ */
+function localStoreEntry< T extends { id?: unknown; digest?: unknown; rendered?: unknown; filePath?: unknown } > (
+	entry: T,
+	data: Record< string, unknown >,
+	options: {
+		storeId: string;
+		slug: string;
+		baseDir: string;
+		rootDir: string;
+		internalOrigins: string[];
+	}
+): T {
+	const id = String(entry.id ?? options.storeId);
+	const localBody = (() => {
+		// Prefer the MDX file's own path: a snapshot may name the file `<slug>-2`
+		// while the store id is the numeric WordPress id, so `<id>.html` would
+		// miss. `<file>.html` is the shape `lib/materialize.ts` writes.
+		const filePath = typeof entry.filePath === 'string' ? entry.filePath : '';
+		if (filePath !== '' && options.rootDir !== '') {
+			const source = resolve(options.rootDir, filePath);
+			const sibling = source.replace(/\.(?:md|mdx|markdown)$/i, '.html');
+			if (sibling !== source && existsSync(sibling)) {
+				return readFileSync(sibling, 'utf8').trim();
+			}
+		}
+		if (options.baseDir === '' || basename(id) !== id) {
+			return '';
+		}
+		const fallback = resolve(options.baseDir, `${id}.html`);
+		return existsSync(fallback) ? readFileSync(fallback, 'utf8').trim() : '';
+	})();
+	const existingRendered = entry.rendered as { html?: unknown } | undefined;
+	const rendered: { html: string } | undefined =
+		typeof existingRendered?.html === 'string'
+			? { html: existingRendered.html }
+			: localBody === ''
+				? undefined
+				: { html: sanitizeHtml(localBody, { internalOrigins: options.internalOrigins }) };
+	// The digest gets a stable prefix so the store re-writes the entry once
+	// (same-digest re-sets are skipped) and later incremental builds still
+	// dedupe unchanged files.
+	return {
+		...entry,
+		id: options.storeId,
+		digest: entry.digest !== undefined ? `local:${ String( entry.digest ) }` : undefined,
+		rendered,
+		data: { ...data, slug: options.slug },
+	} as T;
 }
 
 /** A local entry with draft: true never ships (the 106 frontmatter contract). */
@@ -415,6 +757,22 @@ interface RawEntry {
 	images?: string[];
 }
 
+/**
+ * Copy a collection's declared extra REST keys into the entry's `data`.
+ *
+ * The projected field set below is deliberate — an unbounded content store is
+ * a memory and cache problem. A collection that genuinely needs more (the ECA
+ * toolkit's `meta`, its taxonomy term ids, the raw body) names those keys on
+ * `WpCollection.passthrough`; anything undeclared stays out.
+ */
+function passthroughFields( entry: Record< string, unknown >, collection: WpCollection ): Record< string, unknown > {
+	const out: Record< string, unknown > = {};
+	for ( const key of collection.passthrough ?? [] ) {
+		if ( entry[ key ] !== undefined ) out[ key ] = entry[ key ];
+	}
+	return out;
+}
+
 /** Normalize one raw document into the stable entry shape. */
 /** Map one wp/v2 or wc/v3 document into the stable entry shape. Exported
  * for the on-demand product route (104 Q4) — the SSR render path shares
@@ -446,7 +804,7 @@ export function extractRaw(entry: Record<string, unknown>): RawEntry {
 	const hasSeo = Object.keys( seo ).length > 0;
 
 	return {
-		title: title || String(entry.id ?? ''),
+		title: plainText( title ) || String( entry.id ?? '' ),
 		slug: String(entry.slug ?? ''),
 		date,
 		modified,
@@ -626,6 +984,70 @@ function extractText(value: unknown): string | undefined {
 	return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
+/** The named references WordPress emits in rendered titles/excerpts. */
+const NAMED_ENTITIES: Record<string, string> = {
+	amp: '&',
+	lt: '<',
+	gt: '>',
+	quot: '"',
+	apos: "'",
+	nbsp: ' ',
+	hellip: '…',
+	mdash: '—',
+	ndash: '–',
+	lsquo: '‘',
+	rsquo: '’',
+	ldquo: '“',
+	rdquo: '”',
+	laquo: '«',
+	raquo: '»',
+	copy: '©',
+	reg: '®',
+	trade: '™',
+	times: '×',
+	middot: '·',
+	bull: '•',
+	eacute: 'é',
+	egrave: 'è',
+	agrave: 'à',
+	ccedil: 'ç',
+	uuml: 'ü',
+	ouml: 'ö',
+	auml: 'ä',
+	ntilde: 'ñ',
+	Eacute: 'É',
+};
+
+function fromCodePoint(code: number): string {
+	try {
+		return String.fromCodePoint(code);
+	} catch {
+		return '';
+	}
+}
+
+/**
+ * Render a WordPress *rendered* field as PLAIN TEXT.
+ *
+ * `title.rendered` / `excerpt.rendered` arrive entity-encoded (`We Didn&#8217;t`)
+ * because they are HTML fragments. Every consumer of `title` and
+ * `seoDescription` is a TEXT sink — `<title>`, `<h1>`, meta/OG/Twitter
+ * descriptions, JSON-LD — so the entity must be decoded here or it renders
+ * literally (`We Didn&#8217;t`) and a meta description keeps its `<p>` wrapper.
+ * `excerpt` itself keeps its HTML: cards and feeds render it as markup.
+ */
+export function plainText(value: string | undefined): string | undefined {
+	if (!value) {
+		return undefined;
+	}
+	const decoded = value
+		.replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => fromCodePoint(parseInt(hex, 16)))
+		.replace(/&#(\d+);/g, (_, dec: string) => fromCodePoint(Number(dec)))
+		.replace(/&([a-z][a-z0-9]*);/gi, (match, name: string) => NAMED_ENTITIES[name] ?? match);
+	const text = decoded.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+	return text.length > 0 ? text : undefined;
+}
+
 /** Commerce fields are additive — read them when present, skip otherwise. */
 function extractCommerce(entry: Record<string, unknown>, keys: string[]): string | undefined {
 	for (const key of keys) {
@@ -718,7 +1140,7 @@ async function loadPayloadEntries(
 				author: raw.author,
 				featuredImage: raw.featuredImage,
 				seoTitle: raw.seoTitle,
-				seoDescription: raw.seoDescription,
+				seoDescription: raw.seoDescription ?? plainText( raw.excerpt ),
 				price: raw.price,
 				regularPrice: raw.regularPrice,
 				salePrice: raw.salePrice,

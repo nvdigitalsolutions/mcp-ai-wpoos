@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // vision.ts — optional vision-verified comparisons (Proposal 118).
 //
@@ -208,4 +209,137 @@ export async function visionCompare(
 	timeoutMs: number = 120_000
 ): Promise<VisionOutcome> {
 	return visionRun( config, [ source, built ], prompt, fetchImpl, timeoutMs );
+}
+
+/**
+ * The closed vocabulary a STRUCTURE verdict may name.
+ *
+ * Closed on purpose: the model's job is to pick a label the renderer already
+ * has a component for, never to invent one. A verdict outside this list is
+ * `unknown`, which the caller treats as "no structure measured".
+ */
+export const STRUCTURE_VOCABULARY = [
+	'comparison',
+	'pricing',
+	'stats',
+	'steps',
+	'timeline',
+	'team',
+	'testimonials',
+	'faq',
+	'gallery',
+	'logos',
+	'hero',
+	'cards',
+	'form',
+	'text',
+] as const;
+
+export type StructureType = ( typeof STRUCTURE_VOCABULARY )[ number ];
+
+export interface StructureVerdict {
+	/** `unknown` means the model saw nothing it could name — never a guess. */
+	type: StructureType | 'unknown';
+	/** 0–1, the model's own confidence. */
+	confidence: number;
+	/** One line, the model's reason. Stored for attribution. */
+	note?: string;
+}
+
+/**
+ * The structure prompt — one band, one label.
+ *
+ * The band is rendered in a browser and screenshotted because the STRUCTURE is
+ * not in the sanitised markup: a builder publishes a comparison matrix's marks
+ * as `<svg>` (52 raw, 0 after sanitisation) and a timeline's connector as a
+ * pseudo-element. Vision is the only reader left for those.
+ */
+export const STRUCTURE_PROMPT = [
+	'You are a web-structure classifier. One screenshot of a single website BAND is attached.',
+	'Name the band’s STRUCTURE — what it IS, not what it looks like.',
+	'Work in this order: (1) find ONE concrete visual cue in the screenshot, (2) name the structure that cue implies, (3) set a confidence that reflects how unambiguous that cue is.',
+	'A confidence of 0.9 means the cue is unmistakable. If you are choosing between two labels, answer below 0.5 — a wrong label is worse than none.',
+	'Answer as strict JSON:',
+	'{',
+	'  "type": "comparison" | "pricing" | "stats" | "steps" | "timeline" | "team" | "testimonials" | "faq" | "gallery" | "logos" | "hero" | "cards" | "form" | "text" | "unknown",',
+	'  "confidence": <number 0-1>,',
+	'  "note": "<one line: the concrete visual evidence for the label>"',
+	'}',
+	'Definitions: comparison = a matrix of features against options with check/cross marks;',
+	'pricing = plan columns carrying prices; stats = big numbers with labels; steps = an ordered',
+	'numbered process; timeline = a chronology on a line; faq = stacked questions with answers.',
+	'Answer "unknown" rather than guessing; a wrong structure is worse than none.',
+].join( '\n' );
+
+/** Parse a structure verdict, tolerating a fenced answer and prose fallbacks. */
+export function parseStructureVerdict( text: string ): StructureVerdict {
+	const parsed = parseVerdict( text );
+	const raw = typeof parsed.type === 'string' ? parsed.type.trim().toLowerCase() : '';
+	const type = ( STRUCTURE_VOCABULARY as readonly string[] ).includes( raw )
+		? ( raw as StructureType )
+		: 'unknown';
+	const confidenceRaw = typeof parsed.confidence === 'number' ? parsed.confidence : Number( parsed.confidence );
+	const confidence = Number.isFinite( confidenceRaw ) ? Math.min( 1, Math.max( 0, confidenceRaw ) ) : 0;
+	const note = typeof parsed.note === 'string' && parsed.note.trim() ? parsed.note.trim().slice( 0, 240 ) : undefined;
+	// A label with no confidence is not a measurement.
+	if ( type === 'unknown' || confidence <= 0 ) {
+		return { type: 'unknown', confidence: 0, ...( note ? { note } : {} ) };
+	}
+	return { type, confidence, ...( note ? { note } : {} ) };
+}
+
+/**
+ * Classify ONE band's structure from its screenshot.
+ *
+ * Opt-in and advisory by contract: the caller decides whether to store the
+ * result, and a deterministic detector always wins over it (see
+ * `mergeStructureVerdicts`). Never throws.
+ */
+export async function visionStructure(
+	config: VisionConfig,
+	band: VisionImage,
+	fetchImpl: typeof fetch = fetch,
+	timeoutMs: number = 120_000,
+	prompt: string = STRUCTURE_PROMPT
+): Promise<{ ok: true; verdict: StructureVerdict; raw: string } | { ok: false; error: string }> {
+	const outcome = await visionRun( config, [ band ], prompt, fetchImpl, timeoutMs, 300 );
+	if ( ! outcome.ok ) {
+		return outcome;
+	}
+	return { ok: true, verdict: parseStructureVerdict( outcome.raw ), raw: outcome.raw };
+}
+
+/**
+ * Merge a vision verdict into the measured structures.
+ *
+ * A deterministic detector is authoritative: when one already named the band,
+ * vision is ignored (it may only fill a GAP). A stored vision structure carries
+ * its provenance so a wrong label is attributable and removable.
+ */
+export function mergeStructureVerdicts< T extends { type: string; source?: string } >(
+	measured: T[],
+	vision: { type: StructureType | 'unknown'; confidence: number; note?: string },
+	options: { model?: string; minConfidence?: number } = {}
+): T[] {
+	const minimum = options.minConfidence ?? 0.7;
+	if ( vision.type === 'unknown' || vision.confidence < minimum ) {
+		return measured;
+	}
+	if ( measured.some( ( entry ) => entry.source !== 'vision' ) ) {
+		return measured;
+	}
+	// `measured` wins on type; vision may only ADD where nothing was measured.
+	if ( measured.length > 0 ) {
+		return measured;
+	}
+	return [
+		...measured,
+		{
+			type: vision.type,
+			source: 'vision',
+			...( options.model ? { model: options.model } : {} ),
+			confidence: vision.confidence,
+			...( vision.note ? { note: vision.note } : {} ),
+		} as unknown as T,
+	];
 }

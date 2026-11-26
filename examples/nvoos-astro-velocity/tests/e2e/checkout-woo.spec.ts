@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // checkout-woo.spec.ts — Proposal 108 Phase 2 + 110 e2e gates: the
 // server-cart path. Runs serial on its OWN fixture + BFF pair (8126/4324 —
 // see playwright.config.ts) where the fixture serves woo product mode.

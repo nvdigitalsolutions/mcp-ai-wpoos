@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Sync .agents/skills/ to the remote Hermes agent via its WebUI API.
  *

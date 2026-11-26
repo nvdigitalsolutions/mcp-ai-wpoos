@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Teams/Portability/SecurityCenter client contract tests (fetch mocked).
  */

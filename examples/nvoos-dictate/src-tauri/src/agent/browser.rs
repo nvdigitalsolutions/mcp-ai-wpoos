@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! CDP helper functions: build the observation from the accessibility tree and
 //! construct screenshot params. Shareable by the driver; feature-gated.
 //!

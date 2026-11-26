@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Webcam/camera capture (Proposal 073).
 //!
 //! Architecturally, a webcam enumerates as **two** separate devices: a camera
@@ -51,6 +52,8 @@ pub fn available() -> bool {
 #[cfg(not(feature = "camera"))]
 pub struct CameraCapture {
     pub frame: std::sync::Arc<std::sync::Mutex<Option<PreviewFrame>>>,
+    /// Larger ring consumed by the gesture/detection stages.
+    pub frame_vision: std::sync::Arc<std::sync::Mutex<Option<PreviewFrame>>>,
     pub device_name: String,
 }
 

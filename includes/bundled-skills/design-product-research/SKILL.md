@@ -132,6 +132,16 @@ Use `remote_wp_connection` to verify product availability on the live site:
      category: "conatural",
      per_page: 20
    }
+
+5. Variations for one product (by ID or by parent SKU):
+   remote_wp_connection {
+     connection_id: "conn_8srcad8zylhe",
+     action: "get_wc_product_variations",
+     sku: "CN29"
+   }
+   → resolves the parent product; the reply adds resolved_by: "sku"
+     and product { id, name, sku, type }. A variation SKU still needs
+     the parent product ID (pass post_id).
 ```
 
 **Key fields from live products:** `id`, `name`, `permalink`, `price`, `stock_status`, `stock_quantity`, `categories`, `type`, `status`.

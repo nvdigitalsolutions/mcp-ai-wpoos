@@ -55,6 +55,62 @@ keeps the release-page fallback). Two independent throttles exist: client
 transients (5 session / 15 verify attempts per 10 min per user) and vendor
 per-IP limits — when debugging "Too many checkout attempts", check both.
 
+## The licence read side (`/api/licenses/check|activate`)
+
+`/verify` **issues** a key; validating it later is a **different contract** on
+the same server:
+
+```
+POST https://nvdigitalsolutions.com/api/licenses/check      (form-encoded)
+POST https://nvdigitalsolutions.com/api/licenses/activate
+  license_key = <opaque, 16-64 chars [A-Za-z0-9_-]>   # 0.1.2 keys: nvoos_+40 hex
+  site_url    = <site URL, or a stable instance id for the Laravel runtime>
+  product     = mcp-ai-wpoos-pro          (both clients send the internal slug)
+
+check    -> 200 { status: "valid"|"invalid", plan?, product?, checked_at? }
+activate -> 200 { success: bool, status, plan?, product?, checked_at? }
+```
+
+Verified 2026-11-25 against the live server: there is **no `expires`** in either
+response — the table has no expiry column (absent = perpetual), so a client that
+branches on `expires` is dead code.
+
+Who calls it:
+
+| Client | Path | Reads | Failure policy |
+|---|---|---|---|
+| WP Pro plugin (`includes/admin/class-wp-mcp-ai-pro-license.php`, base URL filterable via `wp_mcp_ai_license_server_url`) | `/activate`, `/check` | `success`, `status`, `expires` | keeps the last state on transport error |
+| Laravel runtime (`lib/laravel-adapter/src/Adapter/LicensedProEntitlement.php`) | `/check` only | `status`, `plan`, `expires` | fails closed; 4xx = definitive denial, 5xx/429 = transient; caches 12 h valid / 5 min denied / 7 d grace |
+
+The Laravel side maps the returned `plan` onto `ProPlanCatalog`
+(`compliance` | `professional` | `enterprise`) — an unrecognised plan is a
+denial (`license-unknown-plan:<plan>`), so the server must only return a
+catalogue value.
+
+**Where it lives (PR #8234):** `addons/checkout-api` serves it, so the store
+that issues keys also validates them —
+`/wp-json/nvoos-checkout/v1/license/check|activate` plus rewrites for the two
+legacy `/api/licenses/*` paths. Policy worth knowing before debugging:
+
+- Unknown, revoked, wrong-product and wrong-site keys all return the **same**
+  `{status:invalid}` with HTTP 200 (no key oracle). A 404/500 there is a
+  routing/deploy problem, not a bad key.
+- `mcp-ai-wpoos-pro` aliases the sold product `nvoos-oos-complete`; the stored
+  row's product is what the response reports.
+- Site binding compares hosts (scheme/path/port ignored, `www.` not folded) and
+  **never re-binds** — a mismatch means the key belongs to another install.
+  `/activate` is therefore **read-only**: it is the same resolver plus a
+  `success` boolean, so it is safe to call repeatedly.
+- A malformed `license_key` (not `[A-Za-z0-9_-]{16,64}`) fails REST validation
+  with **400 `rest_invalid_param`**, not a 200 `invalid`. Clients must treat 400
+  as a bad request, never as "revoked".
+- Plan is a server decision (`nvoos_checkout_license_plan`); the table has no
+  plan column — and no expiry column either (absent = perpetual).
+- Issuing deliberately has no unauthenticated endpoint: mint with a verified
+  Stripe intent, or on the server via
+  `NVOOS_Checkout_API_License_Store::create([...])` (use a unique
+  `stripe_payment_intent` placeholder — the column is `UNIQUE NOT NULL`).
+
 ## Where the clients live
 
 | Plugin | Version | Notes |
@@ -196,7 +252,25 @@ buyer_email (current user's own address), eu_countries, and the full i18n map.
   (`test_checkout_localize_name_matches_js`) — it asserts the localize
   payload, the JS global, and the absence of the old name.
 
+- **`tests/bootstrap.php` and the plugin bootstrap are two require lists, and
+  they drift.** The licence read side (PR #8234) shipped with
+  `NVOOS_Checkout_API_Mailer` required by `tests/bootstrap.php` only, so PHPUnit
+  was green while `/verify` and webhook issuance would have fataled on **every
+  real purchase**. Adding `includes/class-*.php` means adding the
+  `require_once` to **both** `tests/bootstrap.php` and `nvoos-checkout-api.php`,
+  then proving it at runtime on the vendor box:
+  `wp eval 'foreach (["Mailer","License_Resolver"] as $c) { $c="NVOOS_Checkout_API_".$c; echo $c.": ".(class_exists($c)?"YES":"NO").PHP_EOL; }'`.
+  Any `NO` is a live-checkout fatal, not a warning.
+- The legacy `/api/licenses/check|activate` paths are **rewrite rules**, not
+  routes. A deploy without `wp rewrite flush --hard` leaves them 404 while
+  `/wp-json/nvoos-checkout/v1/license/check` works — which looks like a
+  client-side bug and is not.
+
 ## References
+
+- Vendor deploy (SSH, LF staging, `install -m 664 -g www-data`, rewrite flush,
+  in-box curl): `nv-digital-cloudways-wpcli` →
+  `reference/checkout-addon-deploy.md`
 
 - Vendor addon (server side): `addons/checkout-api/` (REST controller holds
   the accepted product list and the license-issue gates)

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // variants.test.ts — Proposal 106 P1: variant hydrate/normalize/ladder +
 // the JSON-LD Offer[] emission.
 import { describe, expect, it } from 'vitest';

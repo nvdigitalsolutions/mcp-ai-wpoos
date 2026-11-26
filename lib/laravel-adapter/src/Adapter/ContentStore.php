@@ -27,6 +27,8 @@ use Nvoos\Core\Domain\Error\NotFoundException;
 use Nvoos\Core\Domain\Error\ValidationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class ContentStore implements ContentStoreInterface {
@@ -537,8 +539,8 @@ class ContentStore implements ContentStoreInterface {
 			$model->save();
 		}
 
-		// Attach taxonomy terms via many-to-many.
-		$this->syncTaxonomyTerms( $model, $command->taxonomyInput );
+		// Replace taxonomy terms.
+		$this->replaceTaxonomyTerms( $model, $command->taxonomyInput );
 
 		return $this->hydrateContentItem( $model->fresh() );
 	}
@@ -547,7 +549,7 @@ class ContentStore implements ContentStoreInterface {
 	 * Update an existing content item.
 	 *
 	 * Only non-null fields in the command are applied. Meta is merged,
-	 * not replaced.
+	 * not replaced. Taxonomy is replaced, per taxonomy.
 	 *
 	 * @param int                  $id       Content item ID.
 	 * @param UpdateContentCommand $command  Update parameters.
@@ -591,8 +593,8 @@ class ContentStore implements ContentStoreInterface {
 			$model->save();
 		}
 
-		// Sync taxonomy terms.
-		$this->syncTaxonomyTerms( $model, $command->taxonomyInput );
+		// Replace taxonomy terms.
+		$this->replaceTaxonomyTerms( $model, $command->taxonomyInput );
 
 		return $this->hydrateContentItem( $model->fresh() );
 	}
@@ -648,6 +650,47 @@ class ContentStore implements ContentStoreInterface {
 	}
 
 	/**
+	 * List the terms defined in a taxonomy.
+	 *
+	 * The vocabulary, not the assignment: a term with no posts is still listed,
+	 * because a categorizer may legitimately choose one that is new to the site.
+	 * `count` is the number of posts carrying the term, so a caller can tell a
+	 * well-used term from an unused one without a second query.
+	 *
+	 * @param string $taxonomy  Taxonomy slug.
+	 * @param int    $limit     Maximum terms to return, 1–500.
+	 *
+	 * @return array<int, array{id:int, name:string, slug:string, count:int}>
+	 */
+	public function listTaxonomyTerms( string $taxonomy, int $limit = 200 ): array {
+		if ( '' === trim( $taxonomy ) ) {
+			return array();
+		}
+
+		$limit = max( 1, min( 500, $limit ) );
+
+		$rows = \Nvoos\Laravel\Models\NvoosTerm::query()
+			->where( 'taxonomy', $taxonomy )
+			->withCount( 'posts' )
+			->orderBy( 'name' )
+			->limit( $limit )
+			->get();
+
+		$terms = array();
+
+		foreach ( $rows as $row ) {
+			$terms[] = array(
+				'id'    => (int) $row->getKey(),
+				'name'  => (string) $row->name,
+				'slug'  => (string) ( $row->slug ?? '' ),
+				'count' => (int) ( $row->posts_count ?? 0 ),
+			);
+		}
+
+		return $terms;
+	}
+
+	/**
 	 * Get taxonomy terms assigned to a content item.
 	 *
 	 * Reads from a many-to-many 'terms' relationship on the model.
@@ -693,7 +736,47 @@ class ContentStore implements ContentStoreInterface {
 
 		$ability = $abilityMap[ $operation ] ?? 'read_content';
 
-		return Gate::allows( $ability, array( $id, $userId ) );
+		$actor = $this->actor( $userId );
+
+		if ( null === $actor ) {
+			return false;
+		}
+
+		// Authorise as the acting user, not the ambient session. A tool may act
+		// for a different user than the request, and several callers have no
+		// session at all (a timed schedule, a queue worker, the tool command).
+		// Plain `Gate::allows()` short-circuits to false when nothing is
+		// authenticated, whatever user id the caller passed in.
+		return Gate::forUser( $actor )->allows( $ability, array( $id, $userId ) );
+	}
+
+	/**
+	 * Resolve the user an access check is about.
+	 *
+	 * The provider comes from configuration rather than from `Auth::guard()`, which
+	 * cannot be relied on here: `Sanctum::actingAs()` (and any `shouldUse()`) swaps
+	 * the default guard for a request guard that has no user provider at all, and
+	 * calling `getProvider()` on it throws. Reading `auth.providers.*` keeps this
+	 * adapter framework-level — no host application's User class is referenced.
+	 */
+	private function actor( int $userId ): ?Authenticatable {
+		if ( $userId <= 0 ) {
+			return Auth::user();
+		}
+
+		$guard       = (string) config( 'auth.defaults.guard', 'web' );
+		$providerKey = (string) config( 'auth.guards.' . $guard . '.provider', '' );
+
+		// Token guards declare no provider — they resolve users through the
+		// default one. Fall back rather than fail; a host without a `users`
+		// provider simply denies, which is the safe direction.
+		if ( '' === $providerKey ) {
+			$providerKey = 'users';
+		}
+
+		$provider = Auth::createUserProvider( $providerKey );
+
+		return $provider?->retrieveById( $userId );
 	}
 
 	// ─── Private helpers ──────────────────────────────────────────────
@@ -733,18 +816,29 @@ class ContentStore implements ContentStoreInterface {
 	}
 
 	/**
-	 * Sync taxonomy terms for a model.
+	 * Replace the terms of each named taxonomy on a model.
+	 *
+	 * `taxonomyInput` is the complete desired set per taxonomy, matching
+	 * `wp_set_post_terms( $append = false )`. The `terms()` relation spans every
+	 * taxonomy on the item — categories and tags share one pivot — so a bare
+	 * `sync()` would detach the other taxonomies' terms as a side effect. This
+	 * attaches the desired terms and detaches only *this* taxonomy's stale ones,
+	 * which is the same end state without the collateral damage.
+	 *
+	 * A taxonomy named with an empty list detaches all of its terms, matching
+	 * `wp_set_post_terms( $id, array(), $taxonomy )`.
 	 *
 	 * @param Model                              $model          The content model.
-	 * @param array<string, array<int, string>>  $taxonomyInput  Taxonomy → term names.
+	 * @param array<string, array<int, string>>  $taxonomyInput  Taxonomy → complete term set.
 	 */
-	private function syncTaxonomyTerms( Model $model, array $taxonomyInput ): void {
+	private function replaceTaxonomyTerms( Model $model, array $taxonomyInput ): void {
 		if ( array() === $taxonomyInput || ! method_exists( $model, 'terms' ) ) {
 			return;
 		}
 
 		foreach ( $taxonomyInput as $taxonomy => $termNames ) {
-			$termIds = array();
+			$desired = array();
+
 			foreach ( $termNames as $name ) {
 				$term = \Nvoos\Laravel\Models\NvoosTerm::firstOrCreate(
 					array(
@@ -752,11 +846,30 @@ class ContentStore implements ContentStoreInterface {
 						'taxonomy' => $taxonomy,
 					)
 				);
-				$termIds[] = $term->getKey();
+
+				$desired[] = (int) $term->getKey();
 			}
 
-			if ( array() !== $termIds ) {
-				$model->terms()->syncWithoutDetaching( $termIds );
+			$desired = array_values( array_unique( $desired ) );
+
+			$relation = $model->terms();
+
+			$current = $relation
+				->where( $relation->getRelated()->qualifyColumn( 'taxonomy' ), $taxonomy )
+				->get()
+				->map( static fn ( $term ): int => (int) $term->getKey() )
+				->all();
+
+			$stale = array_values( array_diff( $current, $desired ) );
+
+			// Attach before detaching: a failure between the two must not leave
+			// the item with terms the caller asked for removed.
+			if ( array() !== $desired ) {
+				$model->terms()->syncWithoutDetaching( $desired );
+			}
+
+			if ( array() !== $stale ) {
+				$model->terms()->detach( $stale );
 			}
 		}
 	}

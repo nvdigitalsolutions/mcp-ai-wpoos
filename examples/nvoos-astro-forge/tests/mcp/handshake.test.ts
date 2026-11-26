@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // handshake.test.ts — MCP Streamable HTTP conformance over a real node:http
 // socket (096 Phase 4 exit criteria; the 095 pattern), covering BOTH wire

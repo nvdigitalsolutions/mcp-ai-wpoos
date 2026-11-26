@@ -11,14 +11,24 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
+use Nvoos\Core\Application\Media\GeneratedMediaPersister;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
 class GenerateGeminiImageTool extends AbstractTool
 {
-    public function __construct(ErrorFactoryInterface $e, private readonly SettingsStoreInterface $s, private readonly HttpClientInterface $h)
-    {
+    /**
+     * `$files` is optional: a host with no registry keeps the payload-only
+     * behaviour rather than failing to construct the tool.
+     */
+    public function __construct(
+        ErrorFactoryInterface $e,
+        private readonly SettingsStoreInterface $s,
+        private readonly HttpClientInterface $h,
+        private readonly ?FileVisibilityStoreInterface $files = null,
+    ) {
         parent::__construct($e);
     }
     public function getSlug(): string
@@ -41,7 +51,7 @@ class GenerateGeminiImageTool extends AbstractTool
             'aspect_ratio' => array('type' => 'string','enum' => array('1:1','3:4','4:3','9:16','16:9'),'default' => '1:1'),
             'n' => array('type' => 'integer','description' => 'Number of images (1-4).','minimum' => 1,'maximum' => 4,'default' => 1),
             'negative_prompt' => array('type' => 'string','description' => 'What to avoid.'),
-        ),'required' => array('prompt'),'additionalProperties' => false);
+        ) + GeneratedMediaPersister::parameters(),'required' => array('prompt'),'additionalProperties' => false);
     }
     public function getRequiredCapability(): string
     {
@@ -64,6 +74,7 @@ class GenerateGeminiImageTool extends AbstractTool
         $ratio   = $this->stringParam($arguments, 'aspect_ratio', '1:1');
         $n       = $this->intParam($arguments, 'n', 1);
         $neg     = $this->stringParam($arguments, 'negative_prompt');
+        $save    = $this->boolParam($arguments, 'save_to_media', true) && null !== $this->files;
 
         $inst = array( 'prompt' => $prompt, 'aspectRatio' => $ratio, 'sampleCount' => $n );
         if ('' !== $neg) {
@@ -79,7 +90,22 @@ class GenerateGeminiImageTool extends AbstractTool
             }
 
             $images = $d['predictions'] ?? array();
-            return $this->success('Image(s) generated successfully.', array( 'prompt' => $prompt, 'model' => $model, 'images' => $images, 'count' => \count($images) ));
+
+            $payload = array( 'prompt' => $prompt, 'model' => $model, 'images' => $images, 'count' => \count($images) );
+
+            if ($save) {
+                // Imagen returns `bytesBase64Encoded` per prediction; the
+                // persister understands both dialects.
+                $payload = (new GeneratedMediaPersister($this->files))->attach(
+                    $payload,
+                    $images,
+                    $context,
+                    GeneratedMediaPersister::displayName($arguments, $context, 'gemini-image'),
+                    $this->stringParam($arguments, 'visibility', FileVisibilityStoreInterface::VISIBILITY_PUBLIC),
+                );
+            }
+
+            return $this->success('Image(s) generated successfully.', $payload);
         } catch (\Throwable $e) {
             return $this->errors->create('request_failed', $e->getMessage());
         }

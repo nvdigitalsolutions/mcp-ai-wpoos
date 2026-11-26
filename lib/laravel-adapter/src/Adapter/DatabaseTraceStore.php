@@ -66,15 +66,52 @@ final class DatabaseTraceStore implements TraceStoreInterface
 			return false;
 		}
 
-		return (bool) DB::table(self::TABLE)->insert(
+		return (bool) DB::table( self::TABLE )->insert(
 			array(
 				'assistant_id' => $assistantId,
+				'tenant_id' => $this->estateFor( $assistantId ),
 				'run_id' => $runId,
 				'artifact' => $artifact,
 				'payload' => $encoded,
 				'created_at' => now(),
 			)
 		);
+	}
+
+	/**
+	 * The estate a run belongs to.
+	 *
+	 * Read from the assistant rather than accepted from the caller. The assistant
+	 * is the estate-owned record, `assistant_id` is already a required argument,
+	 * and a second source would be a second truth to keep in step — the exact
+	 * divergence Proposal 152 §9.3 warns about.
+	 *
+	 * One primary-key lookup per appended record, and only for a traced turn
+	 * (capture is opt-in per assistant). Deliberately **uncached**: a store
+	 * resolved as a singleton in a queue worker or an Octane process would hold
+	 * one request's estate for the next, which is the leak TenantContext exists
+	 * to prevent.
+	 *
+	 * A missing row, a missing table or a blank column all fall back to `default`,
+	 * the same attribution the token rows use (Proposal 152 §3 D3): a trace that
+	 * cannot name its estate must not invent one.
+	 */
+	private function estateFor( int $assistantId ): string {
+		// The package merges `config/nvoos.php` under the `oos` key
+		// (`NvoosServiceProvider::register`), so that is the namespace to read.
+		$table = (string) config( 'oos.assistants_table', 'assistants' );
+
+		try {
+			$tenant = DB::table( $table )->where( 'id', $assistantId )->value( 'tenant_id' );
+		} catch ( \Throwable $exception ) {
+			report( $exception );
+
+			return 'default';
+		}
+
+		$tenant = trim( (string) $tenant );
+
+		return '' !== $tenant ? substr( $tenant, 0, 64 ) : 'default';
 	}
 
 	public function prune(int $assistantId, int $keepRuns): int

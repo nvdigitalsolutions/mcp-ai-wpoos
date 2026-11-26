@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Adaptation script: Convert WordPress chat-transcription-service.js to a standalone NPM package.
 // The source is already structured around (state, helpers) parameters — we just strip the IIFE,
 // rename the public surface, replace WP-specific class names + DOM selectors with configurable

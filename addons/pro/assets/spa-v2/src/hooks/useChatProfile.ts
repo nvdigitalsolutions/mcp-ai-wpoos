@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useChatProfile — wires the chat-profile catalogue and switching to the
  * model store, the REST surface, and the toast feedback loop.

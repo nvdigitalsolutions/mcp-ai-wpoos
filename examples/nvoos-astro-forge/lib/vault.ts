@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // vault.ts — the forge credential store (Proposal 096 Phase 3.1).
 //

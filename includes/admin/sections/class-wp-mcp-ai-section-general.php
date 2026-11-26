@@ -271,6 +271,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 					'min'         => 1,
 					'max'         => 500,
 				),
+				'sse_offload_elapsed_seconds'           => array(
+					'type'        => 'number',
+					'label'       => __( 'Background Hand-off (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long a chat stream may go silent — while a tool or non-streamed model call runs — before the remaining turn is handed to the background worker. This is a proxy idle limit, not the AI provider timeout. The default 110 sits just under Cloudflare\'s 125 s origin read timeout, leaving a margin for the hand-off to arrive; lower it if your proxy resets sooner (AWS load balancers and a default nginx proxy_read_timeout reset at 60 s). It must stay below your proxy limit — at or above it the connection is already gone when the check fires. Set to 0 to disable hand-off.', 'mcp-ai-wpoos' ),
+					'default'     => 110,
+					'placeholder' => '110',
+					'min'         => 0,
+					'max'         => 600,
+				),
 				// Custom Filters fields.
 				'filter_default_light_model'            => array(
 					'type'        => 'text',
@@ -372,6 +381,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 						'summary_max_tokens',
 						'tool_result_summarize_threshold',
 						'request_timeout',
+						'sse_offload_elapsed_seconds',
 						'query_posts_limit',
 					),
 				),
@@ -810,6 +820,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 
 				if ( is_wp_error( $result ) ) {
 					$errors[] = $result->get_error_message();
+				}
+			}
+
+			// Validate sse_offload_elapsed_seconds. Zero is valid — it disables
+			// offload; anything above 600 s can no longer sit below a proxy's
+			// idle timeout, so it would make the gate fire only after a reset.
+			if ( isset( $input['sse_offload_elapsed_seconds'] ) && '' !== $input['sse_offload_elapsed_seconds'] ) {
+				$result = WP_MCP_AI_Settings_Validator::validate_number(
+					$input['sse_offload_elapsed_seconds'],
+					0,
+					600
+				);
+
+				if ( is_wp_error( $result ) ) {
+					$errors[] = __( 'Background Hand-off: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 

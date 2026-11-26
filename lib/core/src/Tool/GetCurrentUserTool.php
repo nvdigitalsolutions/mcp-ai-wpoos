@@ -20,8 +20,10 @@ namespace Nvoos\Core\Tool;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Entity\UserInfo;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class GetCurrentUserTool extends AbstractTool
+class GetCurrentUserTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(
         ErrorFactoryInterface $errors,
@@ -85,5 +87,18 @@ class GetCurrentUserTool extends AbstractTool
             sprintf('User "%s" retrieved.', $userInfo->displayName),
             $userInfo->jsonSerialize(),
         );
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Reads a local store. Side-effect free, but not cacheable: the store
+     * can change between two identical calls.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::LOCAL_READ;
     }
 }

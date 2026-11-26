@@ -231,6 +231,51 @@ class Test_Necessity_Gate extends WP_UnitTestCase {
 		$this->assertNull( $result );
 	}
 
+	/**
+	 * A paid generation is a spend decision, not a damage decision.
+	 */
+	public function test_a_paid_generation_tool_is_pre_approved() {
+		$this->assertTrue( WP_MCP_AI_Necessity_Gate::is_pre_approved( 'generate_gemini_image' ) );
+		$this->assertTrue( WP_MCP_AI_Necessity_Gate::is_pre_approved( 'generate_veo_video_validated' ) );
+	}
+
+	/**
+	 * Destructive and sending tools keep their prompt.
+	 */
+	public function test_a_damaging_tool_is_not_pre_approved() {
+		$this->assertFalse( WP_MCP_AI_Necessity_Gate::is_pre_approved( 'cancel_higgsfield_request' ) );
+		$this->assertFalse( WP_MCP_AI_Necessity_Gate::is_pre_approved( 'delete_post' ) );
+		$this->assertFalse( WP_MCP_AI_Necessity_Gate::is_pre_approved( 'send_group_email' ) );
+	}
+
+	/**
+	 * An operator can ask for the prompts back for every tool.
+	 */
+	public function test_the_pre_approved_filter_can_restore_the_prompt() {
+		add_filter( 'wp_mcp_ai_necessity_gate_pre_approved', '__return_empty_array' );
+
+		$this->assertFalse( WP_MCP_AI_Necessity_Gate::is_pre_approved( 'generate_gemini_image' ) );
+
+		remove_filter( 'wp_mcp_ai_necessity_gate_pre_approved', '__return_empty_array' );
+	}
+
+	/**
+	 * A site can widen the list without a core change.
+	 */
+	public function test_the_pre_approved_filter_can_add_a_tool() {
+		$add = static function ( $slugs ) {
+			$slugs[] = 'my_paid_tool';
+			return $slugs;
+		};
+
+		add_filter( 'wp_mcp_ai_necessity_gate_pre_approved', $add );
+
+		$this->assertTrue( WP_MCP_AI_Necessity_Gate::is_pre_approved( 'my_paid_tool' ) );
+		$this->assertTrue( WP_MCP_AI_Necessity_Gate::is_pre_approved( 'generate_gemini_image' ) );
+
+		remove_filter( 'wp_mcp_ai_necessity_gate_pre_approved', $add );
+	}
+
 	// ── Helpers ───────────────────────────────────────────────────────────
 
 	/**

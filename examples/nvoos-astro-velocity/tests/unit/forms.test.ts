@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forms.test.ts — the guards behind /forms/submit (Proposal 138).
 //

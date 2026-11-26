@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // color.ts — the shared color-conversion core (Proposal 126 D2).
 // Byte-synced copies live in the forge analyzer and the storefront
 // design-import module — edit THIS file first, then copy (the drift gates

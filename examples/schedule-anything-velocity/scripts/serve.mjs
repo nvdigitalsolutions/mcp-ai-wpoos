@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Minimal static server for the Schedule Anything SPA on Cloudways Velocity
  * (and `npm run serve`).

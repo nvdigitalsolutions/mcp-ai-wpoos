@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! rmcp server wiring (feature `mcp`).
 //!
 //! API verified against the official rmcp README (3.5.x):

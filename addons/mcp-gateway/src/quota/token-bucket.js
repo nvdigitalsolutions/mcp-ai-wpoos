@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Token bucket for per-tool quotas (Phase 1 of Proposal 094).
  *

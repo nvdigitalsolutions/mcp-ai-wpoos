@@ -54,10 +54,20 @@ class Test_Chat_Continuation_LLM_Re_Entry extends WP_UnitTestCase {
 			'job_id'          => 'job_abc',
 			'tool_call_id'    => 'tc_001',
 			'messages'        => array(
-				array( 'role' => 'user', 'content' => 'Hello' ),
-				array( 'role' => 'tool', 'content' => 'result', 'tool_call_id' => 'tc_001' ),
+				array(
+					'role'    => 'user',
+					'content' => 'Hello',
+				),
+				array(
+					'role'         => 'tool',
+					'content'      => 'result',
+					'tool_call_id' => 'tc_001',
+				),
 			),
-			'options'         => array( 'provider' => 'openai', 'model' => 'gpt-4' ),
+			'options'         => array(
+				'provider' => 'openai',
+				'model'    => 'gpt-4',
+			),
 			'assistant_id'    => 1,
 		);
 
@@ -65,7 +75,7 @@ class Test_Chat_Continuation_LLM_Re_Entry extends WP_UnitTestCase {
 		add_filter(
 			'wp_mcp_ai_chat_session_stream_frame',
 			function ( $data ) {
-				return $data; // pass-through
+				return $data; // pass-through.
 			}
 		);
 
@@ -172,7 +182,10 @@ class Test_Chat_Continuation_LLM_Re_Entry extends WP_UnitTestCase {
 			'job_id'          => 'job_fail',
 			'tool_call_id'    => 'tc_fail',
 			'messages'        => array(
-				array( 'role' => 'user', 'content' => 'Do a task' ),
+				array(
+					'role'    => 'user',
+					'content' => 'Do a task',
+				),
 			),
 			'options'         => array(),
 			'assistant_id'    => 1,
@@ -203,7 +216,10 @@ class Test_Chat_Continuation_LLM_Re_Entry extends WP_UnitTestCase {
 			'job_id'          => 'job_cancel',
 			'tool_call_id'    => 'tc_cancel',
 			'messages'        => array(
-				array( 'role' => 'user', 'content' => 'Task' ),
+				array(
+					'role'    => 'user',
+					'content' => 'Task',
+				),
 			),
 			'options'         => array(),
 			'assistant_id'    => 1,
@@ -251,7 +267,7 @@ class Test_Chat_Continuation_LLM_Re_Entry extends WP_UnitTestCase {
 			'options'         => array(),
 			'assistant_id'    => 1,
 		);
-		$result = WP_MCP_AI_Chat_Continuation_LLM_Re_Entry::on_continuation_ready(
+		$result   = WP_MCP_AI_Chat_Continuation_LLM_Re_Entry::on_continuation_ready(
 			$snapshot,
 			'completed',
 			array()
@@ -264,7 +280,7 @@ class Test_Chat_Continuation_LLM_Re_Entry extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * init() registers the action hook exactly once.
+	 * Init() registers the action hook exactly once.
 	 *
 	 * @test
 	 */
@@ -282,7 +298,7 @@ class Test_Chat_Continuation_LLM_Re_Entry extends WP_UnitTestCase {
 	// -----------------------------------------------------------------------
 
 	/**
-	 * wp_mcp_ai_chat_session_stream_frame filter can modify the frame payload.
+	 * Wp_mcp_ai_chat_session_stream_frame filter can modify the frame payload.
 	 *
 	 * @test
 	 */
@@ -302,8 +318,15 @@ class Test_Chat_Continuation_LLM_Re_Entry extends WP_UnitTestCase {
 			'job_id'          => 'job_filter',
 			'tool_call_id'    => 'tc_filter',
 			'messages'        => array(
-				array( 'role' => 'user', 'content' => 'Hello' ),
-				array( 'role' => 'tool', 'content' => 'done', 'tool_call_id' => 'tc_filter' ),
+				array(
+					'role'    => 'user',
+					'content' => 'Hello',
+				),
+				array(
+					'role'         => 'tool',
+					'content'      => 'done',
+					'tool_call_id' => 'tc_filter',
+				),
 			),
 			'options'         => array(),
 			'assistant_id'    => 1,

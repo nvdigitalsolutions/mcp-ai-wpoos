@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // localize-media-proxy.test.ts — the managed (proxy) tier, end to end.
 //

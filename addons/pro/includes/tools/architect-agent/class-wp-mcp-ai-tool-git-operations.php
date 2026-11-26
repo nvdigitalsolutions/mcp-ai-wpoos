@@ -908,14 +908,15 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	/**
 	 * Generate error response.
 	 *
+	 * One helper for fifteen call sites, so one canonical shape: the tool's
+	 * failures are heterogeneous (shell disabled, permission, missing argument,
+	 * not a repository), and a single code here is the honest limit of a shared
+	 * helper — the message names which one it was.
+	 *
 	 * @param string $message Error message.
-	 * @return array Error response.
+	 * @return WP_Error Error response.
 	 */
 	private function error_response( $message ) {
-		return array(
-			'operation' => 'error',
-			'message'   => $message,
-			'success'   => false,
-		);
+		return new WP_Error( 'wp_mcp_ai_command_failed', $message );
 	}
 }

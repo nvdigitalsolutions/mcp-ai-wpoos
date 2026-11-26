@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * OAuth 2.1 resource-server contract for the gateway (RFC 9728).
  *

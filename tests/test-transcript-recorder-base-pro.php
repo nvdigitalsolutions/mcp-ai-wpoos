@@ -88,8 +88,19 @@ class Test_Transcript_Recorder_Base_JetEngine extends WP_UnitTestCase {
 	protected function setup_mock_handler() {
 		// Create a mock handler that captures the record.
 		$this->transcript_handler = new class() {
+			/**
+			 * Most recent recorded item.
+			 *
+			 * @var mixed
+			 */
 			public $last_record = null;
 
+			/**
+			 * Capture a recorded transcript item.
+			 *
+			 * @param array $record Transcript record.
+			 * @return bool
+			 */
 			public function update_item( $record ) {
 				$this->last_record = $record;
 				return 12345; // Return a mock ID.

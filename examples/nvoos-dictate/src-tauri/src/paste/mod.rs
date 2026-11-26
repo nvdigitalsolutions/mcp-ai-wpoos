@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Paste backends: clipboard-set + keystroke injection with save/restore.
 //!
 //! `arboard` (clipboard) + `enigo` (keystrokes) is the fala-proven pair; both

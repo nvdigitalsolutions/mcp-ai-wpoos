@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // carousel-facts-browser.test.ts — `collectBandCarouselFacts` against a
 // hermetic fixture.

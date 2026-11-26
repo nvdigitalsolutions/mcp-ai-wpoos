@@ -120,9 +120,9 @@ class NV_oOS_Algorave_Tool_Export_MIDI implements WP_MCP_AI_Tool_Interface, WP_M
 		$notes = $arguments['notes'] ?? array();
 
 		if ( empty( $notes ) || ! is_array( $notes ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'At least one note is required to generate a MIDI file.', 'nvoos-algorave' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'At least one note is required to generate a MIDI file.', 'nvoos-algorave' )
 			);
 		}
 
@@ -133,10 +133,7 @@ class NV_oOS_Algorave_Tool_Export_MIDI implements WP_MCP_AI_Tool_Interface, WP_M
 		$midi_data = $this->generate_midi( $notes, $bpm );
 
 		if ( is_wp_error( $midi_data ) ) {
-			return array(
-				'success' => false,
-				'error'   => $midi_data->get_error_message(),
-			);
+			return $midi_data;
 		}
 
 		// Save to uploads directory.
@@ -145,9 +142,10 @@ class NV_oOS_Algorave_Tool_Export_MIDI implements WP_MCP_AI_Tool_Interface, WP_M
 		$dir        = $upload_dir['basedir'] . $subdir;
 
 		if ( ! wp_mkdir_p( $dir ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Could not create MIDI export directory.', 'nvoos-algorave' ),
+			return new WP_Error(
+				'wp_mcp_ai_upload_failed',
+				__( 'Could not create MIDI export directory.', 'nvoos-algorave' ),
+				array( 'path' => $dir )
 			);
 		}
 
@@ -158,9 +156,10 @@ class NV_oOS_Algorave_Tool_Export_MIDI implements WP_MCP_AI_Tool_Interface, WP_M
 		$written = file_put_contents( $filepath, $midi_data );
 
 		if ( false === $written ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Failed to write MIDI file.', 'nvoos-algorave' ),
+			return new WP_Error(
+				'wp_mcp_ai_upload_failed',
+				__( 'Failed to write MIDI file.', 'nvoos-algorave' ),
+				array( 'path' => $filepath )
 			);
 		}
 

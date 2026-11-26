@@ -82,9 +82,10 @@ class NV_oOS_Graphify_Tool_Resolve_External implements WP_MCP_AI_Tool_Interface,
 		$auto_ingest = isset( $arguments['auto_ingest'] ) ? (bool) $arguments['auto_ingest'] : true;
 
 		if ( empty( $ref ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'ref is required.', 'nvoos-graphify' ),
+			return new WP_Error(
+				'wp_mcp_ai_missing_param',
+				__( 'ref is required.', 'nvoos-graphify' ),
+				array( 'field' => 'ref' )
 			);
 		}
 

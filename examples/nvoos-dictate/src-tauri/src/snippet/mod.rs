@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Screen-to-text snippet OCR (Proposal 100).
 //!
 //! The "OCR push-to-talk": a global hotkey freezes the screen, the user

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-carousel-facts.test.ts — a builder slider's slides-per-view.
 //

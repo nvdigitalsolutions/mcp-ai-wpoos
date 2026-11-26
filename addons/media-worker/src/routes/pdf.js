@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * PDF route — text extraction, rasterization, generation, merge, watermark.
  *
@@ -7,6 +8,7 @@
  *   POST /api/pdf/generate  — generate PDF from HTML/markdown (puppeteer)
  *   POST /api/pdf/merge     — merge multiple PDFs (pdf-lib)
  *   POST /api/pdf/watermark — add watermark to PDF (pdf-lib)
+ *   POST /api/pdf/ocr       — OCR a PDF page by page (pdfjs + tesseract.js)
  *
  * File sources: /extract and /render accept a multipart `file` upload
  * (required on managed hosts where WordPress cannot reach the worker's
@@ -22,10 +24,20 @@ import path from 'path';
 import { launchHardenedBrowser, hardenPage } from '../utils/browser.js';
 import { validatePublicUrl } from '../utils/safe-url.js';
 import { siteDirFor, siteUploadDir, pathGuard } from '../utils/site-paths.js';
+import { clampDpi, clampJpegQuality, clampOpacity, clampPageBudget, parsePageList, renderMime, watermarkPlacement } from '../utils/pdf-style.js';
 
 export const pdfRouter = Router();
 
 const upload = multer( { storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } } );
+
+/**
+ * Byte ceiling for an inline render.
+ *
+ * Inline rendering carries the page images inside the JSON response, so the
+ * whole set has to fit in one body. 24 MB of PNG is roughly forty pages at 150
+ * DPI; past that a caller should ask for fewer pages, a lower dpi, or jpeg.
+ */
+const INLINE_MAX_BYTES = 24 * 1024 * 1024;
 
 // ── Helpers ─────────────────────────────────────────────────
 function tempFile( req, ext ) {
@@ -98,7 +110,16 @@ pdfRouter.post( '/render', upload.single( 'file' ), async ( req, res ) => {
 			return res.status( 404 ).json( { success: false, error: `File not found: ${ source }` } );
 		}
 
-		const { pages, scale, outputDir } = req.body || {};
+		const body = req.body || {};
+		const { pages, scale, outputDir } = body;
+
+		// Multipart text fields arrive as strings, and `'0'` is truthy, so the
+		// accepted spellings are listed rather than coerced.
+		const wantsInline = [ '1', 'true', 'yes', 'on' ].includes(
+			String( body.inline ?? '' )
+				.trim()
+				.toLowerCase(),
+		);
 
 		const pdfjsModule = await import( 'pdfjs-dist/legacy/build/pdf.mjs' );
 		// The legacy build exposes named exports; some versions also ship a
@@ -109,7 +130,16 @@ pdfRouter.post( '/render', upload.single( 'file' ), async ( req, res ) => {
 		try {
 			canvasModule = await import( 'canvas' );
 		} catch ( err ) {
-			if ( 'ERR_MODULE_NOT_FOUND' === err.code || 'ERR_DLOPEN_FAILED' === err.code ) {
+			// A canvas that was installed but whose native binary was never
+			// built (a plain `npm install` without a toolchain, or an upgrade
+			// without a rebuild) throws MODULE_NOT_FOUND for its own
+			// `canvas.node`. That is the same operational state as not having
+			// canvas at all — the route cannot rasterise — so it gets the same
+			// named refusal instead of a 500 that reads like a crash.
+			const missingBinary =
+				'MODULE_NOT_FOUND' === err.code && String( err.message ).includes( 'canvas.node' );
+
+			if ( 'ERR_MODULE_NOT_FOUND' === err.code || 'ERR_DLOPEN_FAILED' === err.code || missingBinary ) {
 				return res.status( 503 ).json( {
 					error: 'capability_unavailable',
 					capability: 'pdf-rasterization',
@@ -122,14 +152,85 @@ pdfRouter.post( '/render', upload.single( 'file' ), async ( req, res ) => {
 		const data = new Uint8Array( fs.readFileSync( source ) );
 		const doc = await pdfjsLib.getDocument( { data } ).promise;
 
+		const asked = parsePageList( pages );
+
+		// A caller that named pages and had all of them rejected asked for
+		// something the document does not have; falling back to every page would
+		// answer a different question.
+		if ( undefined !== pages && '' !== String( pages ) && 0 === asked.length ) {
+			return res.status( 400 ).json( { success: false, error: 'No valid page numbers were requested.' } );
+		}
+
+		const renderScale = undefined !== body.dpi ? clampDpi( body.dpi ) / 72 : ( scale || 2.0 );
+		const mime = renderMime( body.format );
+		const quality = clampJpegQuality( body.quality );
+
+		const allPages = Array.from( { length: doc.numPages }, ( _, i ) => i + 1 );
+		const requestedPages = asked.filter( ( n ) => n <= doc.numPages );
+		const base = requestedPages.length ? requestedPages : allPages;
+
+		// The budget applies when the caller asked for one, and always for inline
+		// rendering: a response body has to be bounded.
+		const selected =
+			wantsInline || undefined !== body.maxPages
+				? base.slice( 0, clampPageBudget( body.maxPages ) )
+				: base;
+
+		if ( wantsInline ) {
+			const inlinePages = [];
+			let totalBytes = 0;
+
+			for ( const pageNum of selected ) {
+				const page = await doc.getPage( pageNum );
+				const viewport = page.getViewport( { scale: renderScale } );
+
+				const canvas = canvasModule.createCanvas( viewport.width, viewport.height );
+				const ctx = canvas.getContext( '2d' );
+
+				await page.render( { canvasContext: ctx, viewport } ).promise;
+
+				const buffer =
+					'image/jpeg' === mime
+						? canvas.toBuffer( 'image/jpeg', { quality } )
+						: canvas.toBuffer( 'image/png' );
+
+				totalBytes += buffer.length;
+
+				// A named refusal rather than a half-answer: a caller that asked for
+				// forty pages at 300 DPI is told the window is too big, not handed
+				// twelve pages with no explanation.
+				if ( totalBytes > INLINE_MAX_BYTES ) {
+					return res.status( 413 ).json( {
+						success: false,
+						code: 'payload_too_large',
+						error: `Inline rendering passed ${ INLINE_MAX_BYTES } bytes at page ${ pageNum }; ask for fewer pages, a lower dpi, or format "jpeg".`,
+					} );
+				}
+
+				inlinePages.push( {
+					page: pageNum,
+					mime_type: mime,
+					image: buffer.toString( 'base64' ),
+					bytes: buffer.length,
+				} );
+			}
+
+			return res.json( {
+				success: true,
+				pages: inlinePages,
+				count: inlinePages.length,
+				total_pages: doc.numPages,
+				truncated: selected.length < doc.numPages,
+				mime_type: mime,
+			} );
+		}
+
 		const outDir = pathGuard( req.site, outputDir ) || tempFile( req, '' ).replace( /\.[^.]+$/, '' );
 		ensureDir( outDir );
 
-		const renderScale = scale || 2.0;
 		const results = [];
-		const pageList = pages || Array.from( { length: doc.numPages }, ( _, i ) => i + 1 );
 
-		for ( const pageNum of pageList ) {
+		for ( const pageNum of selected ) {
 			const page = await doc.getPage( pageNum );
 			const viewport = page.getViewport( { scale: renderScale } );
 
@@ -277,12 +378,17 @@ pdfRouter.post( '/merge', upload.any(), async ( req, res ) => {
 // ── POST /watermark — add watermark to PDF ─────────────────
 // Accepts a multipart `file` upload (required on managed hosts) or a
 // legacy worker-side `source` path for shared-volume deployments.
+//
+// Style is optional and defaults to the original fixed mark, so a caller that
+// sends only `watermark` gets exactly the bytes it always did.
 pdfRouter.post( '/watermark', upload.single( 'file' ), async ( req, res ) => {
 	try {
-		const { watermark, outputPath } = req.body || {};
+		const { watermark, outputPath, position, fontSize } = req.body || {};
 		if ( ! watermark ) {
 			return res.status( 400 ).json( { success: false, error: 'Missing watermark text' } );
 		}
+
+		const opacity = clampOpacity( ( req.body || {} ).opacity );
 
 		let dataBuffer;
 		if ( req.file ) {
@@ -303,14 +409,22 @@ pdfRouter.post( '/watermark', upload.single( 'file' ), async ( req, res ) => {
 
 		for ( const page of pages ) {
 			const { width, height } = page.getSize();
+			const place = watermarkPlacement( {
+				position,
+				pageWidth: width,
+				pageHeight: height,
+				text: watermark,
+				fontSize,
+			} );
+
 			page.drawText( watermark, {
-				x: width / 2 - 150,
-				y: height / 2,
-				size: 48,
+				x: place.x,
+				y: place.y,
+				size: place.size,
 				font,
 				color: rgb( 0.75, 0.75, 0.75 ),
-				opacity: 0.3,
-				rotate: degrees( -45 ),
+				opacity,
+				rotate: degrees( place.rotate ),
 			} );
 		}
 
@@ -324,11 +438,123 @@ pdfRouter.post( '/watermark', upload.single( 'file' ), async ( req, res ) => {
 			output_path: outPath,
 			size: stats.size,
 			pages: pages.length,
+			opacity,
+			position: String( position || 'diagonal' ).toLowerCase(),
 			// data_base64 is the plugin contract: output_path points at the
 			// WORKER's filesystem and is unusable by the calling site.
 			data_base64: Buffer.from( outBytes ).toString( 'base64' ),
 		} );
 	} catch ( err ) {
 		sendError( res, err );
+	}
+} );
+
+// ── POST /ocr — OCR a PDF page by page ────────────────────
+//
+// Rasterize at `dpi` (default 300: the published working default for OCR;
+// below ~200 accuracy falls off sharply, above 600 engines hit pixel caps) and
+// recognise each page with tesseract.js, reusing one worker across pages.
+//
+// The page budget is explicit because OCR is seconds per page: a 200-page scan
+// behind one request is a timeout that reads like a crash. The response says
+// `truncated` so a caller can loop instead of guessing.
+pdfRouter.post( '/ocr', upload.single( 'file' ), async ( req, res ) => {
+	let ocrWorker = null;
+	try {
+		const source = resolveSource( req );
+		if ( ! source ) {
+			return res.status( 400 ).json( { success: false, error: 'Missing source path or file upload' } );
+		}
+		if ( ! fs.existsSync( source ) ) {
+			return res.status( 404 ).json( { success: false, error: `File not found: ${ source }` } );
+		}
+
+		const body = req.body || {};
+		const dpi = clampDpi( body.dpi );
+		const budget = clampPageBudget( body.maxPages );
+		const language = 'string' === typeof body.language && body.language ? body.language : 'eng';
+
+		let canvasModule;
+		try {
+			canvasModule = await import( 'canvas' );
+		} catch ( err ) {
+			// Same half-built case as the render route above: an installed but
+			// unbuilt canvas is unavailable, not a crash.
+			const missingBinary =
+				'MODULE_NOT_FOUND' === err.code && String( err.message ).includes( 'canvas.node' );
+
+			if ( 'ERR_MODULE_NOT_FOUND' === err.code || 'ERR_DLOPEN_FAILED' === err.code || missingBinary ) {
+				return res.status( 503 ).json( {
+					error: 'capability_unavailable',
+					capability: 'pdf-ocr',
+					message: 'PDF OCR is unavailable: the native canvas module is not installed on this server.',
+				} );
+			}
+			throw err;
+		}
+
+		let Tesseract;
+		try {
+			Tesseract = ( await import( 'tesseract.js' ) ).default;
+		} catch ( err ) {
+			if ( 'ERR_MODULE_NOT_FOUND' === err.code ) {
+				return res.status( 503 ).json( {
+					error: 'capability_unavailable',
+					capability: 'pdf-ocr',
+					message: 'PDF OCR is unavailable: tesseract.js is not installed on this server.',
+				} );
+			}
+			throw err;
+		}
+
+		const pdfjsModule = await import( 'pdfjs-dist/legacy/build/pdf.mjs' );
+		const pdfjsLib = pdfjsModule.default || pdfjsModule;
+
+		const data = new Uint8Array( fs.readFileSync( source ) );
+		const doc = await pdfjsLib.getDocument( { data } ).promise;
+
+		const requested = parsePageList( body.pages ).filter( ( n ) => n <= doc.numPages );
+
+		const selected = ( requested.length ? requested : Array.from( { length: doc.numPages }, ( _, i ) => i + 1 ) )
+			.slice( 0, budget );
+
+		ocrWorker = await Tesseract.createWorker( language, 1, { workerBlob: false } );
+
+		const scale = dpi / 72;
+		const pages = [];
+
+		for ( const pageNum of selected ) {
+			const page = await doc.getPage( pageNum );
+			const viewport = page.getViewport( { scale } );
+			const canvas = canvasModule.createCanvas( viewport.width, viewport.height );
+			const ctx = canvas.getContext( '2d' );
+
+			await page.render( { canvasContext: ctx, viewport } ).promise;
+
+			const { data: recognised } = await ocrWorker.recognize( canvas.toBuffer( 'image/png' ) );
+
+			pages.push( {
+				page: pageNum,
+				text: recognised.text,
+				confidence: recognised.confidence,
+			} );
+		}
+
+		res.json( {
+			success: true,
+			text: pages.map( ( p ) => p.text ).join( '\n\n' ),
+			pages,
+			count: pages.length,
+			total_pages: doc.numPages,
+			truncated: selected.length < doc.numPages,
+			dpi,
+			language,
+		} );
+	} catch ( err ) {
+		sendError( res, err );
+	} finally {
+		if ( ocrWorker ) {
+			await ocrWorker.terminate().catch( () => {} );
+		}
 	}
 } );

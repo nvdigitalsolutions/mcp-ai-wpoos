@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -198,11 +199,46 @@ app.get( '/api/health/full', async (_req, res) => {
 				ai_providers: providers,
 				ai_content: !!process.env.OPENAI_API_KEY,
 				image_optimization: true,
+				// The pipeline half of the image family (Proposal 164 section
+				// 164.6 phase 2). These are Sharp calls with no external binary,
+				// so they are declared unconditionally — except editing, which
+				// needs a model key and is refused with 503
+				// `capability_unavailable` when none resolves.
+				//
+				// Separate keys rather than one `image_pipeline`, because a
+				// runtime must be able to tell that a specific operation is
+				// absent rather than inferring it from a version string.
+				image_enhancement: true,
+				image_upscaling: true,
+				image_batch: true,
+				// `position` on the transform resize op is newer than the route.
+				image_smart_crop: true,
+				// `lossless` and `progressive` on `/api/image/batch` are newer than
+				// the route. JPEG has no lossless mode and says so with a 400; the
+				// other encoders honour it, and PNG raises its deflate effort.
+				image_batch_encoding: true,
+				image_editing: !!(
+					providers.gemini ||
+					providers.openai ||
+					providers.replicate
+				),
 				video_generation: !!process.env.REPLICATE_API_KEY,
 				video_processing: caps.ffmpeg && caps.ffprobe,
 				pdf_extraction: true,
 				pdf_generation: true,
 				pdf_rendering: true,
+				// `inline` on `/api/pdf/render` returns the page images as base64
+				// rather than paths on this server's filesystem, which a calling host
+				// cannot read. A separate key, not a version check: an older worker
+				// has the route but not the argument, and must be distinguishable
+				// before a caller spends a request finding out.
+				pdf_render_inline: true,
+				// Page-by-page OCR (pdfjs + tesseract) and styleable watermarks.
+				// Separate keys, not a version check: a runtime talking to an older
+				// worker must be able to tell that the route or the arguments are
+				// absent rather than discovering it by failing a call.
+				pdf_ocr: true,
+				pdf_watermark_style: true,
 				document_excel: true,
 				document_word: true,
 				document_ocr: true,
@@ -228,15 +264,23 @@ app.get( '/api/health/full', async (_req, res) => {
 				web_crawling: true,
 				social_publishing: Object.values( social ).some( Boolean ),
 				social_platforms: social,
+				// Reading the channel list and composing copy do not need a platform
+				// key: `/accounts` reports which keys are set, and `/generate-content`
+				// falls back to a template when no model key resolves. They are
+				// declared separately from `social_publishing` so a runtime can tell
+				// "this worker predates the read routes" from "this worker has no
+				// platform credentials" — two different fixes.
+				social_accounts: true,
+				social_composition: true,
 				workflows: true,
 				job_queue: caps.redis,
 			},
 			endpoints: {
-				image: [ '/api/image/generate', '/api/image/optimize', '/api/image/batch', '/api/image/enhance', '/api/image/upscale', '/api/image/edit', '/api/image/vectorize', '/api/image/providers' ],
+				image: [ '/api/image/generate', '/api/image/optimize', '/api/image/batch', '/api/image/enhance', '/api/image/upscale', '/api/image/edit', '/api/image/vectorize', '/api/image/transform', '/api/image/info', '/api/image/providers' ],
 				video: [ '/api/video/generate', '/api/video/process', '/api/video/info', '/api/video/models', '/api/video/prediction/:id' ],
 				social: [ '/api/social/post', '/api/social/generate-content', '/api/social/accounts' ],
 				workflow: [ '/api/workflow/social-package', '/api/workflow/brand-assets', '/api/workflow/video-pipeline', '/api/workflow/status' ],
-				pdf: [ '/api/pdf/extract', '/api/pdf/render', '/api/pdf/generate', '/api/pdf/merge', '/api/pdf/watermark' ],
+				pdf: [ '/api/pdf/extract', '/api/pdf/render', '/api/pdf/generate', '/api/pdf/merge', '/api/pdf/watermark', '/api/pdf/ocr' ],
 				document: [ '/api/document/excel', '/api/document/word' ],
 				ocr: [ '/api/ocr/recognize' ],
 				email: [ '/api/email/send', '/api/email/compile-mjml', '/api/email/parse' ],

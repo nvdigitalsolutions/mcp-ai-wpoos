@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for per-site provider credential resolution (proposal 027, Phase 2a).
  */

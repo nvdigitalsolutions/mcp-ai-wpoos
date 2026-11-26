@@ -4,6 +4,7 @@ namespace App\Support;
 
 use Nvoos\Core\Domain\Okf\OkfReadException;
 use Nvoos\Core\Domain\Okf\OkfReader;
+use Nvoos\Core\Domain\Okf\OkfWriter;
 use Nvoos\Core\Infrastructure\Okf\FilesystemBundleRoot;
 
 /**
@@ -30,6 +31,25 @@ final class OkfCatalogue
 {
     /** Matches WordPress's route pattern for `{bundle}`. */
     private const NAME_PATTERN = '/^[a-z0-9][a-z0-9_-]{0,99}$/';
+
+    /**
+     * Frontmatter keys exposed by any read, matching WordPress's allowlist.
+     *
+     * Public because the `/admin/okf` page (149 §50) and the REST controller
+     * must expose the same keys: a key the console can read and the panel
+     * cannot would be a second, quieter allowlist.
+     */
+    public const FRONTMATTER_ALLOWLIST = [
+        'title',
+        'description',
+        'type',
+        'tags',
+        'status',
+        'verified',
+        'stale_after',
+        'generated',
+        'usage_window',
+    ];
 
     public function __construct(private readonly string $root)
     {
@@ -176,6 +196,19 @@ final class OkfCatalogue
     }
 
     /**
+     * Resolve a bundle name to a writer, or fail.
+     *
+     * The writer shares the reader's root abstraction, so a bundle that can be
+     * read can be written with the same path rules and the same traversal guard.
+     *
+     * @throws OkfReadException When the bundle is not configured.
+     */
+    public function writerFor(string $name): OkfWriter
+    {
+        return new OkfWriter(new FilesystemBundleRoot($this->pathFor($name)));
+    }
+
+    /**
      * Resolve a bundle name to its directory, or fail.
      *
      * @throws OkfReadException
@@ -204,6 +237,25 @@ final class OkfCatalogue
         }
 
         return $real;
+    }
+
+    /**
+     * Allowlist frontmatter keys.
+     *
+     * @param array<string, mixed> $frontmatter Parsed frontmatter.
+     * @return array<string, mixed>
+     */
+    public static function allowlisted(array $frontmatter): array
+    {
+        $out = [];
+
+        foreach (self::FRONTMATTER_ALLOWLIST as $key) {
+            if (array_key_exists($key, $frontmatter)) {
+                $out[$key] = $frontmatter[$key];
+            }
+        }
+
+        return $out;
     }
 
     /**

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Sidebar nav contract — the APG Disclosure Navigation behaviour:
  * collapsible section groups driven by aria-expanded/aria-controls buttons,

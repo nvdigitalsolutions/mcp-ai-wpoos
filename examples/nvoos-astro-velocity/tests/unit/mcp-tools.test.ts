@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // mcp-tools.test.ts — behavioral coverage for the CMS + ops tool slices
 // (Proposal 095 Phase 3/4.3). A local stub backend serves the commerce

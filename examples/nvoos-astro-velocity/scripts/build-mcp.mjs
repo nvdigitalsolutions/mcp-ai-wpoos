@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // build-mcp.mjs — CLI wrapper (npm run build:mcp) around
 // scripts/lib/mcp-build.mjs for dev/manual builds.

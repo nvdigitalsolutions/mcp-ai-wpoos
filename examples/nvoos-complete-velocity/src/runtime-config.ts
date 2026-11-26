@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Runtime configuration builder for the NV oOS Complete Console.
  *
@@ -11,6 +12,7 @@
  */
 
 import type { ProSpaRuntime, ProSpaUser, ProSpaEndpoints } from '@nvoos/pro-spa-v2/api/config';
+import type { EstateSummary } from '@nvoos/pro-spa-v2/api/tenant';
 
 import {
   backendPaths,
@@ -125,9 +127,11 @@ function buildEndpoints(origin: string, capabilities: string[], backend: Console
     workflowRuns: isAdmin ? `${core}/orchestration/runs` : '',
     wpBase: wp,
     recordsSchema: isAdmin ? `${pro}/records/schema` : '',
-    // The manifest engine is Laravel-only for now; the WordPress runtime has
-    // no /toolkits route yet, so the pages render their unavailable state.
-    toolkits: isAdmin && !isWordPress ? `${pro}/toolkits` : '',
+    // The manifest-driven toolkit engine ships on both runtimes. WordPress
+    // serves it at `/toolkit-manifests` (Proposal 090-B §8 — not `/toolkits`,
+    // which the schedule-anything controller owns); Laravel serves
+    // `api/v1/pro/toolkits`. The spa-v2 client is base-agnostic.
+    toolkits: isAdmin ? (isWordPress ? `${pro}/toolkit-manifests` : `${pro}/toolkits`) : '',
     dashboardsSchema: isAdmin ? `${pro}/dashboards/schema` : '',
     chatChannels: isAdmin ? `${pro}/chat-channels` : '',
     remoteSites: isAdmin ? `${pro}/remote-sites` : '',
@@ -136,13 +140,14 @@ function buildEndpoints(origin: string, capabilities: string[], backend: Console
     // MCP Apps: Pro-only route; empty hides the panel instead of firing 404s.
     mcpApps: isAdmin ? `${core}/mcp-apps` : '',
     mediaCc: isAdmin ? `${pro}/media-cc` : '',
-    // Profession catalogue (assistant editor selector) — Laravel-only; the
-    // WordPress runtime has no professions REST route, so the editor hides
-    // the selector when this is empty.
-    professions: isAdmin && !isWordPress ? `${core}/professions` : '',
-    // Org teams (users + roles) are Laravel-only for now; WordPress has the
-    // agent-team catalogue at `teams` instead. Empty disables the page.
-    orgTeams: isAdmin && !isWordPress ? `${core}/org/teams` : '',
+    // Profession catalogue (assistant editor selector) — both runtimes now
+    // serve it (`mcp-ai/v1/professions` on WordPress, `api/v1/professions` on
+    // Laravel), so only the admin capability gates it.
+    professions: isAdmin ? `${core}/professions` : '',
+    // Org teams (users + roles) are served by both runtimes now
+    // (`mcp-ai/v1/org/teams` on WordPress, `api/v1/org/teams` on Laravel);
+    // only the admin capability gates the page.
+    orgTeams: isAdmin ? `${core}/org/teams` : '',
     blueprints: canEdit ? `${pro}/blueprints` : '',
     commandCenter: isAdmin ? `${pro}/command-center` : '',
     shortcuts: `${pro}/tool-shortcuts`,
@@ -178,6 +183,14 @@ export interface ConsoleRuntimeOptions {
   /** Platform-provisioned default assistant id, used when assistantId is 0. */
   defaultAssistantId?: number;
   /**
+   * Estate currently selected for the Laravel runtime ('' = none). Mirrors
+   * the id the fetch wrapper sends as `X-Tenant-Id`, so the sidebar switcher
+   * renders the same answer the API is acting on.
+   */
+  tenantId?: string;
+  /** Estates this session may select, as `/api/v1/session/me` reported them. */
+  estates?: EstateSummary[];
+  /**
    * Backend profile. Defaults to the build-time `VITE_NVOOS_BACKEND`,
    * falling back to `wordpress` (Proposal 090-B, ADR-6).
    */
@@ -196,8 +209,39 @@ export interface ConsoleRuntimeOptions {
    * open (older backends that predate the map).
    */
   endpoints?: Record<string, boolean>;
+  /**
+   * Resolved base URLs for connected apps that answered their discovery probe
+   * (GET /features → data.endpoint_urls). Additive: a backend that does not
+   * emit the map behaves exactly as before.
+   */
+  endpointUrls?: Record<string, string>;
+  /**
+   * Set when the availability read advertises a same-origin connected-app
+   * proxy (`data.connected_proxy`, 090-p W6). Discovered absolute URLs are
+   * then rewritten to `<origin>/connected/<key>` so a remote product needs no
+   * CORS configuration. Absent = mount the product's absolute URL.
+   */
+  connectedProxy?: boolean;
+  /**
+   * Supply class per endpoint key (GET /features → data.endpoint_reasons).
+   * Lets the console explain an unavailable surface instead of only hiding it.
+   */
+  endpointReasons?: Record<string, string>;
   /** WordPress site title (blogname) for branding surfaces. */
   siteName?: string;
+}
+
+export interface ConsoleRuntimeConfig extends ProSpaRuntime {
+  /**
+   * Supply class per endpoint key, read from `/features`. The console uses it
+   * only for operator copy ("external product", "not installed", …) — the
+   * visibility decision is still the blank endpoint.
+   */
+  endpointReasons: Record<string, string>;
+  /** The estate the API requests act in ('' on WordPress / no membership). */
+  tenantId: string;
+  /** Estates the session may switch between ([] on WordPress). */
+  estates: EstateSummary[];
 }
 
 /**
@@ -205,7 +249,9 @@ export interface ConsoleRuntimeOptions {
  * Origin is always this app's own origin (viaProxy) — serve.mjs (production)
  * or the Vite dev proxy forwards /wp-json to the WordPress target.
  */
-export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpaRuntime {
+export function buildConsoleRuntime(
+  options: ConsoleRuntimeOptions = {},
+): ConsoleRuntimeConfig {
   const origin =
     typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
   const assistantId = options.assistantId ?? options.defaultAssistantId ?? 0;
@@ -245,6 +291,25 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
     }
   }
 
+  // Class C discovery (090-i Phase 4): a configured, reachable product
+  // publishes the base URL the console should mount its island against.
+  // These are admin surfaces on both runtimes, so a non-admin session keeps
+  // them blank rather than being handed a URL it cannot open.
+  //
+  // When the availability read advertises a same-origin connected-app proxy
+  // (090-p W6), the mount point is <origin>/connected/<key> instead of the
+  // product's absolute URL — that is what removes the CORS requirement.
+  if ((options.user?.capabilities ?? []).includes('manage_options')) {
+    for (const [key, url] of Object.entries(options.endpointUrls ?? {})) {
+      if (typeof url !== 'string' || url === '' || !(key in endpoints)) {
+        continue;
+      }
+      (endpoints as unknown as Record<string, string>)[key] = options.connectedProxy
+        ? `${origin}/connected/${key}`
+        : url;
+    }
+  }
+
   return {
     apiUrl: paths.apiBase,
     proApi: paths.proBase,
@@ -274,7 +339,10 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
     assistants: undefined,
     profiles: undefined,
     features,
+    endpointReasons: options.endpointReasons ?? {},
     siteName: options.siteName ?? '',
+    tenantId: options.tenantId ?? '',
+    estates: options.estates ?? [],
   };
 }
 
@@ -381,6 +449,20 @@ export interface CurrentUserResult {
    * nonce — callers must use this value, not the original one.
    */
   nonce: string;
+  /**
+   * Estate memberships (Laravel only). WordPress has no tenant resolution, so
+   * the field is absent there rather than an empty list — the console only
+   * shows the picker when the runtime actually reports memberships.
+   */
+  session?: ConsoleSession;
+}
+
+/** The estate half of `GET /api/v1/session/me` (149 §21). */
+export interface ConsoleSession {
+  /** The estate the server resolved for this request (null = none/ambiguous). */
+  tenant: string | null;
+  /** Memberships this caller may select. */
+  estates: EstateSummary[];
 }
 
 export async function fetchCurrentUser(
@@ -447,7 +529,28 @@ async function fetchLaravelCurrentUser(
     login?: string;
     displayName?: string;
     capabilities?: string[];
+    tenant?: string | null;
+    estates?: Array<Partial<EstateSummary> | null>;
   }>(response, 'session/me');
+
+  // Defensive mapping: the picker keys by id, so an entry without a string
+  // id is dropped rather than rendered as an unselectable row.
+  const estates: EstateSummary[] = Array.isArray(data.estates)
+    ? data.estates.flatMap((estate) =>
+        estate && typeof estate.id === 'string'
+          ? [
+              {
+                id: estate.id,
+                name: typeof estate.name === 'string' ? estate.name : estate.id,
+                slug: typeof estate.slug === 'string' ? estate.slug : undefined,
+                role: typeof estate.role === 'string' ? estate.role : undefined,
+                is_operator: estate.is_operator === true,
+              },
+            ]
+          : [],
+      )
+    : [];
+
   return {
     user: {
       id: data.id ?? 0,
@@ -456,6 +559,10 @@ async function fetchLaravelCurrentUser(
       capabilities: Array.isArray(data.capabilities) ? data.capabilities : [],
     },
     nonce,
+    session: {
+      tenant: typeof data.tenant === 'string' && data.tenant !== '' ? data.tenant : null,
+      estates,
+    },
   };
 }
 
@@ -576,6 +683,12 @@ async function mintSessionNonce(): Promise<string> {
 export interface RuntimeAvailability {
   features: Record<string, boolean>;
   endpoints: Record<string, boolean>;
+  /** Connected-app base URLs that answered their discovery probe. */
+  endpointUrls: Record<string, string>;
+  /** Supply class per endpoint key, for operator-facing copy. */
+  endpointReasons: Record<string, string>;
+  /** True when the backend advertises a same-origin connected-app proxy. */
+  connectedProxy: boolean;
 }
 
 /**
@@ -592,7 +705,13 @@ export async function fetchRuntimeAvailability(
   backend: ConsoleBackend = resolveBackend(buildTimeBackend()),
 ): Promise<RuntimeAvailability> {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
-  const empty: RuntimeAvailability = { features: {}, endpoints: {} };
+  const empty: RuntimeAvailability = {
+    features: {},
+    endpoints: {},
+    endpointUrls: {},
+    endpointReasons: {},
+    connectedProxy: false,
+  };
 
   try {
     const headers: Record<string, string> = {};
@@ -614,15 +733,23 @@ export async function fetchRuntimeAvailability(
       data?: {
         features?: Record<string, boolean>;
         endpoints?: Record<string, boolean>;
+        endpoint_urls?: Record<string, string>;
+        endpoint_reasons?: Record<string, string>;
+        connected_proxy?: boolean;
       };
     }>(response, 'features endpoint');
 
     const features = data?.data?.features;
     const endpoints = data?.data?.endpoints;
+    const endpointUrls = data?.data?.endpoint_urls;
+    const endpointReasons = data?.data?.endpoint_reasons;
 
     return {
       features: isBooleanMap(features) ? features : {},
       endpoints: isBooleanMap(endpoints) ? endpoints : {},
+      endpointUrls: isStringMap(endpointUrls) ? endpointUrls : {},
+      endpointReasons: isStringMap(endpointReasons) ? endpointReasons : {},
+      connectedProxy: data?.data?.connected_proxy === true,
     };
   } catch (error) {
     console.warn(
@@ -647,6 +774,16 @@ export async function fetchFeatureMap(
 
 function isBooleanMap(value: unknown): value is Record<string, boolean> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isStringMap(value: unknown): value is Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+
+  return Object.values(value as Record<string, unknown>).every(
+    (entry) => typeof entry === 'string',
+  );
 }
 
 /**

@@ -22,6 +22,8 @@
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
 
 /**
+ * Tool async executor inline async tests.
+ *
  * @group inline-async-tick
  */
 class Test_Tool_Async_Executor_Inline_Async extends WP_UnitTestCase {
@@ -33,6 +35,9 @@ class Test_Tool_Async_Executor_Inline_Async extends WP_UnitTestCase {
 	 */
 	private $executor;
 
+	/**
+	 * Reset the executor state.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		_set_cron_array( array() );
@@ -41,6 +46,9 @@ class Test_Tool_Async_Executor_Inline_Async extends WP_UnitTestCase {
 		// cleanup job inside the per-test cron array.
 	}
 
+	/**
+	 * Reset the executor state after each test.
+	 */
 	public function tearDown(): void {
 		_set_cron_array( array() );
 		remove_all_filters( 'wp_mcp_ai_inline_kick_enabled' );
@@ -62,7 +70,11 @@ class Test_Tool_Async_Executor_Inline_Async extends WP_UnitTestCase {
 		if ( empty( $wp_filter['shutdown'] ) ) {
 			return 0;
 		}
-		/** @var WP_Hook $hook */
+		/**
+		 * Shutdown hook collection.
+		 *
+		 * @var WP_Hook $hook
+		 */
 		$hook = $wp_filter['shutdown'];
 		$cbs  = $hook->callbacks;
 		return isset( $cbs[20] ) ? count( $cbs[20] ) : 0;
@@ -208,7 +220,7 @@ class Test_Tool_Async_Executor_Inline_Async extends WP_UnitTestCase {
 				'job_id'    => $job_id,
 				'tool_slug' => 'no_such_tool',
 				'status'    => 'pending',
-				'queued_at' => time(), // fresh
+				'queued_at' => time(), // fresh.
 			)
 		);
 

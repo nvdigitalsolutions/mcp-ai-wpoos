@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // /og/product/[id].png — per-product Open Graph card (Proposal 104 §4.8,
 // owner Q5 approved). On-demand render: fetch the live product, draw the

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Per-tool quota integration tests (Phase 1) — gateway + fake upstream.
  *

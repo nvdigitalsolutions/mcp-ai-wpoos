@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // copy.test.ts — the template's typed copy tables (Proposal 104 §4.5):
 // the reference table, the Copy derivation, and the useCopy() lookup. The
@@ -51,6 +52,20 @@ describe( 'copy tables', () => {
 			theme: { label: 'Thème', forcedNote: 'Le thème est défini par la politique du site.' },
 			catalog: { open: 'Voir le catalogue' },
 			search: { placeholder: 'Rechercher…', searching: 'Recherche…', noResults: 'Aucun résultat.', unavailable: 'Recherche indisponible.' },
+			gate: {
+				maintenance: {
+					title: 'De retour bientôt',
+					body: 'Le site est temporairement indisponible.',
+					retry: 'Réessayer',
+				},
+				comingSoon: {
+					title: 'Bientôt disponible',
+					body: 'Quelque chose se prépare ici.',
+					retry: 'Réessayer',
+				},
+				contact: 'Nous contacter',
+				statusLabel: 'État du site',
+			},
 			consent: {
 				regionLabel: 'Consentement aux cookies',
 				title: 'Préférences de cookies',

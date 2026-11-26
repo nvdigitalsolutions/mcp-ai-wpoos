@@ -1,4 +1,5 @@
 ---
+// SPDX-License-Identifier: MIT
 import Base from '../layouts/Base.astro';
 import manifest from '../../nvoos.json';
 import { getCollection, render } from 'astro:content';
@@ -51,6 +52,10 @@ const frontDescription =
 // Issue #7549 — the contact band the source injected from its theme. The
 // profile declares the copy; the band (and its `#contact` anchor) renders here.
 const contactBlock = (manifest as { contact?: { heading?: string } }).contact;
+// The body's own enquiry band renders the contact people when it degrades (a
+// form with no transport — see Form.astro), so appending the `#contact` block
+// as well would ask the same question twice on one page.
+const bodyHasContactBand = homeBands.some((band) => band.kind === 'form');
 ---
 
 <Base
@@ -59,7 +64,7 @@ const contactBlock = (manifest as { contact?: { heading?: string } }).contact;
 	seo={frontPage?.data.seo}
 >
 	{frontPage && frontBody ? (
-		<DesignRenderer html={frontBody} bandGeometry />
+		<DesignRenderer html={frontBody} bandGeometry pageHeading />
 	) : frontPage && frontContent ? (
 		<div class="post-body">
 			<frontContent.Content />
@@ -90,6 +95,6 @@ const contactBlock = (manifest as { contact?: { heading?: string } }).contact;
 			</section>
 		</>
 	)}
-	{contactBlock && <Contact />}
+	{contactBlock && !bodyHasContactBand && <Contact />}
 	<script type="application/ld+json" set:html={renderJsonLd(jsonLd)} />
 </Base>

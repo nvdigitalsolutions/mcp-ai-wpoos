@@ -73,6 +73,46 @@ class WP_MCP_AI_REST_Features_Controller_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The response carries the capability manifest (v2) alongside `features`:
+	 * the console builds both backends from the same fields (Proposal 090-i
+	 * phase 1). `endpoint_gaps` must stay empty — a non-empty list means a key
+	 * this runtime is meant to serve is missing.
+	 */
+	public function test_get_features_includes_the_capability_manifest() {
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$response = ( new WP_MCP_AI_REST_Features_Controller() )->get_features();
+		$data     = $response->get_data();
+
+		$this->assertArrayHasKey( 'endpoints', $data['data'] );
+		$this->assertArrayHasKey( 'endpoint_reasons', $data['data'] );
+		$this->assertArrayHasKey( 'endpoint_gaps', $data['data'] );
+		$this->assertSame( 2, $data['data']['endpoint_contract_version'] );
+		// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- machine-readable contract value.
+		$this->assertSame( 'wordpress', $data['data']['backend'] );
+		$this->assertSame( 'mcp-ai/v1', $data['data']['contract'] );
+		$this->assertIsArray( $data['data']['endpoint_gaps'] );
+		$this->assertSame( array(), $data['data']['endpoint_gaps'] );
+
+		$endpoints = (array) $data['data']['endpoints'];
+		$reasons   = (array) $data['data']['endpoint_reasons'];
+
+		$this->assertNotEmpty( $endpoints );
+		foreach ( $endpoints as $value ) {
+			$this->assertIsBool( $value );
+		}
+
+		$endpoint_keys = array_keys( $endpoints );
+		$reason_keys   = array_keys( $reasons );
+
+		sort( $endpoint_keys );
+		sort( $reason_keys );
+
+		$this->assertSame( $endpoint_keys, $reason_keys, 'Every endpoint key needs a reason.' );
+	}
+
+	/**
 	 * The toolkit enable toggles flow into the map — the console gates its
 	 * command-center nav items on these, so a disabled toolkit must come
 	 * back as explicit `false` (never absent).

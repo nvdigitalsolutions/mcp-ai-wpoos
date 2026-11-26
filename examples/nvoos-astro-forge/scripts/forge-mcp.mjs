@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forge-mcp.mjs — the nvoos-astro-forge MCP HTTP server (096 Phase 4 team
 // mode). Serves the dual-era Streamable HTTP endpoint at /mcp.

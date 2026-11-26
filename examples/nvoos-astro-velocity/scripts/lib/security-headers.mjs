@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // security-headers.mjs — Proposal 104 D12. BFF security headers on
 // Astro-handled responses.

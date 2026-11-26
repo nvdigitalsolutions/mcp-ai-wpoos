@@ -164,7 +164,9 @@ class EndpointCapabilitiesTest extends TestCase
 
         $this->assertNotNull($route, 'The console chat transport POSTs to /api/v1/chat-client.');
         $this->assertContains('POST', $route->methods());
-        $this->assertContains('auth:sanctum', $route->gatherMiddleware());
+        // Sanctum first, then the Auth0 bearer guard (149 §102). Both are
+        // authentication; neither replaces the estate resolution that follows.
+        $this->assertContains('auth:sanctum,auth0', $route->gatherMiddleware());
 
         // Declared but unreachable would still read `true` from the map, so the
         // route is exercised too. No DB needed: auth rejects before validation.
@@ -222,6 +224,37 @@ class EndpointCapabilitiesTest extends TestCase
             $unknown,
             'Unknown reason codes in the contract: '.implode(', ', $unknown)
         );
+
+        // The vocabulary itself is shared with the WordPress runtime and the
+        // console suite, which read `reason_codes` from the same fixture. A
+        // code added on one side only fails here.
+        $declared = (array) ( $contract['reason_codes'] ?? array() );
+        $runtime  = EndpointCapabilities::REASON_CODES;
+
+        sort($declared);
+        sort($runtime);
+
+        $this->assertSame(
+            $runtime,
+            $declared,
+            'contracts/console-endpoints.json reason_codes and EndpointCapabilities::REASON_CODES disagree.'
+        );
+    }
+
+    public function test_the_wordpress_overrides_only_reclassify_known_keys(): void
+    {
+        // The WordPress runtime merges `wordpress_reasons` over the canonical
+        // map. An override for a key that does not exist (or a code outside the
+        // vocabulary) is a typo that would silently never apply.
+        $contract    = $this->contract();
+        $routeBacked = (array) ( $contract['route_backed'] ?? array() );
+        $overrides   = (array) ( $contract['wordpress_reasons'] ?? array() );
+        $codes       = (array) ( $contract['reason_codes'] ?? array() );
+
+        foreach ( $overrides as $key => $reason ) {
+            $this->assertContains($key, $routeBacked, 'wordpress_reasons names an unknown console key: '.$key);
+            $this->assertContains($reason, $codes, 'wordpress_reasons uses an unknown code for '.$key.': '.$reason);
+        }
     }
 
     public function test_the_contract_reasons_match_the_runtime(): void
@@ -243,6 +276,24 @@ class EndpointCapabilitiesTest extends TestCase
         );
     }
 
+    public function test_the_contract_fragments_match_the_runtime(): void
+    {
+        // The fixture is the golden copy of the paths. A route moved on one side
+        // (e.g. `/toolkits` vs `/toolkit-manifests`) fails here instead of
+        // blanking a page in a browser.
+        $expected = (array) ( $this->contract()['fragments']['laravel'] ?? array() );
+        $actual   = EndpointCapabilities::routes();
+
+        ksort($expected);
+        ksort($actual);
+
+        $this->assertSame(
+            $expected,
+            $actual,
+            'EndpointCapabilities::ROUTES and fragments.laravel disagree.'
+        );
+    }
+
     public function test_no_route_supplied_endpoint_is_a_gap(): void
     {
         // The invariant the manifest exists for: a key this runtime is meant to
@@ -255,6 +306,48 @@ class EndpointCapabilitiesTest extends TestCase
             $manifest['gaps'],
             'Unexplained endpoint gaps: '.implode(', ', $manifest['gaps'])
         );
+    }
+
+    public function test_connected_apps_flip_the_key_and_recompute_gaps(): void
+    {
+        // A discovered product proves the surface is served, so its key flips
+        // true. `gaps` must be recomputed in the same breath: a key cannot be
+        // both available and missing. This is only observable with a synthetic
+        // manifest, because the real connected-app keys are `external-product`
+        // and therefore never gaps — but a key reclassified to `route` later
+        // would otherwise keep reporting a contradiction.
+        $manifest = array(
+            'version'   => EndpointCapabilities::CONTRACT_VERSION,
+            'endpoints' => array( 'chat' => false, 'tools' => true ),
+            'reasons'   => array( 'chat' => 'route', 'tools' => 'route' ),
+            'gaps'      => array( 'chat' ),
+        );
+
+        $merged = EndpointCapabilities::applyConnectedApps(
+            $manifest,
+            array( 'chat' => 'https://chat.example.com' )
+        );
+
+        $this->assertTrue($merged['endpoints']['chat']);
+        $this->assertSame(array(), $merged['gaps']);
+        $this->assertSame(array('chat' => 'https://chat.example.com'), $merged['endpoint_urls']);
+
+        // Availability and supply class are separate facts: discovery does not
+        // reclassify the key, so a failed probe still reads as external.
+        $this->assertSame($manifest['reasons'], $merged['reasons']);
+    }
+
+    public function test_no_connected_apps_leaves_the_manifest_untouched(): void
+    {
+        // The early return keeps `endpoint_urls` out of the document when no
+        // product answered, which is how a console tells "no discovery was
+        // attempted" from "discovery found nothing".
+        $manifest = EndpointCapabilities::manifest();
+
+        $merged = EndpointCapabilities::applyConnectedApps($manifest, array());
+
+        $this->assertSame($manifest, $merged);
+        $this->assertArrayNotHasKey('endpoint_urls', $merged);
     }
 
     public function test_unavailable_endpoints_are_not_classified_as_route_supplied(): void

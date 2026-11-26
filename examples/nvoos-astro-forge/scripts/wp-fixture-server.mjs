@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // wp-fixture-server.mjs — the hermetic WordPress REST fixture (096 exit gate).
 //
@@ -428,12 +429,164 @@ export function createWpFixtureData() {
 		media: {
 			501: { source_url: `${ORIGIN}/wp-content/uploads/media-501.png` },
 		},
+		/**
+		 * ECA records (`wp/v2/mcp_ai_eca`) — enough for the `eca` preset to
+		 * scaffold and TYPE-CHECK in CI. The preset's 12 `astro check` errors
+		 * (2026-11-24) were invisible because no job ever scaffolded it; two
+		 * records are all the generated components need to compile.
+		 */
+		mcpAiEca: [
+			{
+				id: 9001,
+				date_gmt: '2026-09-01T09:00:00',
+				modified_gmt: '2026-09-01T09:00:00',
+				title: { rendered: 'Chess Club' },
+				slug: 'chess-club',
+				link: `${ORIGIN}/eca/chess-club/`,
+				content: { rendered: '<p>Open to Years 3 to 6. All abilities welcome.</p>' },
+				excerpt: { rendered: '<p>Open to Years 3 to 6.</p>' },
+				meta: {
+					_eca_code: 'ECA-001',
+					_eca_type: 'society',
+					_eca_day: 'Tuesday',
+					_eca_start_time: '2:45 PM',
+					_eca_end_time: '3:30 PM',
+					_eca_venue: 'Room 23',
+					_eca_max_students: 20,
+					_eca_year_groups: '',
+					_eca_teachers: '',
+					_eca_is_paid: null,
+					_eca_cost: 0,
+					_eca_cost_period: '',
+					_eca_requires_audition: null,
+					_eca_booking_type: 'preference_based',
+					_eca_status: 'active',
+				},
+				mcp_ai_eca_category: [],
+			},
+			{
+				id: 9002,
+				date_gmt: '2026-09-01T09:00:00',
+				modified_gmt: '2026-09-01T09:00:00',
+				title: { rendered: 'Athletics Squad' },
+				slug: 'athletics-squad',
+				link: `${ORIGIN}/eca/athletics-squad/`,
+				content: { rendered: '<p>Track and field for Years 7 to 13. Trials in the first week.</p>' },
+				excerpt: { rendered: '<p>Track and field for Years 7 to 13.</p>' },
+				meta: {
+					_eca_code: 'ECA-002',
+					_eca_type: 'sport',
+					_eca_day: 'Thursday',
+					_eca_start_time: '3:45 PM',
+					_eca_end_time: '5:00 PM',
+					_eca_venue: 'Main Field',
+					_eca_max_students: 30,
+					_eca_year_groups: '7,8,9,10,11,12,13',
+					_eca_teachers: '',
+					_eca_is_paid: null,
+					_eca_cost: 0,
+					_eca_cost_period: '',
+					_eca_requires_audition: null,
+					_eca_booking_type: 'preference_based',
+					_eca_status: 'active',
+				},
+				mcp_ai_eca_category: [],
+			},
+		],
 	};
 }
 
 function json(res, body, headers = {}) {
 	res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', ...headers });
 	res.end(JSON.stringify(body));
+}
+
+// ---------------------------------------------------------------------------
+// Proposal 152 — the page-gate fixture modes.
+//
+//   WP_FIXTURE_GATE=503       HTML answers 503 + Retry-After unless authorized
+//   WP_FIXTURE_GATE=holding   HTML answers 200 + a coming-soon page unless authorized
+//   WP_FIXTURE_GATE=edge      HTML answers 401 + WWW-Authenticate: Basic
+//
+// `/wp-json/` stays open in 503 and holding — that pair IS the failure mode the
+// gate exists for (content forges, design does not). Authorization is either
+// the login session (wp-login.php below), the bypass query (`forge_bypass=1`),
+// or Basic credentials for `edge`.
+// ---------------------------------------------------------------------------
+const GATE_COOKIE = 'wordpress_logged_in_fixture=1';
+
+function fixtureCredentials() {
+	return {
+		user: process.env.WP_FIXTURE_GATE_USER ?? 'forge',
+		password: process.env.WP_FIXTURE_GATE_PASSWORD ?? 'secret',
+	};
+}
+
+function fixtureAuthorized(req, url) {
+	if (String(req.headers.cookie ?? '').includes(GATE_COOKIE)) {
+		return true;
+	}
+	if (url.searchParams.get('forge_bypass') === '1') {
+		return true;
+	}
+	const authorization = String(req.headers.authorization ?? '');
+	if (authorization.startsWith('Basic ')) {
+		const decoded = Buffer.from(authorization.slice(6), 'base64').toString('utf8');
+		const { user, password } = fixtureCredentials();
+		return decoded === `${user}:${password}`;
+	}
+	return false;
+}
+
+/** True when the request was answered by the gate (the caller returns). */
+function handleFixtureGate(req, res, url, path, mode) {
+	if (path === '/health' || path === '/echo-headers' || path.startsWith('/wp-json') || path.startsWith('/wp-content') || path.startsWith('/wp-includes')) {
+		return false;
+	}
+	if (path === '/wp-login.php') {
+		if (req.method === 'POST') {
+			let body = '';
+			req.on('data', (chunk) => {
+				body += chunk;
+			});
+			req.on('end', () => {
+				const params = new URLSearchParams(body);
+				const { user, password } = fixtureCredentials();
+				const ok = params.get('log') === user && params.get('pwd') === password;
+				res.writeHead(302, {
+					location: ok ? `${ORIGIN}/` : `${ORIGIN}/wp-login.php?login=failed`,
+					...(ok ? { 'set-cookie': `${GATE_COOKIE}; Path=/; HttpOnly` } : {}),
+				});
+				res.end();
+			});
+			return true;
+		}
+		res.writeHead(200, {
+			'content-type': 'text/html; charset=utf-8',
+			'set-cookie': 'wordpress_test_cookie=WP+Cookie+check; Path=/',
+		});
+		res.end('<!doctype html><html><body><form method="post"></form></body></html>');
+		return true;
+	}
+	if (fixtureAuthorized(req, url)) {
+		return false;
+	}
+	if (mode === 'edge') {
+		res.writeHead(401, { 'www-authenticate': 'Basic realm="fixture"', 'content-type': 'text/plain' });
+		res.end('auth required');
+		return true;
+	}
+	if (mode === 'holding') {
+		res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+		res.end(
+			'<!doctype html><html><head><title>Coming soon</title></head><body>' +
+				'<div class="coming-soon"><h1>Coming soon</h1><p>Launching shortly.</p></div></body></html>'
+		);
+		return true;
+	}
+	res.writeHead(503, { 'content-type': 'text/html; charset=utf-8', 'retry-after': '600' });
+	res.end('<!doctype html><html><body>Briefly unavailable for scheduled maintenance.</body></html>');
+	return true;
 }
 
 export function createWpFixtureServer(port = PORT) {
@@ -456,9 +609,23 @@ export function createWpFixtureServer(port = PORT) {
 		const slug = url.searchParams.get('slug');
 		const bySlug = (all) => (slug ? all.filter((entry) => entry.slug === slug) : all);
 
+		const gateMode = process.env.WP_FIXTURE_GATE ?? '';
+		if (gateMode && gateMode !== 'off' && handleFixtureGate(req, res, url, path, gateMode)) {
+			return;
+		}
 		if (path === '/health') {
 			res.writeHead(200, { 'content-type': 'text/plain' });
 			res.end('ok');
+			return;
+		}
+		// The gate tests' witness: echoes the request headers the client sent,
+		// so a cookie that leaked off-origin is observable.
+		if (path === '/echo-headers') {
+			json(res, {
+				cookie: String(req.headers.cookie ?? ''),
+				cacheControl: String(req.headers['cache-control'] ?? ''),
+				pragma: String(req.headers.pragma ?? ''),
+			});
 			return;
 		}
 		// The homepage — the design-import fetch target (114 P1): a minimal
@@ -491,11 +658,33 @@ export function createWpFixtureServer(port = PORT) {
 			return;
 		}
 		if (path === '/wp-json' || path === '/wp-json/') {
-			json(res, data.root);
+			// `url` is the origin that ANSWERED, not the module default: an
+			// ephemeral-port bind (the gate + CLI suites) would otherwise hand the
+			// draft profile a dead URL.
+			const host = String(req.headers.host ?? `127.0.0.1:${port}`);
+			json(res, { ...data.root, url: `http://${host}` });
 			return;
 		}
 		if (path === '/wp-json/wp/v2/types') {
 			json(res, data.postTypes);
+			return;
+		}
+		// Proposal 152 P4 — the bridge's gate-state route. `WP_FIXTURE_BRIDGE_GATE`
+		// selects the verdict; `absent` simulates a site without the plugin.
+		if (path === '/wp-json/nvoos-forge/v1/gate') {
+			const mode = process.env.WP_FIXTURE_BRIDGE_GATE ?? 'off';
+			if (mode === 'absent') {
+				res.writeHead(404, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ code: 'rest_no_route', message: 'No route was found matching the URL and request method.' }));
+				return;
+			}
+			const gated = mode === 'maintenance' || mode === 'coming_soon';
+			json(res, {
+				maintenance: gated,
+				mode: gated ? mode : 'off',
+				plugin: mode === 'coming_soon' ? 'elementor' : mode === 'maintenance' ? 'wp-maintenance-mode' : null,
+				checkedAt: '2026-11-20T00:00:00+00:00',
+			});
 			return;
 		}
 		if (path === '/wp-json/wp/v2/posts') {
@@ -505,6 +694,11 @@ export function createWpFixtureServer(port = PORT) {
 		}
 		if (path === '/wp-json/wp/v2/pages') {
 			const { slice, headers } = paginate(bySlug(data.pages));
+			json(res, slice, headers);
+			return;
+		}
+		if (path === '/wp-json/wp/v2/mcp_ai_eca') {
+			const { slice, headers } = paginate(bySlug(data.mcpAiEca));
 			json(res, slice, headers);
 			return;
 		}

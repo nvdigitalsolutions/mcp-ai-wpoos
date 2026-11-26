@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Runtime config unit tests — endpoint building, runtime shape, nonce/user
  * fetch chains (fetch mocked).
@@ -64,6 +65,33 @@ describe('buildConsoleRuntime', () => {
     expect(runtime.endpoints.commandCenter).toContain('/command-center');
     expect(runtime.endpoints.approvals).toContain('/approvals');
     expect(runtime.endpoints.blueprints).not.toBe('');
+  });
+
+  it('points toolkits at the WordPress manifest base', () => {
+    // WordPress serves the manifest engine at `/toolkit-manifests`; the
+    // console must not blank the key (the earlier Laravel-only assumption).
+    const runtime = buildConsoleRuntime({
+      user: { id: 1, capabilities: ['manage_options'] },
+    });
+
+    expect(runtime.endpoints.toolkits).toBe(
+      `${window.location.origin}/wp-json/mcp-ai-pro/v1/toolkit-manifests`,
+    );
+  });
+
+  it('points toolkits at the Laravel toolkits base', () => {
+    const runtime = buildConsoleRuntime({
+      backend: 'laravel',
+      user: { id: 1, capabilities: ['manage_options'] },
+    });
+
+    expect(runtime.endpoints.toolkits).toBe(`${window.location.origin}/api/v1/pro/toolkits`);
+  });
+
+  it('keeps toolkits blank for non-admin sessions', () => {
+    const runtime = buildConsoleRuntime({ user: { id: 9, capabilities: [] } });
+
+    expect(runtime.endpoints.toolkits).toBe('');
   });
 
   it('empties edit_posts surfaces for users without the capability', () => {
@@ -269,6 +297,57 @@ describe('endpoint availability (090-B)', () => {
     expect(runtime.endpoints.tokenManager).not.toBe('');
   });
 
+  it('mounts a connected app at the URL the backend resolved', () => {
+    // Class C discovery: the product is not on this router, so the backend
+    // publishes its base URL instead of a boolean.
+    const runtime = buildConsoleRuntime({
+      backend: 'laravel',
+      user: admin,
+      endpoints: { docsHub: true },
+      endpointUrls: { docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1' },
+    });
+
+    expect(runtime.endpoints.docsHub).toBe(
+      'https://docs.example.com/wp-json/nvoos-docs/v1',
+    );
+  });
+
+  it('mounts a connected app on the same-origin proxy when advertised', () => {
+    // 090-p W6: the proxy advertises itself on /features, and the console
+    // prefers the same-origin mount over the product's absolute URL — that is
+    // what removes the CORS requirement.
+    const runtime = buildConsoleRuntime({
+      backend: 'laravel',
+      user: admin,
+      endpoints: { docsHub: true },
+      endpointUrls: { docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1' },
+      connectedProxy: true,
+    });
+
+    expect(runtime.endpoints.docsHub).toBe(
+      `${window.location.origin}/connected/docsHub`,
+    );
+  });
+
+  it('keeps connected-app URLs away from non-admin sessions', () => {
+    const runtime = buildConsoleRuntime({
+      backend: 'laravel',
+      user: { id: 9, capabilities: ['edit_posts'] },
+      endpointUrls: { docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1' },
+    });
+
+    expect(runtime.endpoints.docsHub).toBe('');
+  });
+
+  it('ignores a connected-app URL for a key the console does not build', () => {
+    const runtime = buildConsoleRuntime({
+      user: admin,
+      endpointUrls: { notAConsoleKey: 'https://example.com' },
+    });
+
+    expect(runtime.endpoints).not.toHaveProperty('notAConsoleKey');
+  });
+
   it('covers exactly the shared console endpoint contract', () => {
     // The backend asserts the same file (EndpointCapabilitiesTest), so a key
     // added on one side without the other fails on both CIs instead of on a
@@ -291,10 +370,11 @@ describe('endpoint availability (090-B)', () => {
   });
 
   it('classifies every route-backed key in the shared contract', () => {
-    // The same file the PHP suite asserts. The reason is what lets the console
+    // The same file the PHP suites assert. The reason is what lets the console
     // tell "not built on this backend yet" from "install the plugin" from
-    // "connect a service"; an unclassified key would render as one of those by
-    // accident.
+    // "connect a service" from "the addon is not active"; an unclassified key
+    // would render as one of those by accident. WordPress overrides are merged
+    // over the canonical (Laravel) map at runtime.
     const contractPath = resolve(
       process.cwd(),
       '../../docker/laravel/app-skeleton/contracts/console-endpoints.json',
@@ -303,25 +383,52 @@ describe('endpoint availability (090-B)', () => {
     const contract = JSON.parse(readFileSync(contractPath, 'utf8')) as {
       route_backed: string[];
       reasons?: Record<string, string>;
+      wordpress_reasons?: Record<string, string>;
+      reason_codes?: string[];
+      fragments?: {
+        laravel?: Record<string, string>;
+        wordpress?: Record<string, string>;
+      };
     };
 
     const reasons = contract.reasons ?? {};
+    const overrides = contract.wordpress_reasons ?? {};
+    const codes = contract.reason_codes ?? [];
 
     expect(Object.keys(reasons).sort()).toEqual([...contract.route_backed].sort());
 
-    const taxonomy = [
-      'route',
-      'runtime-adaptable',
-      'toolkit-shaped',
-      'connected-service',
-      'external-product',
-    ];
+    // An override may only reclassify a key the contract already knows.
+    for (const key of Object.keys(overrides)) {
+      expect(contract.route_backed).toContain(key);
+    }
 
-    const unknown = Object.entries(reasons)
-      .filter(([, reason]) => !taxonomy.includes(reason))
-      .map(([key, reason]) => `${key}=${reason}`);
+    // The vocabulary is shared with both PHP runtimes; an empty list means the
+    // fixture forgot to publish it.
+    expect(codes.length).toBeGreaterThan(0);
+
+    const unknown: string[] = [];
+    for (const [key, reason] of Object.entries(reasons)) {
+      if (!codes.includes(reason)) unknown.push(`${key}=${reason}`);
+    }
+    for (const [key, reason] of Object.entries(overrides)) {
+      if (!codes.includes(reason)) unknown.push(`${key}=${reason}`);
+    }
 
     expect(unknown).toEqual([]);
+
+    // Both runtimes declare the exact route fragment each key maps to. The
+    // PHP suites assert their constants against these maps, so a path moved on
+    // one side fails on three CIs (the `toolkits` drift class).
+    for (const runtime of ['laravel', 'wordpress'] as const) {
+      const fragments = contract.fragments?.[runtime] ?? {};
+
+      expect(Object.keys(fragments).sort()).toEqual([...contract.route_backed].sort());
+
+      for (const [key, fragment] of Object.entries(fragments)) {
+        expect(typeof fragment, `${runtime}.${key}`).toBe('string');
+        expect(fragment, `${runtime}.${key}`).not.toBe('');
+      }
+    }
   });
 });
 
@@ -345,9 +452,89 @@ describe('fetchRuntimeAvailability', () => {
     await expect(fetchRuntimeAvailability('nonce')).resolves.toEqual({
       features: { docs_hub: false },
       endpoints: { workflowBuilder: false, assistants: true },
+      endpointUrls: {},
+      endpointReasons: {},
+      connectedProxy: false,
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns the supply class for every endpoint', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          success: true,
+          data: {
+            features: {},
+            endpoints: { docsHub: false },
+            endpoint_reasons: { docsHub: 'external-product' },
+          },
+        }),
+      ),
+    );
+
+    await expect(fetchRuntimeAvailability()).resolves.toEqual({
+      features: {},
+      endpoints: { docsHub: false },
+      endpointUrls: {},
+      endpointReasons: { docsHub: 'external-product' },
+      connectedProxy: false,
+    });
+  });
+
+  it('returns resolved connected-app URLs', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          success: true,
+          data: {
+            features: {},
+            endpoints: { docsHub: true },
+            endpoint_urls: {
+              docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1',
+            },
+          },
+        }),
+      ),
+    );
+
+    await expect(fetchRuntimeAvailability()).resolves.toEqual({
+      features: {},
+      endpoints: { docsHub: true },
+      endpointUrls: { docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1' },
+      endpointReasons: {},
+      connectedProxy: false,
+    });
+  });
+
+  it('reports an advertised connected-app proxy', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          success: true,
+          data: {
+            features: {},
+            endpoints: { docsHub: true },
+            endpoint_urls: {
+              docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1',
+            },
+            connected_proxy: true,
+          },
+        }),
+      ),
+    );
+
+    await expect(fetchRuntimeAvailability()).resolves.toEqual({
+      features: {},
+      endpoints: { docsHub: true },
+      endpointUrls: { docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1' },
+      endpointReasons: {},
+      connectedProxy: true,
+    });
   });
 
   it('fails open to empty maps when the endpoint map is absent', async () => {
@@ -361,6 +548,9 @@ describe('fetchRuntimeAvailability', () => {
     await expect(fetchRuntimeAvailability()).resolves.toEqual({
       features: { pro: true },
       endpoints: {},
+      endpointUrls: {},
+      endpointReasons: {},
+      connectedProxy: false,
     });
   });
 
@@ -374,6 +564,9 @@ describe('fetchRuntimeAvailability', () => {
     await expect(fetchRuntimeAvailability()).resolves.toEqual({
       features: {},
       endpoints: {},
+      endpointUrls: {},
+      endpointReasons: {},
+      connectedProxy: false,
     });
     expect(warn).toHaveBeenCalled();
   });
@@ -468,5 +661,97 @@ describe('fetchCurrentUser', () => {
 
 		const [, retryInit] = mockFetch.mock.calls[ 2 ] as [ string, RequestInit ];
 		expect( retryInit.headers ).toEqual( { 'X-WP-Nonce': 'stale123' } );
+	} );
+} );
+
+describe('fetchCurrentUser (laravel session estates)', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		vi.restoreAllMocks();
+	});
+
+	it('reports the estate memberships the picker needs', async () => {
+		vi.stubGlobal( '__NVOOS_BACKEND__', 'laravel' );
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(
+				jsonResponse( {
+					id: 7,
+					login: 'owner@example.com',
+					displayName: 'Owner',
+					capabilities: [ 'manage_options' ],
+					tenant: null,
+					estates: [
+						{ id: 'default', name: 'Default', slug: 'default', role: 'owner' },
+						{ id: 'acme', name: 'Acme', slug: 'acme', role: 'member', is_operator: true },
+					],
+				} ),
+			),
+		);
+
+		const result = await fetchCurrentUser( 'nonce' );
+
+		expect( result.session ).toEqual( {
+			tenant: null,
+			estates: [
+				{
+					id: 'default',
+					name: 'Default',
+					slug: 'default',
+					role: 'owner',
+					is_operator: false,
+				},
+				{
+					id: 'acme',
+					name: 'Acme',
+					slug: 'acme',
+					role: 'member',
+					is_operator: true,
+				},
+			],
+		} );
+	} );
+
+	it('drops malformed estate rows instead of rendering unselectable options', async () => {
+		vi.stubGlobal( '__NVOOS_BACKEND__', 'laravel' );
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(
+				jsonResponse( {
+					id: 7,
+					login: 'owner@example.com',
+					displayName: 'Owner',
+					capabilities: [],
+					tenant: 'acme',
+					estates: [ null, { name: 'No id' }, { id: 'acme' } ],
+				} ),
+			),
+		);
+
+		const result = await fetchCurrentUser( 'nonce' );
+
+		expect( result.session?.tenant ).toBe( 'acme' );
+		expect( result.session?.estates ).toEqual( [
+			{
+				id: 'acme',
+				name: 'acme',
+				slug: undefined,
+				role: undefined,
+				is_operator: false,
+			},
+		] );
+	} );
+
+	it('omits the session block on WordPress (no tenant resolution there)', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue(
+				jsonResponse( { id: 3, name: 'Console Admin', slug: 'console-admin' } ),
+			),
+		);
+
+		const result = await fetchCurrentUser( 'nonce' );
+
+		expect( result.session ).toBeUndefined();
 	} );
 } );

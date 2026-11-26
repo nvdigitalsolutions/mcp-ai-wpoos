@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // accordion-control.test.ts — the rebuilt builder accordion's row styling.
 //

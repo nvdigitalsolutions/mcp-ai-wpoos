@@ -18,8 +18,10 @@ namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
+use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 
-class CancelJobTool extends AbstractTool
+class CancelJobTool extends AbstractTool implements ToolCapabilityFlagsInterface
 {
     public function __construct(
         ErrorFactoryInterface $errors,
@@ -86,5 +88,18 @@ class CancelJobTool extends AbstractTool
                 'cancelled' => $cancelled,
             ),
         );
+    }
+
+    /**
+     * Capability flags — Proposal 149 §154.
+     *
+     * Writes to a local store with state the caller can undo — derived
+     * cache entries, cancellable queue entries.
+     *
+     * @return list<string>
+     */
+    public function getCapabilityFlags(): array
+    {
+        return CapabilityFlagVocabulary::LOCAL_WRITE_REVERSIBLE;
     }
 }

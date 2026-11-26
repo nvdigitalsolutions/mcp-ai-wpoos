@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // region-colors.test.ts — parsing, CIEDE2000, and the region verdicts.
 //
@@ -10,13 +11,18 @@ import { describe, expect, it } from 'vitest';
 
 import {
 	applyBandSurfaces,
+	applyChromeSurfaces,
+	bandRegionSelector,
+	builtBandSelectors,
 	colorDeltaE,
 	compareRegionColorModes,
 	compareRegionColors,
+	cssIdSelector,
 	DEFAULT_COLOR_REGIONS,
 	deltaE2000,
 	GATED_INK_SHARE,
 	GRADIENT_SURFACE_RE,
+	idSelectors,
 	inkMass,
 	normalizeColorModes,
 	normalizeCssColor,
@@ -365,12 +371,37 @@ describe( 'band surfaces (gradient / photo / flat)', () => {
 		expect( sections[ 0 ].bgColor ).toBe( '#000000' );
 	} );
 
-	it( 'never overwrites a pinned surface', () => {
+	it( 'never overwrites an operator-pinned surface', () => {
 		const pinned: ForgeSection = { id: 'a1', bgColor: '#dd3333' };
-		applyBandSurfaces( [ pinned ], () => ( { background: '#000000', text: '#ffffff', image: gradient } ) );
+		applyBandSurfaces(
+			[ pinned ],
+			() => ( { background: '#000000', text: '#ffffff', image: gradient } ),
+			undefined,
+			{ preserve: () => true }
+		);
 
 		expect( pinned.bgColor ).toBe( '#dd3333' );
-		expect( pinned.bgGradient ).toBe( gradient );
+		expect( pinned.bgGradient ).toBeUndefined();
+	} );
+
+	// The harvest reads DECLARATIONS and can read a rule for a child layer or a
+	// variant the page never renders (eca.directory's magenta header, 2026-11-23).
+	it( 'a measured surface beats a harvested one', () => {
+		const section: ForgeSection = { id: 'a1', bgColor: '#d30c5c' };
+		applyBandSurfaces( [ section ], () => ( { background: 'transparent', text: '#1a1e1d' } ) );
+		expect( section.bgColor ).toBeUndefined();
+	} );
+
+	it( 'clears a harvested photo when the browser paints no image', () => {
+		const section: ForgeSection = { id: 'a1', bgImage: 'https://example.com/bg-01.png' };
+		applyBandSurfaces( [ section ], () => ( { background: 'transparent', text: '#1a1e1d' } ) );
+		expect( section.bgImage ).toBeUndefined();
+	} );
+
+	it( 'leaves a band the pass could not measure untouched', () => {
+		const section: ForgeSection = { id: 'a1', bgColor: '#dd3333' };
+		applyBandSurfaces( [ section ], () => undefined );
+		expect( section.bgColor ).toBe( '#dd3333' );
 	} );
 
 	it( 'skips a transparency reading (the body surface showing through)', () => {
@@ -389,6 +420,182 @@ describe( 'band surfaces (gradient / photo / flat)', () => {
 		const sections: ForgeSection[] = [ { id: 'a1' } ];
 		applyBandSurfaces( sections, () => undefined );
 		expect( sections[ 0 ] ).toEqual( { id: 'a1' } );
+	} );
+} );
+
+describe( 'chrome surfaces (measurement beats the stylesheet harvest)', () => {
+	const measured = ( header: RegionColors, footer: RegionColors, body?: RegionColors ) => ( {
+		light: {
+			...( body ? { body } : {} ),
+			header,
+			footer,
+		},
+	} );
+
+	it( 'replaces a harvested header/footer surface and ink with the measured ones', () => {
+		// eca.directory: the harvest read `#d30c5c` for both bars (a customizer
+		// colour nothing paints) and the link accent for the footer ink.
+		const chrome = {
+			headerBg: '#d30c5c',
+			headerInk: '#8764a0',
+			footerBarBg: '#d30c5c',
+			footerInk: '#27104a',
+			footerBarInk: '#8764a0',
+		};
+		const applied = applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: '#f7f7f7', text: '#27104a', inks: [ { color: '#27104a', share: 0.59 }, { color: '#ffffff', share: 0.41 } ] },
+				{ background: '#f7f7f7', text: '#747474', inks: [ { color: '#747474', share: 0.62 }, { color: '#27104a', share: 0.38 } ] }
+			)
+		);
+
+		expect( chrome ).toEqual( {
+			headerBg: '#f7f7f7',
+			headerInk: '#27104a',
+			footerBarBg: '#f7f7f7',
+			footerInk: '#747474',
+			footerBarInk: '#747474',
+		} );
+		expect( applied ).toContain( 'chrome.headerBg' );
+		expect( applied ).toContain( 'chrome.footerBarInk' );
+	} );
+
+	it( 'gives a transparent header the BODY surface (the strip shows the page)', () => {
+		const chrome: Record< string, string > = { headerBg: '#d30c5c' };
+		applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: 'transparent', text: '#1a1e1d' },
+				{ background: 'transparent', text: '#1a1e1d' },
+				{ background: '#f7fafc', text: '#1a1e1d' }
+			)
+		);
+
+		expect( chrome.headerBg ).toBe( '#f7fafc' );
+		expect( chrome.footerBarBg ).toBe( '#f7fafc' );
+	} );
+
+	it( 'keeps an operator-pinned fact', () => {
+		const chrome: Record< string, string > = { headerBg: '#d30c5c', footerInk: '#27104a' };
+		applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: '#f7f7f7', text: '#27104a' },
+				{ background: '#f7f7f7', text: '#747474', inks: [ { color: '#747474', share: 0.62 } ] }
+			),
+			{ preserve: ( path ) => path === 'chrome.headerBg' }
+		);
+
+		expect( chrome.headerBg ).toBe( '#d30c5c' );
+		expect( chrome.footerInk ).toBe( '#747474' );
+	} );
+
+	it( 'leaves the harvest alone when a region could not be measured', () => {
+		const chrome: Record< string, string > = { headerBg: '#04132b' };
+		const applied = applyChromeSurfaces( chrome, { light: {} } );
+
+		expect( chrome.headerBg ).toBe( '#04132b' );
+		expect( applied ).toEqual( [] );
+	} );
+
+	it( 'takes the nav ink from the header palette when the harvest disagrees', () => {
+		// A `--design`-only refresh re-reads the stylesheet and can land on
+		// `#000000` while the painted nav is the header's dominant ink.
+		const chrome: Record< string, string > = { navInk: '#000000' };
+		applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: '#f7f7f7', text: '#27104a', inks: [ { color: '#27104a', share: 0.59 }, { color: '#ffffff', share: 0.41 } ] },
+				{ background: '#f7f7f7', text: '#747474' }
+			)
+		);
+
+		expect( chrome.navInk ).toBe( '#27104a' );
+	} );
+
+	it( 'leaves a nav ink that the palette already carries', () => {
+		const chrome: Record< string, string > = { navInk: '#27104a' };
+		applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: '#f7f7f7', text: '#27104a', inks: [ { color: '#27104a', share: 0.59 } ] },
+				{ background: '#f7f7f7', text: '#747474' }
+			)
+		);
+
+		expect( chrome.navInk ).toBe( '#27104a' );
+	} );
+
+	// eca.directory, measured on the live footer: 62% of the glyph area is
+	// `#747474` (the link LISTS) and 38% is `#27104a` (the block TITLES and the
+	// wordmark). The palette winner is therefore the WORDS, not the titles — and
+	// `chrome.footerInk` paints the rebuilt H3s while `footerBrand.text.ink`
+	// paints the list copy. Writing the winner into both slots greyed every
+	// title and the colour gate reported both source inks as drift, because the
+	// rebuild carried only one of them.
+	it( 'splits a two-ink footer across the heading and text slots by ROLE', () => {
+		const chrome: {
+			footerInk?: string;
+			footerBarInk?: string;
+			footerBrand?: { text?: { ink?: string } };
+		} = {};
+		const applied = applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: '#f7f7f7', text: '#27104a' },
+				{
+					background: '#f7f7f7',
+					text: '#747474',
+					inks: [ { color: '#747474', share: 0.62 }, { color: '#27104a', share: 0.38 } ],
+					roles: { heading: '#27104a', body: '#747474' },
+				}
+			)
+		);
+
+		expect( chrome.footerInk ).toBe( '#27104a' );
+		expect( chrome.footerBarInk ).toBe( '#747474' );
+		expect( chrome.footerBrand?.text?.ink ).toBe( '#747474' );
+		expect( applied ).toContain( 'chrome.footerBrand.text.ink' );
+	} );
+
+	it( 'leaves the footer text slot alone when one ink paints the whole footer', () => {
+		const chrome: { footerInk?: string; footerBrand?: { text?: { ink?: string } } } = {};
+		const applied = applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: '#f7f7f7', text: '#27104a' },
+				{
+					background: '#f7f7f7',
+					text: '#27104a',
+					inks: [ { color: '#27104a', share: 1 } ],
+					roles: { heading: '#27104a', body: '#27104a' },
+				}
+			)
+		);
+
+		expect( chrome.footerInk ).toBe( '#27104a' );
+		expect( chrome.footerBrand?.text?.ink ).toBeUndefined();
+		expect( applied ).not.toContain( 'chrome.footerBrand.text.ink' );
+	} );
+
+	it( 'keeps an operator-pinned footer text ink', () => {
+		const chrome: { footerBrand?: { text?: { ink?: string } } } = { footerBrand: { text: { ink: '#111827' } } };
+		applyChromeSurfaces(
+			chrome,
+			measured(
+				{ background: '#f7f7f7', text: '#27104a' },
+				{
+					background: '#f7f7f7',
+					text: '#747474',
+					inks: [ { color: '#747474', share: 0.62 }, { color: '#27104a', share: 0.38 } ],
+					roles: { heading: '#27104a', body: '#747474' },
+				}
+			),
+			{ preserve: ( path ) => path === 'chrome.footerBrand.text.ink' }
+		);
+
+		expect( chrome.footerBrand?.text?.ink ).toBe( '#111827' );
 	} );
 } );
 
@@ -486,5 +693,90 @@ describe( 'colour schemes (light/dark)', () => {
 	it( 'gates dark when the source does define it', () => {
 		const report = compareRegionColorModes( { light, dark }, { light } );
 		expect( report.unimplemented ).toEqual( [] );
+	} );
+} );
+
+// ---------------------------------------------------------------------------
+// Selector safety. A CSS identifier cannot start with a digit, so `#6daaaef9`
+// throws in `querySelector` — and one such id aborted every colour comparison
+// on the page (eca.directory, 2026-11-24). Builders mint hash ids constantly,
+// so these helpers are the single place that decision is made.
+// ---------------------------------------------------------------------------
+describe( 'idSelectors', () => {
+	it( 'prefers #id when the id is a legal CSS identifier', () => {
+		expect( idSelectors( 'about' ) ).toEqual( [ '#about', '[id="about"]' ] );
+		expect( idSelectors( 'about-us' ) ).toEqual( [ '#about-us', '[id="about-us"]' ] );
+		expect( idSelectors( '_band' ) ).toEqual( [ '#_band', '[id="_band"]' ] );
+	} );
+
+	it( 'falls back to an attribute selector for a digit-leading id', () => {
+		expect( idSelectors( '6daaaef9' ) ).toEqual( [ '[id="6daaaef9"]' ] );
+	} );
+
+	it( 'returns no selector for an empty id', () => {
+		expect( idSelectors( '' ) ).toEqual( [] );
+		expect( idSelectors( undefined as unknown as string ) ).toEqual( [] );
+	} );
+
+	it( 'escapes a quote so the attribute selector stays well formed', () => {
+		expect( idSelectors( 'a"b' ) ).toEqual( [ '[id="a\\"b"]' ] );
+	} );
+} );
+
+describe( 'cssIdSelector', () => {
+	it( 'never returns an invalid identifier selector', () => {
+		expect( cssIdSelector( '6daaaef9' ) ).toBe( '[id="6daaaef9"]' );
+		expect( cssIdSelector( 'about' ) ).toBe( '#about' );
+	} );
+
+	it( 'returns an empty string when there is nothing to address', () => {
+		expect( cssIdSelector( '' ) ).toBe( '' );
+	} );
+} );
+
+describe( 'bandRegionSelector', () => {
+	const section = ( patch: Partial< ForgeSection > ): ForgeSection =>
+		( { id: 'b1', ...patch } ) as ForgeSection;
+
+	it( 'addresses an anchored band by its id', () => {
+		expect( bandRegionSelector( section( { anchor: 'about' } ) ) ).toBe( '#about' );
+	} );
+
+	it( 'escapes a digit-leading anchor', () => {
+		expect( bandRegionSelector( section( { anchor: '6daaaef9' } ) ) ).toBe( '[id="6daaaef9"]' );
+	} );
+
+	it( 'falls back to the Elementor element class', () => {
+		expect( bandRegionSelector( section( { vendorId: '4c649f2e' } ) ) ).toBe(
+			'.elementor-element-4c649f2e'
+		);
+	} );
+
+	it( 'returns undefined when the band has no handle at all', () => {
+		expect( bandRegionSelector( section( { anchor: '', vendorId: '' } ) ) ).toBeUndefined();
+	} );
+} );
+
+describe( 'builtBandSelectors', () => {
+	it( 'addresses a rebuilt band by its marker first', () => {
+		// The scaffold emits `data-section-id` and no `id`; the marker is the
+		// only handle that actually resolves in the built document.
+		expect( builtBandSelectors( '6daaaef9' )[ 0 ] ).toBe( '[data-section-id="6daaaef9"]' );
+	} );
+
+	it( 'keeps the id selectors as a fallback, escaped when needed', () => {
+		expect( builtBandSelectors( 'about' ) ).toEqual( [
+			'[data-section-id="about"]',
+			'#about',
+			'[id="about"]',
+		] );
+		expect( builtBandSelectors( '6daaaef9' ) ).toEqual( [
+			'[data-section-id="6daaaef9"]',
+			'[id="6daaaef9"]',
+		] );
+	} );
+
+	it( 'returns no selector for an empty id', () => {
+		expect( builtBandSelectors( '' ) ).toEqual( [] );
 	} );
 } );

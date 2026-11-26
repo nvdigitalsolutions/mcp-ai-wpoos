@@ -87,16 +87,53 @@ class WP_MCP_AI_REST_Features_Controller {
 	 * item can lag up to one minute, matching the status endpoints'
 	 * staleness window.
 	 *
+	 * `endpoints` is runtime truth read from the REST router: it lets the
+	 * console degrade a surface with a reason instead of firing a request
+	 * that 404s. `endpoint_reasons` classifies every key (so a `false` reads
+	 * as expected or as a regression) and `endpoint_gaps` lists the subset
+	 * this runtime is meant to serve and does not — it must stay empty.
+	 *
+	 * `endpoint_urls` is the Class C discovery layer (090-i Phase 4): a
+	 * configured, reachable NV oOS product publishes the base the console
+	 * should mount, and its key flips true even though no route is registered
+	 * locally. The matching feature flag flips too, so the two maps agree.
+	 *
 	 * @since 2.4.0
+	 * @since 1.2.22 Serves the capability manifest (v2) alongside `features`.
+	 * @since 1.2.22 Adds connected-app discovery (`endpoint_urls`).
 	 * @return WP_REST_Response
 	 */
 	public function get_features() {
+		$manifest = WP_MCP_AI_Endpoint_Capabilities::manifest();
+		$features = WP_MCP_AI_Feature_Flags::all();
+
+		// Discovery is one bounded probe set per TTL; with nothing configured it
+		// returns immediately and the response is exactly what it was before.
+		$urls = WP_MCP_AI_Connected_App_Registry::instance()->available();
+
+		if ( array() !== $urls ) {
+			$manifest = WP_MCP_AI_Endpoint_Capabilities::apply_connected_apps( $manifest, $urls );
+			$features = WP_MCP_AI_Connected_App_Registry::apply_feature_flags( $features, $urls );
+		}
+
+		$data = array(
+			'features'                  => $features,
+			'endpoints'                 => (object) $manifest['endpoints'],
+			'endpoint_contract_version' => $manifest['version'],
+			'endpoint_reasons'          => (object) $manifest['reasons'],
+			'endpoint_gaps'             => $manifest['gaps'],
+			'backend'                   => 'wordpress',
+			'contract'                  => 'mcp-ai/v1',
+		);
+
+		if ( isset( $manifest['endpoint_urls'] ) ) {
+			$data['endpoint_urls'] = (object) $manifest['endpoint_urls'];
+		}
+
 		$response = rest_ensure_response(
 			array(
 				'success' => true,
-				'data'    => array(
-					'features' => WP_MCP_AI_Feature_Flags::all(),
-				),
+				'data'    => $data,
 			)
 		);
 

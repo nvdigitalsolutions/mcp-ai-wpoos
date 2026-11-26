@@ -69,6 +69,13 @@ class Test_Pro_Workflow_Builder_Ajax_Handlers extends WP_MCP_AI_Ajax_TestCase {
 	public function setUp(): void {
 		parent::setUp();
 		delete_option( self::WF_OPTION );
+
+		// wp_mcp_ai_trigger_workflow belongs to the Pro orchestration dashboard,
+		// which registers it from its constructor on an admin request only.
+		if ( false === has_action( 'wp_ajax_wp_mcp_ai_trigger_workflow' )
+			&& class_exists( 'WP_MCP_AI_Orchestration_Dashboard' ) ) {
+			new WP_MCP_AI_Orchestration_Dashboard();
+		}
 	}
 
 	/** Tears down test state after each test. */

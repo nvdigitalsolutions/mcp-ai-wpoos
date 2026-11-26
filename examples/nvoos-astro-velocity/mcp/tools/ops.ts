@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // ops.ts — nvoos-astro-mcp operational tool slice (Proposal 095 §3.3,
 // Phase 3/4.3): storefront status, preview URLs, the mirror rebuild trigger

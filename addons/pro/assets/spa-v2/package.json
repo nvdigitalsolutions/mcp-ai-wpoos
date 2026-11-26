@@ -3,6 +3,7 @@
   "version": "2.1.0",
   "description": "NV oOS Pro Admin SPA — modern TypeScript React admin panel replacing the legacy pro-spa",
   "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "build": "node esbuild.config.cjs --prod",
@@ -49,6 +50,8 @@
     "vitest": "^4.1.11"
   },
   "overrides": {
+    "minimatch@^10": ">=11.0.1 <12",
+    "minimatch@^9": ">=11.0.1 <12",
     "vite": ">=8.2.4 <8.3",
     "nanoid": "^3.3.17",
     "js-yaml": ">=5.4.1",
