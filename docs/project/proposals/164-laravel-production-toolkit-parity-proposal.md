@@ -5370,3 +5370,94 @@ actually one.
 | tool readiness audit | **347 / 347**, servable **328** (+2), no violations |
 | toolkit parity | **126 of 854**; `crm` **2 ported**, 0 declined, 0 deferred, **11 remaining** |
 | phpcs | clean, no fixes needed |
+
+## 164.64 The interaction pair, and two vocabularies the toolkit never reconciled
+
+Slice 2 is `get_contact_interactions` and `get_crm_handover`. Both were read
+line by line first, as §164.63 promised. Reading changed the port.
+
+### The finding: activities are written in one vocabulary and read in another
+
+The toolkit's only activity writer is `create_crm_activity`. It stamps:
+
+```php
+update_post_meta( $activity_id, 'activity_type', $activity_type );
+update_post_meta( $activity_id, 'related_type', $related_type );
+update_post_meta( $activity_id, 'related_id', $related_id );
+```
+
+`get_contact_interactions` filters on `_activity_contact_id` and reads
+`_activity_type`, `_activity_outcome` and `_activity_duration`. A grep across
+`addons/pro/includes/tools/crm/` finds **three readers and zero writers** of
+the underscore family (`archive_stale_contacts` and
+`recalculate_engagement_scores` are the other two readers). Ported literally,
+the tool could never return a row the toolkit itself created.
+
+`get_crm_handover` reads the writer's vocabulary — `related_type` /
+`related_id` for the activity join and `activity_type` for the label — so the
+two tools in the *same slice* disagreed about how an activity links to a
+contact. That is the dual-store problem from §164.63 one level down: the same
+"keep both reachable" rule decides this port too.
+
+### Decisions
+
+- **The interaction tool reads both families.** The legacy keys are read first,
+  so an already-migrated export keeps its shape, and the live keys are the
+  fallback. The query links on `_activity_contact_id` **or** on a `related_id`
+  whose `related_type` is contact-bearing (`lead` or `contact`; a legacy
+  contact *is* a lead, per the dual store). `related_type = 'deal'` is
+  deliberately not matched: that id is a deal id, and a test pins it.
+- **This is a documented deviation from WordPress and an upstream bug
+  candidate.** The alternative — a faithful port that always returns zero rows
+  — would pass a parity check and be useless in the Laravel app.
+- **The date range is inclusive and applied while walking pages.**
+  `ContentQuery` has no date clause. Filtering after one page would silently
+  drop in-range rows whenever the newest page is out of range, so the tool
+  reads 200-row pages (the adapter's documented maximum) until it has `limit`
+  rows or the results are exhausted, bounded at 100 pages. Results are newest
+  first, and a row older than `date_from` ends the walk because the ordering
+  guarantees nothing later can be in range.
+- **A date that does not exist is refused.** WordPress hands `2026-02-31` to
+  `date_query`; the core validates with `checkdate()` first (the classroom
+  precedent), so a malformed range is a field error rather than an empty
+  result.
+- **The limit stays WordPress's**: 50 by default, 1–500, and the capability
+  stays `read` — the tool is gated as WordPress gates it, not at the family
+  default of `edit_posts`.
+- **The handover keeps the WordPress section order**: lead, company, deals,
+  history, activities, then the closing ask. WordPress captures `$lines` into
+  `$sections` as it goes and only reads the keys; the port records a boolean
+  per emitted section instead, which is observable-identical.
+- **`_company_status` is pinned, not corrected.** `create_company` writes
+  `_company_target_status`; the handover reads `_company_status`, so a company
+  created by the toolkit renders an empty `Status:` line. Correcting it would
+  change a bundle a consumer may already parse. Second upstream bug candidate in
+  two slices, recorded rather than fixed.
+- **A missing linkage omits its section.** No `lead_id`, no `company_id`, no
+  activities — the bundle still returns. Only a bad `entity`, a bad `entity_id`
+  or an unknown record is an error (404 on the record).
+- **Structured meta is an array or a JSON string.** `bant_assessment` and
+  `stage_history` are decoded from JSON when stored as text. PHP-serialised
+  strings are **not** decoded: the core will not call `unserialize()` on stored
+  data.
+- **Currency formatting follows the engine.** An explicit per-deal currency
+  wins; otherwise the `default_currency` setting (USD); an unknown code keeps
+  the engine's `"CODE "` prefix. `number_format()` replaces
+  `number_format_i18n()` — the core has no i18n layer — and `humanTime()`
+  replaces `human_time_diff()` with the same units, untranslated.
+- **CRM settings are an optional dependency.** `CrmTool` accepts a
+  `SettingsStoreInterface`; without one the documented defaults apply, which is
+  what a Laravel host gets until it binds the option table.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,128 / 19,942** (17 tests added) |
+| adapter PHPUnit | **129**, 900 assertions — the two new probes pass; one unrelated failure remains (`export_eca_data`: this host's file store sniffs the exported CSV as `unknown` and refuses it) |
+| tool readiness audit | **349 / 349**, servable **330** (+2), no violations |
+| toolkit parity | **128 of 854**; `crm` **4 ported**, 0 declined, 0 deferred, **9 remaining** |
+| phpcs | clean, no fixes needed |
+
+Next is slice 3, the contact pair: `manage_crm_contact` (the dual-store
+dispatch) and `scan_duplicate_contacts`.

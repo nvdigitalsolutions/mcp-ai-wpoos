@@ -164,6 +164,12 @@ Probe Club,club
 			// test, so the create leaves nothing behind.
 			array( 'create_company', array( 'company_name' => 'Probe Ltd', 'industry' => 'Testing' ), 'success', array( 'company_id', 'company_name' ), array( 'user_id' => 1 ) ),
 			array( 'get_companies', array( 'industry' => 'Testing' ), 'success', array( 'companies', 'total_companies' ), array( 'user_id' => 1 ) ),
+
+			// §164.64 — the interaction timeline and the handover bundle. The
+			// timeline answers empty for an unknown contact; the handover refuses an
+			// unknown deal rather than assembling a bundle with no subject.
+			array( 'get_contact_interactions', array( 'contact_id' => 999999 ), 'success', array( 'contact_id', 'total_count', 'interactions' ), array( 'user_id' => 1 ) ),
+			array( 'get_crm_handover', array( 'entity' => 'deal', 'entity_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
