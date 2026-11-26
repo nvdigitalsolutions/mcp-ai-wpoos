@@ -588,6 +588,36 @@ comm -13 /tmp/staged.txt /tmp/expected.txt   # missing      — must be empty
   the allowlist) and reconcile the two before committing: every path outside the
   allowlist is either another agent's work or a missed dependency.
 
+- **A file list is not a port — prove it with a tree diff (2026-11-26).** A
+  handoff enumerated "7 patched + 4 string-patched + 11 new" and was wrong
+  twice over: `lib/gate.ts` (+39/−1 — the fields the new module imported) and
+  eight further files (`deploy-config.ts`, `copy/en.ts`, four tests,
+  `scaffold.test.ts`) never crossed. `tsc --noEmit` caught the first at once
+  (`Property 'retryAfter' does not exist on type 'BridgeGateState'`); only a
+  tree diff caught the rest:
+
+  ```sh
+  diff -rq --exclude=node_modules --exclude=dist --exclude=.astro \
+    <source-tree> <worktree>/<same-tree>
+  ```
+
+  Then prove each residual difference is header-only before dismissing it — a
+  repo-wide `+1` SPDX sweep is indistinguishable from a real change in a file
+  list:
+
+  ```sh
+  diff --unified=0 <a> <b> | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' \
+    | grep -v SPDX-License-Identifier      # empty = header-only
+  ```
+
+  Two traps this exposed. (1) Copying a file from a branch whose **HEAD had
+  stripped** the SPDX line silently re-breaks the docs contract — `ts:examples`
+  allows `missing_spdx` of **0** — so restore the header from the base, never
+  from the source worktree. (2) A multi-file `head`/`diff` loop in this shell
+  **interleaves** its output: two intact `.astro` files read back as one
+  corrupted file. Verify one file at a time with `cat -A` before "fixing" a
+  phantom.
+
 - **`.git` inside a worktree is a FILE, not a directory** (a pointer into
   `.git/worktrees/<name>`). Writing scratch to `<worktree>/.git/msg.txt` fails
   with "parent directory doesn't exist" — keep scratch in `/tmp`.
@@ -895,6 +925,15 @@ not have, so "new files since base" logic must fall back to a two-dot tree diff:
   `--allow-increase` and a reason. `--folder-docs` checks the Rust non-module
   READMEs. Proposal 166 /
   [`docs/developer/file-header-convention.md`](../../../docs/developer/file-header-convention.md).
+  Details that decide whether it passes (2026-11-26): `//!` is **Rust-only** —
+  TS/JS/Astro need the literal `@fileoverview` or `@file` tag, and the repo's
+  older `// ---` blocks do **not** count even though ~750 legacy ones are
+  tolerated by the ratchet; the bar is 2 meaningful lines (**1** for
+  `test`/`config`), each ≥20 chars, and the first must not be just the
+  filename; `--json` returns **scope totals only** (no per-file detail — a
+  dead end), so use `--explain=<file>`. `Documentation contract` and
+  `Licence boundary intact` can go red from one root cause, because the licence
+  workflow re-runs the same contract — read both logs before fixing twice.
 
 ### Format-check drift - verify the toolchain and the commit (2026-11-04)
 
