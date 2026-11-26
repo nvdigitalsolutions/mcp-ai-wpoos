@@ -2389,6 +2389,15 @@ return array(
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'toolkit_cpt' => array(
+			'class' => 'Nvoos\\Core\\Tool\\ToolkitCptTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Eight actions over ContentStoreInterface and SchemaStoreInterface: list_types, get_schema, list_items, get_item, create_item, bulk_create, update_item, delete_item. Three of them are the reason this exists: nothing else enumerates the registered types (get_post_type_schema requires one), search_content requires a search term, forces publish and cannot filter by meta, and bulk_import covers only tasks and projects. The other five are also served under other slugs, but keeping the full action set preserves the single discoverable surface an agent that knows the WordPress tool will reach for. Refusals replace the reference\'s silent normalisation: an unknown compare or sort field is named rather than coerced, and a field key that WordPress would strip is refused instead of being renamed. `date` is refused because the store stamps dates and offers no way to set them.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ToolkitCptToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'transcode_video' => array(
 			'class' => 'Nvoos\\Core\\Tool\\TranscodeVideoTool',
 			'readiness' => 'ready',

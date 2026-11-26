@@ -17,6 +17,10 @@
             "decision": "declined",
             "reason": "Superseded by get_video_metadata, which is served: it returns the container, duration and bitrate plus the video and audio streams (codec, dimensions, frame rate, channels), and accepts file_id or a URL where this tool accepts only video_id. Its analyze_audio flag asks for the audio-stream detail the served tool already returns, so a port would be a second slug for one answer. Declined rather than deferred because there is nothing left to build."
         },
+        "generate_architectural_drawing": {
+            "decision": "deferred",
+            "reason": "Its value is the structured-prompt compiler — scale notation, dimension callouts, materials, building codes — wrapped around a DALL-E/Imagen call and a raster-to-SVG step this runtime already serves as `output_format: svg` on the image tools. There is no image-generation contract here: each of the three served generators speaks to a provider through SettingsStoreInterface and HttpClientInterface directly, so a faithful port today would be a fourth copy of that plumbing plus a second vectoriser. Prerequisite: a shared image-generation seam the prompt compiler can sit on. Deferred rather than declined because the capability is worth having once that seam exists."
+        },
         "generate_image_ai": {
             "decision": "declined",
             "reason": "Its handler dispatches to no provider of its own: it is a generic front door whose work is already served by generate_openai_image, generate_gemini_image and generate_cloudflareai_image, each of which names the provider it will bill. Porting it would be a fourth slug for the same three calls with a provider the caller cannot see in advance."
@@ -29,6 +33,10 @@
             "decision": "deferred",
             "reason": "Lists media-library attachments filtered by _mcp_video_status and _mcp_video_target_platform. Nothing on this runtime writes either: the only writer in WordPress is upload_video_batch, which is itself unported. A port today could only answer with an empty list, and an empty list reads as a finding rather than as a missing model. Prerequisite: a video processing and upload job model. Deferred, not declined, because the query is sound once something writes the status."
         },
+        "get_uninvoiced_orders": {
+            "decision": "deferred",
+            "reason": "It lists WooCommerce orders that lack the `_invoiced` meta flag. This runtime has no order or invoice model at all — the app skeleton registers no Order or Invoice entity — so there is nothing to query and no flag to look for. Prerequisite: an order model carrying an invoiced marker, which arrives with the ecommerce toolkit rather than ahead of it."
+        },
         "get_unwatermarked_images": {
             "decision": "deferred",
             "reason": "It lists images that have no watermark, which needs a recorded relationship between a source and its watermarked rendition. FileDerivativeStoreInterface::ROLES currently offers only poster, caption and frame, so there is no watermark role to query and a port today could only answer with an empty list, which reads as a finding rather than as a missing model. Prerequisite: a watermark role on the derivative store, the same way the video inventories waited for their roles."
@@ -40,6 +48,10 @@
         "optimize_image_sharp": {
             "decision": "deferred",
             "reason": "It duplicates optimise_images_batch (which already batches convert and compress) plus the resize that batch_process_images would have added, so it is the same capability under a third name and lands with the multi-operation transform rather than beside it. Prerequisite: a multi-operation `/transform` call on the media worker."
+        },
+        "prepare_file_for_vector_store": {
+            "decision": "deferred",
+            "reason": "It converts CSV, XLSX and PPTX into PDF or structured text, OCRs scanned PDFs and repairs encoding before ingest. The runtime has the OCR half (OcrServiceInterface, PdfOcrInterface, PdfTextExtractorInterface) and PDF mutation, but nothing reads a spreadsheet or a slide deck: the media worker generates office documents, it does not parse them. Prerequisite: an office-document reader that exposes rows and sheets as text."
         },
         "remove_background": {
             "decision": "deferred",
