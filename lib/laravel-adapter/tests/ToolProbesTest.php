@@ -366,6 +366,14 @@ Probe Club,club
 			// against the real store without adding rows the other probes see.
 			array( 'create_service', array( 'name' => 'Probe service', 'duration_minutes' => 60, 'price' => 10 ), 'success', array( 'service_id', 'service' ), array( 'user_id' => 1 ) ),
 			array( 'import_services', array( 'source' => 'json_array', 'dry_run' => true, 'data' => array( array( 'name' => 'Probe import A' ), array( 'name' => 'Probe import B' ) ) ), 'success', array( 'created', 'total', 'complete' ), array( 'user_id' => 1 ) ),
+
+			// §164.87 — booking links and optimisation. The link probe writes a
+			// record and returns the token once; the analysis probe answers an
+			// empty far-future range, so it proves the BETWEEN query and the
+			// unconfigured-capacity path against the real store without adding
+			// appointments the other probes would see.
+			array( 'generate_booking_link', array( 'appointment_type' => 'Probe consultation' ), 'success', array( 'link_id', 'link', 'booking_path', 'token' ), array( 'user_id' => 1 ) ),
+			array( 'optimize_schedule', array( 'date_range_start' => '2099-01-01', 'date_range_end' => '2099-01-31' ), 'success', array( 'analysis', 'recommendations', 'optimization_goal' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
