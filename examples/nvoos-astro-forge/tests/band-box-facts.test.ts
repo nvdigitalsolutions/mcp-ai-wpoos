@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-box-facts.test.ts — the measured box of a builder's classes.
 //

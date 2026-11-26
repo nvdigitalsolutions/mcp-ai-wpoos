@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Deictic grounding — M5 of Proposal 153: "point at something and ask".
 //!
 //! The gesture supplies the **referent**, not a command: the user shows a hand,

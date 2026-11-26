@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // check-tokens.mjs — CI drift gate (Proposal 095): rebuilds in memory and
 // compares against the committed generated artifacts. Non-zero exit = stale

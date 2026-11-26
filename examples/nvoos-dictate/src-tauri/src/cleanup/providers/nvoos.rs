@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! NV oOS Stage-2 provider: delegates polishing to a configured WordPress
 //! site's assistant via the plugin REST chat endpoint with the assistant
 //! credential stored in the OS keychain.

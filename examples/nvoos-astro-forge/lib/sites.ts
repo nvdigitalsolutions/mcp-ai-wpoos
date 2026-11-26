@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // sites.ts — the multi-site profile registry (Proposal 096 Phase 3.4).
 //

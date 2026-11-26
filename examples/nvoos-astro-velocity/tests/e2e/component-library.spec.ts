@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // component-library.spec.ts — the Q6 evaluation gates: the adapted Incluud
 // components (accordion/tabs/breadcrumbs) and the Zag islands (dialog/
 // combobox) must pass axe-core and the keyboard contracts, or the adoption

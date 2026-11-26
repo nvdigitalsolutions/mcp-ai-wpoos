@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // wp-loader.test.ts — the Astro content-layer loader against a fake LoaderContext.
 //

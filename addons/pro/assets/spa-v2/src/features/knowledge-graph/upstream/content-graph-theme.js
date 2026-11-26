@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /* jshint esversion: 6 */
 /**
  * NV oOS Content Graph — Visual Theme Engine

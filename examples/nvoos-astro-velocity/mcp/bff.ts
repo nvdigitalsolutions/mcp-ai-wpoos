@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // bff.ts — Streamable HTTP mount for the storefront BFF (Proposal 095 §3.3).
 // Bundled by scripts/build-mcp.mjs into dist/mcp-entry.mjs; scripts/serve.mjs

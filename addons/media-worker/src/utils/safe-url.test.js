@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for the SSRF-safe URL validator (OWASP SSRF Prevention in Node.js).
  */

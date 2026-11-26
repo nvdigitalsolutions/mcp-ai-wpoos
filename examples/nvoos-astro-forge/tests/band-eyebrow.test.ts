@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-eyebrow.test.ts — the measured eyebrow/title pair, and the single
 // `panel:` emission.

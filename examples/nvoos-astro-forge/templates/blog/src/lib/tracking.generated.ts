@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // tracking.generated.ts — placeholder shipped by the template. The scaffold
 // overwrites this file when the site profile carries a `tracking` block

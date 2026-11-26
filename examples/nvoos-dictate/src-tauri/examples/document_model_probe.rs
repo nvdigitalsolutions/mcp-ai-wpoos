@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Document-model tier probe (Proposal 111): renders/loads one page and
 //! sends it to the configured local DeepSeek-OCR-class server, printing the
 //! returned Markdown. This is the live-verification gate for the tier.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * WorkflowsPage render tests.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Router — Hash-based routing for WordPress admin compatibility.
  *

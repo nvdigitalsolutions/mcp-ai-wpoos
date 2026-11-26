@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * OAuth integration tests — full gateway app with a fake upstream site, a
  * fake authorization-server JWKS endpoint, and real signed tokens.

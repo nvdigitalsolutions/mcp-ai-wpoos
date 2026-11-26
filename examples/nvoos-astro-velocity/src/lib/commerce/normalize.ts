@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Client-side normalization — Proposal 092 §3.4 / D7.
 //

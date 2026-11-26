@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // content.config.ts — the WordPress content layer (Proposal 096).
 //

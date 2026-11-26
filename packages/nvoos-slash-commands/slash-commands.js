@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Slash Commands Integration for Chat Interface
  *

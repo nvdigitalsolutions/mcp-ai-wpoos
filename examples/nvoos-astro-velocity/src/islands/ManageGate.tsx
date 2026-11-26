@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // ManageGate island — the standalone Astro CMS surface (/manage).
 //

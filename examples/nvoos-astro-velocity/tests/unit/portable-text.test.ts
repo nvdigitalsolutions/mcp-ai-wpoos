@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // portable-text.test.ts — the Proposal 107 block-content schema: accept/
 // reject matrices for every custom type, the link-href safety walk (D3),

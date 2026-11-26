@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // vision.test.ts — the optional vision layer (Proposal 118): env resolution,
 // data-URL shaping, request building, verdict parsing, fail-soft contract.

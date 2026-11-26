@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Pro SPA v2 — Toolkit engine client (Proposal 090-B §8).
  *

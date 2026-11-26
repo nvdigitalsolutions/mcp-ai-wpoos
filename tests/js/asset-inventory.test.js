@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Jest tests for assets/js/asset-inventory.js
  *

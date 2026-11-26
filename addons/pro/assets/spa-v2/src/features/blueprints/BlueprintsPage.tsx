@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * BlueprintsPage — assistant blueprint catalogue (Proposal 084 Phase 5c).
  *

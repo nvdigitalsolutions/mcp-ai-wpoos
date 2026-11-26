@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * MarkdownContent — Renders Markdown with syntax highlighting and sanitization.
  *

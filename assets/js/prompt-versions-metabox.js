@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Prompt versions metabox controls (Proposal 091, Track B).
  *

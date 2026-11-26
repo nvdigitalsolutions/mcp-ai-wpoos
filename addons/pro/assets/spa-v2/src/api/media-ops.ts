@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Pro SPA v2 — Media Ops client (Proposal 084 Phase 4, W14).
  *

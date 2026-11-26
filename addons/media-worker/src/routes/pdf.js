@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * PDF route — text extraction, rasterization, generation, merge, watermark.
  *

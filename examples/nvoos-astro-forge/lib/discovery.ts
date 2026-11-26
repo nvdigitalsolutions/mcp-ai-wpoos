@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // discovery.ts — site_analyze: one command turns a WordPress URL into a
 // draft site profile (Proposal 096 §1, tools/discover).

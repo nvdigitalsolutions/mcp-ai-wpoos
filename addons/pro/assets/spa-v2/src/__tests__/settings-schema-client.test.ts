@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * SettingsClient schema/values contract tests (2.4.0, Proposal 084 Phase 2).
  */

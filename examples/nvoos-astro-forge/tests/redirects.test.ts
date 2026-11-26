@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // redirects.test.ts — the redirect-map generator: the rebuild's URL rules
 // (posts/pages/products, front page → '/') merged with the stored rules the

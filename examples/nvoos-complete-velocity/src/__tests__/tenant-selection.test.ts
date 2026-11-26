@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Estate selection — the store the fetch wrapper reads and the decision the
  * boot sequence makes (149 §21).

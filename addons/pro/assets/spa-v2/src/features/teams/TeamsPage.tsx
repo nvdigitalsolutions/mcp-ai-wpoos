@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * TeamsPage — team catalogue with per-team profession members.
  *

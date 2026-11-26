@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * End-to-end smoke test: boots the real gateway (native Streamable HTTP
  * server on mcp-wordpress internals) as a child process, then exercises

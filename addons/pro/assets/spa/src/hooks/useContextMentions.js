@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useContextMentions — Hook for @-mention autocomplete.
  */

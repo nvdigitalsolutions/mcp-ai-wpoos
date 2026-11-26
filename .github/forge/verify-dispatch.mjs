@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // GENERATED — emitDeployConfig (examples/nvoos-astro-forge/lib/deploy-config.ts).
 // Re-emit after changing the verifier template:
 //   node scripts/forge.mjs deploy-config --target .tmp-verify-emit --to github-pages

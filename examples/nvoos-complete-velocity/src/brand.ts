@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Branding helpers shared by the console shell (nav logo) and the entry
  * point (document title). Both surfaces show the first few words of the

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests for the SSH MCP bridge (bin/mcp-bridge-ssh.js + bin/mcp-bridge.js).
  *

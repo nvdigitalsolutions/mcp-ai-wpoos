@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // system-export.ts — package a forged site as a reusable design system
 // (Proposal 136 §4.3).

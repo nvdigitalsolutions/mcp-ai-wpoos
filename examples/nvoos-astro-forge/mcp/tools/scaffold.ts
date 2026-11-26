@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // scaffold.ts — scaffold/status/tokens/package tool slice (096 §3.3).
 // MCP-mode targets are confined to the configured work directory

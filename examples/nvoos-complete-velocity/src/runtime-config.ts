@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Runtime configuration builder for the NV oOS Complete Console.
  *

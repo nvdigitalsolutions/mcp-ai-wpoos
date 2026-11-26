@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ChatDock tests — mode-driven conversation-list collapse.
  *

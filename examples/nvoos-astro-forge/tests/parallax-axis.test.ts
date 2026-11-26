@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // parallax-axis.test.ts — the axis contract, END TO END.
 //

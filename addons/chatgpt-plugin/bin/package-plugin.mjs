@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Package the plugin folder as a ZIP for the OpenAI Agents API
  * `environment.plugins` contract (inline base64 uploads) and for the plugin

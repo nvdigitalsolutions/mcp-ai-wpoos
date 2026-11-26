@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * PDF Text Extraction Service
  * 

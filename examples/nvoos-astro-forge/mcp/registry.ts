@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // registry.ts — SINGLE SOURCE OF TRUTH (096 §3.3 / 095 registry pattern):
 // every tool name → Zod schema + annotations + write flag + handler. The

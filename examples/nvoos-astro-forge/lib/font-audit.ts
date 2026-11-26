@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // font-audit.ts — did the icon fonts actually ship and render?
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Form view — manifest-driven create/edit form for a Resource.
  *

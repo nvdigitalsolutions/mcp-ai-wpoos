@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * AgentPanel — Core chat UI: message list + composer.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ToolPicker — registry-backed, ARIA-compliant searchable multiselect for
  * assistant tool slugs (Proposal 088).

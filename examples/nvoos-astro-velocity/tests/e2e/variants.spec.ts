@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // variants.spec.ts — Proposal 106 P1 e2e gates (variable products).
 //
 // Product 3 (Halo Lounge Chair) carries 3 Size variants on the single-doc

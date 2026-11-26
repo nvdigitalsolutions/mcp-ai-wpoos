@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Observation serialization (§3): the compact, index-numbered element list
 //! the brain reasons over. Refs are `backendNodeId`-derived (chrome-agent's
 //! `nN` convention) so they stay stable across snapshots *of the same page* —

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // wizard.ts — setup_wizard: one command from URL to deployed (096 §6.1).
 //

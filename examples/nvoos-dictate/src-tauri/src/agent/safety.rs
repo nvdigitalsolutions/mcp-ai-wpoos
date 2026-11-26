@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Safety gate (§4/§4a): origin allowlist, sensitive-field masking, and the
 //! approval decision that decides whether a proposed action may run without a
 //! human confirmation.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // media.ts — the runtime media-origin rules (Proposal 139).
 //

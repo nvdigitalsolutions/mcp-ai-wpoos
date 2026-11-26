@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // admin-chrome.ts — remove the CMS's ADMIN chrome from a rendered page.
 //

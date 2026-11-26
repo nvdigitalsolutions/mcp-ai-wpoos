@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // compare.ts — re-extraction diff (Proposal 098 Phase 2.2).
 //

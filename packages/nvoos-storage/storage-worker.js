@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Web Worker for handling heavy localStorage operations.
  * 

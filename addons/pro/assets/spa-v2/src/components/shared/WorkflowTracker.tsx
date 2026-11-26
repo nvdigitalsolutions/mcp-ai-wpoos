@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Pro SPA v2 — Workflow progress tracker.
  * Mirrors chat-spa's WorkflowTracker with pro namespace.

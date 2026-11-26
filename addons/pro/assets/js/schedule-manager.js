@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /* global wpMcpAiScheduleManager */
 /**
  * Pro Schedule Manager — Admin UI

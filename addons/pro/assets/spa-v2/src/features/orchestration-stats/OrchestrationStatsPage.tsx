@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * OrchestrationStatsPage — multi-agent + orchestration statistics
  * (Proposal 084 Phase 3).

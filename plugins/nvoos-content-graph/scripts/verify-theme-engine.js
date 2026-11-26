@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /* jshint esversion: 6 */
 /**
  * Standalone verification of the JS theme engine parity (no browser).

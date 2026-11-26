@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forms-check.test.ts — the live half of the enquiry contract.
 //

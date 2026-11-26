@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // types.ts — the forge site profile + collection contracts (Proposal 096).
 //

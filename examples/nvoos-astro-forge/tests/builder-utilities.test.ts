@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // builder-utilities.test.ts — the vendor utility pack (Proposal 137 follow-up).
 //

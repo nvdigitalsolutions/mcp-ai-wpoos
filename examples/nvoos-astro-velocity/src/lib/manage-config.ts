@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Admin config hand-off for the standalone Astro CMS bundle.
  *

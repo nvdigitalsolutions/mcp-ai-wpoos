@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // postbuild-structured-data.test.ts — a retired CMS must not survive in JSON-LD.
 //

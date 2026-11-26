@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // localize-media.mjs — mirror remote media into the built site (Proposal 139).
 //

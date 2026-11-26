@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! `nokhwa`-backed camera capture: device enumeration and a resident frame
 //! ring feeding the live preview. Camera audio is handled by the existing mic
 //! path (a webcam mic is an ordinary input device).

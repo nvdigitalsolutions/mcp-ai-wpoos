@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // shop.ts — the shop/checkout configuration tool slice (Proposal 108
 // DECISION-1). shop_get reads the shop globals (checkout/cart/return URLs,

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests for WebLLM Function Calling Client (webllm-function-calling-client.js)
  *

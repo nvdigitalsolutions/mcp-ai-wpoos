@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Chat Memory Drawer for NV oOS Chat (Phase 3).
  *

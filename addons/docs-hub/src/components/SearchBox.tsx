@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * SearchBox — header search input with Cmd-K shortcut and dropdown results.
  *

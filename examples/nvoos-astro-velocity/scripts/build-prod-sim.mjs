@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // build-prod-sim.mjs — Proposal 104 §5.1 CI gate: a production-parity build
 // with NO build-time commerce base (the mirror invariant — the 092 prerender

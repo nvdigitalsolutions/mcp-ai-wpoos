@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useOperations — Hook for the operations surfaces (cron + DLQ).
  */

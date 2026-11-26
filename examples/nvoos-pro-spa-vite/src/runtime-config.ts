@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Runtime configuration builder for the standalone Pro SPA.
  *

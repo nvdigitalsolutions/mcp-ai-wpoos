@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Security Center — pure presentation helpers for the posture report and
  * action results (unit-tested; the page keeps no parsing logic inline).

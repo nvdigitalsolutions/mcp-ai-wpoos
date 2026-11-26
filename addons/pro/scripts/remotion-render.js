@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Remotion render script — pre-bundled for plugin distribution.
  *

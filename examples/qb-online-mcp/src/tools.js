@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tool registrations for the QuickBooks Online MCP server.
  *

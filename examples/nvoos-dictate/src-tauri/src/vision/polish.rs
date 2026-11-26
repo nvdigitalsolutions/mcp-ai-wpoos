@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Vision label polish (Proposal 076): relabel YOLO detection boxes with a
 //! local VLM.
 //!

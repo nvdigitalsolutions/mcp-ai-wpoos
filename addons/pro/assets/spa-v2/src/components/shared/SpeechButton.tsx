@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Pro SPA v2 — Speech (TTS) button for messages.
  *

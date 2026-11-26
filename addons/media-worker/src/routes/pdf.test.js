@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for the PDF route's styleable watermark and the OCR endpoint's
  * validation.

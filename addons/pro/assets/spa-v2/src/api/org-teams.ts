@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Org teams client — the tenant's people, not the agent-team catalogue.
  *

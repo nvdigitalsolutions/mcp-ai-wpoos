@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Island asset loader + hash guard for self-contained island apps.
  *

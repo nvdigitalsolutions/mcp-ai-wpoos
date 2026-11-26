@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // mcp-build.mjs — bundle the MCP HTTP mount (mcp/bff.ts) into
 // dist/mcp-entry.mjs so scripts/serve.mjs (plain Node) can route /mcp

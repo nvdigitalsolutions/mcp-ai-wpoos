@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // tracking.ts — the tracker & measurement capture pass (Proposal 130).
 //

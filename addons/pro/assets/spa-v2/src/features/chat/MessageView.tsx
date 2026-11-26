@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * MessageView — Renders a single chat message with role badge,
  * rich markdown content routing, tool cards, annotations, and toolbar.

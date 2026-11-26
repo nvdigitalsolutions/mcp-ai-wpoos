@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useAnalytics — Hook for the console Analytics page (Proposal 084 Phase 5b).
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // section-kinds.ts — the `data-section` vocabulary for this storefront.
 //

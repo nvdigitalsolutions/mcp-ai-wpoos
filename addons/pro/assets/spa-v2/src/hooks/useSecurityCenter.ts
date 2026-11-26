@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useSecurityCenter — Hook for the security posture surface.
  */

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Generate addons/pro/assets/vendor/manifest.json — a small SBOM for the
  * vendored Pro dependency tree.

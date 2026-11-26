@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 // Typed IPC surface mirroring src-tauri/src/ipc.rs and the serialized DTOs.
 // The webview is thin: all state lives in Rust; these wrappers only marshal.
 

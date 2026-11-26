@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * NV oOS SSE → AI SDK Data Stream Protocol adapter.
  *

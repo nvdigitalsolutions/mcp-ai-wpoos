@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useApprovals — Hook for the HITL approval queue (list + resolve).
  */

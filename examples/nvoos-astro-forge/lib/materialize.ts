@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // materialize.ts — turn a BUILT artifact's baked content store into local
 // content files (2026-11-15).

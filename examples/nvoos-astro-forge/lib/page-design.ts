@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // page-design.ts — the per-PAGE design facts a sub-page never had.
 //

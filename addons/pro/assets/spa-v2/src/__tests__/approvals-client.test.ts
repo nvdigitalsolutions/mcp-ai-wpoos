@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ApprovalsClient contract tests — list envelope mapping and the
  * approve/deny POST shapes (fetch mocked).

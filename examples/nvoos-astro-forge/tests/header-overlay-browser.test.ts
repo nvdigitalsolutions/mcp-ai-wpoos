@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // header-overlay-browser.test.ts — `measureStickyHeader` against a hermetic
 // fixture.

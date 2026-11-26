@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { test as setup, expect } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 

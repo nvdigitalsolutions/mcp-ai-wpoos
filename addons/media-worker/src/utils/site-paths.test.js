@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for the multi-tenant site path namespacing utility.
  */

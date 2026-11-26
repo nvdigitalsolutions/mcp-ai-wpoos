@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // element-css.test.ts — recovering a builder's PER-ELEMENT <style> rules.
 //

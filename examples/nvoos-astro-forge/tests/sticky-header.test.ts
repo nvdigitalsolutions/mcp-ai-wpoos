@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // sticky-header.test.ts — the measured sticky header (analyze --geometry).
 //

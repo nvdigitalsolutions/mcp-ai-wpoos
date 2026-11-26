@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // storefront-origin.test.ts — storefrontOrigin() resolution precedence
 // (2026-10-31). Regression: preview_url / screenshot always returned

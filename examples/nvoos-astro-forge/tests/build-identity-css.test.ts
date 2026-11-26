@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // build-identity-css.test.ts — the stylesheet half of deploy identity.
 //

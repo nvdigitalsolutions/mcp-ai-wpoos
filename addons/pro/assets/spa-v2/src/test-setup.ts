@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import '@testing-library/jest-dom';
 
 // ── jsdom polyfills (Proposal 080 + spa-ui skill guidance) ─────────────────

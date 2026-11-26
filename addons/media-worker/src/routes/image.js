@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { Router } from 'express';
 import multer from 'multer';
 import sharp from 'sharp';

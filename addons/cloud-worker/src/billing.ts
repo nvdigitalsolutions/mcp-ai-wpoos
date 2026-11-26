@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Billing — markup math, atomic balance debit, ledger writes.
  *

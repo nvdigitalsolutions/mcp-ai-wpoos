@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Document input pipeline (Proposal 109): PDF + multi-page TIFF OCR.
 //!
 //! The hybrid two-pass standard (OCRmyPDF's skip-text strategy): per page,

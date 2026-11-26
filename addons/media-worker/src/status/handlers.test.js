@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for the status request handlers (fake req/res, in-memory store).
  *

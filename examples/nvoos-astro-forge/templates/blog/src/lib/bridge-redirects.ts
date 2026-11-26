@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // bridge-redirects.ts — read the source site's stored redirects, safely.
 //

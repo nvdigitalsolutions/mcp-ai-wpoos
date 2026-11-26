@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! macOS paste backend: clipboard + CGEventPost Cmd+V (P5 port, phase M3).
 //!
 //! `enigo` 0.6 has a macOS path but the crate's maintenance record is

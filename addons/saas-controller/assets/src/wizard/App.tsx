@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Wizard root — wraps `<Wizard />` in the react-query provider.
  *

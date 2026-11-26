@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // product-model.ts — resolve a product document's 3D model (product-3d variant).
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // ssrf.ts — the forge URL guard (Proposal 096 §2.4 / Phase 4 MCP surface).
 //

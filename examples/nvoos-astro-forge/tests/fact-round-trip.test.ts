@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // fact-round-trip.test.ts — a measured fact must reach the generated module.
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // page-bands.ts — per-PAGE band facts (the multi-page half of `--geometry`).
 //

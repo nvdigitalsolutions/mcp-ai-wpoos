@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Pro SPA v2 — persisted composer height hook (Proposal 080, Phase 2).
  *

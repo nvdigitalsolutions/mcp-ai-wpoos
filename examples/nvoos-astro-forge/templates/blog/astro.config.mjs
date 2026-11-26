@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 // FORGE:adapter-import

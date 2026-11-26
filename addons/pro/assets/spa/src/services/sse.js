@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * SSE Service — Server-Sent Events stream manager.
  *

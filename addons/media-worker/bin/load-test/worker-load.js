@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * k6 load test for the Design Stack Media Worker (proposal 027, Phase 2e).
  *

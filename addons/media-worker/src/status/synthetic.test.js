@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for external-target seeding + the synthetic probe loop
  * (fake store + injectable clock/check, mirroring sweeper.test.js).

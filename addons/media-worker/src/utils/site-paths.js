@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Multi-tenant site namespacing for filesystem scratch space.
  *

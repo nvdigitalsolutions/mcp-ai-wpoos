@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * SlashCommandsClient + TriggersClient contract tests (fetch mocked).
  */

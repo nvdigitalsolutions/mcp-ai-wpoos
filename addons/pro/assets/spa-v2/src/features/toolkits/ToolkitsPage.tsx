@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ToolkitsPage — the manifest-driven Pro toolkit catalogue.
  *

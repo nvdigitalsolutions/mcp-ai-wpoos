@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // stdio.ts — nvoos-astro-forge MCP local entry (096 Phase 4; the 095 stdio
 // pattern): the coding-agent profile (Zed / Claude Code / npx). Same tool

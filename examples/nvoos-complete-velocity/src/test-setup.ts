@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Vitest setup — jsdom polyfills for the host tests.
  *

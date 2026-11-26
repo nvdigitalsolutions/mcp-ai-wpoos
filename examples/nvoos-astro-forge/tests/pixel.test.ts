@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // pixel.test.ts — the pixel gate's verdicts.
 //

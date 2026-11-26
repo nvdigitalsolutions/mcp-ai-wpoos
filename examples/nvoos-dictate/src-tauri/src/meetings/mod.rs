@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Meeting recording and transcription.
 //!
 //! Explicit "Record" action only (never automatic). Windows captures the

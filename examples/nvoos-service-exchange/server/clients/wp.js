@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * WordPress / WP-CLI provisioner primitives.
  *

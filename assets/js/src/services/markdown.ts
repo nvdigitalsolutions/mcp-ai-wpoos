@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Markdown Rendering Service for NV oOS Chat — TypeScript edition.
  *

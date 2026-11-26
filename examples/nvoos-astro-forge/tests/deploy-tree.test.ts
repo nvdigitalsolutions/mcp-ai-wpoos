@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // deploy-tree.test.ts — the emitted sync-deploy-tree.mjs, executed for real.
 //

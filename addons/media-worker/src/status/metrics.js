@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * OpenMetrics (Prometheus text exposition) rendering for the status module.
  *

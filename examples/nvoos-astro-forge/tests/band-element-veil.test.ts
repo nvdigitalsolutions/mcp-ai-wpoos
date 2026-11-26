@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-element-veil.test.ts — a band photo's translucent SCRIM.
 //

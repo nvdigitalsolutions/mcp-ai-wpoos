@@ -1,4 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Embedded SQLite migrations (v1).
+//!
+//! Migrations are append-only: a released version is never edited, only
+//! superseded by a new entry.
 
 use rusqlite_migration::{Migrations, M};
 

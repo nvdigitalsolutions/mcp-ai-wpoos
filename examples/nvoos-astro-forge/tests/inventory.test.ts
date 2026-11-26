@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // inventory.test.ts — Proposal 115 §1/§2: multi-source inventory (sitemap
 // index + homepage links + optional Wayback), the REST diff, the site-shape

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * CommandPalette — Universal action launcher with fuzzy search.
  * Zed equivalent: Cmd+Shift+P

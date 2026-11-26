@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Meeting recorder: explicit record/stop, mic + optional system audio,
 //! transcription on stop, transcript returned to the caller.
 //!

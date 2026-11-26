@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Workflow DSL export/import controls for the DAG Builder admin page
  * (Proposal 091, Track A).

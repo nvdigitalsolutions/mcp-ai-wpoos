@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // UiCombobox.tsx — autocomplete combobox island built on the Zag.js combobox
 // state machine (@zag-js/combobox + @zag-js/react). Zag owns the a11y

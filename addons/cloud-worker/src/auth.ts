@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Authentication middleware — validates the Bearer Connect Token, looks up the
  * wallet, and verifies the X-NV-Site-Url header matches the site bound at

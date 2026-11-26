@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // region-colors.ts — the colour-system gate: chrome and page surfaces.
 //

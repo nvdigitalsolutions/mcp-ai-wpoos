@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! STT engine facade.
 //!
 //! One `SttEngine` implementation per backend; engines are created once,

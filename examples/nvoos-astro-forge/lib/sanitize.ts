@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // sanitize.ts — the XSS gate between WordPress HTML and Astro `set:html`.
 //

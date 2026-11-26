@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Landmark geometry: turn a normalised hand into interpretable features.
 //!
 //! Everything here is scale-free by construction (inputs are already

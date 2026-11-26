@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-copy.test.ts — the band's paragraphs, minus the text its heading prints.
 //

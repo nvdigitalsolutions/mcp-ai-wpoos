@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tenant context — provides tenant configuration from the current subdomain.
  *

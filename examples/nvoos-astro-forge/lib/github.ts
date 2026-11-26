@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // github.ts — the GitHub deploy tools (Proposal 096 Phase 3.2).
 //

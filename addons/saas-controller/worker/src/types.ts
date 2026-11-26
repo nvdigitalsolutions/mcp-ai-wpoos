@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Shared types and the Workers Env binding for the NV oOS Cloud Worker.
  */

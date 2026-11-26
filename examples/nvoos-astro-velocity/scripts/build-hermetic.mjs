@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // build-hermetic.mjs — build the app against the fixture contract server.
 //

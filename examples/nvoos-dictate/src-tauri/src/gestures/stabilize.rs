@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Temporal stabilisation.
 //!
 //! Raw per-frame classification is unusable as input: a pose hovers at the

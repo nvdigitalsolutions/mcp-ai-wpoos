@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Windows `WH_KEYBOARD_LL` low-level keyboard hook.
 //!
 //! Runs on a dedicated OS thread with a message loop. This is the pattern

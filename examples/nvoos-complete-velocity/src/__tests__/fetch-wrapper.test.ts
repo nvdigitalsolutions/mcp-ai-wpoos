@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Fetch-wrapper session-expiry tests — 401 → onUnauthorized scoping
  * (site-origin only), re-install idempotency, and the jQuery ajaxError

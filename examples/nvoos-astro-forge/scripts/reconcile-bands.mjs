@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Section-by-section reconciliation: source band facts vs the built band.
 // Read-only. Prints one row per band per page so the gaps are a work list.
 //

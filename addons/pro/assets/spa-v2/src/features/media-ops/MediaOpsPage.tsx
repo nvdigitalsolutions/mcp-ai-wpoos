@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * MediaOpsPage — media library command-center metrics (Proposal 084
  * Phase 4, W14).

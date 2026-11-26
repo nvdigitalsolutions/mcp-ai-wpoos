@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Class-name utility — clsx + tailwind-merge (Tailwind v4 aware).
  */

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // /design-audit.json.ts — the build-time WCAG contrast audit (Proposal 114 §3.5).
 //
 // Prerendered in both render modes: every rendered token pair (light, dark,

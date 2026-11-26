@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, type DiagnosticsInfo } from '../lib/ipc';
 

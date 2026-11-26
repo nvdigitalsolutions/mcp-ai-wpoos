@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import type { DictateEvent } from '../lib/ipc';
 
 /**

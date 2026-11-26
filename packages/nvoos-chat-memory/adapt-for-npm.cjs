@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Adaptation script: Convert WordPress chat-memory-service.js to a standalone NPM package.
 // The source is already a thin REST proxy with `request()` + 8 verbs. We replace the
 // `window.wpMcpAiChat` lookups with a module-level `_config` object configured via

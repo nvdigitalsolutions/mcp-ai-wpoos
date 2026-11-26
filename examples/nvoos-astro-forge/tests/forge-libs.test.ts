@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forge-libs.test.ts — the vendored-lib closure.
 //

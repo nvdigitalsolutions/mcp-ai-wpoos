@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forms-gate.test.ts — the enquiry contract in the BUILT page.
 //

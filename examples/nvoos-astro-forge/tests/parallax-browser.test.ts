@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // parallax-browser.test.ts — the axis contract in a REAL browser (2026-11-17).
 //

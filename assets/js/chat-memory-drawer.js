@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Chat Memory Drawer for NV oOS Chat (Phase 3).
  *

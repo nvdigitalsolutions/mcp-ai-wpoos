@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * HTTP Client Service for NV oOS Chat
  * 

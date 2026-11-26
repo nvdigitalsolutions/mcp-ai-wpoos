@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Unit tests for OAuth access-token validation (real RSA/EC keys, fake JWKS
  * transport, injected clock and cache — no network, no dependencies).

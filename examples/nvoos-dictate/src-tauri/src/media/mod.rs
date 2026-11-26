@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Media ingestion: decode → long-media chunking → transcription orchestration.
 //!
 //! This module ties together the Symphonia decode seam (`util/decode`) and the

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // title-tag.test.ts — the heading level a band title renders at.
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // box-parity.test.ts — the per-band BOX gate's comparison rules.
 //

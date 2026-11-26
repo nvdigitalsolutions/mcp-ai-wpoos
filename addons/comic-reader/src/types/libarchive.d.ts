@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Type declarations for libarchive.js — NV oOS Comic Reader.
  *

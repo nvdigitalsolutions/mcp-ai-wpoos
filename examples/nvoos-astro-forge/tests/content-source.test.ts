@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // content-source.test.ts — which snapshot a scaffold is asked to copy.
 //

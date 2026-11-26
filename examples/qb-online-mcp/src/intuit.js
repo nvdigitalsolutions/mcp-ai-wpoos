@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Intuit OAuth token manager and QuickBooks Online accounting API client.
  *

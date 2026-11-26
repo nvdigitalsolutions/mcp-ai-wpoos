@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // text-parity.ts — content parity, measured instead of assumed.
 //

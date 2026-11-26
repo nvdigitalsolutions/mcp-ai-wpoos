@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // gate-policy.test.ts — the per-site gate blocking policy.
 //

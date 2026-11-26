@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * WorkflowCanvas — the visual DAG canvas (Proposal 084 Phase 3b W10.2b).
  *

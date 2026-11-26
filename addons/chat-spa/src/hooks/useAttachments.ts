@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * NV oOS Chat SPA — file attachment state hook (Phase 6).
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { create } from 'zustand';
 
 export const useSettingsStore = create((set) => ({

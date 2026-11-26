@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! User settings: DTOs, defaults, and persistence.
 //!
 //! Security invariant: `Settings` holds **no secrets**. Credentials and API

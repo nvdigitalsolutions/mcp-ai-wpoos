@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Type declaration for the vendored theme engine (upstream/content-graph-theme.js).
  *

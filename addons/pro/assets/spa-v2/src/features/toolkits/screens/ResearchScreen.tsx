@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ResearchScreen — create-from-query (090-b Phase 4.5).
  *

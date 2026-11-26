@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-responsive-padding.test.ts — an explicit padding fact must not flatten
 // the source's per-viewport rhythm.

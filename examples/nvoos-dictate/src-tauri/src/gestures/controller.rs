@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! The resident gesture loop.
 //!
 //! One worker (`nvoos-gesture`) owns the backend, the stabiliser, the motion

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for the ingest route (Proposal 079):
  * POST /api/ingest/parse.

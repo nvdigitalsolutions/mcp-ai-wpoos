@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { useEffect, useState } from 'react';
 import {
   api,

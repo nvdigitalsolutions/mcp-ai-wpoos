@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Webcam/camera capture (Proposal 073).
 //!
 //! Architecturally, a webcam enumerates as **two** separate devices: a camera

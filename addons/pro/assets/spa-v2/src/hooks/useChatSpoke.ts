@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useChatSpoke — Wraps `useChat` from `@ai-sdk/react` with the pro SSE adapter.
  *

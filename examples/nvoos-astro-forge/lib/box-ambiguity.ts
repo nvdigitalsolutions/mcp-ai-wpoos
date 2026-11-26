@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // box-ambiguity.ts — the classes whose measured box was DROPPED.
 //

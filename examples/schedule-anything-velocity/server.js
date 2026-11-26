@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Cloudways Velocity default entry point.
  *

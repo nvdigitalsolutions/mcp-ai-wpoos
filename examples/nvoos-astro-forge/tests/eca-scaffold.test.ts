@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // eca-scaffold.test.ts — the `eca` preset and its generated artifacts
 // (Proposal 163 §P1).

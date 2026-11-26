@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Copy vendored JS libraries from node_modules to assets/vendor/.
  *

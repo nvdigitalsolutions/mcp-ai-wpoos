@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Extended Cognition Toolkit — Camera Viewfinder Module
  *

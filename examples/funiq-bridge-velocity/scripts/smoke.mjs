@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Hermetic smoke for the assembled nvoos-funiq-velocity mirror.
  *

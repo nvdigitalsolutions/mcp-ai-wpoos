@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ESLint flat config for the NV oOS SaaS Controller addon.
  *

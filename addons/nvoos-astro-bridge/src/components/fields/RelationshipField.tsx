@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Relationship field — single or hasMany selector for related collections.
  */

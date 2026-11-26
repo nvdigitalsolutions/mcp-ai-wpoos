@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! macOS meeting system-audio via the ScreenCaptureKit sidecar helper
 //! (P5 port, phase M5).
 //!

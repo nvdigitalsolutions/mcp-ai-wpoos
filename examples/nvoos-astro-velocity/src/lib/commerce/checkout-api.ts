@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // checkout-api.ts — the bridge checkout proxy client (Proposal 110 Phase B).
 //

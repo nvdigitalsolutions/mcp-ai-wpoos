@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Frozen-screen capture for snippet OCR (Proposal 100, M1).
 //!
 //! The frame lives **in memory only** (privacy bright line): `FrozenFrame`

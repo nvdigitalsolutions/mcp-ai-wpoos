@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { useState, useCallback, useEffect } from '@wordpress/element';
 
 export function useCommandPalette() {

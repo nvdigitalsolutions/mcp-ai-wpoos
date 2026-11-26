@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Health route tests — public shape, degraded registry, auth-gated full.
  */

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // content.spec.ts — Proposal 106 P2 e2e gates (CMS content + hybrid local).
 //
 // Read-only against the default fixture/BFF pair: envelope pages render

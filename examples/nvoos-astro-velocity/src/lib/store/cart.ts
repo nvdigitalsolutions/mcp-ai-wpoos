@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Cart store — display-only client state for v1 (no checkout in the
 // contract; owner decision Q5 covers auth, not payments). Persisted to

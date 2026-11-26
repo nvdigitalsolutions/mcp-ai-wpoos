@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Audio Service for NV oOS Chat
  * 

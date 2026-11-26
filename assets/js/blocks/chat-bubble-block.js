@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * WP MCP AI Chat Bubble Block for Gutenberg
  *

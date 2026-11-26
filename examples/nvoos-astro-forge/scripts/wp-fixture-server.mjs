@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // wp-fixture-server.mjs — the hermetic WordPress REST fixture (096 exit gate).
 //

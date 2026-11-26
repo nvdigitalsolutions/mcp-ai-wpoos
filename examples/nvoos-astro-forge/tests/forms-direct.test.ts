@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forms-direct.test.ts — the emitted DIRECT-delivery endpoint (Proposal 138).
 //

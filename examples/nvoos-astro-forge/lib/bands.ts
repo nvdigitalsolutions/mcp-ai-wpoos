@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // bands.ts — vendor-agnostic band (section) detection.
 //

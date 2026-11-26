@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * React Cosmos 7 fixture – TMATemplateBuilder: all interactive states.
  *

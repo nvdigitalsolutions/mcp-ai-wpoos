@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Sync bin/ sources into this package — bin/ is the canonical home.
  *

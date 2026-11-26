@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // fact-audit.test.ts — facts baked into the profile must reach the build.
 //

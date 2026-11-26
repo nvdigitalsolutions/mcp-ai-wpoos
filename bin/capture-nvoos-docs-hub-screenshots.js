@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Capture wp.org screenshots for the standalone nvoos-docs-hub plugin.
  *

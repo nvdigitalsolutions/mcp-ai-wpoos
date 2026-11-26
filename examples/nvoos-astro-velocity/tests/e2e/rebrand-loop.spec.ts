@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // rebrand-loop.spec.ts — the assistant-style rebrand loop driven from a real
 // browser (Proposal 095 §3.3 / issue #7319). Two tests:

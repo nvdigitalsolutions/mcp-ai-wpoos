@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // gate-cli.test.ts — `forge gate <profile>` (Proposal 152): exit codes,
 // JSON output and the fail-closed analyze path.

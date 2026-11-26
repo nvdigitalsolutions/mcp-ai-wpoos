@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Snippet OCR (RapidOCR / PP-OCR) model catalogue: per-language packs of
 //! detection + recognition ONNX models and the character dict, with SHA-256
 //! verification, streaming download, and atomic install — mirroring

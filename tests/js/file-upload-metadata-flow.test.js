@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Test file upload metadata flow
  * Verifies that attachment metadata from upload flows through to message segments

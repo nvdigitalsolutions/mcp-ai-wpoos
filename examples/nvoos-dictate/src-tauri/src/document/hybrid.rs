@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Hybrid per-page router (Proposal 109, D5): decide whether a page's text
 //! comes from the document's own text layer (`Text`) or from OCR of a
 //! rasterized page (`Ocr`). The OCRmyPDF skip-text strategy: never OCR a

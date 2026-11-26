@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // localize-media-snapshot.test.ts — the localizer reads a committed snapshot
 // BEFORE the network, so a CMS-less rebuild does not depend on surviving CDN

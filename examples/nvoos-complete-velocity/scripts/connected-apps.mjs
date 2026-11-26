@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Connected-app allowlist and path rules for the `/connected/<key>/*` proxy
  * in `scripts/serve.mjs` (Proposal 090-p W6).

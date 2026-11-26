@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // design.test.ts — the forge design-import module (Proposal 114 P1/P5):
 // deterministic extraction, token mapping, contrast-fix suggestions, and the

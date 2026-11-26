@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // ratelimit.ts — dependency-free in-memory rate limiter for the /mcp mount
 // (Proposal 096 Phase 4; the 095 hardening pattern — closes the unbounded-

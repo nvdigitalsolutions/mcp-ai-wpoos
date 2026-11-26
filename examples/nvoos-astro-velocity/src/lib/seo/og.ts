@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // OG card builder — Proposal 104 §4.8 (owner Q5, now approved).
 //

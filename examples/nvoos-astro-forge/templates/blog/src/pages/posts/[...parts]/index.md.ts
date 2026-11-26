@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // /posts/<id>/<slug>/index.md — the markdown variant of a post
 // (Proposal 136 §4.4). The HTML page stays canonical.
 //

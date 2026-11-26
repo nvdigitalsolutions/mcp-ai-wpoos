@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Local object detection + tracking (Proposal 075).
 //!
 //! Runs a YOLO-family ONNX detector (`yolov11n` by default, `yolov8n` as

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // contrast-audit.test.ts — Phase 1 WCAG 2.2 contrast gate (Proposal 095 §3.1).
 //

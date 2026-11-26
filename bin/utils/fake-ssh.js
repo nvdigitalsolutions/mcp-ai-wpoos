@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Test double for OpenSSH used by bin/test-mcp-bridge-ssh.js.
  *

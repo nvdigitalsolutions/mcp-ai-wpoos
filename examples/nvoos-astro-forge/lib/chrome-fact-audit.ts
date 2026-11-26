@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // chrome-fact-audit.ts — did the build render the CHROME facts it was given?
 //

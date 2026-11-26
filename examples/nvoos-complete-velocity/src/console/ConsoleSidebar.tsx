@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ConsoleSidebar — SA-format left navigation for the console shell.
  *

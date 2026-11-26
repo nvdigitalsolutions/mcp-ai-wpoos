@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Cloudways API client — verified against the live API (2026-11-12).
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Content body resolution (Proposal 107, DECISION-2) — the ONE place a
 // content document's body is decided, used by the page and post detail

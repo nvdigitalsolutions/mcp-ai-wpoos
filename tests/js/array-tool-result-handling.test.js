@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests for handling array tool results (e.g., from search_attachments)
  *

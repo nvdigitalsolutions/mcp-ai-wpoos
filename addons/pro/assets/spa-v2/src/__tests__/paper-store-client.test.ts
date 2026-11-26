@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * PaperStoreClient contract tests — record-page pagination envelope.
  *

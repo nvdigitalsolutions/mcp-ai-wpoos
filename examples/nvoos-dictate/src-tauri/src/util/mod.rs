@@ -1,4 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Small platform utilities.
+//!
+//! Pure helpers only; I/O belongs to the calling module.
 
 pub mod decode;
 

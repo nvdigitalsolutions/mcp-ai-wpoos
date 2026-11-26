@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! `DocumentController`: the single-flight worker state for the document
 //! pipeline (Proposal 109).
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // purge-prerendered.test.ts — the stale-prerender boot guard.
 //

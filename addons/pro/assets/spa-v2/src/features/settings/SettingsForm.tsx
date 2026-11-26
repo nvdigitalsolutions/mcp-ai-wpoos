@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * SettingsForm — the reusable schema-driven settings form (2.4.0, Proposal
  * 084 Phase 2; refactored out of SettingsPage for Proposal 089 Phase 2b).

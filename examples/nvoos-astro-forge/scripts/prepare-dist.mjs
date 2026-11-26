@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 /**
  * Bundle the three bin entries into dist/ for the npm artifact.
  *

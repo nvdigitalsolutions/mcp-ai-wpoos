@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // content-render.test.ts — the DECISION-2 body precedence: blocks >
 // contentRendered (trusted) > content (sanitized) > empty. Loud failure on

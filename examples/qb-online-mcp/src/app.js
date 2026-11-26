@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * HTTP application assembly: inbound auth gate, health probe, and the
  * dual-era MCP handler.

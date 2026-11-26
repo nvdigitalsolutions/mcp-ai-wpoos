@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Laravel backend profile tests (Proposal 090-B Phase 0).
  *

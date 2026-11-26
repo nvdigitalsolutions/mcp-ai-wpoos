@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Central error type for the NV oOS Cognition core.
 //!
 //! Every fallible core operation returns `AppResult<T>`. IPC handlers map

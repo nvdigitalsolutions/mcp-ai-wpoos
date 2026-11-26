@@ -1,4 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Per-app profile adjustments — the last stage, applied after punctuation.
+//!
+//! Applied last on purpose: each category is a deliberate stylistic choice, and
+//! nothing earlier should undo it.
 
 use crate::config::AppCategory;
 

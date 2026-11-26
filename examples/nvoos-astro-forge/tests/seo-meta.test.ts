@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // seo-meta.test.ts — the loader's SEO head extraction (Proposal 131 §2.2):
 // Rank Math flat fields first, then Yoast's `yoast_head_json`, with the

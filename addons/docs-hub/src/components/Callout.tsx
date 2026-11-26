@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Callout — styled alert block for note/tip/warning/danger directives.
  *

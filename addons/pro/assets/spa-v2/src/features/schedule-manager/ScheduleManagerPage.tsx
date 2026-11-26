@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ScheduleManagerPage — Pro schedule + preset management
  * (Proposal 084 Phase 3b, gap P9).

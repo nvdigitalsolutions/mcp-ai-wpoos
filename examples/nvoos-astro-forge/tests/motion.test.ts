@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // motion.test.ts — the piece-level parallax CSS generator (Proposal 121 +
 // the element pass). The source facts are Phlox's AvertaParallaxBox depth/

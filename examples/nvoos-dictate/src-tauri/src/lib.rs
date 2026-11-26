@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! NV oOS Cognition — library entry point (Tauri mobile-ready split).
+//!
+//! Modules are grouped by pipeline stage: capture (`audio`, `camera`),
+//! recognition (`stt`, `vision`, `document`), post-processing (`cleanup`,
+//! `memory`), and delivery (`paste`, `hotkey`, `ipc`).
 
 pub mod agent;
 pub mod audio;

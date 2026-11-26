@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-coverage.test.ts — a pass that resolves nothing must say so.
 //

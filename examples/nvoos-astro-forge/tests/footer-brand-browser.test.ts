@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // footer-brand-browser.test.ts — `measureFooterBrand` against a hermetic
 // fixture.

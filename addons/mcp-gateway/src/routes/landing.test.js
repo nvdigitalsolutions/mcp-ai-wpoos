@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Landing page tests — placeholder behavior without a demo key, and the
  * `PUBLIC_DEMO_KEY` rendering path (substitution + HTML escaping).

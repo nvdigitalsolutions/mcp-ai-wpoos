@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Portable push-to-talk state machine for the macOS event tap (P5 port).
 //!
 //! This module is platform-free on purpose: the event-tap shell

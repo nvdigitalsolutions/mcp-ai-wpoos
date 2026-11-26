@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Popover — Radix Popover primitives with shadcn styling.
  */

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Environment parsing for the QuickBooks Online MCP server.
  *

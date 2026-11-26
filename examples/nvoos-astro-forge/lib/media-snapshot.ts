@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // media-snapshot.ts — freeze a localized build's media beside the profile.
 //

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Minimal static server for Cloudways Velocity (and `npm run serve`).
  *

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forge.mjs — the Forge CLI (Proposal 096; commander + @clack/prompts since
 // Proposal 104 §4.3).

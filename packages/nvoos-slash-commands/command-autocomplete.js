@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Command Autocomplete for Slash Commands
  *

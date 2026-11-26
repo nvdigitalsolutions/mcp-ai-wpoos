@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // gate-e2e.test.ts — a GATED source forged end to end (Proposal 152).
 //

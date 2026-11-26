@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * HTTP surface of the gateway: health endpoint plus the token-gated MCP
  * endpoint. Tool policy is enforced at MCP registration time

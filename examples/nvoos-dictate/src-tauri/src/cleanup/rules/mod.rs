@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Deterministic cleanup rules.
 //!
 //! Order matters: whitespace → vocabulary → numbers → fillers →

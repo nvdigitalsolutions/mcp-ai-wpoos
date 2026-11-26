@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // agent-surfaces.spec.ts — the agent routes really serve (Proposal 136 §4.4).
 //

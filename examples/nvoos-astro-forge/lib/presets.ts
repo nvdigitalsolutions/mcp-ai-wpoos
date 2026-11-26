@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // presets.ts — forge presets (Proposal 104 §4.3, D8): one command-line
 // choice maps onto a template + a default collection profile + surface

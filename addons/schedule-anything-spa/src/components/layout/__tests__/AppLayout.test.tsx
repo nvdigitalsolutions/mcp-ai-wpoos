@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * AppLayout — renders the tenant sidebar chrome with i18n labels.
  *

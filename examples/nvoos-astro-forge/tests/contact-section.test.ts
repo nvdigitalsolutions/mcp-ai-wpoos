@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // contact-section.test.ts — the rebuilt contact band (issue #7549) + footer ink.
 //

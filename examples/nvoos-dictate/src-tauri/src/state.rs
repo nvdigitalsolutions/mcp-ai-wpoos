@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Application state: the shared core graph managed by Tauri.
 //!
 //! `AppState` is managed via `app.manage()` and handed to every IPC command.

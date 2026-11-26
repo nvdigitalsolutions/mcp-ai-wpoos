@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // /pages/<id>/<slug>/index.md — the markdown variant of a CMS page
 // (Proposal 136 §4.4). Portable Text projects structurally; legacy
 // `contentRendered` HTML degrades to paragraph-structured text.

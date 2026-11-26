@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * dryRun + shadow-policy integration tests (Phase 4) — gateway + fake site.
  *

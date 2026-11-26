@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // bands.test.ts — the vendor-agnostic sectioner.
 //

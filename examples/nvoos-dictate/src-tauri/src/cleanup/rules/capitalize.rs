@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Capitalization: sentence starts + the standalone pronoun "i".
 //!
 //! Code category is exempt — identifiers must never be rewritten.

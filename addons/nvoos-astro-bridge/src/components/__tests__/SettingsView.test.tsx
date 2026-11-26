@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * SettingsView consumption contract (Proposals 105/106) — the request()
  * helper is mocked, so this suite pins what the tab asks the bridge for:

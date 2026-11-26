@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Hand-landmark de-risk probe (Proposal 153, M0).
 //!
 //! Loads a MediaPipe-compatible 21-keypoint ONNX export, runs it on one image,

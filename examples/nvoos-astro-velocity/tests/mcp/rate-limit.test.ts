@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // rate-limit.test.ts — unit + HTTP matrix for the BFF rate-limit gate
 // (Proposal 095 security hardening): fixed-window allow/deny with an

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // postbuild-root-relative-media.test.ts — a root-relative CMS path is rescued.
 //

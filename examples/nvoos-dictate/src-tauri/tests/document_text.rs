@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Document pipeline integration tests (Proposal 109) — PDF open/extract
 //! against the committed fixtures. Feature-gated on `document` (package
 //! features flow to integration targets, so `cargo test --features document`

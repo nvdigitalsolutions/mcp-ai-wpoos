@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Settings page — toolkit toggles and AI provider configuration.
  */

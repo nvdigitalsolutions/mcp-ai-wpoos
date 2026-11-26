@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Build the NV oOS Complete Console and stage it into this app's dist/.
  *

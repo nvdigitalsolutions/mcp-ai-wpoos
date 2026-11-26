@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Build script: Copy type definitions from the TypeScript source into dist/.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // property-coverage.ts — a measured fact that never reaches the stylesheet.
 //

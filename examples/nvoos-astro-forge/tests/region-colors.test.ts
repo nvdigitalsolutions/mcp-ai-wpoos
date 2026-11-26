@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // region-colors.test.ts — parsing, CIEDE2000, and the region verdicts.
 //

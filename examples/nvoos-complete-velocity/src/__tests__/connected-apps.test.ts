@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 // @vitest-environment node
 /**
  * Unit tests for the connected-app proxy policy (Proposal 090-p W6).

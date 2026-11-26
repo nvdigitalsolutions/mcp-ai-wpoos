@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * HTML → structured-data extraction helpers for the crawl routes (static
  * tier). No network access happens in this module — callers fetch the HTML

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // motion.ts — piece-level parallax CSS (Proposal 121 + the element pass).
 //

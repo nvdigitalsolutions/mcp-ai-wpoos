@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * VADEngine — Standalone Voice Activity Detection
  *

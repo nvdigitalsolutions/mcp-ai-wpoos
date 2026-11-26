@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Chat Bubble Widget
  *

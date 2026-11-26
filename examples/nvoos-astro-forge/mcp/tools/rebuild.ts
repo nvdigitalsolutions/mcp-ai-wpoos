@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // rebuild.ts — sync & rebuild tool slice (096 §3.3): the generated pipeline
 // config and the signed inbound rebuild trigger against the bridge plugin.

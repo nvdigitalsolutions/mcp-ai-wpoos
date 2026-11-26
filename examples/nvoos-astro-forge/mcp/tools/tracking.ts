@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // tracking.ts — the tracker & measurement tool slice (Proposal 130).
 //

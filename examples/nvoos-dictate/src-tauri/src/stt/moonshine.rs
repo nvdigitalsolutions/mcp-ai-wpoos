@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Moonshine v2 streaming engine (feature `moonshine`).
 //!
 //! Status: integration spike. Moonshine v2 (MIT) is the low-latency

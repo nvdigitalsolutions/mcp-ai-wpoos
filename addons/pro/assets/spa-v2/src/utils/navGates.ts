@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Nav gating — spa-v2's route catalogue for the command palette.
  *

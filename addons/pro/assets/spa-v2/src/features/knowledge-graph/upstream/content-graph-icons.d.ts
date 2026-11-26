@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Type declaration for the vendored icon registry (upstream/content-graph-icons.js).
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Publication discipline — Proposal 104 §2.1 (astro-theme-cactus pattern):
 // ONE predicate, used by every surface that lists or links a product.

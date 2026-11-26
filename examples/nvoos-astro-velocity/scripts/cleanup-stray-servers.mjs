@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // One-off helper: kill stray node processes left by earlier manual server
 // boots + playwright runs (the Windows sh shell does not reap background
 // jobs). Only kills processes whose command line references the velocity

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Ingest route — parses owner-format files into a shared { columns, rows }
  * matrix contract (tabular formats) or extracted { text } (PDF/photo OCR).

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ScheduleFleetCard — fleet-wide run aggregates for the Schedule Manager
  * landing view.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // content.test.ts — the Proposal 106 P2 hybrid-local content layer: the
 // glob+WP merge (WP wins on collision, drafts never ship, local fills the

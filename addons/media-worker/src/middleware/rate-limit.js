@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Rate limiting middleware (OWASP Node.js guidance: limit every endpoint,
  * with stricter limits on expensive routes).

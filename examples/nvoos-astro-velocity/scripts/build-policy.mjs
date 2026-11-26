@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // build-policy.mjs — theme-policy generator CLI (Proposal 105 §3). Fetches
 // the policy doc from the build-time contract base and writes

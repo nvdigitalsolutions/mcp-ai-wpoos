@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // responsive.ts — the source's responsive language (Proposal 115 §4).
 //

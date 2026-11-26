@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // materialize.test.ts — recover a built artifact's baked content (2026-11-15).
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // /README.md — the deploy-branch build report.
 //
 // The mirror branch for a site is FORCE-PUSHED on every build (see the

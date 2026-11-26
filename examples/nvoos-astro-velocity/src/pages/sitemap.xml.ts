@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // sitemap.xml — SSR endpoint (Proposal 092 §5.4 / D11).
 //

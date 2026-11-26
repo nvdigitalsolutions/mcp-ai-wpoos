@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! The human-readable vocabulary.
 //!
 //! One source of truth for the Settings legend, the onboarding screen, the

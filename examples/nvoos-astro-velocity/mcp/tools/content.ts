@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // content.ts — nvoos-astro-mcp content tool slice (Proposal 107, DECISION-1).
 //

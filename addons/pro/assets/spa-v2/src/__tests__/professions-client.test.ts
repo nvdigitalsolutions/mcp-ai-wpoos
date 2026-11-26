@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ProfessionsClient contract tests (fetch mocked).
  */

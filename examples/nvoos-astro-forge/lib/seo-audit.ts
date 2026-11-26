@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // seo-audit.ts — the `forge verify --seo` gate (Proposal 131 §2.6).
 //

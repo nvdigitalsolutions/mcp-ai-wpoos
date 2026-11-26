@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // geometry.test.ts — the box-diff verdict (pass / warn / fail).
 //

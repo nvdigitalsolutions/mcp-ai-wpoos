@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // structured-data.test.ts — Proposal 136 §4.5.
 //

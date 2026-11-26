@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { SSEService, type SSEConnection } from '@nvdigitalsolutions/nvoos-events';
 import { domUpdateBatcher, scrollBatcher } from '@nvdigitalsolutions/nvoos-dom-batcher';
 import MarkdownRenderer from '@nvdigitalsolutions/nvoos-markdown';

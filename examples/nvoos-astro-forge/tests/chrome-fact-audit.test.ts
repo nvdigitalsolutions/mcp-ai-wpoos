@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // chrome-fact-audit.test.ts — a chrome fact that stops at the profile.
 //

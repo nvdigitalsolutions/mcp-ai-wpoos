@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! CDP driver (§7, Option A): wraps a chromiumoxide `Browser` + `Page` for the
 //! operations the agent loop needs. Pure Rust, no Node sidecar.
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * cn() — class-name utility tests (clsx + tailwind-merge).
  */

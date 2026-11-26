@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // gate.test.ts — the page gate (Proposal 152): probe classification, the
 // wp-login session, host scoping, redirect safety and no-store.

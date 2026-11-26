@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Interaction-state measurement — hover, focus, focus-visible and active.
  *

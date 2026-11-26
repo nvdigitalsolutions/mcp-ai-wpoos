@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // shop-doc.test.ts — getShop normalization (Proposal 108 §2): legacy
 // backends omit the extension fields; the client must resolve them to the

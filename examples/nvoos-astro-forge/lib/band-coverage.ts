@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-coverage.ts — did a measurement pass actually MATCH anything?
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useScheduleManager — Hook for the schedule + preset surface.
  */

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-panel-browser.test.ts — `collectBandPanelFacts` against a hermetic
 // fixture.

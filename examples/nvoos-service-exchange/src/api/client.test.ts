@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { createApiClient, ApiClientError } from './client';
 
 function jsonResponse( status: number, body: unknown ) {

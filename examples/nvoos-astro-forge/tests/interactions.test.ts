@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // interactions.test.ts — measured hover / focus / active states, as emitted CSS.
 //

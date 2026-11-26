@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // eca.ts — the ECA front-end format `nvoos-eca/v1` (Proposal 163, Phase 0).
 //

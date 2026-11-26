@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // chrome-audit.test.ts — the opened mobile menu, source vs build.
 //

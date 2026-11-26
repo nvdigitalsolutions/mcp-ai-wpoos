@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 // @vitest-environment node
 /**
  * End-to-end tests for the `/connected/<key>/*` proxy in scripts/serve.mjs

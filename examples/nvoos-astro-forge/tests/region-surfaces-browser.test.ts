@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // region-surfaces-browser.test.ts — P5 (pseudo surfaces) and P6 (ancestor
 // gradients) against a hermetic fixture page.

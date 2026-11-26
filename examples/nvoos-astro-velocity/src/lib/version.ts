@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // App version — the single source of truth for the storefront's public
 // version. Surfaced in the site footer, the MCP handshake (SERVER_VERSION in

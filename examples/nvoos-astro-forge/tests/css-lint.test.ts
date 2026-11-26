@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // css-lint.test.ts — rules that are declared and do nothing.
 //

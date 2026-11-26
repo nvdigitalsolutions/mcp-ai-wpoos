@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for the Wave 1 image routes (v3.4.0):
  * POST /api/image/enhance and POST /api/image/upscale.

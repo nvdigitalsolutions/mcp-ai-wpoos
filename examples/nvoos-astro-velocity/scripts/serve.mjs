@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // nvoos-astro-velocity — BFF server (Proposal 092 §5.5 / D2).
 //

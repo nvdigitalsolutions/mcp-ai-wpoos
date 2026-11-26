@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // compare.test.ts — the source-vs-rebuild box comparison.
 //

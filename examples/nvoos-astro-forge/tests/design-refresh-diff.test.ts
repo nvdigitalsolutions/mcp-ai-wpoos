@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // design-refresh-diff.test.ts — what a `--design` refresh silently drops.
 //

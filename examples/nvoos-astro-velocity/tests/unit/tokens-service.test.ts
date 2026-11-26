@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // tokens-service.test.ts — runtime TokenService: transactional overrides,
 // snapshots/rollback, themes, contrast, Phase 4 durable state (Proposal 095).
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';

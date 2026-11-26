@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Clipboard + Ctrl+V backend (Windows/Linux via arboard + enigo; macOS has
 //! its own CGEvent backend).
 //!

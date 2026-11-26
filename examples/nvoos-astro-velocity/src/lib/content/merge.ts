@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Content merge — Proposal 106 §2 hybrid local (L2).
 //

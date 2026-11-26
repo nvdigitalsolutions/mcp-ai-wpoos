@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 export type Industry =
 	| 'healthcare'
 	| 'food_beverage'

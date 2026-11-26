@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests for the embedded LLM system prompt config fallback in generateEmbeddedCompletion.
  *

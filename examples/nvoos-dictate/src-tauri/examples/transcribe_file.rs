@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! STT latency/WER benchmark harness (fala/Handy `transcribe_file` pattern).
 //!
 //! Usage:

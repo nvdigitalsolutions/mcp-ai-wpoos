@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * media-studio — Fashion Batch Panel unit tests (Pro-backed UI).
  *

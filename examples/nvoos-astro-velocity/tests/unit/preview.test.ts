@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // preview.test.ts — Proposal 107 §3.2: signed preview tokens + the session
 // cookie predicate. Constant-time verification, expiry-first ordering,

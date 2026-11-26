@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Archive sync: build a `TranscriptRecord` from a history row and push it
 //! one-way to the configured NV oOS site. Local history stays the source of
 //! truth — the plugin is a mirror, never the other way around.

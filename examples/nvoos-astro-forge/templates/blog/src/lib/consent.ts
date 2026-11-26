@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // consent.ts — the pure consent model (Proposal 130 §2.5).
 //

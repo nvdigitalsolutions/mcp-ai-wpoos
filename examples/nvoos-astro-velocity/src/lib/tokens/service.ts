@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // service.ts — ADS token runtime service (Proposal 095).
 //

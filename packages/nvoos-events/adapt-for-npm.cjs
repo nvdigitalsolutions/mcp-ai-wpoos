@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Adaptation script: Convert WordPress plugin event system to standalone NPM package
 // Combines SSE service and job event bus into unified package
 

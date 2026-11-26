@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * WorkflowBuilderClient contract tests (fetch mocked).
  */

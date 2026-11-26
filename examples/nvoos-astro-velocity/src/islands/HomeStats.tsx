@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // HomeStats island — the live counters on the home page (client:load).
 //

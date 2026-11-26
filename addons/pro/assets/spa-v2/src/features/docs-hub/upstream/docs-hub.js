@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /*! NV oOS Docs Hub — bundled frontend (React documentation SPA).
  * This file is generated — do not edit directly.
  * Source: https://github.com/nvdigitalsolutions/nvoos-docs-hub/tree/main/src

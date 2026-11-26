@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // eca-ui.ts — the ECA catalogue's generated front-end (Proposal 163 §P2).
 //
