@@ -308,6 +308,19 @@ Probe Club,club
 			array( 'render_schedule_result', array( 'schedule_id' => 'probe-no-such-schedule' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'configure_schedule_widget_defaults', array( 'schedule_id' => 'probe-no-such-schedule', 'result_capture' => 'full' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'plan_schedules_from_workflow', array( 'workflow_text' => "## Ops\n- Probe the planner\n", 'dry_run' => true ), 'success', array( 'plan', 'summary' ), array( 'user_id' => 1 ) ),
+
+			// §164.81 — the research and content family, which closes the declared
+			// orchestration toolkit at 36/36. The aggregator is pure; the post
+			// bridge writes through the bound content store; the broadcast wrapper
+			// writes a schedule; the report generator is probed in formatting mode
+			// so no search or model is needed. The blueprint exporter is probed as
+			// a refusal: this host registers only the package provider, and the
+			// assistant export engine is bound by the app skeleton.
+			array( 'aggregate_research_data', array( 'topic' => 'Probe topic', 'sources' => array( array( 'url' => 'https://probe.example/a', 'title' => 'A', 'content' => 'Probe content A.' ), array( 'url' => 'https://probe.example/a', 'title' => 'A again', 'content' => 'Duplicate URL.' ) ) ), 'success', array( 'unique_sources', 'duplicates_found', 'formatted_output' ), array( 'user_id' => 1 ) ),
+			array( 'create_post_from_research', array( 'data' => array( 'title' => 'Probe research post', 'report' => '# Probe findings', 'description' => 'Probe summary' ) ), 'success', array( 'post_id', 'post_type', 'source' ), array( 'user_id' => 1 ) ),
+			array( 'schedule_channel_broadcast', array( 'message' => 'Probe broadcast.', 'channels' => array( 'slack' ), 'credentials' => array( 'slack' => array( 'webhook' => 'https://probe.example/hook' ) ), 'name' => 'Probe broadcast' ), 'success', array( 'schedule_id', 'channels', 'schedule' ), array( 'user_id' => 1 ) ),
+			array( 'export_assistant_blueprint', array( 'assistant_id' => 1 ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'generate_research_report', array( 'title' => 'Probe report', 'sections' => array( array( 'heading' => 'Findings', 'content' => 'Probe finding.' ), array( 'heading' => 'Next steps', 'content' => 'Probe step.' ) ), 'citations' => array( 'Probe source' ) ), 'success', array( 'report', 'word_count', 'section_count' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
