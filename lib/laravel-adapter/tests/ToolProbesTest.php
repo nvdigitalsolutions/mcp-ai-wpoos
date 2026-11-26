@@ -196,6 +196,12 @@ Probe Club,club
 			// §164.70 — the capture writes through the bound memory store. The
 			// wing slug proves the sanitize_key step: Acme Corp is account/acmecorp.
 			array( 'crm_capture_interaction', array( 'account_id' => 'Acme Corp', 'room' => 'interactions', 'content' => 'Probe capture.' ), 'success', array( 'wing', 'room', 'tier', 'memory_id', 'expires_at' ), array( 'user_id' => 1 ) ),
+
+			// §164.71 — the F&B table pair. No table is mapped in this
+			// environment, so each proves it names the absence instead of
+			// fabricating a matrix.
+			array( 'fnb_read_table', array( 'table_id' => '3.0' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'fnb_search_table', array( 'table_id' => '3.0' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 

@@ -5966,3 +5966,155 @@ corrected.
 Next is the next repository in the queue — the toolkit order is the owner's to
 choose; the register now reads 137 ported, 8 declined, 35 deferred, 674
 remaining.
+
+## 164.71 `food-beverage`, measured — and the table foundation
+
+The owner chose the next four repositories: `food-beverage` (23 tools),
+`orchestration` (36), `calendar-booking` (34) and `gtmetrix` (23). This section
+is the measurement of the first, plus its foundation slice.
+
+### What the toolkit is made of
+
+`addons/pro/includes/tools/food-beverage/` holds **50 files**: 23 tools and 27
+support classes (five CPTs, seven readers and writers, the metrics engine, the
+report builder/exporter, the ingest-quality and retention helpers, the tenant
+profile, the tool base). The toolkit does not use `$wpdb` and makes no direct
+HTTP call from a tool: every figure comes from **tabular data**, addressed by
+spec table id.
+
+That is the shape that decides the port. `WP_MCP_AI_Fnb_Data_Source` is an
+18-entry registry — the 17 spec tables and the `assumptions` sheet — each with
+canonical column keys and the header spellings an operator's export uses, plus
+a 77-entry alias dictionary. Rows are positional; a canonical key is resolved
+to a column index at read time, so a spreadsheet whose headers drifted still
+resolves.
+
+### The dependency map, measured
+
+| tool | reads | calls |
+|---|---|---|
+| `fnb_read_table` | — | `Data_Source::get_table` |
+| `fnb_search_table` | — | `Data_Source::search_table` |
+| `fnb_days_of_cover` | 3.0 | `m14_days_of_cover` |
+| `fnb_weekend_demand` | 4.0 | `m12_expected_covers` |
+| `fnb_duplicate_invoice_scan` | 14.0, 15.0 | `month_of` |
+| `fnb_calculate_metric` | — | `Metrics::calculate` |
+| `fnb_compare_periods` | — | `calculate`, `m01_revenue` |
+| `fnb_budget_variance` | — | `m20_budget_variance` |
+| `fnb_dish_margin` | — | `m21_dish_margin`, `menu_engineering` |
+| `fnb_expected_use` / `fnb_stock_used` / `fnb_stock_variance` | — | `m16` / `m15` / `m17` |
+| `fnb_price_change_impact` | — | `m19_price_change_impact` |
+| `fnb_waste_analysis` | — | `m18_waste_pct` |
+| `fnb_labour_analysis` | — | `m02`, `m09`, `m10`, `payroll_total` |
+| `fnb_utilities_per_cover` | — | `m02`, `m11`, `utilities_totals` |
+| `fnb_variance_split` | — | `m02`, `m07`, `m08`, `total_operating_cost` |
+| `fnb_generate_report` / `fnb_export_report` | — | `Report_Builder::build` / `Report_Exporter` |
+| `fnb_save_draft` / `fnb_list_drafts` | — | `Draft_Writer` |
+| `fnb_import_table` | — | the ingestor (CPT reader, structure matcher, ingest quality) |
+| `fnb_audit_log` | — | — |
+
+Two consequences: the metric engine is the backbone (15 of 23 tools are a
+wrapper around one or two `m*` functions), and only three tools read tables
+directly.
+
+### The storage decision
+
+`TabularReaderInterface` already exists in this runtime and is already bound in
+the Laravel adapter to `MediaWorkerTabularReader` (the media worker parses
+`xlsx`, `csv`, `tsv`, `json` via ExcelJS and the repo's delimited parser). It
+reads a **file**, not a table id, so the missing piece is the mapping — and the
+mapping is configuration, not a contract:
+
+```
+wp_mcp_ai_fnb_toolkit_settings = array(
+    'as_of_date' => '2026-06-30',
+    'table_map'  => array(
+        '3.0' => array( 'path' => '/srv/fnb/ingredients.csv' ),
+        '6.0' => array( 'path' => '/srv/fnb/sales.xlsx', 'sheet' => 'Daily sales' ),
+    ),
+)
+```
+
+No new domain contract was added. What was dropped, and why:
+
+- **The Drive connection cascade.** WordPress resolves a table through four
+  levels ending in "the only enabled Drive connection". There is no Drive
+  client here, and a host that wants one points `table_map` at a path.
+- **`connection_id`.** The argument selected a connection. With one source there
+  is nothing to select, so it is **absent** rather than accepted and ignored —
+  the rejected-then-ignored shape this programme keeps finding. The
+  `connection_id`/`connection_name` payload keys go with it.
+- **`fnb_native_cpt` and the native-storage hint.** Five tables can be backed by
+  WordPress posts; this runtime has no F&B post type, and the hint exists to
+  tell an operator to flip a WordPress setting that does not exist here.
+  `source` stays in the payload and always reads `fnb_data_source`, so a
+  consumer that branches on it does not have to distinguish "absent" from
+  "changed".
+
+### The slice plan (provisional)
+
+| slice | contents |
+|---|---|
+| **1** | catalogue + source + `fnb_read_table`, `fnb_search_table` |
+| 2 | the metric engine and its dispatcher: `fnb_calculate_metric`, `fnb_compare_periods` |
+| 3 | the table-reading metrics: `fnb_days_of_cover`, `fnb_weekend_demand`, `fnb_duplicate_invoice_scan` |
+| 4 | the cost and variance wrappers: `fnb_dish_margin`, `fnb_price_change_impact`, `fnb_stock_used`, `fnb_stock_variance`, `fnb_expected_use`, `fnb_waste_analysis`, `fnb_budget_variance`, `fnb_variance_split`, `fnb_labour_analysis`, `fnb_utilities_per_cover` |
+| 5 | reports and drafts: `fnb_generate_report`, `fnb_export_report`, `fnb_save_draft`, `fnb_list_drafts` |
+| 6 | ingest and audit: `fnb_import_table`, `fnb_audit_log` |
+
+Slices 2–6 stay provisional until each tool is read line by line, as with `crm`.
+
+### Slice 1: a generated catalogue, not a transcribed one
+
+The registry and the alias dictionary are the toolkit's contract with an
+operator's spreadsheets — a column that stops resolving turns a metric into
+zero — so they are **generated**, not copied by hand:
+`bin/generate-fnb-table-catalogue.php` loads the Pro class with only `ABSPATH`
+defined, reflects the two structures, and writes
+`lib/core/resources/fnb-table-catalogue.php` (731 lines, 18 tables, 77 aliases).
+`--check` fails when the core copy and the Pro class disagree, so the two cannot
+drift silently.
+
+Three behaviours were pinned from the Pro implementation rather than tidied:
+
+1. **The column resolver has three passes** — canonical key, then the table's
+   own aliases (`price_lkr` for `price`), then the 77-entry dictionary applied
+   to each normalised header (which is how an operator's `inv no` becomes
+   `invoice`). A test exercises all three and the miss.
+2. **A numeric date is disambiguated by magnitude.** A Sheets/Excel serial is
+   days since 1899-12-30 (46023 = 2026-01-01) and sits far below any modern
+   epoch, so `< 100000` is a serial. Both are pinned with real values.
+3. **`float_cell()` strips thousands separators**, so `"1,234.5"` is a number
+   rather than zero — and `is_numeric("1,234.5")` is false, so this is
+   load-bearing arithmetic, not formatting.
+
+And two from the search:
+
+- **A column with no value means "is present".** `column: item_id` without a
+  `value` keeps the rows whose cell is non-empty; with a value it is a
+  case-insensitive substring test.
+- **A row whose date does not parse passes a date range.** The range is only
+  compared when the cell parses, so an undated row is never excluded. This is
+  the §164.69 shape again — a filter that admits "unknown" — and it is pinned
+  with a test rather than corrected.
+
+One flag does not carry over: the Pro base declares `local-only`, but here the
+table is read through `TabularReaderInterface`, which the Laravel adapter binds
+to an HTTP worker, so the port declares `read-only`, `idempotent` and
+`cacheable` and says why. `cacheable` is true because `FnbTableSource` caches a
+resolved table for the WordPress five minutes through the optional
+`CacheStoreInterface`.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,277 / 20,420** (26 tests added) |
+| adapter `ToolProbesTest` | **139 / 978**, 1 skipped, 0 failures — both probes expected `error`: no table is mapped in this environment |
+| tool readiness audit | **360 / 360**, servable **341** (+2), no violations |
+| toolkit parity | **139 of 854**; `food-beverage` **2 ported**, 0 declined, 0 deferred, **21 remaining** |
+| capability flags / catalogue drift | in step (1,465 tools; 18 tables and 77 aliases) |
+| phpcs | clean under `phpcs-laravel.xml.dist`, 9/9 files |
+
+Next is slice 2: the metric engine and its dispatcher, which 15 of the remaining
+21 tools are a wrapper around.
