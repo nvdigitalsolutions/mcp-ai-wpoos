@@ -292,6 +292,22 @@ Probe Club,club
 			array( 'instantiate_template', array( 'template_id' => 999999, 'variables' => array() ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'seed_template_library', array(), 'success', array( 'templates_created', 'created', 'errors' ), array( 'user_id' => 1 ) ),
 			array( 'create_execution_prompt', array( 'plan_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.80 — the schedule family. The create writes into the bound
+			// ScheduleStoreInterface, the listing reads it back, and the eight
+			// id-taking tools are probed with an impossible id to prove the refusal
+			// path. The planner runs with dry_run so the suite leaves one schedule
+			// behind, not one per item.
+			array( 'create_pro_schedule', array( 'hook' => 'probe_schedule_hook', 'name' => 'Probe schedule', 'schedule' => 'daily' ), 'success', array( 'schedule_id', 'schedule', 'next_run' ), array( 'user_id' => 1 ) ),
+			array( 'list_pro_schedules', array(), 'success', array( 'schedules', 'total' ), array( 'user_id' => 1 ) ),
+			array( 'update_pro_schedule', array( 'schedule_id' => 'probe-no-such-schedule', 'name' => 'x' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'delete_pro_schedule', array( 'schedule_id' => 'probe-no-such-schedule' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'dry_run_pro_schedule', array( 'schedule_id' => 'probe-no-such-schedule' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_schedule_run_history', array( 'schedule_id' => 'probe-no-such-schedule' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_schedule_latest_result', array( 'schedule_id' => 'probe-no-such-schedule' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'render_schedule_result', array( 'schedule_id' => 'probe-no-such-schedule' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'configure_schedule_widget_defaults', array( 'schedule_id' => 'probe-no-such-schedule', 'result_capture' => 'full' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'plan_schedules_from_workflow', array( 'workflow_text' => "## Ops\n- Probe the planner\n", 'dry_run' => true ), 'success', array( 'plan', 'summary' ), array( 'user_id' => 1 ) ),
 		);
 	}
 

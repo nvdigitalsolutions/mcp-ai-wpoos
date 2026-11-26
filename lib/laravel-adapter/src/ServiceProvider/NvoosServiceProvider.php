@@ -29,6 +29,7 @@ use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Infrastructure\Cloudways\CloudwaysClient;
 use Nvoos\Core\Infrastructure\Okf\FilesystemBundleLocator;
 use Nvoos\Core\Infrastructure\PaperStore\JsonPaperStore;
+use Nvoos\Core\Infrastructure\Schedule\JsonScheduleStore;
 use Nvoos\Core\Infrastructure\Session\JsonAutonomousSessionStore;
 use Nvoos\Core\Infrastructure\Session\JsonExecutionHistoryStore;
 use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
@@ -82,6 +83,7 @@ use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
 use Nvoos\Core\Domain\Contract\ProfessionWriteInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
 use Nvoos\Core\Domain\Contract\RateLimiterInterface;
+use Nvoos\Core\Domain\Contract\ScheduleStoreInterface;
 use Nvoos\Core\Domain\Contract\SchemaStoreInterface;
 use Nvoos\Core\Domain\Service\Harness\OutputGuardrail;
 use Nvoos\Core\Domain\Service\Harness\RetrievalHarness;
@@ -518,6 +520,21 @@ class NvoosServiceProvider extends ServiceProvider {
 			}
 
 			return new JsonExecutionHistoryStore( $root );
+		} );
+
+		// Pro Schedule definitions, run history and result envelopes (Proposal 164
+		// section 164.80). One JSON file per schedule id holds all three arrays; the
+		// binding therefore only decides where the root lives. A host runner that
+		// records runs can implement ScheduleStoreInterface instead and keep this
+		// off the filesystem without touching a tool.
+		$this->app->singleton( ScheduleStoreInterface::class, function ( $app ) {
+			$root = (string) ( $app['config']->get( 'oos.schedules_root' ) ?? '' );
+
+			if ( '' === trim( $root ) ) {
+				$root = $app->storagePath( 'schedules' );
+			}
+
+			return new JsonScheduleStore( $root );
 		} );
 
 		// OKF bundles — one directory per bundle under a configured base (Proposal 164

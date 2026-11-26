@@ -1019,6 +1019,18 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Pro Schedules Root
+	|--------------------------------------------------------------------------
+	|
+	| The scheduler tools keep definitions, run history and result envelopes
+	| in one JSON file per schedule id (Proposal 164 section 164.80). Null
+	| means `storage_path('schedules')`.
+	|
+	*/
+	'schedules_root' => env( 'NVOOS_SCHEDULES_ROOT' ),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Console Feature Map
 	|--------------------------------------------------------------------------
 	|
