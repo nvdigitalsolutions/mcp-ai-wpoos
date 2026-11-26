@@ -4591,6 +4591,90 @@ gets one when a session-capable `web_browser` has a reason to ask.
 | toolkit parity | **102 of 854**; `capture` **1 of 2** ported, 1 deferred, 0 remaining |
 | licence boundary / phpcs | intact / clean |
 
+## 164.54 `eca-management`'s remaining 35, measured before they are built
+
+**On the numbering:** §164.52 (the package migration) and §164.53 (page capture)
+both merged ahead of this one, and §164.55 — its own register half — follows it.
+The number is the next free one rather than a renumbering of anything. It is the coverage comparison `toolkit_cpt`
+taught us to write first (§164.49): dispositions and a build order, no register
+change, and the parity count untouched at 13 ported and 35 remaining.
+
+### What the ported 13 already gave us
+
+The first ECA batch was not a stub. `mcp_ai_eca` and `mcp_ai_student` are content
+types on `ContentStoreInterface`, and the rows carry the whole activity shape:
+
+| kind | keys already written and read |
+|---|---|
+| identity | `_eca_code`, `_eca_status`, `_eca_data` |
+| time | `_eca_day`, `_eca_start_time`, `_eca_end_time`, `_eca_sessions` |
+| place | `_eca_venue` |
+| people | `_eca_teachers`, `_eca_max_students`, `_eca_current_enrollment`, `_eca_enrollments` |
+| money | `_eca_cost`, `_eca_cost_period`, `_eca_currency`, `_eca_is_paid` |
+| grouping | `_eca_term`, `_eca_booking_type` |
+| attendance | `_eca_attendance_log` on the ECA row (`mark_eca_attendance`) |
+| student | `_student_email` and the student row's own fields |
+
+That table is the comparison's whole result: **fourteen of the thirty-five need no
+new model**, because the data they read and write is already stored by the tools
+that were ported. The remaining twenty-one need something that does not exist yet,
+and each names what.
+
+### Portable now — fourteen, and what each touches
+
+| slug | reads or writes |
+|---|---|
+| `delete_eca` | `ContentStoreInterface::delete`; WordPress' soft "cancel" is a `_eca_status` write, which is the separate half of the same tool |
+| `delete_student` | the same store; WordPress itself warns it does not unenroll, so neither does this |
+| `get_eca_attendance_report` | `_eca_attendance_log`, filtered by date range and student |
+| `get_eca_timetable` | `_eca_day`, `_eca_start_time`, `_eca_end_time`, `_eca_sessions`, `_eca_venue`, `_eca_teachers` |
+| `get_student_participation_summary` | enrollments across ECAs plus each ECA's attendance log |
+| `generate_eca_participation_report` | the same two sources, shaped as a report |
+| `generate_eca_analytics` | participation, capacity and attendance aggregates over the same rows |
+| `check_eca_conflicts` | overlap arithmetic over `_eca_sessions` / day / times / `_eca_venue` — no new storage |
+| `set_eca_schedule` | writes `_eca_sessions` (the multi-session shape already exists) |
+| `manage_eca_term` | terms are a small enumerated list in WordPress (an option, `wp_mcp_ai_eca_terms`); here they belong in `SettingsStoreInterface`, and the ECA link is the existing `_eca_term` meta |
+| `export_eca_data` | CSV over ECAs, students, enrollments, attendance and the `_eca_cost`/`_eca_is_paid` fields; the writer is `fputcsv` and the file lands in the registry |
+| `import_ecas_csv` | the same in reverse: a `file_id`, `fgetcsv`, create-or-update by `_eca_code` |
+| `send_eca_notification` | `EmailServiceInterface`, which is bound; recipients are `_student_email` |
+| `send_eca_parent_report` | the participation report plus the same sender |
+
+Two divergences are named rather than discovered later. First, **there is no
+separate guardian record** — WordPress' "parents" are extra addresses on a student
+this runtime does not model, so both sending tools address the student email and
+say so in their description. Second, **`export_eca_data`'s financial block is a
+derivation**, not a payments table: cost, currency and paid flags exist; a
+transaction ledger does not.
+
+### Declined — one
+
+`research_eca` is a provider prompt preset: it calls the model client with a
+composed research prompt. The runtime already serves `deep_research` and
+`web_search`, and the WordPress tool's own guidance points at them. A third name
+for "research this topic" is the `text_to_image_prompt_optimizer` case — declined
+because no prerequisite would make the duplicate worth a slot.
+
+### Deferred — twenty, in three groups
+
+| group | slugs | prerequisite |
+|---|---|---|
+| Google Classroom | `create_classroom_course`, `update_classroom_course`, `list_classroom_courses`, `list_classroom_guardians`, `list_classroom_submissions`, `create_classroom_coursework`, `post_classroom_announcement`, `manage_classroom_push_watch`, `classroom_course_analytics`, `link_classroom_course_to_eca`, `sync_classroom_courses_to_ecas`, `sync_classroom_roster_to_students` (12) | A Classroom API client with OAuth and a course↔ECA link store. `link_classroom_course_to_eca` is the keystone; every other Classroom slug assumes that link exists. |
+| iSAMS / SOCS | `isams_query`, `sync_students_from_isams`, `sync_ecas_from_isams`, `sync_eca_enrollments_from_isams`, `sync_ecas_to_isams`, `sync_ecas_from_socs` (6) | A school-MIS client with per-institution credentials. SOCS is a different vendor from iSAMS, so it is a second client, not a flag on the first. `_eca_isams_sync_id` exists as a field, which makes the sync writable but not the transport. |
+| Notification rules | `configure_eca_notifications`, `create_eca_workflow_rule` (2) | An event→action rule store with ECA events. The adapter has a `nvoos_triggers` table but no tool surface and no emitters for enrollment/attendance changes, so a rule could be stored and never fired — which reads as a silent no-op rather than as a missing capability. |
+
+### The order the comparison implies
+
+1. **The two deletes** — smallest, and they finish the CRUD the first batch left open.
+2. **The reads over existing data** — timetable, attendance report, participation summary.
+3. **The aggregates** — analytics, participation report, conflicts, export.
+4. **The writers that name a store** — schedule, term (settings), import.
+5. **The two senders**, which depend on the report shapes from 2–3.
+6. The three deferred groups wait for their prerequisites, and the register records
+   them there rather than counting them as unexamined work.
+
+Steps 1–5 are one slice each if the earlier rhythm holds; step 4 is the one that
+needs a decision (§`SettingsStoreInterface` for terms) before code.
+
 ## 164.55 The ECA dispositions reach the register
 
 **On the numbering:** §164.54 (the comparison) is open in its own change, so this
