@@ -46,7 +46,7 @@ import { countAnimations, diffAnimations, measureAnimations, planAnimationRebuil
 import { auditClassCoverage } from '../lib/class-audit.ts';
 import { isMaterializedContent, resolveContentDir, resolveMediaDir } from '../lib/content-source.ts';
 import { computeLock, describeLock, isLocked, lockDrift, readLock, removeLock, writeLock } from '../lib/lock.ts';
-import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
+import { DEPLOY_RUNTIMES, emitDeployConfig, resolveRuntime, resolveSiteUrl } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { openGate } from '../lib/gate.ts';
 import { applyDesignPins, findDroppedPins } from '../lib/pins.ts';
@@ -1430,13 +1430,16 @@ async function runDeploy( profileRef, options ) {
 
 	// 2. Emit the deploy pipeline (adapter-generic — rebuild wrapper, deploy
 	//    workflow, and the fail-closed dispatch verifier).
+	//    The runtime is derived from the profile: a site that names a
+	//    managed-only feature must never be emitted as a static tree.
+	const runtime = resolveRuntime( profile, options.runtime );
 	const emitted = await emitDeployConfig( options.target, {
 		mode,
 		siteUrl: resolveSiteUrl( profile, options.siteUrl ),
 		cloudflareProject: options.cloudflareProject,
 		mirrorRepo: options.mirrorRepo,
 		siteBranch: options.siteBranch,
-		runtime: options.runtime,
+		runtime,
 	} );
 	for ( const file of emitted.files ) {
 		console.log( `  + ${ file }` );
@@ -1717,9 +1720,12 @@ async function runDeployConfig( profileRef, options ) {
 	assertMirrorOptions( options );
 	assertRuntime( options );
 	let siteUrl = options.siteUrl;
+	let runtime = options.runtime;
 	if ( profileRef ) {
 		const profile = await loadProfile( profileRef );
 		siteUrl = resolveSiteUrl( profile, options.siteUrl );
+		// Refuse a static tree for a profile that needs the managed runtime.
+		runtime = resolveRuntime( profile, options.runtime );
 	}
 	try {
 		const emitted = await emitDeployConfig( options.target, {
@@ -1728,7 +1734,7 @@ async function runDeployConfig( profileRef, options ) {
 			cloudflareProject: options.cloudflareProject,
 			mirrorRepo: options.mirrorRepo,
 			siteBranch: options.siteBranch,
-			runtime: options.runtime,
+			runtime,
 		} );
 		console.log( `\u2713 Emitted the deploy pipeline into ${ options.target }:` );
 		for ( const file of emitted.files ) {

@@ -868,18 +868,35 @@ const description =
 	'Every extra-curricular activity at ${ schoolName } — filter by day, school, year group, type, time and cost.';
 
 const canonical = new URL( ${ JSON.stringify( basePath + '/' ) }, Astro.site ?? Astro.url ).toString();
-const itemList = {
-	'@context': 'https://schema.org',
-	'@type': 'ItemList',
-	name: 'Activities',
-	numberOfItems: records.length,
-	itemListElement: records.slice( 0, 50 ).map( ( record, index ) => ( {
-		'@type': 'ListItem',
-		position: index + 1,
-		name: record.title,
-		url: new URL( record.url, Astro.site ?? Astro.url ).toString(),
-	} ) ),
-};
+	const listed = records.slice( 0, 50 );
+	const itemList = {
+		'@context': 'https://schema.org',
+		'@type': 'ItemList',
+		name: 'Activities',
+		numberOfItems: listed.length,
+		itemListElement: listed.map( ( record, index ) => ( {
+			'@type': 'ListItem',
+			position: index + 1,
+			item: {
+				'@type': 'Course',
+				name: record.title,
+				url: new URL( record.url, Astro.site ?? Astro.url ).toString(),
+				provider: {
+					'@type': 'Organization',
+					name: record.provider ?? '${ schoolName }',
+				},
+				...( record.pricing.paid && record.pricing.amount
+					? {
+							offers: {
+								'@type': 'Offer',
+								price: record.pricing.amount,
+								priceCurrency: record.pricing.currency ?? 'LKR',
+							},
+					  }
+					: {} ),
+			},
+		} ) ),
+	};
 ---
 
 <Base title={ 'Activities | ${ schoolName }' } description={ description } canonical={ canonical }>
@@ -919,6 +936,10 @@ const canonical = new URL( record.url, origin ).toString();
 const url = bookingUrl( record, ecaConfig );
 const cta = bookingCtaLabel( record.booking.type, record.booking.requiresAudition, ecaConfig.booking?.label );
 const days = record.schedule.days.length > 0 ? record.schedule.days.join( ' & ' ) : null;
+// A published timetable is enough for a CourseInstance: a start time with no
+// explicit day list must not silently drop the instance (Google needs
+// hasCourseInstance on the Course list carousel).
+const hasInstance = record.schedule.days.length > 0 || Boolean( record.schedule.start );
 const time = record.schedule.start
 	? formatClock( record.schedule.start ) + ( record.schedule.end ? ' – ' + formatClock( record.schedule.end ) : '' )
 	: null;
@@ -940,9 +961,9 @@ const jsonLd = {
 	url: canonical,
 	provider: { '@type': 'Organization', name: record.provider ?? '${ schoolName }' },
 	...( record.pricing.paid && record.pricing.amount
-		? { offers: { '@type': 'Offer', price: record.pricing.amount, priceCurrency: record.pricing.currency ?? 'LKR' } }
+		? { offers: { '@type': 'Offer', price: record.pricing.amount, priceCurrency: record.pricing.currency ?? 'LKR', url: canonical } }
 		: {} ),
-	...( days
+	...( hasInstance
 		? {
 				hasCourseInstance: {
 					'@type': 'CourseInstance',
@@ -952,7 +973,9 @@ const jsonLd = {
 						? {
 								courseSchedule: {
 									'@type': 'Schedule',
-									byDay: record.schedule.days.map( ( day ) => 'https://schema.org/' + day ),
+									...( record.schedule.days.length > 0
+										? { byDay: record.schedule.days.map( ( day ) => 'https://schema.org/' + day ) }
+										: {} ),
 									startTime: record.schedule.start,
 									endTime: record.schedule.end ?? record.schedule.start,
 								},

@@ -92,6 +92,39 @@ under `dist/media` — see the astro-forge `reference/performance-budget.md`.
 - Velocity settings: Framework `Astro-ssr` · Output Directory `.` ·
   Entry **`server.js`** (PM2 must start the repo-root entry) · Node 24.x.
 
+## The runtime is derived from the profile (shipped 2026-11-26)
+
+`lib/deploy-config.ts` exports `requiredRuntime( profile )` and
+`resolveRuntime( profile, requested )`, and both the `deploy` and
+`deploy-config` commands call the latter. A profile that names a managed-only
+feature can no longer be emitted as a static tree:
+
+| Profile says | Runtime |
+|---|---|
+| `deploy.runtime: "managed"` | managed |
+| `forms.delivery: "direct"` | managed (the provider key stays server-side) |
+| `forms.fallback: "direct"` | managed (re-delivery) |
+| everything else — incl. `forms.delivery: "bridge"` | **static** |
+
+`bridge` is static-safe on purpose: the browser POSTs to
+`/wp-json/nvoos-forge/v1/forms/submit` and WordPress owns the mailer. Only
+`direct` sends from the runtime. Likewise `eca.booking.mode: "external"` is a
+hand-off and needs no server.
+
+Why the gate exists: an ECA site shipped a **static** artifact (no `server.js`,
+no deps, the no-op build) into an app configured **Astro-SSR** with Entry
+`server.js`. The deploy reached PM2 and failed with
+`Script not found: …/server.js`, and the previous artifact kept serving. The
+mirror was fine; the tier was never checked on the app side.
+
+Symptom-to-cause table when a Velocity deploy fails at "Starting application":
+
+| Log | Cause | Fix |
+|---|---|---|
+| `Script not found: …/server.js` + `audited 1 package` | static artifact, managed app | either `Astro-csr` + blank Entry, or publish a managed tree |
+| missing dependency manifest | managed tree without `dependencies`/lockfile | `sync-deploy-tree.mjs`; `mirror-push` refuses it |
+| `Port detected from .env: N` vs the DNS record's port | mismatch | align the record |
+
 ## The step everyone forgets
 
 **A mirror push does not always redeploy the app — check `auto_deploy` first.**

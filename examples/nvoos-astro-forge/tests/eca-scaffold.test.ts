@@ -28,7 +28,7 @@ import {
 } from '../lib/eca-scaffold.ts';
 import type { SiteProfile } from '../lib/types.ts';
 import { resolveContactBlock } from '../lib/scaffold.ts';
-import { ecaRouteFiles } from '../lib/eca-ui.ts';
+import { ecaRouteFiles, type ForgeFile } from '../lib/eca-ui.ts';
 
 const profile = ( over: Partial< SiteProfile > = {} ): SiteProfile => ( {
 	url: 'https://eca.directory',
@@ -412,5 +412,46 @@ describe( 'ecaDataPages — which pages become data views', () => {
 		const pages = ecaDataPages( profile() );
 		expect( pages.map( ( page ) => page.slug ) ).toContain( 'junior-school-list' );
 		expect( pages.map( ( page ) => page.slug ) ).not.toContain( 'select-list' );
+	} );
+} );
+
+describe( 'ECA structured data', () => {
+	// The listing must be eligible for Google's Course carousel: an ItemList
+	// whose entries are Course objects carrying name + provider, and a detail
+	// Course whose CourseInstance survives a timetable with no explicit days.
+	const files = (): ForgeFile[] =>
+		ecaRouteFiles( {
+			url: 'https://school.test',
+			collections: [],
+			eca: { basePath: '/activities', schoolName: 'Test School' },
+		} );
+
+	it( 'emits an ItemList of Course items on the catalogue page', () => {
+		const index = files().find( ( file ) => file.content.includes( 'const listed = records.slice( 0, 50 );' ) );
+		expect( index, 'the catalogue page should build a capped listing' ).toBeTruthy();
+
+		expect( index?.content ).toContain( 'numberOfItems: listed.length' );
+		expect( index?.content ).toContain( "item: {\n\t\t\t\t'@type': 'Course'" );
+		expect( index?.content ).toContain( "provider: {\n\t\t\t\t\t'@type': 'Organization'" );
+		// The old shape counted every record but only listed 50 of them.
+		expect( index?.content ).not.toContain( 'numberOfItems: records.length' );
+	} );
+
+	it( 'keeps the CourseInstance when only a start time is published', () => {
+		const detail = files().find( ( file ) => file.content.includes( 'const hasInstance =' ) );
+		expect( detail, 'the activity page should derive hasInstance' ).toBeTruthy();
+
+		expect( detail?.content ).toContain(
+			"const hasInstance = record.schedule.days.length > 0 || Boolean( record.schedule.start );"
+		);
+		expect( detail?.content ).toContain( '...( hasInstance' );
+		expect( detail?.content ).not.toContain( '...( days' );
+		// byDay is omitted rather than emitted empty.
+		expect( detail?.content ).toContain( 'record.schedule.days.length > 0\n' );
+	} );
+
+	it( 'gives the Offer a URL for eligibility', () => {
+		const detail = files().find( ( file ) => file.content.includes( 'const hasInstance =' ) );
+		expect( detail?.content ).toContain( "priceCurrency: record.pricing.currency ?? 'LKR', url: canonical" );
 	} );
 } );
