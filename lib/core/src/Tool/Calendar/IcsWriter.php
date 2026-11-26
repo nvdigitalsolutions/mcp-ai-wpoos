@@ -10,7 +10,13 @@
  *
  * - `VCALENDAR` with `VERSION:2.0`, `CALSCALE:GREGORIAN` and `METHOD:PUBLISH`;
  * - `VEVENT` with `UID`, `DTSTAMP`, `DTSTART`, `DTEND`, `SUMMARY`, optional
- *   `DESCRIPTION`, `LOCATION` and `ORGANIZER`, and an optional `VALARM`.
+ *   `DESCRIPTION`, `LOCATION`, `ORGANIZER`, `ATTENDEE` and an optional `VALARM`.
+ *
+ * **Invitations.** A booking notification is not a published calendar: the
+ * caller sets `method: 'REQUEST'` to ask the recipient to accept, and supplies
+ * an `attendee` (with `RSVP=TRUE`) plus an organizer. `sequence` is emitted only
+ * when given, because RFC 5545 treats an absent `SEQUENCE` as `0` and adding it
+ * unconditionally would change every export the existing caller builds.
  *
  * **Times are UTC.** Timed events are emitted as `YYYYMMDDTHHMMSSZ` and all-day
  * events as `VALUE=DATE` with an exclusive `DTEND`, so no `VTIMEZONE` component
@@ -43,6 +49,14 @@ final class IcsWriter
 {
     public const PRODID = '-//NV Digital Solutions//Open Operator System//EN';
 
+    /**
+     * The methods this writer can emit.
+     *
+     * `CANCEL` is deliberately absent: cancelling also requires
+     * `STATUS:CANCELLED`, and a half-implemented method is worse than a refusal.
+     */
+    public const METHODS = array('PUBLISH', 'REQUEST');
+
     /** RFC 5545 section 3.1: content lines SHOULD NOT be longer than 75 octets. */
     private const FOLD_OCTETS = 75;
 
@@ -59,13 +73,16 @@ final class IcsWriter
      *     start: string,
      *     end?: string,
      *     all_day?: bool,
-     *     default_minutes?: int
+     *     default_minutes?: int,
+     *     attendee?: array{name?: string, email?: string}
      * }> $entries Events to write.
      * @param array{
      *     calName?: string,
      *     timezone?: string,
      *     reminders?: bool,
-     *     organizer?: array{name?: string, email?: string}
+     *     organizer?: array{name?: string, email?: string},
+     *     method?: string,
+     *     sequence?: int
      * } $options Calendar options.
      * @param DateTimeImmutable|null $now Stamp for DTSTAMP; defaults to now.
      */
@@ -75,12 +92,24 @@ final class IcsWriter
             ->setTimezone(new DateTimeZone('UTC'))
             ->format('Ymd\THis\Z');
 
+        $method = isset($options['method']) && is_string($options['method'])
+            ? strtoupper(trim($options['method']))
+            : 'PUBLISH';
+
+        if (! in_array($method, self::METHODS, true)) {
+            $method = 'PUBLISH';
+        }
+
+        $sequence = isset($options['sequence']) && is_numeric($options['sequence'])
+            ? max(0, (int) $options['sequence'])
+            : null;
+
         $lines = array(
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
             'PRODID:' . self::PRODID,
             'CALSCALE:GREGORIAN',
-            'METHOD:PUBLISH',
+            'METHOD:' . $method,
         );
 
         if (isset($options['calName']) && '' !== trim((string) $options['calName'])) {
@@ -95,7 +124,7 @@ final class IcsWriter
         $organizer  = is_array($options['organizer'] ?? null) ? $options['organizer'] : array();
 
         foreach ($entries as $entry) {
-            $event = self::event($entry, $stamp, $reminders, $organizer);
+            $event = self::event($entry, $stamp, $reminders, $organizer, $sequence);
 
             if (array() === $event) {
                 continue;
@@ -124,10 +153,11 @@ final class IcsWriter
      * @param string                $stamp     DTSTAMP value.
      * @param bool                  $reminders Whether to add a 15-minute alarm.
      * @param array<string, mixed>  $organizer Organizer name and email.
+     * @param int|null              $sequence  Event revision, or null to omit.
      *
      * @return list<string>
      */
-    private static function event(array $entry, string $stamp, bool $reminders, array $organizer): array
+    private static function event(array $entry, string $stamp, bool $reminders, array $organizer, ?int $sequence = null): array
     {
         $title       = isset($entry['title']) ? (string) $entry['title'] : '';
         $uid         = isset($entry['uid']) ? (string) $entry['uid'] : '';
@@ -142,6 +172,10 @@ final class IcsWriter
         }
 
         $lines = array('BEGIN:VEVENT', 'UID:' . self::text($uid), 'DTSTAMP:' . $stamp);
+
+        if (null !== $sequence) {
+            $lines[] = 'SEQUENCE:' . $sequence;
+        }
 
         if ($allDay) {
             $start = CalendarEventDefinition::date($startRaw);
@@ -190,6 +224,16 @@ final class IcsWriter
         if ('' !== $email) {
             $name     = isset($organizer['name']) ? (string) $organizer['name'] : '';
             $lines[]  = 'ORGANIZER' . ( '' !== trim($name) ? ';CN=' . self::param($name) : '' ) . ':mailto:' . $email;
+        }
+
+        $attendee = is_array($entry['attendee'] ?? null) ? $entry['attendee'] : array();
+        $attendeeEmail = isset($attendee['email']) ? trim((string) $attendee['email']) : '';
+
+        if ('' !== $attendeeEmail) {
+            $attendeeName = isset($attendee['name']) ? trim((string) $attendee['name']) : '';
+            $lines[]      = 'ATTENDEE'
+                . ( '' !== $attendeeName ? ';CN=' . self::param($attendeeName) : '' )
+                . ';RSVP=TRUE:mailto:' . $attendeeEmail;
         }
 
         if ($reminders) {
