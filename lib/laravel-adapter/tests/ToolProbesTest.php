@@ -202,6 +202,11 @@ Probe Club,club
 			// fabricating a matrix.
 			array( 'fnb_read_table', array( 'table_id' => '3.0' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'fnb_search_table', array( 'table_id' => '3.0' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.72 — the engine. The metric call reaches a table and refuses;
+			// the comparison degrades to its two split rows, as WordPress does.
+			array( 'fnb_calculate_metric', array( 'metric_id' => 'M-01', 'month' => '2026-09' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'fnb_compare_periods', array( 'month' => '2026-09', 'prev_month' => '2026-08' ), 'success', array( 'month', 'prev_month', 'metrics' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
