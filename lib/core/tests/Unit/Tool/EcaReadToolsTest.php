@@ -24,12 +24,18 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tests\Unit\Tool;
 
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
+use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
+use Nvoos\Core\Domain\Entity\StoredFile;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Entity\ContentCollection;
 use Nvoos\Core\Domain\Entity\ContentItem;
 use Nvoos\Core\Domain\Entity\ContentQuery;
 use Nvoos\Core\Domain\Entity\CreateContentCommand;
 use Nvoos\Core\Domain\Entity\UpdateContentCommand;
+use Nvoos\Core\Tool\Classroom\CheckEcaConflictsTool;
+use Nvoos\Core\Tool\Classroom\ExportEcaDataTool;
+use Nvoos\Core\Tool\Classroom\GenerateEcaAnalyticsTool;
+use Nvoos\Core\Tool\Classroom\GenerateEcaParticipationReportTool;
 use Nvoos\Core\Tool\Classroom\GetEcaAttendanceReportTool;
 use Nvoos\Core\Tool\Classroom\GetEcaTimetableTool;
 use Nvoos\Core\Tool\Classroom\GetStudentParticipationSummaryTool;
@@ -423,6 +429,264 @@ final class EcaReadToolsTest extends TestCase
         );
     }
 
+    // ─── Conflict check ────────────────────────────────────────────────────
+
+    public function test_a_student_check_finds_the_overlap_and_skips_the_excluded_activity(): void
+    {
+        $store = $this->store(array(
+            10 => $this->item(10, 'mcp_ai_eca', array(
+                '_eca_day' => 'Monday', '_eca_start_time' => '15:00', '_eca_end_time' => '16:00',
+                '_eca_venue' => 'Hall',
+                '_eca_student_enrollments' => array(30 => array('student_id' => 30)),
+            )),
+            11 => $this->item(11, 'mcp_ai_eca', array(
+                '_eca_day' => 'Monday', '_eca_start_time' => '15:30', '_eca_end_time' => '16:30',
+                '_eca_venue' => 'Gym',
+                '_eca_student_enrollments' => array(30 => array('student_id' => 30)),
+            )),
+        ));
+
+        $hit = $this->conflicts($store)->execute(
+            array('check_type' => 'student', 'student_id' => 30, 'day' => 'Monday', 'start_time' => '15:30', 'end_time' => '16:30'),
+            array('user_id' => 7)
+        );
+
+        $this->assertTrue($hit['data']['has_conflicts']);
+        $this->assertSame(array(10, 11), array_column($hit['data']['conflicts'], 'eca_id'));
+
+        $excluded = $this->conflicts($store)->execute(
+            array(
+                'check_type' => 'student', 'student_id' => 30, 'day' => 'Monday',
+                'start_time' => '15:30', 'end_time' => '16:30', 'exclude_eca_id' => 11,
+            ),
+            array('user_id' => 7)
+        );
+
+        $this->assertSame(array(10), array_column($excluded['data']['conflicts'], 'eca_id'));
+    }
+
+    public function test_a_teacher_check_matches_a_csv_list_and_a_touching_slot_does_not_collide(): void
+    {
+        $store = $this->store(array(
+            10 => $this->item(10, 'mcp_ai_eca', array(
+                '_eca_day' => 'Tuesday', '_eca_start_time' => '09:00', '_eca_end_time' => '10:00',
+                '_eca_teachers' => 'Ms Lee, Mr Smith',
+            )),
+        ));
+
+        $touching = $this->conflicts($store)->execute(
+            array('check_type' => 'teacher', 'teacher_name' => 'Mr Smith', 'day' => 'Tuesday', 'start_time' => '10:00', 'end_time' => '11:00'),
+            array('user_id' => 7)
+        );
+
+        $this->assertFalse($touching['data']['has_conflicts']);
+
+        $overlapping = $this->conflicts($store)->execute(
+            array('check_type' => 'teacher', 'teacher_name' => 'Mr Smith', 'day' => 'Tuesday', 'start_time' => '09:30', 'end_time' => '10:30'),
+            array('user_id' => 7)
+        );
+
+        $this->assertTrue($overlapping['data']['has_conflicts']);
+        $this->assertSame(10, $overlapping['data']['conflicts'][0]['eca_id']);
+    }
+
+    public function test_a_venue_check_is_exact_and_the_arguments_are_validated(): void
+    {
+        $store = $this->store(array(
+            10 => $this->item(10, 'mcp_ai_eca', array(
+                '_eca_day' => 'Monday', '_eca_start_time' => '09:00', '_eca_end_time' => '10:00', '_eca_venue' => 'Main Hall 2',
+            )),
+        ));
+
+        $near = $this->conflicts($store)->execute(
+            array('check_type' => 'venue', 'venue' => 'Main Hall', 'day' => 'Monday', 'start_time' => '09:00', 'end_time' => '10:00'),
+            array('user_id' => 7)
+        );
+
+        $this->assertFalse($near['data']['has_conflicts']);
+
+        foreach (
+            array(
+            array('check_type' => 'venue', 'venue' => 'Main Hall', 'day' => 'Funday', 'start_time' => '09:00', 'end_time' => '10:00'),
+            array('check_type' => 'venue', 'venue' => 'Main Hall', 'day' => 'Monday', 'start_time' => '25:00', 'end_time' => '26:00'),
+            array('check_type' => 'venue', 'venue' => 'Main Hall', 'day' => 'Monday', 'start_time' => '10:00', 'end_time' => '09:00'),
+            array('check_type' => 'venue', 'day' => 'Monday', 'start_time' => '09:00', 'end_time' => '10:00'),
+            array('check_type' => 'student', 'day' => 'Monday', 'start_time' => '09:00', 'end_time' => '10:00'),
+            ) as $bad
+        ) {
+            $this->assertSame(
+                'validation_failed',
+                $this->conflicts($store)->execute($bad, array('user_id' => 7))['error']['code']
+            );
+        }
+    }
+
+    // ─── Analytics ─────────────────────────────────────────────────────────
+
+    public function test_participation_and_capacity_are_counted_from_the_rosters(): void
+    {
+        $result = $this->analytics($this->store($this->programme()))->execute(
+            array('report_type' => 'participation'),
+            array('user_id' => 7)
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(2, $result['data']['summary']['total_ecas']);
+        $this->assertSame(3, $result['data']['summary']['total_enrolments']);
+        $this->assertSame(array('club' => 1, 'sport_squad' => 1), $result['data']['summary']['by_type']);
+        $this->assertSame(array(1, 2), $result['data']['chart_data']['datasets'][0]['data']);
+
+        $capacity = $this->analytics($this->store($this->programme()))->execute(
+            array('report_type' => 'capacity'),
+            array('user_id' => 7)
+        );
+
+        // club: 1 of 10; squad: 2 of 2 (full).
+        $this->assertSame(12, $capacity['data']['summary']['total_capacity']);
+        $this->assertSame(1, $capacity['data']['summary']['full_ecas']);
+        $this->assertSame(0, $capacity['data']['summary']['over_capacity']);
+        $this->assertSame(25.0, $capacity['data']['summary']['overall_fill_rate']);
+        $this->assertSame(9, $capacity['data']['summary']['spare_places']);
+    }
+
+    public function test_financial_is_a_roster_projection_and_says_so(): void
+    {
+        $result = $this->analytics($this->store($this->programme()))->execute(
+            array('report_type' => 'financial'),
+            array('user_id' => 7)
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(1, $result['data']['summary']['paid_ecas']);
+        $this->assertSame(1, $result['data']['summary']['free_ecas']);
+        $this->assertSame(array('GBP' => 5.0), $result['data']['summary']['projected_by_currency']);
+        $this->assertStringContainsString('not money received', $result['data']['summary']['note']);
+    }
+
+    public function test_engagement_rates_each_activity_and_counts_the_silent_ones(): void
+    {
+        $result = $this->analytics($this->store($this->programme()))->execute(
+            array('report_type' => 'engagement'),
+            array('user_id' => 7)
+        );
+
+        $this->assertSame(2, $result['data']['summary']['sessions_logged']);
+        $this->assertSame(1, $result['data']['summary']['ecas_without_sessions']);
+
+        // 3 attended of 4 records across the club's two sessions.
+        $this->assertSame(75.0, $result['data']['summary']['average_attendance_rate']);
+    }
+
+    public function test_an_unknown_report_type_or_a_bad_date_is_refused(): void
+    {
+        $store = $this->store($this->programme());
+
+        $this->assertSame(
+            'validation_failed',
+            $this->analytics($store)->execute(array('report_type' => 'forecast'), array('user_id' => 7))['error']['code']
+        );
+
+        $this->assertSame(
+            'validation_failed',
+            $this->analytics($store)->execute(
+                array('report_type' => 'participation', 'date_range' => array('start_date' => '2026-11')),
+                array('user_id' => 7)
+            )['error']['code']
+        );
+    }
+
+    // ─── Participation report ──────────────────────────────────────────────
+
+    public function test_the_activity_report_lists_each_student_and_renders_markdown(): void
+    {
+        $store = $this->store($this->programme() + array(
+            30 => $this->item(30, 'mcp_ai_student'),
+            31 => $this->item(31, 'mcp_ai_student'),
+        ));
+
+        $result = $this->reportTool($store)->execute(
+            array('scope' => 'eca', 'scope_id' => '10', 'format' => 'markdown'),
+            array('user_id' => 7)
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(1, $result['data']['summary']['rows']);
+        $this->assertSame(100.0, $result['data']['summary']['average_rate']);
+        $this->assertStringContainsString('| Student |', $result['data']['markdown']);
+        $this->assertStringContainsString('Student 30', $result['data']['markdown']);
+    }
+
+    public function test_the_student_report_is_filtered_by_term(): void
+    {
+        $store = $this->store(array(
+            30 => $this->item(30, 'mcp_ai_student', array(
+                '_student_eca_enrollments' => array(10 => array('eca_id' => 10), 11 => array('eca_id' => 11)),
+            )),
+            10 => $this->item(10, 'mcp_ai_eca', array('_eca_term' => 'Autumn')),
+            11 => $this->item(11, 'mcp_ai_eca', array('_eca_term' => 'Spring')),
+        ));
+
+        $result = $this->reportTool($store)->execute(
+            array('scope' => 'student', 'scope_id' => '30', 'term' => 'Spring'),
+            array('user_id' => 7)
+        );
+
+        $this->assertSame(1, $result['data']['summary']['rows']);
+        $this->assertSame('Student 30', substr($result['data']['title'], strlen('Participation: ')));
+    }
+
+    public function test_the_report_refuses_a_scope_without_an_id_or_an_unknown_activity(): void
+    {
+        $store = $this->store($this->programme());
+
+        $this->assertSame(
+            'validation_failed',
+            $this->reportTool($store)->execute(array('scope' => 'eca'), array('user_id' => 7))['error']['code']
+        );
+
+        $this->assertSame(
+            'not_found',
+            $this->reportTool($store)->execute(array('scope' => 'eca', 'scope_id' => '999'), array('user_id' => 7))['error']['code']
+        );
+    }
+
+    // ─── Export ────────────────────────────────────────────────────────────
+
+    public function test_an_export_is_stored_private_by_default_and_its_csv_is_what_was_promised(): void
+    {
+        $files  = $this->fileStore();
+        $result = $this->export($this->store($this->programme()), $files)->execute(
+            array('export_type' => 'ecas'),
+            array('user_id' => 7)
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(2, $result['data']['rows']);
+        $this->assertSame('private', $result['data']['file']['visibility']);
+        $this->assertStringEndsWith('.csv', $result['data']['file']['filename']);
+        $this->assertSame(array('eca_id', 'eca_name', 'eca_type'), array_slice($result['data']['columns'], 0, 3));
+
+        // The fake read the temp file before the tool unlinked it.
+        $this->assertCount(3, $files->lines);
+        $this->assertStringContainsString('Chess Club 10', $files->lines[1]);
+    }
+
+    public function test_the_financial_export_repeats_the_derivation_caveat_and_a_missing_store_is_named(): void
+    {
+        $result = $this->export($this->store($this->programme()), $this->fileStore())->execute(
+            array('export_type' => 'financial'),
+            array('user_id' => 7)
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertStringContainsString('not money received', $result['data']['note']);
+
+        $this->assertSame(
+            'no_file_store',
+            $this->export($this->store())->execute(array('export_type' => 'ecas'), array('user_id' => 7))['error']['code']
+        );
+    }
+
     // ─── Doubles ──────────────────────────────────────────────────────────
 
     private function timetable(ContentStoreInterface $store): GetEcaTimetableTool
@@ -438,6 +702,105 @@ final class EcaReadToolsTest extends TestCase
     private function participation(ContentStoreInterface $store): GetStudentParticipationSummaryTool
     {
         return new GetStudentParticipationSummaryTool($this->errors, $store);
+    }
+
+    private function analytics(ContentStoreInterface $store): GenerateEcaAnalyticsTool
+    {
+        return new GenerateEcaAnalyticsTool($this->errors, $store);
+    }
+
+    private function reportTool(ContentStoreInterface $store): GenerateEcaParticipationReportTool
+    {
+        return new GenerateEcaParticipationReportTool($this->errors, $store);
+    }
+
+    private function export(
+        ContentStoreInterface $store,
+        ?FileVisibilityStoreInterface $files = null,
+    ): ExportEcaDataTool {
+        return new ExportEcaDataTool($this->errors, $store, $files);
+    }
+
+    /**
+     * Two activities: a paid club of one with two logged sessions, and a free
+     * squad at capacity with no sessions yet.
+     *
+     * @return array<int, ContentItem>
+     */
+    private function programme(): array
+    {
+        return array(
+            10 => $this->item(10, 'mcp_ai_eca', array(
+                '_eca_type' => 'club',
+                '_eca_status' => 'active',
+                '_eca_max_students' => 10,
+                '_eca_is_paid' => 'yes',
+                '_eca_cost' => 5,
+                '_eca_currency' => 'GBP',
+                '_eca_student_enrollments' => array(30 => array('student_id' => 30)),
+                '_eca_attendance_log' => array(
+                    '2026-11-10' => $this->session('2026-11-10', array(array(30, 'present'), array(31, 'absent'))),
+                    '2026-11-17' => $this->session('2026-11-17', array(array(30, 'late'), array(31, 'present'))),
+                ),
+            )),
+            11 => $this->item(11, 'mcp_ai_eca', array(
+                '_eca_type' => 'sport_squad',
+                '_eca_status' => 'full',
+                '_eca_max_students' => 2,
+                '_eca_is_paid' => 'no',
+                '_eca_student_enrollments' => array(
+                    30 => array('student_id' => 30),
+                    31 => array('student_id' => 31),
+                ),
+            )),
+        );
+    }
+
+    /**
+     * Records what the tool wrote before it unlinks its temporary file.
+     */
+    private function fileStore(): FileVisibilityStoreInterface
+    {
+        return new class implements FileVisibilityStoreInterface {
+            /** @var list<string> */
+            public array $lines = array();
+
+            public function storeWithVisibility(
+                string $localPath,
+                string $filename,
+                string $mimeType,
+                int $userId,
+                string $visibility,
+                ?string $tenantId = null,
+            ): StoredFile {
+                $read = \file($localPath, \FILE_IGNORE_NEW_LINES);
+
+                $this->lines = false === $read ? array() : $read;
+
+                return new StoredFile(
+                    id: 77,
+                    filename: $filename,
+                    mimeType: $mimeType,
+                    sizeBytes: (int) \filesize($localPath),
+                    localPath: $localPath,
+                    ownerId: $userId,
+                    createdAt: new \DateTimeImmutable(),
+                    publicUrl: 'private' === $visibility ? null : 'https://example.test/files/' . $filename,
+                    visibility: $visibility,
+                    slug: 'export-slug',
+                );
+            }
+
+            public function supportsVisibility(string $visibility): bool
+            {
+                return true;
+            }
+        };
+    }
+
+    private function conflicts(ContentStoreInterface $store): CheckEcaConflictsTool
+    {
+        return new CheckEcaConflictsTool($this->errors, $store);
     }
 
     /**

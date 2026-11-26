@@ -57,8 +57,6 @@ class GetEcaTimetableTool extends AbstractTool
 {
     private const VIEW_TYPES = array('student', 'teacher', 'venue', 'year_group');
 
-    private const DAYS = array('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday');
-
     /** The same page ceiling `list_ecas` uses. */
     private const SCAN_LIMIT = 200;
 
@@ -168,7 +166,7 @@ class GetEcaTimetableTool extends AbstractTool
 
         $timetable = array();
 
-        foreach (self::DAYS as $day) {
+        foreach (Schedule::DAYS as $day) {
             $timetable[ $day ] = array();
         }
 
@@ -206,7 +204,7 @@ class GetEcaTimetableTool extends AbstractTool
         // HH:MM compares lexicographically, so a padded time sorts without being
         // parsed against today's date; a malformed value sorts to one end rather
         // than throwing mid-report.
-        foreach (self::DAYS as $day) {
+        foreach (Schedule::DAYS as $day) {
             \usort(
                 $timetable[ $day ],
                 static fn (array $a, array $b): int => \strcmp($a['start_time'], $b['start_time'])
@@ -246,76 +244,20 @@ class GetEcaTimetableTool extends AbstractTool
     private function matchesView(ContentItem $eca, string $view_type, string $view_id): bool
     {
         switch ($view_type) {
-            case 'student':
-                $id = (int) \preg_replace('/\D+/', '', $view_id);
-
-                if ($id <= 0) {
-                    return false;
-                }
-
-                if (\array_key_exists($id, EcaRow::enrollments($eca))) {
-                    return true;
-                }
-
-                return \array_key_exists($id, Enrollments::map($eca->meta['_eca_enrollments'] ?? array()));
+                        case 'student':
+                            return EcaFilter::enrolled($eca, (int) \preg_replace('/\D+/', '', $view_id));
 
             case 'teacher':
-                return self::matchesList($eca->meta['_eca_teachers'] ?? array(), $view_id);
+                return EcaFilter::matchesList($eca->meta['_eca_teachers'] ?? array(), $view_id);
 
-            case 'venue':
-                return 0 === \strcasecmp(\trim((string) ($eca->meta['_eca_venue'] ?? '')), $view_id);
+                        case 'venue':
+                            return EcaFilter::venue($eca, $view_id);
 
             case 'year_group':
-                return self::matchesList($eca->meta['_eca_year_groups'] ?? array(), $view_id);
+                return EcaFilter::matchesList($eca->meta['_eca_year_groups'] ?? array(), $view_id);
         }
 
         return false;
-    }
-
-    /**
-     * A name against a field that may be a list, a CSV string or one value.
-     */
-    private static function matchesList(mixed $value, string $needle): bool
-    {
-        $needle = \trim($needle);
-
-        if ('' === $needle) {
-            return false;
-        }
-
-        foreach (self::flatten($value) as $candidate) {
-            if (0 === \strcasecmp($candidate, $needle) || false !== \stripos($candidate, $needle)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private static function flatten(mixed $value): array
-    {
-        if (\is_string($value)) {
-            $value = \str_contains($value, ',') ? \explode(',', $value) : array($value);
-        } elseif (\is_scalar($value)) {
-            $value = array((string) $value);
-        }
-
-        if (!\is_array($value)) {
-            return array();
-        }
-
-        $out = array();
-
-        foreach ($value as $item) {
-            if (\is_scalar($item)) {
-                $out[] = \trim((string) $item);
-            }
-        }
-
-        return $out;
     }
 
     /**
@@ -331,10 +273,10 @@ class GetEcaTimetableTool extends AbstractTool
 
             for ($i = 0; $i < $count; $i++) {
                 for ($j = $i + 1; $j < $count; $j++) {
-                    $a_start = self::minutes((string) $rows[ $i ]['start_time']);
-                    $a_end   = self::minutes((string) $rows[ $i ]['end_time']);
-                    $b_start = self::minutes((string) $rows[ $j ]['start_time']);
-                    $b_end   = self::minutes((string) $rows[ $j ]['end_time']);
+                    $a_start = Schedule::minutes((string) $rows[ $i ]['start_time']);
+                    $a_end   = Schedule::minutes((string) $rows[ $i ]['end_time']);
+                    $b_start = Schedule::minutes((string) $rows[ $j ]['start_time']);
+                    $b_end   = Schedule::minutes((string) $rows[ $j ]['end_time']);
 
                     if (null === $a_start || null === $a_end || null === $b_start || null === $b_end) {
                         continue;
@@ -368,24 +310,5 @@ class GetEcaTimetableTool extends AbstractTool
         }
 
         return $conflicts;
-    }
-
-    /**
-     * Minutes since midnight, or null when the value is not a time.
-     */
-    private static function minutes(string $time): ?int
-    {
-        if (!\preg_match('/^(\d{1,2}):(\d{2})/', \trim($time), $parts)) {
-            return null;
-        }
-
-        $hours   = (int) $parts[1];
-        $minutes = (int) $parts[2];
-
-        if ($hours > 23 || $minutes > 59) {
-            return null;
-        }
-
-        return $hours * 60 + $minutes;
     }
 }

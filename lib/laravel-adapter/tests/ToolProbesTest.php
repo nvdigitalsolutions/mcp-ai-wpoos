@@ -131,6 +131,10 @@ final class ToolProbesTest extends TestCase {
 			// §164.57 — the three ECA reads: two refusals and one empty success.
 			array( 'get_eca_attendance_report', array( 'eca_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'get_eca_timetable', array( 'view_type' => 'venue', 'view_id' => 'no-such-venue' ), 'success', array( 'total_sessions', 'timetable' ), array( 'user_id' => 1 ) ),
+			array( 'check_eca_conflicts', array( 'check_type' => 'venue', 'venue' => 'nowhere', 'day' => 'Monday', 'start_time' => '09:00', 'end_time' => '10:00' ), 'success', array( 'has_conflicts', 'conflicts' ), array( 'user_id' => 1 ) ),
+			array( 'generate_eca_analytics', array( 'report_type' => 'participation' ), 'success', array( 'summary', 'rows' ), array( 'user_id' => 1 ) ),
+			array( 'generate_eca_participation_report', array( 'scope' => 'school' ), 'success', array( 'columns', 'rows' ), array( 'user_id' => 1 ) ),
+			array( 'export_eca_data', array( 'export_type' => 'ecas' ), 'success', array( 'rows', 'file' ), array( 'user_id' => 1 ) ),
 			array( 'get_student_participation_summary', array( 'student_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
