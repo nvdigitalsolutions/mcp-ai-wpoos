@@ -6118,3 +6118,96 @@ resolved table for the WordPress five minutes through the optional
 
 Next is slice 2: the metric engine and its dispatcher, which 15 of the remaining
 21 tools are a wrapper around.
+
+## 164.72 The metric engine, and money that rounds to zero
+
+Slice 2 is `WP_MCP_AI_Fnb_Metrics` — the 1,625-line engine behind M-01…M-21 —
+plus its dispatcher (`fnb_calculate_metric`) and the month-on-month comparison
+(`fnb_compare_periods`). It lands as one slice because the dispatcher's schema
+enumerates the metric catalogue: a partial engine would advertise ids it could
+not answer, which is the shape this programme rejects everywhere else.
+
+### The structural change: instance, not static
+
+WordPress calls `WP_MCP_AI_Fnb_Data_Source::get_table()` from inside every
+metric, so the source is global. The port injects `FnbTableSource` instead, which
+is what lets a test hand in a fixture and a host decide where rows come from.
+Three smaller changes follow from it:
+
+- **Fluent accessors.** `float_cell( cell( '9.0', $headers, $row, 'opening' ) )`
+  becomes `$this->num( '9.0', $headers, $row, 'opening' )`. Same coercion, and
+  the formula you read is the formula.
+- **`stock_used_lkr()` is `stockUsed()`.** The name carried a currency the
+  toolkit has since made configurable; the formula is unchanged.
+- **`r()` takes its precision from the tenant currency**, ported from
+  `Fnb_Tenant_Profile::currency_decimals()`: `LKR`, `JPY`, `KRW` and `VND` round
+to **zero** decimals and everything else to two.
+
+### The finding that caught the port, not the code
+
+The first fixture set `currency = LKR` — correct for the demo workbook — and six
+assertions failed: average spend came back `6.0` instead of `5.75`, the volume
+effect `333.0` instead of `333.3333`. The engine was right and the expectations
+were wrong, because almost every `r()` call passes no decimal count, so the
+currency decides the precision of every money figure in every metric. The test
+fixture now runs in a two-decimal currency so the arithmetic is visible, and a
+separate test pins LKR's zero-decimal rounding. That is the fourth time in this
+programme a fixture was wrong rather than the port, and the check is the same
+each time: *is the expectation or the code wrong?*
+
+### Twelve pinned behaviours
+
+1. **M-02 falls back to the utilities sheet's `total_covers`** when the covers
+table is empty or totals zero, de-duplicating by date so several meter readings
+for one day do not multiply the covers, and switching `source` to
+`fnb_metrics:M-02:utilities`.
+2. **M-14 takes the last matching count row in file order**, not the latest by
+date — the loop overwrites as it walks. A workbook in date order behaves as you
+would expect; an unordered one does not.
+3. **M-15 answers from the first matching count row** and returns inside the
+loop, so a period spanning two counts reports the first.
+4. **M-17 derives its month from `from`** (`substr($from, 0, 7)`); without `from`
+there is no expected-use comparison and the meter reads `0`.
+5. **M-19 counts only price rises** (`$delta <= 0` is skipped) and attributes
+quantity from the change date to the next change, or a year out.
+6. **M-20 leaves `actual` and `variance` null** for a budget line with no actual:
+"not recorded" is not "nothing spent".
+7. **M-21 resolves the recipe cost in three steps** — the menu's precomputed
+column, then the recipes' cost-per-portion, then quantity × the supplier's
+latest unit price — and reports which one answered in `recipe_cost_source`.
+8. **`menuEngineering()` calls M-21 once per menu item**, so it depends on the
+table cache the way WordPress depends on its transient.
+9. **A nested metric never fails the call**: errors ride inside the result array
+and the dispatcher turns them into `metric_error` after the outer metric has
+assembled what it could.
+10. **An unknown id answers `unknown_metric`** with the nearest valid id
+(Levenshtein, preferring a shared number) and the full list.
+11. **The comparison drops a metric whose either month errors**, but not the Food
+and Beverage split — its rows read `value` off a zeroed metric array, so an
+unreadable sales table yields two zero rows. The adapter probe is a success for
+exactly this reason.
+12. **`change_pct` divides by `abs(prev)`**, so a negative baseline keeps the
+sign of the change, and is `null` when the baseline is zero.
+
+### Two demo artefacts replaced
+
+`fnb_compare_periods` defaulted to **September 2026 against August 2026** — the
+demo workbook's months — and labelled the split "Food revenue (LKR)". A host with
+no arguments would compare two months that may not exist in its data, and one in
+another currency would be mislabelled. The port defaults to the current month
+against the previous one and puts the configured currency in the label; a caller
+that passes months and an LKR venue sees the identical behaviour.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,311 / 20,536** (34 tests added) |
+| adapter `ToolProbesTest` | **141 / 991**, 1 skipped, 0 failures — the metric probe refuses, the comparison succeeds on its two split rows |
+| tool readiness audit | **362 / 362**, servable **343** (+2), no violations |
+| toolkit parity | **141 of 854**; `food-beverage` **4 ported**, 0 declined, 0 deferred, **19 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, 12/12 files |
+
+Next is slice 3: the three tools that read a table directly —
+`fnb_days_of_cover`, `fnb_weekend_demand`, `fnb_duplicate_invoice_scan` — which
+now need only their own arguments on top of the engine.
