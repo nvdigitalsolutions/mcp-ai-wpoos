@@ -139,8 +139,13 @@ function declared_slugs(string $file): array
  * Measure every toolkit directory.
  *
  * A slug is counted once, in this order: served (the manifest decides), then
- * declined (never to be ported), then deferred (blocked). `remaining` is what
- * is left over, and it is the column to read.
+ * declined (never to be ported), then deferred (blocked). `remaining` is the
+ * unported work left over, and it is the column to read. It **includes** the
+ * deferred tools: a deferral is work waiting on a prerequisite, not a decision
+ * to leave it undone, so subtracting it would make the backlog look smaller
+ * than it is. The columns therefore do not sum to `wp`:
+ * `wp = ported + declined + remaining`, and `deferred` is a subset of
+ * `remaining`.
  *
  * @param array<string, bool> $servable
  * @return array{
@@ -206,7 +211,7 @@ function measure(string $toolkitRoot, array $servable, ToolkitParityDecisions $d
 			'ported'         => count($ported),
 			'declined'       => count($declined),
 			'deferred'       => count($deferred),
-			'remaining'      => count($all) - count($ported) - count($declined) - count($deferred),
+			'remaining'      => count($all) - count($ported) - count($declined),
 			'slugs'          => $ported,
 			'declined_slugs' => $declined,
 			'deferred_slugs' => $deferred,

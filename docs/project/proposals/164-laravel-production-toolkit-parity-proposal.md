@@ -7849,3 +7849,74 @@ would be more than a wrapper over an unbound dependency, and the Google and
 Outlook syncs need an OAuth credential store plus a sync-state store with
 tombstones. Both are register decisions — `deferred` with the prerequisite named,
 or `declined` with the reason — not porting work.
+
+## 164.89 `calendar-booking`, slice 8 — the register closes, and a count that hid work
+
+The toolkit's last nine tools are registered rather than ported, each with the
+prerequisite that would make a port more than a wrapper. All nine are `deferred`;
+none is `declined`, because each names a concrete piece of infrastructure that
+would let the capability be built properly.
+
+### The register
+
+| tools | prerequisite |
+|---|---|
+| `get_jetappointment_providers`, `get_jetappointment_services` | a JetAppointment client (JetEngine tables or REST with credentials) and the provider/service-to-local mapping, including a Jet id to `_service_external_id` link so an import stays idempotent |
+| `get_jetbooking_instances`, `get_jetbooking_units` | a JetBooking client, plus a decision on whether an instance or unit maps to a service, a location or both — the answer shapes the record, so it has to precede the port |
+| `sync_from_jetappointment`, `sync_from_jetbooking` | the client, a sync-state store holding the last cursor per provider, and an id map so a second run updates instead of duplicating |
+| `sync_to_jetappointment` | the client **with write scope**, an outbound id map, and a conflict policy for "both changed since the last cursor" |
+| `sync_google_calendar` | an OAuth credential store with refresh, a per-calendar sync-state store, and deletion tombstones. The Calendar API syncs with a per-calendar `syncToken`/`nextSyncToken`; an expired token answers `410 GONE` and the client must clear its storage and full-sync |
+| `sync_outlook_calendar` | the same credential and sync-state stores, plus a per-calendar delta link. Graph's delta query returns an `@odata.deltaLink` and answers `410` with `syncStateNotFound`/`syncStateInvalid` when the state expires, at which point the client restarts with a full sync |
+
+The tombstones are the part that is easy to skip and expensive to skip: without
+them a full resync cannot tell an event deleted at the provider from one that was
+never imported, so the first `410` would either resurrect cancellations or drop
+real bookings.
+
+### The backlog count was hiding the deferrals
+
+Registering nine deferrals exposed a defect in the measurement. `measure()` in
+`bin/toolkit-parity.php` computed
+`remaining = wp − ported − declined − deferred`, while the script header, the
+`ToolkitParityDecisions` docblock and the register's own `$comment` all state that
+a deferral **stays** in `remaining` because it is work waiting on a prerequisite.
+On this slice's own numbers the two readings differ by the whole backlog:
+subtracting the deferrals would have reported `calendar-booking` as
+`25 ported, 9 deferred, 0 remaining` — a closed toolkit with nine tools unbuilt,
+which is exactly the laundering the class docblock warns against.
+
+The measurer now computes `remaining = wp − ported − declined`, so the deferred
+tools sit inside the backlog and the published columns no longer sum to `wp`
+(`wp = ported + declined + remaining`, with `deferred ⊆ remaining`). The table's
+docblock says so. Programme totals move from `591 remaining` to `627`: the 36
+deferrals other toolkits already carried, plus these nine. That is a correction to
+the reported number, not new work.
+
+`ToolkitParityMeasurementTest` guards the relation by reading `--json` and
+asserting `remaining = wp − ported − declined` and `deferred ≤ remaining` for
+every toolkit, so a future edit cannot quietly shrink the backlog again.
+
+### What the toolkit now reports
+
+| measure | value |
+|---|---|
+| declared | **34** |
+| ported | **25** |
+| declined | **0** |
+| deferred | **9** |
+| remaining | **9** (the deferred set) |
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,821 / 22,778** (2 tests and 290 assertions added) |
+| adapter suite | **227 / 1,562**, unchanged — no tool moved |
+| tool readiness audit | **440 / 440**, servable **421**, unchanged — a register entry adds no class |
+| toolkit parity | **219 ported, 8 declined, 45 deferred, 627 remaining**; `calendar-booking` **25 / 0 / 9 / 9** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The calendar-booking queue is now empty: every declared tool is either served or
+registered against the prerequisite that would unblock it. The next work in this
+family is the prerequisites themselves — the Jet booking client and the OAuth
+credential and sync-state stores — not more slugs.
