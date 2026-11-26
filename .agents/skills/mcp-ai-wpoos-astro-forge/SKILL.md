@@ -348,111 +348,48 @@ Moved to [`reference/form-bridge.md`](reference/form-bridge.md) — content unch
 (split out 2026-11-17 to keep this file under Zed's load limit).
 ## Proposal 165 — the publication gate (managed tier)
 
-A forged managed site can mimic Elementor's maintenance/coming-soon behaviour:
-the public sees a holding page, a signed-in manager sees the real site.
+A forged managed site can mimic Elementor: the public sees a holding page, a
+signed-in manager sees the real site. Two modules, two questions — `lib/gate.ts`
+is how the FORGE enters a gated source; `lib/gate-publish.ts` + `lib/gate-runtime.ts`
+are how the BUILT site behaves while the CMS is gated. `gate.generated.json` is
+always emitted (it is the runtime boot state), `trust: bridge` refuses to gate on
+HTML inference alone, and a gate page stripped from the build falls back to a
+built-in copy rather than 500.
 
-- **Two gate modules, two different questions.** `lib/gate.ts` = how the FORGE
-gets into a gated source. `lib/gate-publish.ts` + `lib/gate-runtime.ts` = how
-the BUILT site behaves while the CMS is gated. Do not merge them.
-- **`gate.generated.json` is always written** (even with the gate off) — it is
-the runtime's BOOT state. It carries the verdict plus the non-secret runtime
-config; the bypass token and the session HMAC are derived at runtime.
-- **`trust: 'bridge'` (default) refuses to gate on HTML inference alone.** A
-cached anonymous page looks gated to a logged-out probe; only the bridge's
-`/wp-json/nvoos-forge/v1/gate` is authoritative. `trust: 'probe'` opts in.
-- **`honor` can decline a mode** (`coming_soon-only`, `off`): the manifest keeps
-the evidence but sets `honored:false`, `mode:'off'`, `page:null`.
-- **The session format is a cross-module contract:**
-`<exp>.<uid>.<base64url(name)>.<hmac>` with HMAC over `'manage.v1.' + payload`.
-`lib/manage-runtime.ts` emits the signer, `lib/gate-runtime.ts` emits the
-verifier. Change one without the other and every manager is silently logged out
-of the preview. Pinned by `tests/gate-runtime.test.ts`.
-- **The static handler must not clobber the gate's headers.** A bypassed request
-carries `cache-control: private, no-store` from the gate; `createStatic` only
-sets cache-control when the gate has not.
-- **Gate pages are PRERENDERED** (`src/pages/{maintenance,coming-soon}.astro`)
-because the front controller answers before Astro; it reads
-`dist/client/<page>/index.html` and falls back to a built-in page if stripped.
+Full contract, the `honor` policy, the session HMAC recipe and the artifact rules:
+[`reference/proposal-165-publication-gate.md`](reference/proposal-165-publication-gate.md).
 
-Full contract (reconstructed 2026-11-26 after a tree loss):
-`docs/project/proposals/165-forge-maintenance-mode-parity-eca-runbook.md`.
+**A prerendered page only answers at its slashed URL** (since 2026-11-26,
+#8330). `build.format 'directory'` writes `dist/client/<slug>/index.html` and
+nothing else, so `/about-us` matched no route and 404'd on a managed build —
+while WordPress 301s that exact form, so every legacy inbound link broke.
+`createStatic` now probes `<path>/index.html` and 301s to it, query preserved.
+Recognise it by: `/about-us/` = 200 and `/about-us` = 404 for the SAME document,
+with SSR routes (`/manage`, `/api/*`) unaffected. A live page that 404s is worth
+re-checking with the slash before suspecting content, the gate or the build.
+
+## Manage sign-in (Proposal 165, hardened 2026-11-26)
+
+`/manage` has three doors and five failure codes; the code names the layer.
+Read `?error=` before touching the credential.
+
+| Code | Meaning |
+|---|---|
+| `config` | no signing key (env, or the provisioned `.forge-gate-secret`) |
+| `origin` | browser Origin not accepted — proxy Host rewrite vs `security.checkOrigin` |
+| `credentials` | WordPress rejected the credential |
+| `permission` | authenticated, but no `edit_posts` / `manage_astro` |
+| `upstream` | the CMS did not answer in time |
+
+Doors, the key-provisioning rule, the `allowedDomains` + `x-forwarded-host` fix
+and why the bridge needs no new endpoint:
+[`reference/manage-sign-in.md`](reference/manage-sign-in.md).
 
 ## Shared-mirror deploy (branch per site, 2026-11-06)
 
-Owner decision: forged client sites deploy through ONE private mirror repo
-(`nvdigitalsolutions/nvoos-forge-sites`) — one `site/<name>` branch per
-client, built `dist/` at the branch ROOT (force-pushed, flat; `main` holds
-only the README clone anchor). Velocity apps connect the mirror and select
-Branch = `site/<name>` (Root directory = repo root — Velocity supports
-per-app Branch + Root Directory per the official deployment docs). Never
-commit generated sites into the monorepo: `sites/<name>.json` profiles are
-the only committed artifact per site.
-
-- **Forge:** `deploy`/`deploy-config` gain `--mirror-repo <owner/repo>` +
-  `--site-branch <branch>` (paired, validated). Mirror mode emits
-  `scripts/mirror-push.mjs` next to the workflows (single template in
-  `lib/deploy-config.ts` `mirrorPushScript()` — orphan-branch checkout +
-  force push; the workflow and the CLI run the SAME emitted file, no
-  drift). `deploy --mirror-repo` skips repo creation and mirrors a prebuilt
-  `dist/` (operator staging path; needs `GITHUB_TOKEN`). Legacy velocity
-  shape (per-site repo, `deploy` branch under `site/`) is unchanged.
-- **Monorepo pipeline:** `.github/workflows/forge-sites.yml` — push on
-  `sites/**`/templates/libs, `workflow_dispatch` (`site` input), and
-  `repository_dispatch` `nvoos-forge-content-changed` (bridge-fired; HMAC
-  verified by the committed `.github/forge/verify-dispatch.mjs`, generated
-  by `emitDeployConfig`). Per site: scaffold → deploy-config → build →
-  mirror-push. Unset `NVOOS_FORGE_MIRROR_*` secrets degrade to build-only
-  (never a red job). Needs repo variable `NVOOS_FORGE_MIRROR_REPO` +
-  secrets `NVOOS_FORGE_MIRROR_URL`/`_TOKEN`, `FORGE_WEBHOOK_SECRET`.
-- Full runbook + research: `docs/project/proposals/114-shared-mirror-deploy-addendum.md`.
-- **Adding a client site:** seed the branch on the mirror —
-  `gh api repos/nvdigitalsolutions/nvoos-forge-sites/git/refs -f ref=refs/heads/site/<name> -f sha=<main sha>`
-  (read the sha via `gh api …/git/refs/heads/main --jq .object.sha`) — commit
-  `sites/<name>.json`, merge → the workflow mirrors on the next run. The
-  mirror's `main` README lists the convention (update it via the
-  `contents` API PUT — base64 content + the current file `sha`).
-- **Operational learnings (2026-11-06, first live mirror push):** the
-  Windows self-hosted runner's `npm install` phase runs ~15 min — a quiet
-  job is NOT a hang, check `gh run view <id> --log` before touching code.
-  The WCAG scaffold warnings fix in the PROFILE, not the template: the
-  TOP-LEVEL `tokens` keys are the `--forge-*` names minus the prefix (`ink`,
-  `muted`, `line-strong`, …) — a `design.tokens` block does NOT exist and is
-  silently ignored (the merge is `defaults ← designToTokens(design) ←
-  profile.tokens`). Pick values from the source's own unassigned pool that
-  PASS — the audit's one-size suggestion (same dark color for all three)
-  flattens hierarchy, `#505050` muted and `#666666` line-strong both clear
-  4.5:1/3:1 and keep it. GitHub intermittently rejects the orphan force
-  push with `remote: fatal error in commit_refs` — the emitted script
-  retries 3× with a 5s `Atomics.wait` sleep (cross-platform). Mirror CI
-  secrets on the monorepo:
-  `NVOOS_FORGE_MIRROR_URL` + `NVOOS_FORGE_MIRROR_TOKEN` + variable
-  `NVOOS_FORGE_MIRROR_REPO` — set via `gh auth token | gh secret set …` so
-  the token never lands in a transcript. A prebuilt local `dist/` stages
-  instantly: run the generated `scripts/mirror-push.mjs` with `MIRROR_URL`/
-  `MIRROR_TOKEN`/`SITE_BRANCH` env.
-- **Local preview of a built site** (a `dist/` exists): the Zed terminal
-  reaps backgrounded children, so detach the server —
-  `powershell.exe -NoProfile -Command "Start-Process -FilePath 'node' -ArgumentList 'node_modules/astro/bin/astro.mjs','preview','--port','4199' -WorkingDirectory '<abs target>' -WindowStyle Hidden"`.
-  astro's bin is `bin/astro.mjs` (NOT `astro.js`); `astro preview` binds
-  `localhost` (::1) only — probe `curl http://localhost:<port>/`, not
-  `127.0.0.1`; stop via the PID from `netstat -ano | grep <port> | grep LISTEN`.
-- **Velocity app — build-centric, no static preset (2026-11-06):** Velocity
-  ALWAYS runs `npm install` + a build command; there is no pure static
-  framework option. With `Astro-ssr` selected, a mirror branch (prebuilt
-  flat files, no package.json) fails `ENOENT package.json` (rc=254). The
-  working pattern: the mirror-push emission ships a **no-op package.json
-  stub** (`nvoos-forge-site`, build = `node -e "…"` — quoted: `sh -c` rejects a bare `(`) beside the
-  built files, and the Velocity Deployment Settings set the **Output
-  Directory to the repo root (`.`)** with the default build command
-  (`npm run build` — the no-op). The Cloudways MCP exposes no
-  deployment-settings tool (the apps toolset's web-rules tools are
-  header/redirect rules only) — these are Velocity-console UI settings.
-  The mirror content itself is not the problem: verify with
-  `gh api repos/nvdigitalsolutions/nvoos-forge-sites/contents/?ref=site/<name>`
-  — `index.html` at root means the push is good. A hand-added stub does NOT
-  survive the next mirror force-push (the push replaces branch content) —
-  the stub must come from the emission, so merge the emission fix BEFORE
-  the next forge-sites run.
+Moved to [`reference/shared-mirror-deploy.md`](reference/shared-mirror-deploy.md)
+(content unchanged; split out 2026-11-26 to keep this file under Zed
+load limit).
 
 ## Proposal 135 — two-tier deploy + domain topology (2026-11-09)
 
@@ -1144,81 +1081,9 @@ builder themes declare rhythm in classes the sanitizer strips, so
 
 ## Measured band typography + the sticky header (2026-11-10)
 
-The two passes that closed "the sections still don't match": the raw-HTML band
-path had NO heading scale (a 40px source `<h3>` rendered at 15.21px = `1.17em`
-of the 13px body), and a sticky header's SCROLLED state was never captured. Both
-are browser facts on `analyze --geometry`, stored as `profile.bandFacts` and
-`profile.stickyHeader`. Full contract:
-[`reference/measured-band-facts-and-sticky-header.md`](reference/measured-band-facts-and-sticky-header.md).
-
-- `bandFacts[id]` = per-heading computed facts (size/weight/line-height/
-  letter-spacing/transform/**text-align**), the body paragraph, and the inner
-  `containerWidth`. Scaffold emits `[data-section-id] h3{…}` + `--ds-title-*`,
-  and derives the band `measure` from the container (fluid bands stop rendering
-  at the site measure).
-- **A measured device size REPLACES the headline `clamp()`, it is not an anchor
-  for it** (2026-11-21). The template shrinks a headline to a hard-coded floor
-  (`1.5rem`/`1.75rem`), which is a guess about the source — so a band title that
-  is 22.2px on desktop and 16px on a phone rendered at the desktop size on
-  phones (39% large). `title.tablet.size` / `title.mobile.size` now emit
-  `--ds-title-size-md` / `--ds-title-size-sm`, and `global.css` swaps the whole
-  clamp for them under `1024px` / `767px`. The vars are absent where the source
-  does not change size at that device, so the clamp still governs.
-  **Known gap:** on a raw-HTML band the class box fact still wins (see the
-  Gotchas bullet on the specificity floor), so a desktop class type reaches the
-  phone; the device title vars fix the COMPONENT path only.
-- **A `rem` body size must resolve against the html root rule.** `chromeSizeFrom`
-  reads `body { font-size }` and its `em` pattern is anchored, so `1.125rem`
-  declined every branch and fell through to the polluted element resolution.
-  The chrome size is now also a MEASURED fact (`geometry.chromeSize`, from the
-  copyright node's computed style, overlaid by `applyMeasuredChromeSize`) — a
-  declaration is not a computed value: `1.125rem` resolves to 18px where the
-  source paints 15.984px.
-- `stickyHeader` = rest vs pinned background/ink/height. `Base.astro` adds
-  `site-header--pinned`; global.css rebuilds it as a `scroll(root)` timeline
-  (rest state is the BASE — a header's finished state is the scrolled one, and a
-  solid strip over the hero at scrollY 0 is the louder error).
-- `bandFacts[id].hidden` = the selectors the SOURCE renders hidden at rest
-  (accordion panels, tab panes, mobile drawers), hidden at BOTH breakpoints and
-  carrying `:not(.in)`-style exclusions so the open panel stays visible. This
-  replaced the hand-written `.panel-collapse.collapse:not(.in)` rule. Reopening
-  is behaviour, not data: `templates/blog/src/components/BuilderAccordion.astro`
-  toggles those classes back — see
-  [`reference/measured-band-facts-and-sticky-header.md`](reference/measured-band-facts-and-sticky-header.md) §3.
-- `verify` runs a **class-coverage audit** (report-only; `--strict-classes`
-  makes it a gate): every class name in the rebuilt bands that matches no rule,
-  written to `verify-artifacts/class-coverage.json`. That list is the inventory
-  behind every hand fix in this arc — read it before adding CSS.
-- **Vendor utilities are DATA, not template CSS** (`BUILDER_ADAPTERS[].utilities`):
-  `text-center`, `text-medium`, `padding-four-all`, `font-weight-600` … are
-  emitted per band, trimmed to the classes the page measured (`bandFacts[].classes`).
-  `global.css` carries none of them, so a Divi site gets Divi's conventions and
-  nothing else. Values are measured. The VALUE-NAMING responsive variants
-  (`xs-padding-40px-tb`, `sm-padding-70px-tb`, `md/sm/xs-text-center`) are mapped;
-  the numeric spacing scale is not — it arrives as a measured box fact instead
-  (see the addendum below).
-- Gotchas: read the pinned snapshot after a real wait (the live page's header
-  colours land a beat after the scroll class); the fact audit cannot see a
-  scoped rule that sits before the band, so its marker needs a `present`
-  predicate over the whole page; and the audit must include the page's INLINE
-  `<style>` blocks and treat `[class~=…]`/`[class*=…]` as coverage, or it
-  reports correctly-styled bands as missing.
-
-### Addendum (2026-11-11) — box facts, header LAYOUT, two sanitizer bugs
-
-Typography and scrolled colours were not sufficient: four more measured facts
-(box facts, header LAYOUT, `stickyHeader.position`, container-per-device) plus
-two sanitizer bugs. The bullets — box diff, `media`, `themeToggle`, the pixel
-gate's source seam, gate policy, the per-device container, the `<p>`-class gap,
-`box`, `stickyHeader.position`, chrome-vs-nav ink and the fluid-band rule — moved
-to
-[`reference/measured-band-facts-and-sticky-header.md`](reference/measured-band-facts-and-sticky-header.md)
-§11 rather than restating the reference here. Read it before touching
-`bandFacts`, `chrome.headerBg` or the gate policy.
-
-Two bugs fixed in that pass: `class` was stripped from `h1`–`h6` (headings lost
-their measured box), and `--dark` set light ink on the WRAP instead of its
-children. virtuallyjamaica: **0 fail** box geometry, **0 drift** colour.
+Moved to [`reference/measured-band-typography-sticky.md`](reference/measured-band-typography-sticky.md)
+(content unchanged; split out 2026-11-26 to keep this file under Zed
+load limit).
 
 ## Interaction states — hover, focus, press (2026-11-11)
 
@@ -1486,6 +1351,16 @@ stylesheet, which is the point of the path.
   — hash ids are not CSS identifiers, `--ds-measure` is the content column,
   a state delta must outrank the positional fact, and a query-loop band is
   data rather than design.
+- Publication gate (Proposal 165, the managed tier):
+  [`reference/proposal-165-publication-gate.md`](reference/proposal-165-publication-gate.md)
+  — the two gate modules, `honor`, the session HMAC recipe and the
+  directory-index 301.
+- Manage sign-in (hardened 2026-11-26):
+  [`reference/manage-sign-in.md`](reference/manage-sign-in.md) — the three
+  doors, five `?error=` codes, key provisioning and the proxy-Origin trap.
+- Split out verbatim on 2026-11-26 to keep this file under Zed's load limit:
+  [`reference/shared-mirror-deploy.md`](reference/shared-mirror-deploy.md) and
+  [`reference/measured-band-typography-sticky.md`](reference/measured-band-typography-sticky.md).
 
 ## Email delivery
 
