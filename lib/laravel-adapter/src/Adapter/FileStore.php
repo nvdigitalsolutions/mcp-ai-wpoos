@@ -230,6 +230,16 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface, Fil
 		// The bytes decide the type. The caller's `$mimeType` is a hint that is
 		// discarded when it disagrees with the sniff — a "text/plain" filename
 		// carrying a PNG is a PNG.
+		//
+		// Sniffing is a security control, not a convenience, so it needs libmagic.
+		// A host without ext-fileinfo cannot file anything; say which extension is
+		// missing instead of reporting every payload as "unknown".
+		if ( ! \function_exists( 'finfo_open' ) ) {
+			throw new ValidationException(
+				'File type cannot be verified: the fileinfo extension (ext-fileinfo) is required to sniff file bytes.',
+			);
+		}
+
 		$sniffed = $this->detectMime( $localPath );
 
 		if ( null === $sniffed || ! isset( self::TYPES[ $sniffed ] ) ) {

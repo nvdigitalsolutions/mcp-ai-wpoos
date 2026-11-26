@@ -7,6 +7,7 @@
     "prefer-stable": true,
     "require": {
         "php": "^8.2",
+        "ext-fileinfo": "*",
         "nvoos/core": "*",
         "illuminate/support": "^12.41.1 || ^13.0",
         "illuminate/cache": "^12.41.1 || ^13.0",
