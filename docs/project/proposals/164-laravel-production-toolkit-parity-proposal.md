@@ -4094,3 +4094,108 @@ measurement table are spliced together (`| gate | value |e tool will list the vi
 again …`), which is what a bad conflict resolution looks like. It predates this
 slice and repairing it means reconstructing text, so it is left for its own change
 rather than folded into a slice whose diff should be insertions only.
+
+## 164.48 The Paper Store learns to leave the building
+
+**On the numbering:** §164.47 is the `image-production` slice, which merged ahead
+of this one; the two are independent, so this section simply takes the next free
+number.
+
+### The substrate was already paid for
+
+`PaperStoreInterface` and its `JsonPaperStore` implementation shipped in 1.3.0,
+and `NvoosServiceProvider` binds the store as a singleton rooted at
+`oos.paper_store_root` (falling back to `storage/paper-store`). The layout is
+`{root}/{collection}/{id}.json`, chosen so the same records can be read by either
+runtime. What was missing was only the pair of tools that moves records in and
+out: `paper-store` sat at 0 of 2 ported while the thing it needed was bound and
+tested. That is the cheapest kind of gap to close, which is why it came next.
+
+### Export: a page, not a promise of everything
+
+The WordPress tool returns `$repo->query()->get()` — the whole collection, with no
+bound. That is fine against a database and wrong here, because
+`JsonPaperStore::query()` scans the collection directory on **every** call (it
+keeps no index, deliberately). Assembling "everything" by looping pages would
+therefore read the same files once per page: a 1,000-record export would cost five
+full scans. So the tool returns one page of at most 200 — the contract's
+documented ceiling — plus `total`, `truncated` and `next_offset`. A caller that
+wants the rest asks again; a caller that does not, is told there is more.
+
+Two smaller decisions in the same spirit:
+
+- **An unusable collection name is refused, not answered.** `query()` treats an
+  invalid name as "no records" and returns an empty page, so `../secrets` would
+  have been reported as an empty collection. An empty export is a *finding*; a
+  malformed argument is a *refusal*, and they must never look alike.
+- **Order is pinned to `id`.** The reference tool inherits the repository default,
+  which sorts by `updated_at` — a mutable column. Paging by a mutable column can
+  serve a record twice or skip one when something is saved mid-export. Order is
+  not part of the data; the set is. Offset paging is still sensitive to concurrent
+  creates and deletes, which shift every later page; the store has no snapshot, so
+  that residual drift is named rather than hidden.
+
+`cacheable` is deliberately **not** declared, although the WordPress tool declares
+it: this is a read against a store that can change between two identical calls,
+which is exactly the case `CapabilityFlagVocabulary::LOCAL_READ` excludes it for.
+
+### Import: three things the reference left unfinished
+
+The loop, the `overwrite` default and the counters follow the WordPress tool. Three
+details were tightened, each because the reference is silent or inconsistent
+rather than because the port wanted a change:
+
+- **A title is checked here, not left to the store.** The WordPress schema says
+  every item needs `id` *and* `title`, but `execute()` only checks `id`; the title
+  failure then arrives as a repository exception whose wording depends on the
+  store. Both are now checked before any write, so the documented precondition is
+  the enforced one.
+- **A record with no id is a failure, not a silent skip.** The reference
+  increments `skipped` and says nothing, which makes "malformed" and "already
+  existed" the same counter. They are different facts, and a caller reconciling a
+  migration needs to tell them apart.
+- **The report reconciles.** `imported + skipped + failed === total`, always,
+  including when the store throws mid-batch. This is the discipline
+  `BulkImportTool` established: a batch report a caller cannot reconcile is worse
+  than no report.
+
+`dry_run` defaults to **false**, unlike `optimise_images_batch`. The difference is
+intent: that tool infers a bulk action over a library the caller did not
+enumerate, so it asks twice. An import is the opposite — the caller wrote every
+record out in the arguments — and the reference tool writes immediately, which a
+migrating prompt depends on. The flag is offered, not imposed, and a rehearsal
+still refuses malformed records so it is a real rehearsal.
+
+Import is an **upsert, not a merge**: `save()` replaces the whole record and
+preserves `created_at`, so a field absent from the incoming record is removed. The
+tool says so rather than promising a partial update the store cannot deliver.
+
+### Why this pair matters beyond two slugs
+
+Together they are the backup and migration path for curated knowledge, and they
+work between runtimes because the JSON layout is shared: an export from the
+WordPress site imports into this one without a translation step, and back again.
+That is a capability the runtime did not have at all, not merely a name that was
+missing.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **2,931 / 19,110** (26 tests, plus 4 manifest data sets) |
+| adapter PHPUnit | **448 / 2,145**, OK — both new rows construct |
+| tool readiness audit | **319 / 319**, servable **300** (+2), no violations |
+| toolkit parity | **98 of 854**; `paper-store` **2 of 2**, 0 remaining |
+| licence boundary | intact |
+| phpcs (PSR-12, laravel dist) | clean on both tools, the test and the manifest |
+
+No app-skeleton feature test was added for the pair: the adapter suite already
+proves every servable row is constructible, `PaperStoreTest` exercises the bound
+singleton through the REST API, and the unit suite runs against the real
+`JsonPaperStore`. A third test would duplicate those three rather than add to them.
+
+### Still not repaired
+
+The tail of §164.46 remains spliced on `alpha-working` (a paragraph and the
+measurement table run together). It predates both this slice and §164.47, and
+repairing it means reconstructing text, so it stays a finding for its own change.
