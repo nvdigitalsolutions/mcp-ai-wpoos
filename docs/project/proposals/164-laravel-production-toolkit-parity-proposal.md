@@ -4467,3 +4467,56 @@ each carries the prerequisite that would unblock it.
 The parity gate was exercised again after the edit: an unknown decision word still
 fails the check, so these six rows are being read by the same machinery that
 validates the rest.
+
+## 164.52 The file registry a package-only install could not write
+
+**On the numbering:** §164.46 recorded this defect and deliberately left it for its
+own change. This is that change, and the number is simply the next free one.
+
+### What was broken
+
+`2026_01_01_000006_create_nvoos_files_table` creates the table with six columns:
+`path`, `disk`, `filename`, `mime_type`, `size_bytes`, `owner_id`. Five more
+arrived later — `tenant_id`, `visibility`, `checksum`, `metadata`, `slug` — and each
+landed in the **app skeleton's** migrations, because each shipped alongside an
+app-side reader.
+
+`FileStore::insertRow()` writes all five of them. On a deployment the skeleton's
+migrations run and fill the gap, so nothing was ever visibly broken. On an install
+that has only this package, nothing does, and the first `store()` throws on an
+unknown column. The adapter's own Testbench app is exactly that install — it calls
+`loadMigrationsFrom()` on this package and on nothing else — so the failure was
+reproducible without a deployment, and had simply never been asserted.
+
+### The repair
+
+A second package migration,
+`2026_11_26_100000_add_file_identity_columns_to_nvoos_files`, adds the five columns
+and then the composite `(tenant_id, slug)` unique index. The definitions mirror the
+skeleton's migrations — `visibility` defaults to `public`, `tenant_id` to `default`,
+`checksum`/`slug`/`metadata` are nullable — so a table built by either path is the
+same table, which is the property that made a package-side migration safe to add
+rather than a second, divergent shape.
+
+Every step is guarded by `hasColumn()`/`hasIndex()`. On a deployment the skeleton
+has already added the columns, and this migration runs after it by timestamp
+(`2026_11_26` against the skeleton's `2026_11_23`), so the guards make it a no-op
+instead of a duplicate-column failure. On a package-only install it is the only
+thing that runs, which is the point.
+
+### The test that would have caught it
+
+`FileRegistrySchemaTest` runs inside the package-only app. It asserts the five
+columns and the index exist, then stores a real file through `FileStore` and reads
+it back by id. With the migration removed, both tests fail — one on the insert, one
+on the schema assertion — so the pair is not vacuous.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| adapter PHPUnit | **450 / 2,164** (2 added), OK |
+| `lib/core` PHPUnit | **2,980 / 19,331**, unchanged |
+| tool readiness audit | **322 / 322**, servable **303**, unchanged (no tool lands here) |
+| toolkit parity | **101 of 854**; no row moved |
+| licence boundary / phpcs | intact / clean |
