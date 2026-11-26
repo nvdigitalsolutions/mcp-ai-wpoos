@@ -838,6 +838,14 @@ can appear in the repo root. Two failure modes follow:
   `Licence boundary intact` check fails in ~20 s, so this is the cheapest
   CI failure to prevent — and the easiest to misdiagnose as a code problem
   when the diff is only a docblock.
+- **The docs contract gate is the second-cheapest failure.** `php
+  bin/check-file-docs.php --new-files-only --strict --base=origin/alpha-working`
+  checks every new TS/JS/Astro/Rust file for an SPDX line and a purpose header
+  (`@fileoverview` / `//!`). `--explain=<file>` says which check failed. The
+  budget is `.github/docs-budget.json`; never raise it without
+  `--allow-increase` and a reason. `--folder-docs` checks the Rust non-module
+  READMEs. Proposal 166 /
+  [`docs/developer/file-header-convention.md`](../../../docs/developer/file-header-convention.md).
 
 ### Format-check drift - verify the toolchain and the commit (2026-11-04)
 

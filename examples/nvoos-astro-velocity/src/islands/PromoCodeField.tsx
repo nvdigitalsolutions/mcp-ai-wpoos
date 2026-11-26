@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // PromoCodeField island — clean-room React component (D6), client:load (CSP: no per-page inline bootstrap).
 //

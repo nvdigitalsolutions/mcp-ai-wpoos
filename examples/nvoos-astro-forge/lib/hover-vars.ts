@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // hover-vars.ts — the band's measured HOVER deltas as CSS variables.
 //

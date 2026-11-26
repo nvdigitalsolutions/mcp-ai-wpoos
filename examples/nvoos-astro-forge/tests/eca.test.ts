@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // eca.test.ts — the `nvoos-eca/v1` normaliser (Proposal 163, Phase 0).
 //

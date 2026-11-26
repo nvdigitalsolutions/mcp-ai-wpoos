@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-row-layout.test.ts — the band's ROW as a measured fact.
 //

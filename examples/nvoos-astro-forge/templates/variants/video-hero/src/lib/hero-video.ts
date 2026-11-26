@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // hero-video.ts — resolve a hero video and decide whether it may autoplay
 // (video-hero variant).

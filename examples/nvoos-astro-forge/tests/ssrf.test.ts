@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // ssrf.test.ts — the URL guard: private/literal ranges, credentials, bad
 // protocols, and the registry-vs-open-analyze fetch policy.

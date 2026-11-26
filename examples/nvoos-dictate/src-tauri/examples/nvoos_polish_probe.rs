@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! End-to-end probe of the NV oOS Stage-2 polish pipeline against the REAL
 //! configured site and the REAL keychain credential — the exact code path
 //! `finalize_inner` runs (minus the PTT keypress). Sends one clearly-marked

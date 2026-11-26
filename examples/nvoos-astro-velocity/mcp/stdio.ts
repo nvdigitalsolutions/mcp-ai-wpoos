@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // stdio.ts — nvoos-astro-mcp local entry (Proposal 095 §3.3): the coding-
 // agent profile (Zed / Claude Code / npx). Same tool registry as the BFF

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-carousel.test.ts — a logo wall the source PAGES is carried to the
 // template.

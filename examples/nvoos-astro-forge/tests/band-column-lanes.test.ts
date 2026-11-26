@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-column-lanes.test.ts — a multi-column band keeps its LANES.
 //

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // optimize-glb.mjs — the 3D asset pipeline AND the byte-budget gate.
 //

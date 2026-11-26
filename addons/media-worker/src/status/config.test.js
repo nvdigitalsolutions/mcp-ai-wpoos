@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for STATUS_EXTERNAL_TARGETS parsing (config.js).
  */

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // GalleryLightbox island — clean-room React component (D6), client:load (CSP: no per-page inline bootstrap).
 // Receives runtime-optimized image descriptors from the server-rendered page

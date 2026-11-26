@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // presets.test.ts — the 104 §4.3 preset registry: descriptors, suggestion
 // from a discovery report, and the collection-profile application.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests for chat-memory-drawer.js (Phase 3 — drawer + badge + toast).
  *

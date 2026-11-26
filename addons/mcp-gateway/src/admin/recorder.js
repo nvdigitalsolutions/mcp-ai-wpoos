@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * In-memory call recorder for policy simulation (Phase 4 of Proposal 094).
  *

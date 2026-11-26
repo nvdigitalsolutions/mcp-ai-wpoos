@@ -1,0 +1,84 @@
+{
+    "version": 1,
+    "tolerance": 25,
+    "scopes": {
+        "rust:dictate": {
+            "files": 153,
+            "missing_spdx": 0,
+            "wrong_spdx": 0,
+            "missing_overview": 0
+        },
+        "ts:addons": {
+            "files": 865,
+            "missing_spdx": 0,
+            "wrong_spdx": 0,
+            "missing_overview": 856
+        },
+        "ts:bin": {
+            "files": 45,
+            "missing_spdx": 0,
+            "wrong_spdx": 0,
+            "missing_overview": 45
+        },
+        "ts:docker": {
+            "files": 3,
+            "missing_spdx": 0,
+            "wrong_spdx": 0,
+            "missing_overview": 3
+        },
+        "ts:docs": {
+            "files": 1,
+            "missing_spdx": 0,
+            "wrong_spdx": 0,
+            "missing_overview": 1
+        },
+        "ts:examples": {
+            "files": 760,
+            "missing_spdx": 0,
+            "wrong_spdx": 0,
+            "missing_overview": 753
+        },
+        "ts:extensions": {
+            "files": 3,
+            "missing_spdx": 0,
+            "wrong_spdx": 0,
+            "missing_overview": 3
+        },
+        "ts:includes": {
+            "files": 1,
+            "missing_spdx": 0,
+            "wrong_spdx": 0,
+            "missing_overview": 1
+        },
+        "ts:packages": {
+            "files": 71,
+            "missing_spdx": 0,
+            "wrong_spdx": 0,
+            "missing_overview": 71
+        },
+        "ts:plugins": {
+            "files": 51,
+            "missing_spdx": 0,
+            "wrong_spdx": 0,
+            "missing_overview": 51
+        },
+        "ts:repo-tooling": {
+            "files": 11,
+            "missing_spdx": 0,
+            "wrong_spdx": 0,
+            "missing_overview": 11
+        },
+        "ts:root": {
+            "files": 220,
+            "missing_spdx": 0,
+            "wrong_spdx": 0,
+            "missing_overview": 220
+        },
+        "ts:tests": {
+            "files": 63,
+            "missing_spdx": 0,
+            "wrong_spdx": 0,
+            "missing_overview": 63
+        }
+    }
+}

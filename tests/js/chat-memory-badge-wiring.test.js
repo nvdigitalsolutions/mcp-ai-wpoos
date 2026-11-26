@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Regression test for the memory-badge auto-wire in chat.js.
  *

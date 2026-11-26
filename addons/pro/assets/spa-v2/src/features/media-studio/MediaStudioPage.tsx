@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * MediaStudioPage — native NV oOS Media Studio island inside the Pro SPA.
  *

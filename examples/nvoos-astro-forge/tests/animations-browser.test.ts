@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // animations-browser.test.ts — the `document.getAnimations()` probe (2026-11-12).
 //

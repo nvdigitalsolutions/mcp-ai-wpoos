@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * MediaGrid — Thumbnail grid view for the Media Library tab.
  *

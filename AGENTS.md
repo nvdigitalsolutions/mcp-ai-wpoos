@@ -98,6 +98,7 @@ Every agent session loads these two files:
 | [`.context/rest-api.md`](.context/rest-api.md) | Working on REST API endpoints |
 | [`.context/chat-ui.md`](.context/chat-ui.md) | Working on frontend chat interface |
 | [`.context/testing.md`](.context/testing.md) | Writing or reviewing tests |
+| [`docs/developer/file-header-convention.md`](docs/developer/file-header-convention.md) | Adding or editing TS/JS/Astro/Rust source files |
 | [`.context/pro-vs-base.md`](.context/pro-vs-base.md) | Making Base vs Pro placement decisions |
 | [`.context/image-identification.md`](.context/image-identification.md) | Working on the image identification ladder (`identify_image` + Cloud Vision / perceptual-hash / OCR tools) |
 | [`docs/features/llm-harness.md`](docs/features/llm-harness.md) | Working on LLM Harnessing (Layers A–J) |

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! In-memory frame cropping shared by vision label polish (Proposal 076) and
 //! deictic grounding (Proposal 153 M5).
 //!

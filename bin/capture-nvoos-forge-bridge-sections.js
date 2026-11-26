@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Capture the two NEW wp.org listing screenshots for nvoos-forge-bridge:
  * the Stored redirects section (screenshot 3) and the managed-frontend

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * SSE Connection Manager — TypeScript-native SSE client with lifecycle
  * tracking, per-connection status, and automatic cleanup.

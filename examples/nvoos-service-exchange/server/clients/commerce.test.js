@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { evaluateEntitlement, isAdvertisable, linkPrice, validatePriceId } from './commerce.js';

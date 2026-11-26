@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /* jshint esversion: 6 */
 /**
  * NV oOS Content Graph — Admin Graph Explorer (SPA vendored copy)

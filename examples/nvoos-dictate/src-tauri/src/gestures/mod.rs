@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Local hand-gesture input (Proposal 153).
 //!
 //! The module is deliberately split so that the **decision logic is always

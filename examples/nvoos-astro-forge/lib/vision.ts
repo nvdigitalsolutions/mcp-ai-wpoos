@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // vision.ts — optional vision-verified comparisons (Proposal 118).
 //

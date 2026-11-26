@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // route-keys.ts — duplicate-URL detection from the content store.
 //

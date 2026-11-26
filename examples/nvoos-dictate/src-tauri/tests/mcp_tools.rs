@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! MCP tool handler tests (feature `mcp`) — the toolbox is tested directly
 //! without a live rmcp transport, per the plan's test strategy.
 

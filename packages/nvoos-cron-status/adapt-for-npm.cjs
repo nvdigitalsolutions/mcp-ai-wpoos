@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Adaptation script: Convert WordPress cron-status-service.js to a standalone NPM package.
 // The source uses two WP globals (wpMcpAiSSE, wpMcpAiJobBus) and one CSS class. We replace
 // them with module-level injectable adapters set via configure().

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Capability/read-only gating (the console's permissions.ts contract).
  * The server is authoritative; these helpers are UX gates fed by the

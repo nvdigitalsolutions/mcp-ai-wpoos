@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Memory-layer de-risk spike (Proposal 127, M0): the live-verification
 //! gate for the encoder. Downloads the pinned granite embedder files
 //! (streaming sha256 + atomic install), loads tokenizer + ort session, and

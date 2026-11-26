@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Pure helpers for the schedulable tool catalogue palette.
  *

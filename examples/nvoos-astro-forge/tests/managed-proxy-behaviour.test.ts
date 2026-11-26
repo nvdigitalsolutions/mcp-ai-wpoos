@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // managed-proxy-behaviour.test.ts — the emitted proxy helper, EXECUTED.
 //

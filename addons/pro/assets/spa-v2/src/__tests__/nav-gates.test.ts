@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Nav gating tests — the spa-v2 route catalogue and its visibility matrix.
  *

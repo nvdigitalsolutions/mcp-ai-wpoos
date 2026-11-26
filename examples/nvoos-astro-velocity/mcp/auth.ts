@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // auth.ts — nvoos-astro-mcp authorization (Proposal 095 §3.3).
 //

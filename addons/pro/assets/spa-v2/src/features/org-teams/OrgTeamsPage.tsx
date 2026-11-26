@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * OrgTeamsPage — the tenant's teams and their members.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Static pose classification from geometry.
 //!
 //! Deliberately rule-based for v1: no weights, no download, no licence

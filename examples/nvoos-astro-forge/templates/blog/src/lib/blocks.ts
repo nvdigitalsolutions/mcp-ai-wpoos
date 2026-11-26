@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // blocks.ts — pure helpers for the content blocks (Proposal 126 §blocks).
 // Tabs need deterministic ids for the radio-input technique; the djb2 hash
 // keeps the id stable across rebuilds (the velocity content-blocks

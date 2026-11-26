@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Dictation controller: the orchestration loop.
 //!
 //! Flow (Windows PTT):

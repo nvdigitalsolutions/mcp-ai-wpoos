@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * LoginScreen UI tests — form submission, uniform error display, the
  * informational notice (session-expired) surface, and the magic-link

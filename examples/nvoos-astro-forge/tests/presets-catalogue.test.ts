@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // presets-catalogue.test.ts — `presets.json` must match lib/presets.ts.
 //

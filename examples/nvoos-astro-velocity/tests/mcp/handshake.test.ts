@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // handshake.test.ts — MCP Streamable HTTP conformance over a real node:http
 // socket (Proposal 095 §4.2 exit criteria), covering BOTH wire eras the
 // endpoint serves:

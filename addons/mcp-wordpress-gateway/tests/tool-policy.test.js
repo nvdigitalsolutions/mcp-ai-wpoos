@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tool policy tests: wildcard matching, deny-wins filtering, list rewriting.
  */

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Canonical shared types for the NV oOS TypeScript layer.
  *

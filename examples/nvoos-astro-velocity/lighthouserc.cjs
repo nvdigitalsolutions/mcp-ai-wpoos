@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Lighthouse CI — Proposal 092 Phase 2.6 gate.
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * The wp-admin page no longer consumes this externals target (bridge 1.1.0):
  * AdminPage enqueues build/standalone/astro-admin.{js,css} instead — under

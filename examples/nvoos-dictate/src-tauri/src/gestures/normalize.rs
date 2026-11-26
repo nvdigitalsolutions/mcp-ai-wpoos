@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Landmark normalisation.
 //!
 //! Raw landmarks mix four things we do not want the classifier to depend on:

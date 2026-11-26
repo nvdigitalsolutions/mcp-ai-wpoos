@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // media-url-cache-bust.test.ts — the proxied media path, EXECUTED.
 //

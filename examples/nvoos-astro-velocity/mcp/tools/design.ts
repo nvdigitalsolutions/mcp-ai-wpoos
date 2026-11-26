@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // design.ts — nvoos-astro-mcp design tool slice (Proposal 095 §3.3).
 // Tokens/themes/contrast over the ADS TokenService. Every bulk write is

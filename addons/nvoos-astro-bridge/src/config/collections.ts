@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Config-driven collection definitions — mirrors Payload schema.
  *

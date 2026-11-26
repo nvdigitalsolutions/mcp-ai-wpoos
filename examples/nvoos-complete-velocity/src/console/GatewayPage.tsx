@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * GatewayPage — fleet gateway catalog & policy view for the console shell.
  *

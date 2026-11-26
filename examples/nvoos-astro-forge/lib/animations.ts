@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // animations.ts — the source's animated-effect inventory (2026-11-12).
 //

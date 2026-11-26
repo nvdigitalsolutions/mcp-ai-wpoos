@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // registry.test.ts — the single-source coverage gate (096 §7): every tool
 // must carry a Zod schema, explicit annotations, a write flag, and a

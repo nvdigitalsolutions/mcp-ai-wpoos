@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Test suite for inline content extraction from tool results
  * Specifically tests the generate_gemini_image and edit_gemini_image response handling

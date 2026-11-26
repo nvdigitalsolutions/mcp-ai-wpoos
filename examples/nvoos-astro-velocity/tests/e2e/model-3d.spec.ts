@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // model-3d.spec.ts — the 3D product block's contracts.
 //

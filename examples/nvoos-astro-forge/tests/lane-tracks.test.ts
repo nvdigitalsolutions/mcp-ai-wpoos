@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // lane-tracks.test.ts — the source's per-device ROW, as a grid track count.
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // vision-structure.test.ts — the STRUCTURE verdict contract.
 //

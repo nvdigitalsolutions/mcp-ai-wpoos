@@ -1,6 +1,7 @@
 {
 	"name": "design-media-worker",
 	"version": "3.4.0",
+	"license": "UNLICENSED",
 	"description": "Design Stack media worker — AI image/video generation, optimization, social publishing, document pipeline, and workflow orchestration",
 	"main": "src/index.js",
 	"type": "module",

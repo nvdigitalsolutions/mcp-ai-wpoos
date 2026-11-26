@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Phase 0 measurement harness for Proposal 144 §4.3 — capture residency.
 //!
 //! Measures, on this machine, in one run:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // util.ts — shared MCP tool helpers (Proposal 096 Phase 4; 095 pattern).
 //

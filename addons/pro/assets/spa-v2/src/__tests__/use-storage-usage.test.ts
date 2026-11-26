@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useStorageUsage — reactive localStorage quota tests.
  */

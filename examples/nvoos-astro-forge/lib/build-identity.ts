@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // build-identity.ts — prove the LIVE site is the artifact you just built.
 //

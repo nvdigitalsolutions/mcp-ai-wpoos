@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Deterministic chunking for the memory corpus (Proposal 127).
 //!
 //! Splits captured text into searchable units: line/paragraph breaks first,

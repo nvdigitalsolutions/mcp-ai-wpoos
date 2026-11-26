@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // tools.test.ts — MCP tool handler units (hermetic temp forge home, zero
 // network): site registry round-trips, SSRF-gated analyze, target

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Estate service — the application layer the HTTP router talks to.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // checkout-api.test.ts — Proposal 110: the embedded checkout client's pure
 // pieces (schemas, Stripe payment_data builder, post-payment routing, thanks
 // param validation, the embed-eligibility rule) — all hermetic.

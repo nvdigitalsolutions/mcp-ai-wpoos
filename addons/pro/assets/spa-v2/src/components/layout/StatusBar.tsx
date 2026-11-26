@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * StatusBar — Fixed bottom bar showing connection status, model, profile,
  * and localStorage session storage usage.

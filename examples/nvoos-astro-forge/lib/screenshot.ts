@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // screenshot.ts — deterministic screenshots for the pixel gate.
 //

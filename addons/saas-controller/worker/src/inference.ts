@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Inference proxy — forwards OpenAI-compatible requests to the Cloudflare AI
  * Gateway → OpenRouter, captures wholesale cost, applies markup, debits the

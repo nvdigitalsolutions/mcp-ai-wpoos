@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /* global jQuery, wpMcpAiMediaBlueprints */
 ( function ( $ ) {
 	'use strict';

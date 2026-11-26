@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { describe, expect, it } from 'vitest';
 
 import { auditBands, builtBandBlocks, formatBandReport } from '../lib/band-audit.ts';

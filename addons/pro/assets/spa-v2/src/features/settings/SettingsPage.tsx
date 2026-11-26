@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * SettingsPage — schema-driven plugin settings form (2.4.0, Proposal 084
  * Phase 2).

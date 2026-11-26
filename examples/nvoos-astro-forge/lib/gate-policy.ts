@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // gate-policy.ts — per-site gate blocking policy (Proposal 114 §3.6 addendum).
 //

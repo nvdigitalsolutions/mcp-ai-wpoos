@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Custom React Flow node: trigger (cron, webhook, or event).
  */

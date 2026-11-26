@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // design.ts — the forge design-import module (Proposal 114 P1/P5).
 //

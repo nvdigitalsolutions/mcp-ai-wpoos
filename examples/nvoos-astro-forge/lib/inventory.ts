@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // inventory.ts — page-inventory discovery (Proposal 115 §1/§2).
 //

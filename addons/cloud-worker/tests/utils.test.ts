@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Unit tests for the dependency-free helpers in src/utils.ts and src/billing.ts.
  *

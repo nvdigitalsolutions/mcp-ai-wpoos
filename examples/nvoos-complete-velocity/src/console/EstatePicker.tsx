@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Estate picker — shown when the Laravel runtime reports several memberships
  * and no usable selection (149 §21).

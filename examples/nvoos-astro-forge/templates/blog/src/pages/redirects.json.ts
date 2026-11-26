@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import manifest from '../../nvoos.json';

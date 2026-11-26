@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ProOpsPage — Pro ops overview (Proposal 084 Phase 3, gap P11).
  *

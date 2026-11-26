@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // fact-audit.ts — did the build actually render the facts it was given?
 //

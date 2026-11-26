@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * MentionChip — Rendered mention in the message editor.
  * Shows as a small pill that can be removed.

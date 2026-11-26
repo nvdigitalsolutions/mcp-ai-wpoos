@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // contrast.ts — WCAG 2.2 contrast math for the token gate (Proposal 096 §2.4).
 //

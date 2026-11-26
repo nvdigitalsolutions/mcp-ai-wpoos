@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Typed REST API client for NV Open Operator System (oOS).
  *

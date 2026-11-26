@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * UI Store — Zustand store for sidebar, modals, toasts, and theme.
  */

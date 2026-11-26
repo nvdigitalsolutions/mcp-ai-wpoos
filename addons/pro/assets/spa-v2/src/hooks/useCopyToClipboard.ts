@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useCopyToClipboard — Hook for copying text to clipboard.
  */

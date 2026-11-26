@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useTriggers — Hook for workflow triggers (list, toggle, delete).
  */

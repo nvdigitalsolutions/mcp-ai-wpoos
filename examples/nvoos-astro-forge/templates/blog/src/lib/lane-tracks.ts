@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // lane-tracks.ts — how many columns the SOURCE puts on one device row.
 //

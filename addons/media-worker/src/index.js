@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';

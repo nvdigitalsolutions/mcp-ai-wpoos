@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // geometry.ts — rendered box geometry, measured instead of inferred.
 //

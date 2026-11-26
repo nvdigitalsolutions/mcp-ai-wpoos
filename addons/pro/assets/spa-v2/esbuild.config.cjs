@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * esbuild configuration for NV oOS Pro SPA v2 addon.
  *

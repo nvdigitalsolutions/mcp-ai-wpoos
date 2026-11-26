@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ToolkitsClient contract tests (fetch mocked) — Phase 4.2.
  */

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // /<slug>/index.md — the markdown variant of a page (Proposal 136 §4.4).
 //
 // The llms.txt v2 proposal asks for a clean markdown version at the same URL

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // analyzer.ts — deterministic static design-language extraction (Proposal 098
 // Phase 0.3).

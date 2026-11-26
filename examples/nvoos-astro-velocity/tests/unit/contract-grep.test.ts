@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Contract gate (D3 + naming policy) — the CI-enforced invariant that the
 // storefront binds ONLY to the NV commerce contract. The gate covers BOTH

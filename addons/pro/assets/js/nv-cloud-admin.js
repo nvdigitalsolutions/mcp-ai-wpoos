@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /* global wp, jQuery */
 /**
  * NV oOS Cloud admin settings page.

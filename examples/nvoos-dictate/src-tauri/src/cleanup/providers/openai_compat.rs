@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! OpenAI-compatible Stage-2 provider (BYOK; also covers local Ollama
 //! endpoints). The API key lives in the OS keychain — never in config.
 

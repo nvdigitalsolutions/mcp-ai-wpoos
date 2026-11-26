@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // header-actions-browser.test.ts — the header CTA pills as the BROWSER paints
 // them (`measureHeaderActions`).

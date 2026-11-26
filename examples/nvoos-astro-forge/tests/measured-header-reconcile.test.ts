@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // measured-header-reconcile.test.ts — the measured sticky header outranks the
 // stylesheet harvest.

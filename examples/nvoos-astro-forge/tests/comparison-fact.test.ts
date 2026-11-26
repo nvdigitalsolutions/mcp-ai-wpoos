@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // comparison-fact.test.ts — the analyzer-measured COMPARISON MATRIX.
 //

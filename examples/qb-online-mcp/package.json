@@ -2,6 +2,7 @@
 	"name": "qb-online-mcp",
 	"version": "0.1.0",
 	"private": true,
+	"license": "UNLICENSED",
 	"type": "module",
 	"description": "QuickBooks Online MCP server — Streamable HTTP front end over Intuit's accounting API.",
 	"main": "src/server.js",

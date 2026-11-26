@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * DashboardsPage — the generic repeating-dashboard surface (Proposal 084
  * Phase 4, W13 CRE portfolio pilot).

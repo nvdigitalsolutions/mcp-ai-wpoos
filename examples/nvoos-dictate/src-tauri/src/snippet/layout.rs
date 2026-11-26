@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Reading-order reconstruction for OCR + extracted-text boxes (Proposal 102
 //! D7, pulled forward by Proposal 109 M1 as its first consumer).
 //!

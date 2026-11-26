@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // managed-runtime.test.ts — Proposal 135 Phase 2: the emitted managed surface.
 //

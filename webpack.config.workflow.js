@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * WordPress Scripts Webpack Config – Pro Workflow Builder
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // wp-loader.ts — the Astro content-layer loader for WordPress (Proposal 096).
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Theme registry — Proposal 104 §4.2 (forge variant). The selectable theme
 // list is static for now: 'light' (the implicit default — absent data-theme)

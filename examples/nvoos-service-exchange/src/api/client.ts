@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import type { Blueprint, CatalogueEntry, EstateDetail, EstateSummary } from '../types';
 
 export class ApiClientError extends Error {

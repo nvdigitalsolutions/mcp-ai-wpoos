@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * NotFound — shown when a requested slug is not in the manifest.
  *

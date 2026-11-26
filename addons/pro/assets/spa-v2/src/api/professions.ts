@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Professions client — the assistant editor's profession catalogue.
  *

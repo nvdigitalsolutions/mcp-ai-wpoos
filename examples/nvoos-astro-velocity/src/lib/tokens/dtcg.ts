@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // dtcg.ts — DTCG 2025.10 validation + reference resolution (runtime twin).
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Site Toolkits Page — manage toolkits on a specific site.
  *

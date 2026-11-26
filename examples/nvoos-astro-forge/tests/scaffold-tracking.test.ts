@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // scaffold-tracking.test.ts — the generated tracking module + env lines
 // (Proposal 130 §3.4).

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-lane-facts.test.ts — a container-mode band records its LANES.
 //

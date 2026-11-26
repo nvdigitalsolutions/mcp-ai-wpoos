@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import MarkdownRenderer from '@nvdigitalsolutions/nvoos-markdown';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';

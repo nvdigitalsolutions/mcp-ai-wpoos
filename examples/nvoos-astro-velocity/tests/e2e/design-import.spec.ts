@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // design-import.spec.ts — Proposal 098 end-to-end: the complete
 // inspired-by recreation loop driven from a real browser over /mcp.

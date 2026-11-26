@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * UI Utilities Service for NV oOS Chat
  * 

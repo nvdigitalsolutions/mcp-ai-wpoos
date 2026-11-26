@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // structure-pass.ts — the opt-in VISION structure pass (Proposal 163 §P6).
 //

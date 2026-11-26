@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // surface-coverage.test.ts — the gate that asks "did the page PAINT it?".
 //

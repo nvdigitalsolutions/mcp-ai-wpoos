@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // /forms/submit — the storefront's own public form endpoint (Proposal 138).
 //

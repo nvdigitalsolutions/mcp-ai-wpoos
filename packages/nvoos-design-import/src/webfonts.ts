@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // webfonts.ts — Google Fonts loading for harvested brand families
 // (Proposal 126 cross-pollination — the forge webfont harvest). The ADS
 // font tokens declare the family; a system stack renders with no link, a

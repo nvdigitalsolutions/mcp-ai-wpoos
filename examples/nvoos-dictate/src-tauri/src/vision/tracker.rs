@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! SORT-style multi-object tracker (Kalman + IoU) with a click-to-select pin.
 //!
 //! Classic Simple Online Realtime Tracking: each track is a constant-velocity

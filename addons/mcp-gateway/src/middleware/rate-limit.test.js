@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Rate limiter tests — per-key budgets, 429 shape, Retry-After header.
  */

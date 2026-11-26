@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Type declaration for the vendored explorer factory
  * (upstream/content-graph-admin.js).

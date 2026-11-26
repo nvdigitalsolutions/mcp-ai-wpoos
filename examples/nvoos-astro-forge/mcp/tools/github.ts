@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // github.ts — publish tool slice (096 §3.3): private-by-default repo create,
 // source commit/push, and a redacted status view. Tokens come from

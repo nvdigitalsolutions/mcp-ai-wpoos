@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Model download registry: pinned model sources, SHA-256 verification,
 //! progress reporting, atomic install.
 //!

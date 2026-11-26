@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! NeMo FastConformer-CTC engine via the OFFICIAL k2-fsa `sherpa-onnx` API.
 //!
 //! Runs the same `OfflineRecognizer` as parakeet but through the

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ConsoleSidebar tests — grouped nav rendering, disclosure behaviour,
  * dock toggle, collapse rail, and the visibility matrix.

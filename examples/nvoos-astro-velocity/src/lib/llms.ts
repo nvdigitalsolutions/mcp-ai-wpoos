@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // llms.ts — the agent-facing index (Proposal 136 §4.4, velocity port).
 //

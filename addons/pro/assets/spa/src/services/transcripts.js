@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Transcripts Client — typed wrappers around mcp-ai/v1/chat-transcripts.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // element-css-structural.test.ts — the CLASS-anchored fallback for a builder
 // that re-mints element ids per render.

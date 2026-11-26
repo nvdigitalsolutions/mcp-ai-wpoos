@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // redirects.ts — the redirect-map generator (096 §3.3; Proposal 132).
 //

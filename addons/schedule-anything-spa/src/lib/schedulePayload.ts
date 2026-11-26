@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Build the create-schedule REST payload from builder canvas state.
  *

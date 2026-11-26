@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // copy.test.ts — the template's typed copy tables (Proposal 104 §4.5):
 // the reference table, the Copy derivation, and the useCopy() lookup. The

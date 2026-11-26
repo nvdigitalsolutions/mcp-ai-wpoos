@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ModelSelector — Provider + model dropdown with favorites support.
  * Zed equivalent: Model selector in Agent Panel.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // media-localize.test.ts — Proposal 138 media localization.
 //

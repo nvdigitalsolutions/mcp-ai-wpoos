@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * FlexSearch adapter for client-side full-text search.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // scaffold.ts — materializes the Astro project from a site profile.
 //

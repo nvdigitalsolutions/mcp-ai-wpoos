@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Parakeet TDT engine via the OFFICIAL k2-fsa `sherpa-onnx` Rust API.
 //!
 //! API verified against sherpa-onnx 1.13.8 (the crate's own doc example in

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Pro SPA v2 — Suggested prompts component.
  * @package NV_oOS_Pro_Spa @since 0.9.0

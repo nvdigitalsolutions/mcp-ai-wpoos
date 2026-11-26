@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // deploy-config.ts — the generated deploy pipeline (Proposal 096 Phase 3.3).
 //

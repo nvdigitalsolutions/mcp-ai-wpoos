@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import client, {
 	configure, isAvailable, wakeUp, recall, store, update, remove, audit,
 	getPreferences, setPreferences, isMemoryRetrievalResult

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // capture.test.ts — the screenshot contract (Proposal 118 §2): endpoint
 // resolution, payload normalization, dropped-artifact reads.

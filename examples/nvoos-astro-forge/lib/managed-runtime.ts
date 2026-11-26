@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // managed-runtime.ts — the managed deploy tier's emitted runtime files
 // (Proposal 135 Phase 2).

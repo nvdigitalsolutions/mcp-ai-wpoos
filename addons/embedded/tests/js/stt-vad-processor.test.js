@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests for Voice Activity Detector (stt-vad-processor.js)
  *

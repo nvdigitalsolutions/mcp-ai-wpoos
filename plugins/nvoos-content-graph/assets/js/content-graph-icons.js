@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /* jshint esversion: 6 */
 /**
  * NV oOS Content Graph — Icon Glyph Registry

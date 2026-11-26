@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forms-check.ts — the LIVE half of the enquiry contract (`forge forms check`).
 //

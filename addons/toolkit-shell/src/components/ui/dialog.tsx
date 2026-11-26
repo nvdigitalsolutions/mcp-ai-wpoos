@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Dialog — Radix Dialog primitives, unstyled (classes in main.css).
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /* global wpMcpAiSkillManager */
 /**
  * Skill Manager Admin – JavaScript entry point.

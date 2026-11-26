@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Dialog — Radix Dialog primitives with shadcn styling.
  */

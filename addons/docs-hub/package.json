@@ -3,6 +3,7 @@
   "version": "0.3.9",
   "description": "NV oOS Docs Hub – React documentation browser SPA",
   "private": true,
+  "license": "GPL-3.0-or-later",
   "scripts": {
     "build": "node esbuild.config.js --prod",
     "build:dev": "node esbuild.config.js",

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Minimal standalone stand-in for `@wordpress/i18n`.
  *

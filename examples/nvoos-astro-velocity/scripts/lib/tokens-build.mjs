@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // tokens-build.mjs — ADS generator core (zero-dep). Reads the DTCG token
 // sources in src/tokens/ and emits:

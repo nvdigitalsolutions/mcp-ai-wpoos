@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * React Query hooks for the Astro CMS REST API.
  *

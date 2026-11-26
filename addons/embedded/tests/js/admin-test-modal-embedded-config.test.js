@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests for admin-test-assistant.js embedded config endpoint inclusion.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // property-coverage.test.ts — a measured property that never reaches the CSS.
 //

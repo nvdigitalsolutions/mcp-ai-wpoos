@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Playwright e2e — Proposal 092 Phase 2.5 gates.
 //
 // Boots its own fixture contract server + BFF (same pair smoke.mjs uses),

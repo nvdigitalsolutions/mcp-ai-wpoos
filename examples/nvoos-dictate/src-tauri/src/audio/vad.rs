@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Voice activity detection.
 //!
 //! Default: a pure-Rust **energy (RMS) VAD** — instant, zero dependencies,

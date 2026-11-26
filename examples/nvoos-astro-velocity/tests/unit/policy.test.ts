@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // policy.test.ts — Proposal 105 P2: the theme-policy module ladder.
 // Pins: forced light/dark/brand, unknown-slug fail-open, forced-ignores-
 // storage, the auto ladder (stored → media → defaultTheme), the contrast

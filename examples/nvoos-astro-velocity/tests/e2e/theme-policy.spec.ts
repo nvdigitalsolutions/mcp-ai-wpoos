@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // theme-policy.spec.ts — Proposal 105 P2 e2e gates.
 //
 // Runs in the ISOLATED serial 'theme-policy' project (own fixture + BFF pair,

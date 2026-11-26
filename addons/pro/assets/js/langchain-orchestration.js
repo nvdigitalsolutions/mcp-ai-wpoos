@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * LangChain.js Orchestration Client for WordPress
  *

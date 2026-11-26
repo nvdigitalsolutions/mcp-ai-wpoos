@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Test user message attachment metadata display
  * Verifies that attachments in user messages display complete metadata

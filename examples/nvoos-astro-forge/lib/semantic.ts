@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // semantic.ts — the builder-structure classifier (Proposal 114 P2).
 //

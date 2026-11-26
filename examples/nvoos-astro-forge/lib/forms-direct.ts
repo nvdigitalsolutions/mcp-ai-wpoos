@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forms-direct.ts — the DIRECT delivery endpoint emitter.
 //

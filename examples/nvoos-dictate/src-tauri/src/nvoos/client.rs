@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Typed REST client for the NV oOS plugin.
 //!
 //! Security invariants:

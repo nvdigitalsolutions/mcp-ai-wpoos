@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 // Generates placeholder app icons (PNG/ICO/ICNS) with zero dependencies.
 // BOOTSTRAP ONLY: first-time scaffolding art. The committed brand icons
 // (generated from the brand SVG via `npm run tauri icon <source.svg>`)

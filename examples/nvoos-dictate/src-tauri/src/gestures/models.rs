@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Hand-landmark model catalogue with a **pinned, hash-verified** artifact.
 //!
 //! Proposal 153 M0 is satisfied for one export: OpenCV Zoo's ONNX conversion of

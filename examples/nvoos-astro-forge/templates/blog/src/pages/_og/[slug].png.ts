@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // /og/{slug}.png — build-time social cards for posts (Proposal 104 §4.8 /
 // Q5, the Cactus pattern). Scaffolded only when the ogImages surface is on

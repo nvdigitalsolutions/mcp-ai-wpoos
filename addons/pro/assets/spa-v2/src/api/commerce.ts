@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Commerce toolkit console API (Proposal 089 Phase 3c).
  *

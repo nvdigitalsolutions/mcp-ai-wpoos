@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Hand-landmark backends.
 //!
 //! [`HandPoseBackend`] is the seam between the portable decision logic and a

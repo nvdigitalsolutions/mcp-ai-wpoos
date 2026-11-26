@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Branded sign-in screen — replaces the proxied WordPress login page.
  *

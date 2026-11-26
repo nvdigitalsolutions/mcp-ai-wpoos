@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // lhci-local.mjs — run Lighthouse CI against the hermetic local servers.
 //

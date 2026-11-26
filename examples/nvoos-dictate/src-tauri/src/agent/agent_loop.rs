@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! The ReAct loop (§3): observe → reason → act → reflect, hardened for a
 //! local-model brain.
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // tool-def.ts — the single-source tool contract (Proposal 096 Phase 4, the
 // 095 registry pattern). Every tool: name, title, description, a Zod input

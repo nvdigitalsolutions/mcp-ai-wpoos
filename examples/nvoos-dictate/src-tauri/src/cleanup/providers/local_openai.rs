@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Shared implementation for **local** OpenAI-compatible Stage-2 providers.
 //!
 //! LM Studio and Ollama both expose an OpenAI-compatible `/v1` surface over

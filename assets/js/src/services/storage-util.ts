@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Storage Utility for NV oOS Chat — TypeScript edition.
  *

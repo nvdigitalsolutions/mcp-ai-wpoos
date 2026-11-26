@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // product-3d-variant.test.ts — the additive `product-3d` template variant.
 //

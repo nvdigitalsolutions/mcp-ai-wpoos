@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ConsolidateScreen — duplicate finder for one entity.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { describe, expect, it } from 'vitest';
 import { buildAdminConfig } from '../../src/lib/manage-config';
 import type { Customer } from '../../src/lib/commerce/types';

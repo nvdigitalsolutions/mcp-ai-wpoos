@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // content-scan.ts — the content audit scanner (096 §3.3 long-tail).
 //

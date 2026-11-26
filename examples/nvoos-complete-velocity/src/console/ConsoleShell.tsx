@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ConsoleShell — SA-format host shell for the NV oOS Complete Console.
  *

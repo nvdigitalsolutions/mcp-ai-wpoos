@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * File header.
+ *
+ * @package WP_MCP_AI
+ * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 namespace Nvoos\Core\Domain\Contract;
 
 /**

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Query-side tokenizer + FTS5 query builder (Proposal 127).
 //!
 //! One tokenizer for index and question (SurfSense ADR 0032): the index side

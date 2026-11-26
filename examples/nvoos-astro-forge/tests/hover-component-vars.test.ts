@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // hover-component-vars.test.ts — the measured hover repaint reaches the REBUILT
 // component.

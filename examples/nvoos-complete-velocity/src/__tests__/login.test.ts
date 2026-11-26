@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Sign-in unit tests — the wp-login replay flow (fetch mocked) and the 401 →
  * UnauthorizedError mapping from the session bootstrap.

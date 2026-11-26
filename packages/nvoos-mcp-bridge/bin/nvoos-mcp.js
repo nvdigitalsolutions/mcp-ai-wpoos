@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * nvoos-mcp — package entry dispatcher (package-owned, NOT synced from bin/).
  *

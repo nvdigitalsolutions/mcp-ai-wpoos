@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Shared OpenAI-compatible transport shape for Stage-2 polish providers.
 //!
 //! Both `openai_compat` and `lm_studio` speak the same `/v1/chat/completions`

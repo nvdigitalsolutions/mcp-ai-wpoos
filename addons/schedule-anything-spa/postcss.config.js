@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * PostCSS config — Tailwind CSS v4.
  *

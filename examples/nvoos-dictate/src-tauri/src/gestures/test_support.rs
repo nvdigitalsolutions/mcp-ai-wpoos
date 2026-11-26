@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Synthetic hand fixtures for unit tests.
 //!
 //! These build plausible 21-landmark hands without a camera or a model, so

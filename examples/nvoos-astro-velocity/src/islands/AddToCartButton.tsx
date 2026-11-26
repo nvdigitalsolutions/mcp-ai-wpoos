@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // AddToCartButton island — clean-room React component (D6), client:load (CSP: no per-page inline bootstrap).
 // Writes the display-only cart store (no checkout in the v1 contract).

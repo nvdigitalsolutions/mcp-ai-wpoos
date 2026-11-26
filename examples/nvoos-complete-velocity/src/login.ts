@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Cookie-auth WordPress sign-in and sign-out for the NV oOS Complete
  * Console.

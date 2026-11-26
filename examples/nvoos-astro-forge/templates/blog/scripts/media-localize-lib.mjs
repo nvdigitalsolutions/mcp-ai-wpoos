@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // media-localize-lib.mjs — pure helpers for the post-build asset localizer.
 //

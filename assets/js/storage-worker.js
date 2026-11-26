@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Web Worker for handling heavy localStorage operations.
  * 

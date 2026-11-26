@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // structure-pass.test.ts — the vision structure pass, without a browser.
 //

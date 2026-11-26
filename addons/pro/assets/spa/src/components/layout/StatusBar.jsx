@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import CollaborativePresence from '../collaboration/CollaborativePresence';
 
 export default function StatusBar() {

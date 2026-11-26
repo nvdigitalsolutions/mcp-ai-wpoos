@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
+//! Tauri build script: compiles the app and stages the optional PDFium runtime
+//! beside dev and integration-test binaries when the `document` feature is on.
 fn main() {
     tauri_build::build();
     #[cfg(feature = "document")]

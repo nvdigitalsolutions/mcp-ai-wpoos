@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Layout — Root layout component wrapping the SPA in HashRouter.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // csp-inline-invariance.test.ts — Proposal 104 D12 guard.
 //

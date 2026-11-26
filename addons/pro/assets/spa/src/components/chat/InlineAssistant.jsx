@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Inline Assistant — Gutenberg sidebar for AI text transformation.
  *

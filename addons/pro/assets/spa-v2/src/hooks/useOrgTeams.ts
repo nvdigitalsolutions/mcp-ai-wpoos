@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useOrgTeams — hook for the tenant's org teams and their members.
  *

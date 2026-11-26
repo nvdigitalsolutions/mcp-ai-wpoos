@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * PKCE end-to-end harness — Proposal 099 Phase 0/3.
  *

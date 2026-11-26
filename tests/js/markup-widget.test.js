@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests for the markup widget module (DOM scaffolding only — Konva is
  * not loaded so the inline canvas path falls through to the fallback,

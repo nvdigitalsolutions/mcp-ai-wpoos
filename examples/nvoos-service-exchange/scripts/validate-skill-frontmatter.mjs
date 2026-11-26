@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Validate SKILL.md frontmatter across the repo + global skill roots.
  *

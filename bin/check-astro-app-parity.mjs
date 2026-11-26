@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 // ---------------------------------------------------------------------------
 // check-astro-app-parity.mjs — cross-app contract drift detector
 // (examples/nvoos-astro-forge ↔ examples/nvoos-astro-velocity).

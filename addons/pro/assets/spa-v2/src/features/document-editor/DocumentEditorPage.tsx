@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * DocumentEditorPage — native NV oOS Document Editor island inside the Pro SPA.
  *

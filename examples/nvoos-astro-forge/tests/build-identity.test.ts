@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // build-identity.test.ts — the stale-deploy detector.
 //

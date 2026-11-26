@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Tests for the Hermes WebUI MCP server (bin/hermes-mcp-server.js).
  *

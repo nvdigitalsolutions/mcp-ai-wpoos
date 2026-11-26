@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Typed IPC commands exposed to the webview.
 //!
 //! Tauri trust-boundary rules: every command validates its inputs in Rust,

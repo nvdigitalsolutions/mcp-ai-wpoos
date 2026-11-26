@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useProfessions — the profession catalogue for the assistant selector.
  *

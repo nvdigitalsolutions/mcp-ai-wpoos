@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! `AgentController`: owns the CDP `Driver` on a dedicated `nvoos-agent` worker
 //! thread (the `Browser`/`Handler` are `!Sync`, so they cannot live in `AppState`
 //! — the same ownership rule as `cpal::Stream` and `nokhwa::Camera`), runs the

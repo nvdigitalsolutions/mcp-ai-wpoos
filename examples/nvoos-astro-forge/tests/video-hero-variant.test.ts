@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // video-hero-variant.test.ts — the additive `video-hero` template variant.
 //

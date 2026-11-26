@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Laravel login/logout path tests (Proposal 090-B Phase 1).
  *

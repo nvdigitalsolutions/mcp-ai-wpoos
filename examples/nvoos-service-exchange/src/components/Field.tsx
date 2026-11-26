@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import type { ReactNode } from 'react';
 
 export function Field( {

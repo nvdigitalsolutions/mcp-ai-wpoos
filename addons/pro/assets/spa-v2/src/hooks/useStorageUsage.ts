@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * useStorageUsage — Reactive measurement of the localStorage space consumed
  * by the plugin's keys (wp_mcp_ai_*, nvoos-chat-spa*, nvoos-pro-spa*).

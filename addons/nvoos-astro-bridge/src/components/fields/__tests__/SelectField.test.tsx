@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * SelectField — native select, options from config, aria-invalid on error.
  */

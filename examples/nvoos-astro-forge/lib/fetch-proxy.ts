@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // fetch-proxy.ts — the build-time proxy seam (Proposal 116 follow-up).
 //

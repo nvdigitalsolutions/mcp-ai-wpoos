@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // materialize-from-wp.test.ts — freeze a LIVE CMS into the snapshot shape.
 //

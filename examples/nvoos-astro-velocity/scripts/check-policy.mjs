@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // check-policy.mjs — CI drift gate (Proposal 105 §3), chained into `npm run
 // check` like check:tokens. Recomputes the expected generated artifact from

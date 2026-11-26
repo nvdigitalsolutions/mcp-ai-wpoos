@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Test suite for tool result parsing and display
  * Tests the fix for issue #1429 where images weren't surfacing in chat

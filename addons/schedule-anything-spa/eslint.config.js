@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ESLint flat config — Schedule Anything SPA.
  *

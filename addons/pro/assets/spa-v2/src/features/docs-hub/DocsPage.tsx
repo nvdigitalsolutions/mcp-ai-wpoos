@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * DocsPage — native NV oOS Docs Hub island inside the Pro SPA.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Pro SPA v2 — Workflow builder client (Proposal 084 Phase 3b, W10.2a).
  *

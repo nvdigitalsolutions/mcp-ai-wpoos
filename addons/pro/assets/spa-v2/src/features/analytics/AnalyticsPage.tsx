@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * AnalyticsPage — site-wide usage + cost analytics (Proposal 084 Phase 5b).
  *

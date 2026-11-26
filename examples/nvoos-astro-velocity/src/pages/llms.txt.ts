@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // /llms.txt — the storefront's agent index (Proposal 136 §4.4).
 //
 // Links the canonical HTML pages (velocity's content is Portable Text, so a

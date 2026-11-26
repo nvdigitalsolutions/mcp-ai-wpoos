@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // font-audit.test.ts — the browser-free half of the font-survival gate.
 //

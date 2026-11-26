@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * AssistantsPage — Advanced section (090-B assistant edit parity).
  *

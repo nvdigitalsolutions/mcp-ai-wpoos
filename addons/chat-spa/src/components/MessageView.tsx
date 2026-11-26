@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * NV oOS Chat SPA — single message renderer (Phase 8 enhanced).
  *

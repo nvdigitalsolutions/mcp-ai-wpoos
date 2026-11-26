@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Root component — layout shell with catalogue-driven navigation.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Create Site Wizard — multi-step form with provisioning progress.
  *

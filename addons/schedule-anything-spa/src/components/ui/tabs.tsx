@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tabs — Radix Tabs primitives with shadcn styling.
  */

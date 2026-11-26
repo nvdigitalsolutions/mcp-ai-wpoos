@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Dependency-free validation gate for the NV oOS Gateway plugin package
  * (Node built-ins only — the mirror repo must never need `npm install`).

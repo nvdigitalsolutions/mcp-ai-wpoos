@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // wireframes.test.ts — Proposal 115 §3/§4: captured wireframes from rendered
 // source HTML (sanitize → classify → responsive enrichment) vs. content-first

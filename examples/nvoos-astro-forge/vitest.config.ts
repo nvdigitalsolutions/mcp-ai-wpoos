@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { defineConfig } from 'vitest/config';
 
 // A large slice of this suite does real filesystem work: it scaffolds a whole

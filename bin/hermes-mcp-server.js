@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Hermes WebUI MCP Server — exposes the Hermes Agent WebUI as MCP tools.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // media-snapshot.test.ts — the committed media net for a CMS-less site.
 //

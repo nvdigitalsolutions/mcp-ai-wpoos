@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Intent routing: the single safety gate.
 //!
 //! The router is the only place that turns a recognised gesture into an

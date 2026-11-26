@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // page-design.test.ts — merging a page's design facts onto its measured bands.
 //

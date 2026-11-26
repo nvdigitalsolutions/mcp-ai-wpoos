@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // forms.test.ts — the payload contract BOTH delivery modes share.
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Runtime config unit tests — endpoint building, runtime shape, nonce/user
  * fetch chains (fetch mocked).

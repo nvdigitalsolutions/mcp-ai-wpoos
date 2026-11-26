@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Reconciler — pure merge of provider probes into estate evidence.
  *

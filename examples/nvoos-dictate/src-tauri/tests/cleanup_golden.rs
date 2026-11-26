@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Golden tests for the deterministic cleanup pipeline (Stage-1).
 //!
 //! These are the regression backstop: any rule change must keep every case

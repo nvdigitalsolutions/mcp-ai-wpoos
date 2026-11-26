@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Resident microphone capture feeding the pre-roll ring buffer.
 //!
 //! Architecture note: `cpal::Stream` is `!Send + !Sync` on WASAPI (cpal

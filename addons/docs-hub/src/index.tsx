@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Entry point — mounts the Docs Hub SPA into all matching root elements.
  *

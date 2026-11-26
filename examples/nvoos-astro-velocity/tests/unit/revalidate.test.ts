@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // revalidate.test.ts — Proposal 104 Q3: the /internal/revalidate route.
 // Fail-closed auth: unset token 503, bad token 401, good token purges the
 // requested tags (defaulting to the products tag set).

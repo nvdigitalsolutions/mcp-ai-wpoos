@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Argument bounds for the video route (Proposal 164 §164.4.5).
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Chart Recipes — spa-v2 unit tests.
  *

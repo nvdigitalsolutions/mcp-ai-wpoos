@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Portable Text — the structured block-content layer (Proposal 107,
 // DECISION-2, D1). Open spec (portabletext.org), JSON-native, agent-friendly:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // scaffold.test.ts — template copy, FORGE-marker rewrite, vendoring, gates.
 // ---------------------------------------------------------------------------

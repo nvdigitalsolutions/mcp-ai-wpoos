@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * End-to-end smoke tests over a real socket: inbound auth, health, and the
  * legacy (claim-less) MCP handshake + tools/list.

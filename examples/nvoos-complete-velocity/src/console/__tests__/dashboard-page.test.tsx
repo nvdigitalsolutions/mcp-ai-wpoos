@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * DashboardPage tests — welcome card, live stats, quick-action navigation.
  */

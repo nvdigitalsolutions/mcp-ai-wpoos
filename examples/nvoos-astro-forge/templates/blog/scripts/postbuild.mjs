@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // postbuild.mjs — materialize the host-agnostic redirect map (Proposal 096 §0).
 //

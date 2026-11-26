@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Vision model catalogue: pinned ONNX detector / hand models with SHA-256
 //! verification, streaming download, and atomic install — mirroring
 //! `stt::model_registry` but scoped to single-file ONNX vision models.

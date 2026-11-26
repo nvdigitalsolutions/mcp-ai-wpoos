@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * GitHub client for per-estate console branches (ADR-05).
  *

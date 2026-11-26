@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Build script: Adapt the nvoos-sse-client source for NPM distribution.
  *

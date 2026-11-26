@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Test for streaming text rendering fallback when markdown rendering fails
  * 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { rm } from 'node:fs/promises';
 
 // Temp-tree teardown for the suites that scaffold a whole Astro project into a

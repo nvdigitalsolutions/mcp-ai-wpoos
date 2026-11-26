@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Managers section — promote/demote WordPress users with CMS manager access.
  *

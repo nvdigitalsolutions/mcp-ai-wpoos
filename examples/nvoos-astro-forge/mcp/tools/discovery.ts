@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // discovery.ts — the site_analyze tool slice (096 §3.3). Open-world READ:
 // registry URLs always pass; arbitrary URLs need NVOOS_FORGE_OPEN_ANALYZE=1;

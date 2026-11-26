@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // band-diff.ts — WHERE a band's height delta comes from.
 //

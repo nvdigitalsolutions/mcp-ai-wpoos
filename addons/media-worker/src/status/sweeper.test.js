@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for the dead man's switch sweeper (fake store + injectable clock).
  */

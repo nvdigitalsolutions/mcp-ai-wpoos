@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // og.test.ts — Proposal 104 Q5: the pure OG card builder (the satori/resvg
 // render path is covered by the e2e + smoke image assertions).
 import { describe, expect, it } from 'vitest';

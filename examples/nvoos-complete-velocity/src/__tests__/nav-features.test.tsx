@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Nav gating tests — the visibility matrix and the RequireGate route guard.
  *

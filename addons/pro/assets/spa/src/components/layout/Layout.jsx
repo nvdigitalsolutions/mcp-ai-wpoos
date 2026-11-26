@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Layout — Three-column SPA layout: ChatSidebar | MainContent | RightPanel.
  *

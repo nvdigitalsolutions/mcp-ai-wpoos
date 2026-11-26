@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! macOS foreground-app detection via NSWorkspace (P5 port, phase M6).
 //!
 //! The Windows counterpart is `win_foreground.rs`; both feed the per-app

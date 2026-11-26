@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // text-parity.test.ts — normalisation, shingling, coverage direction, extraction.
 //

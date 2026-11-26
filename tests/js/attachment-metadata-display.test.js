@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Test attachment metadata display includes attachment_id
  * Verifies that buildAttachmentMeta includes attachment_id in the format "ID: X"

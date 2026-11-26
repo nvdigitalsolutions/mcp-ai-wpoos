@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /** Public booking page — no auth required. */
 export function BookingPage() {
   return (

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * EmbeddedApp — Router-free, chat-first mount for the [nvoos_pro_spa]
  * shortcode.

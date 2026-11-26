@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Scan-profile preprocessing for document pages (Proposal 102 §3.3's
 //! accuracy ladder, pulled forward by Proposal 109 M2).
 //!

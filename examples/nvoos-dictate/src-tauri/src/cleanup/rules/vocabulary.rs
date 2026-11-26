@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Vocabulary substitution: user dictionary terms are replaced on word
 //! boundaries, case-insensitively, longest-term-first so "new york city"
 //! wins over "york".

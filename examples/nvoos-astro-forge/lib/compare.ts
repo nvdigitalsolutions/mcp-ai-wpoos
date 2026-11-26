@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // compare.ts — measure the same element on the source and on the rebuild, and
 // report the difference.

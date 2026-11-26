@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Ambiguity arbitration — M6 of Proposal 153 §7.3.
 //!
 //! When the stabiliser cannot separate two poses, a local LLM is asked to pick

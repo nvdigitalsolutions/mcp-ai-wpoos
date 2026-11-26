@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // seo-graph.ts — the site-level JSON-LD graph helper (Proposal 131 §2.3).
 //

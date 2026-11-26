@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Lock-free-ish pre-roll ring buffer for microphone samples.
 //!
 //! The mic stream stays open while the app runs; samples land in this ring

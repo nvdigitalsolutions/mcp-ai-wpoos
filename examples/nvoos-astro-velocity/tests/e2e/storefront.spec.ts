@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Interactive storefront e2e — Proposal 092 Phase 1 parity checks.
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // seo.ts — kind-typed JSON-LD builder (Proposal 104 §4.6 / D5), vendored
 // into the template like sanitize.ts. One `jsonLdFor(kind, input)` covers

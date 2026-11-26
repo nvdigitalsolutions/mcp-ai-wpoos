@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * SettingsFormFields — the per-type field renderers shared by the
  * schema-driven settings form (Proposal 084 Phase 2 / 089 Phase 2b).

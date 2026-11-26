@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Browser route — Puppeteer screenshots + PDF generation.
  *

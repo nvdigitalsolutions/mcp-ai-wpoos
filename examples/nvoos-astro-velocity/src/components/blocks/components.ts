@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // components.ts — the Portable Text component map (Proposal 107
 // DECISION-2, shared in 108 Phase 1.3). Blocks.astro and TabsBlock.astro

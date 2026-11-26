@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * RemoteSitesPage — the Connections page (console: Command Centers →
  * Channels → Connections).

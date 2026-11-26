@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * RemoteSitesClient contract tests (fetch mocked) — console Connections page.
  *

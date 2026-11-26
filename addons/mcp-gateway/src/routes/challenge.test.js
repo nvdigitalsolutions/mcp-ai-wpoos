@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * OpenAI domain-verification challenge tests — exact-token plain-text
  * contract, 404 while unset, no caching.

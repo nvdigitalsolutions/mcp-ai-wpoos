@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Media Collection Admin UI JavaScript (Phase 4)
  *

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // Fixture server — serves tests/fixtures/*.json as the NV commerce contract
 // (P5 golden-contract smoke + hermetic `astro build` and BFF smoke tests).

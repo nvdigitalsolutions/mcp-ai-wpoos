@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Hardened Puppeteer launcher shared by the browser and PDF routes.
  *

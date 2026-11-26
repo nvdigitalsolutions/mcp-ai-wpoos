@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Mic probe: open the default input device (or the device whose name
 //! contains an argument substring) for 3 seconds and report whether the
 //! capture stream delivers buffers. Distinguishes an OS/device problem

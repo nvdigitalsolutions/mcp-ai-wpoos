@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * DesignView consumption contract (Proposal 095 §4.1) — the MCP client is
  * mocked, so this suite pins what the tab asks the /mcp surface for: the

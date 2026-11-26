@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Schedule data-fetching hooks using @tanstack/react-query.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 import { Router } from 'express';
 import axios from 'axios';
 import OpenAI from 'openai';

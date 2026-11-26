@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Chart Recipes — schema-driven, HTML/CSS chart rendering for chat.
  *

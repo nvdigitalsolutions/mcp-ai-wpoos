@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * GatewayPage tests — catalog + policy rendering and the unconfigured state.
  */

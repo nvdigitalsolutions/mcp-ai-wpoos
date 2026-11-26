@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // template-chrome-media.test.ts — the chrome serves same-origin media.
 //

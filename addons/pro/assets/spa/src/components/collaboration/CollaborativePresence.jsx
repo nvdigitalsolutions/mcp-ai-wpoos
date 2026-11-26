@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * CollaborativePresence — Shows other users editing the same content.
  */

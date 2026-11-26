@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // theme.spec.ts — ADS theme switching e2e (Proposal 095 Phase 1 gates).
 // JS path (ThemeToggle) + no-JS path (data-theme boot) + persistence.
 import { expect, test } from '@playwright/test';

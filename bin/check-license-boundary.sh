@@ -200,6 +200,39 @@ missing_tree "addons/pro/includes" "run bin/add-spdx-headers.php --apply"
 missing_tree "addons/canvas" "run bin/add-spdx-headers.php --apply"
 
 # ---------------------------------------------------------------------------
+# 4. Cross-language documentation contract (Proposal 166, Phase P8).
+#
+# The PHP checks above are tree-wide. This gate applies the same rule to every
+# first-party TS/JS/Astro/Rust file, using .github/docs-scopes.json and the
+# recorded budget. A new file with no SPDX, or any licence that disagrees with
+# its manifest, fails here.
+#
+# On a clean CI checkout, run without flags. Locally, with work in progress,
+# set NVOOS_DOCS_ALLOW_DIRTY=1 so uncommitted files are included rather than
+# skipped (otherwise the budget sees a partial tree).
+# ---------------------------------------------------------------------------
+echo
+echo "Cross-language documentation contract"
+
+if command -v php >/dev/null 2>&1; then
+	if [ "${NVOOS_DOCS_ALLOW_DIRTY:-0}" = "1" ]; then
+		if php bin/check-file-docs.php --strict --allow-dirty; then
+			pass "TS/JS/Astro/Rust — every in-scope file declares its manifest licence"
+		else
+			fail "TS/JS/Astro/Rust — documentation contract violated (Proposal 166)"
+		fi
+	else
+		if php bin/check-file-docs.php --strict; then
+			pass "TS/JS/Astro/Rust — every in-scope file declares its manifest licence"
+		else
+			fail "TS/JS/Astro/Rust — documentation contract violated (Proposal 166)"
+		fi
+	fi
+else
+	fail "php is not available — cannot run the cross-language contract gate"
+fi
+
+# ---------------------------------------------------------------------------
 echo
 if [ "$FAILED" -ne 0 ]; then
 	echo "❌ Licence boundary VIOLATED — see failures above."

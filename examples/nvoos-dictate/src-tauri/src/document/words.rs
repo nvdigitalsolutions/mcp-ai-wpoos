@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Word-box retention for the document pipeline (Proposal 109 follow-up 2).
 //!
 //! Pure functions: scale engine boxes into a page's canonical raster space,

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // policy-build.mjs — theme-policy generator core (zero-dep, Proposal 105).
 // Shared by scripts/build-policy.mjs (writes), scripts/check-policy.mjs

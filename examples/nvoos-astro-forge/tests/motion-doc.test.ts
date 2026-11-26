@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // motion-doc.test.ts — MOTION.md (Proposal 136 §4.4).
 //

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * ChatChannelsPage — the channel command center (Proposal 084 Phase 4,
  * W14 Chat Channels port).

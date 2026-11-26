@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // gate.ts — the page-gate tool slice (Proposal 152).
 //

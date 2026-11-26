@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Nav gating — single source of truth for the console's route catalogue.
  *

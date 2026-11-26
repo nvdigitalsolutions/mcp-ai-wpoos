@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // mail.ts — transactional email delivery for the DIRECT form mode.
 //

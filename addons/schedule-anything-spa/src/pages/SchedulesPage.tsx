@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Schedules page — list, create, toggle, and delete schedules.
  * Uses useSchedules, useToggleSchedule, useDeleteSchedule, useTriggerSchedule hooks.

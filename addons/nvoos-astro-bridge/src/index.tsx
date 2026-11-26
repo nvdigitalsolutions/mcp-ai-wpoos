@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Entry point — mounts the Astro Admin SPA into its root element.
  */

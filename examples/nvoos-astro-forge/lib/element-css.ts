@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // element-css.ts — carry a builder's PER-ELEMENT declarations into the rebuild.
 //

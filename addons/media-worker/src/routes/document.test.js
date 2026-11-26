@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Tests for the Excel route's freeze panes, auto-filter and formula channel.
  *

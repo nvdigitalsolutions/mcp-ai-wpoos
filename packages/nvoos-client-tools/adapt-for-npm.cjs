@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // Adaptation script: Convert WordPress client-tools registry to standalone NPM package
 // The source already declares CLIENT_TOOLS as a plain object literal — the adaptation
 // strips the IIFE wrapper, removes the WordPress global export, replaces the bare

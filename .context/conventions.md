@@ -192,6 +192,29 @@ Use this pattern for:
 
 Do **not** apply this header to trivial utility files that merely call a vendored library — one citation at the top of the wrapper file is enough. The full repo-wide attribution index lives in [`CREDITS.md`](../CREDITS.md) at the repository root.
 
+## File Headers (TS / JS / Astro / Rust)
+
+Proposal 166 (Unix Theory P8–P12) extends the PHP header discipline to every
+first-party source file. The full contract is in
+[`docs/developer/file-header-convention.md`](../docs/developer/file-header-convention.md);
+the enforced shape is:
+
+- One `SPDX-License-Identifier` line, equal to the nearest manifest's licence
+  (`.github/docs-scopes.json` resolves the manifest; `UNLICENSED` → `LicenseRef-Proprietary`).
+- TS/JS: `@fileoverview` on the next block — 1–5 lines covering responsibility,
+  invariant, and non-goal.
+- Rust: `//!` module docs after the SPDX line.
+- Astro: both inside the frontmatter fence.
+- Tests and configs get 1–3 lines (“what it pins” + fixtures); generated files
+  get none (`@generated` + the generator command).
+
+Never add `@package` or `@since` to TS/Rust headers: ownership lives in the
+folder README, and stability uses TSDoc release tags.
+
+Gates: `composer run docs:check-file` (report),
+`composer run docs:check-file:strict` (budget), and the `Docs Contract`
+workflow (`--new-files-only` on PRs).
+
 ## Security Requirements (Always Apply)
 
 ### Input Sanitization

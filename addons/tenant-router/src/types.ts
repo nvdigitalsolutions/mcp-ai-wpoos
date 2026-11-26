@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Shared type definitions for the Tenant Router Cloudflare Worker.
  */

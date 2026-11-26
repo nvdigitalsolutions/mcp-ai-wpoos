@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Settings tab — theme policy (Proposal 105 §1) and shop checkout globals
  * (Proposal 106 §1.3).

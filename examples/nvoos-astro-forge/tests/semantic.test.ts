@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // semantic.test.ts — the builder-structure classifier (Proposal 114 P2):
 // Elementor widget sections, wp-block fallbacks, slot extraction, and the

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * DashboardPage — console home screen (SA DashboardPage format).
  *

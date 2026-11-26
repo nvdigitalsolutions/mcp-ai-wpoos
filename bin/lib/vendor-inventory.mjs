@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Shared inventory helpers for the vendored Pro dependency tree.
  *

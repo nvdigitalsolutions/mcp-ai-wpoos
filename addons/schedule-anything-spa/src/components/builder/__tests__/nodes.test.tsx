@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Builder node components — render smoke tests for the @xyflow/react nodes.
  *

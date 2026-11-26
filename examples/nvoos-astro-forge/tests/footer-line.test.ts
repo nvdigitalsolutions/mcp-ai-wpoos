@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // footer-line.test.ts — a footer LINE split at the anchors it carries.
 //

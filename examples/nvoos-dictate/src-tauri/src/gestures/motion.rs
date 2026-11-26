@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Motion primitives over a short palm-centre history.
 //!
 //! Static classification answers "what pose is this"; motion answers "what did

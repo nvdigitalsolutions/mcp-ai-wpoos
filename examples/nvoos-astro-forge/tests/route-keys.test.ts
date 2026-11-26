@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // route-keys.test.ts — the duplicate-URL gate behind `verify`.
 //

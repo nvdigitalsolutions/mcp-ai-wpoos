@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * OAuth well-known routes — public, outside the /api auth gate.
  *

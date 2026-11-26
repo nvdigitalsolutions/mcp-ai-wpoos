@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Detail view — renders a single row of a Resource as a
  * read-only definition list, manifest-driven.

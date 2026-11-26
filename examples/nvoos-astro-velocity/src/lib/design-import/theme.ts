@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // theme.ts — theme emission + verification (Proposal 098 Phase 4).
 //

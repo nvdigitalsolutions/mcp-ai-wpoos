@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // seo.test.ts — the template's kind-typed JSON-LD builder (Proposal 104
 // §4.6): shapes per kind, offer wiring, breadcrumbs, and the `<` escape.

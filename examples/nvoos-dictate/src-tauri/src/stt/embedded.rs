@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Embedded (plugin) remote STT — the fallback engine for machines without
 //! local models (ADR 0003).
 //!

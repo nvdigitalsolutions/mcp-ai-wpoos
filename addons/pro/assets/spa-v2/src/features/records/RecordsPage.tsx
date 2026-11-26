@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * RecordsPage — the generic entity-records surface (Proposal 084 Phase 4).
  *

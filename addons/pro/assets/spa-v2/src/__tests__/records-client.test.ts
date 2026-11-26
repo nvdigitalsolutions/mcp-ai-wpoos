@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * RecordsClient contract tests (fetch mocked) — Phase 4 W11.
  */

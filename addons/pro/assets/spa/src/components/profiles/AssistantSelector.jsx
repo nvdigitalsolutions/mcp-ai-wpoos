@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * AssistantSelector — Dropdown to pick which assistant handles the
  * current conversation. Scopes both the conversations sidebar and

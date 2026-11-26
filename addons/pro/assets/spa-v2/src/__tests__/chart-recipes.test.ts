@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Chart Recipes — spa-v2 unit tests.
  *

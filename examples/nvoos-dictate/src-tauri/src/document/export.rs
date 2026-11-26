@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 //! Export emitters for document results (Proposal 109 M4): plain text,
 //! Markdown, hOCR and ALTO — pure string emitters over the page/line
 //! structure, no dependencies. The searchable-PDF emitter lives in

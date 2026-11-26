@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Workflow DAG Builder — vanilla JS SVG-based node graph editor.
  *

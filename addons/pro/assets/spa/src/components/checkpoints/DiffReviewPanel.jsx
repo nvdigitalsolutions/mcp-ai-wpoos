@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * DiffReviewPanel — Accept/reject individual change hunks.
  * Zed equivalent: Multi-buffer diff review.

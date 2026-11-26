@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // container-model.test.ts — Elementor's container vocabulary, named once.
 //

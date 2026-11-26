@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * MCP route integration tests — gateway + fake upstream NV oOS sites.
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // page-settle.ts — wait until a source page's boxes have stopped moving.
 //

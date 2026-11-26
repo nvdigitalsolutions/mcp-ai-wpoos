@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-Proprietary
 /**
  * Pro SPA v2 — Agent team + workflow + delegation extractor.
  * Scans message tool invocations for agent-related tool results.

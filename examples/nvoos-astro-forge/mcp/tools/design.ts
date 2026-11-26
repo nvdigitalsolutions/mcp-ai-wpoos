@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // ---------------------------------------------------------------------------
 // design.ts — the design_apply/design_verify/design_verify_visual/design_verify_text/
 // design_verify_pixel tool slice (Proposals 114 P6 + 118 §5 + the parity gates).
