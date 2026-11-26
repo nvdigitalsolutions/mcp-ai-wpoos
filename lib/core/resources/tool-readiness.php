@@ -95,6 +95,15 @@ return array(
 			'replaced_by' => 'analyze_comment_content',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
+		'analyze_data_patterns' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Orchestration\\AnalyzeDataPatternsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the statistical pattern analysis (Proposal 164 section 164.77). Non-numeric entries are dropped but numeric strings survive, so min/max can return the string they were given while mean/median are numeric. Frequency buckets round to two decimals, correlation is against position because there is one dataset, outliers use nearest-rank quartiles, and an unknown analysis_type adds no block. One crash is fixed rather than pinned: a single-element dataset divided by an empty half in trend and raised DivisionByZeroError on PHP 8; it now answers stable, and that is the only deviation.',
+			'evidence' => 'lib/core/tests/Unit/Tool/OrchestrationUtilitiesTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'analyze_file_suitability' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AnalyzeFileSuitabilityLocalTool',
 			'readiness' => 'ready',
@@ -461,6 +470,15 @@ return array(
 			'reason' => 'Ports the WordPress server rename over CloudwaysClientInterface (Proposal 164 section 164.61). Whitespace is trimmed before the emptiness check so a label of spaces is refused locally rather than stored as a blank name. The length rule is the API own, not a guess: an out-of-range label comes back as the API message with its status.',
 			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysWriteToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
+		'convert_html_to_markdown' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Orchestration\\ConvertHtmlToMarkdownTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the regex HTML-to-Markdown chain (Proposal 164 section 164.77). The WordPress description claims turndown.js but the code is regex and its usage guidance says so; the port keeps the chain. Pinned: images match src before alt, so an alt-before-src image loses its alt; links keep only a double-quoted href; dropping links keeps the text while dropping images removes them; and compression is a signed percentage string, negative when the conversion grows. One edge is narrowed: the WordPress empty() check refuses the string "0", which is a valid document here.',
+			'evidence' => 'lib/core/tests/Unit/Tool/OrchestrationUtilitiesTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'convert_image_format' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ConvertImageFormatTool',
@@ -1027,6 +1045,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/PdfDocumentAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'extract_structured_data' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Orchestration\\ExtractStructuredDataTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the field extractor (Proposal 164 section 164.77). The description promises CSS selectors; the code treats a selector matching the tag pattern as an element name and splices anything else into /pattern/i. Pinned: ".product-price" therefore matches nothing, a pattern containing a slash is an invalid regex and answers empty rather than warning, csv does not quote values, and a non-string selector reports an empty field. Missing or empty content and selectors share one error code, as in WordPress.',
+			'evidence' => 'lib/core/tests/Unit/Tool/OrchestrationUtilitiesTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'extract_video_frames' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ExtractVideoFramesTool',
 			'readiness' => 'ready',
@@ -1311,6 +1338,15 @@ return array(
 			'reason' => 'MediaWorkerOfficeWriter implements OfficeWriterInterface over the media worker `POST /api/document/excel` (exceljs); needs `oos.media_worker.url` at runtime. Deterministic formatter, so no model is involved despite the WordPress flagship declaring `requires-model`.',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/PdfDocumentAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
+		'generate_password' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Orchestration\\GeneratePasswordTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the vault password generator (Proposal 164 section 164.77) with random_int over the combined charset. Pinned: there is no per-set guarantee, so a password can lack a digit with numbers enabled; avoid_ambiguous filters letters and digits only; and the 0-4 strength scale cannot reach 4 because the maximum raw score is 7 and it is halved to 3. Length 12-128 and count 1-10 are refused by the tool, so the vault service silent reset to 20 is not reachable. Flags are read-only and local-only, not idempotent, because the same arguments deliberately produce a different secret.',
+			'evidence' => 'lib/core/tests/Unit/Tool/OrchestrationUtilitiesTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
 		'generate_pdf' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GeneratePdfTool',
