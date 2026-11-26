@@ -79,6 +79,9 @@ class FileStore implements FileStoreInterface, FileVisibilityStoreInterface, Fil
 		'text/plain'      => array( 'txt', 'document' ),
 		'text/markdown'   => array( 'md', 'document' ),
 		'text/csv'        => array( 'csv', 'document' ),
+		// libmagic has an iCalendar rule for a document that starts with
+		// BEGIN:VCALENDAR, so an exported calendar is typed from its bytes.
+		'text/calendar'   => array( 'ics', 'document' ),
 		'application/json' => array( 'json', 'document' ),
 		// Subtitles. Both are what libmagic actually reports for the bytes —
 		// `application/x-subrip` for an SRT and `text/vtt` for a WebVTT file —
