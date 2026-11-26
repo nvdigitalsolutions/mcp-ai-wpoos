@@ -80,6 +80,32 @@ node scripts/forge.mjs site.json --target ./customer-frontend
 cd customer-frontend && npm install && npm run build
 ```
 
+### `embed` per collection — and when to turn it off
+
+`collections[].embed` (boolean, default `true` except product collections) makes
+the loader fetch `_embed=1`, which is what gives a post its **author display
+name** (`_embedded.author[0].name`) and its **featured image URL**
+(`_embedded['wp:featuredmedia']`). Both are read in `lib/wp-loader.ts` and used
+by every template that renders a byline or a card image.
+
+Turn it off per collection when a site renders neither — a product catalogue, a
+CPT index with no bylines, a pages-only brochure:
+
+```json
+{ "slug": "pages", "restBase": "wp/v2/pages", "fields": ["id", "slug", "title", "content"], "embed": false }
+```
+
+Two things worth knowing before you do:
+
+- **`_embed` is not a performance lever.** Measured on a live Elementor site:
+  4.11 s for 100 posts without it, 3.70 s with it — noise next to the CMS's own
+  bootstrap. If a build is slow, measure the CMS first
+  (`time wp eval 'echo 1;'` vs `--skip-plugins`) before touching this flag.
+- **You cannot replace the author half with a sidecar.** `wp/v2/users?include=…`
+  is refused with `rest_user_enum_blocked` on any hardened CMS, while `_embed`
+  still resolves authors internally — so dropping it there silently removes
+every byline. Keep `embed: true` wherever a template prints one.
+
 ### Design rebuild (Proposal 114)
 
 The forge never replicates a source site's markup — it rebuilds the
