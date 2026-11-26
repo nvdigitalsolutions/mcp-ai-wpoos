@@ -109,7 +109,7 @@ pass with a warning and scaffold the coming-soon page. Now:
   allows it; MCP gains the read-only `gate_probe` and `design_apply` fails
   closed with the remediation ladder.
 - **The bridge corroborates the probe (P4).** Every probe also asks
-  `GET /wp-json/nvoos-forge/v1/gate` on the **forge bridge** plugin (v0.3.2).
+  `GET /wp-json/nvoos-forge/v1/gate` on the **forge bridge** plugin (v0.3.4).
   A `404` means the plugin is absent; a JSON verdict (`maintenance`, `mode`,
   `plugin`, `checkedAt`) turns an `open` **anonymous** HTML read into `gated` —
   the cached-anonymous-page case HTML alone cannot distinguish. The bridge

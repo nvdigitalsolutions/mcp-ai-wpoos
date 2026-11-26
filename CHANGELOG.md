@@ -11,6 +11,10 @@
 - **`get_wc_product_variations` no longer demands a numeric ID.** `remote_wp_connection` now accepts `post_id`, the `product_id` alias, or `sku` on `get_wc_product` and `get_wc_product_variations`. A SKU is looked up with the exact WooCommerce `sku` filter, then a search fallback that still requires an exact match; the variations reply adds `resolved_by: "sku"` and the matched `product` (id, name, sku, type). A variation SKU cannot resolve on its own — the products endpoint never returns variations — so the error names that case and points at the variation's `parent_id`.
 - **`include_variations` actually works now.** The remote site manager decodes JSON to associative arrays while the product logic addressed object properties, so `type => variable` was never detected and `get_wc_products` silently returned parent products with `variation_count: 0`. Payload items (products, single product, variations, batch variations) are normalised to objects, which also re-enables the documented image capping and description truncation on this path.
 
+### Changed — Forge Bridge 0.3.4 approved and live on WordPress.org
+
+- **`plugins/nvoos-forge-bridge` is on the directory as 0.3.4** (#8324 sync; approved 2026-11-24 on the 0.3.2 submission — trunk r3827294, `tags/0.3.4` r3827296, assets r3827301). The initial release carries the two post-review form-dispatch fixes: Elementor's registered ajax action (`elementor_pro_forms_send_form`, not the nonce action) and JetFormBuilder's native `form_fields` map (0.3.3), plus the typed `400 nvoos_forge_form_post_id_required` for an Elementor submission missing its carrier `post_id` (0.3.4). The release pass regenerated the stale POT (0.3.2 → 0.3.4; 66 msgids, 0 lost, 1 added), added the JFB fix to the 0.3.3 changelog entry, and fixed the `bracket_fields` test that called a protected helper. Validation: PCP 0/0 at full severity against the tag, 83/83 tests (239 assertions), phpcs 0, clean install with an empty `debug.log`, and the directory ZIP 16/16 identical to the build.
+
 ## [1.2.23] - 2026-11-25
 
 ### Added — Machine principals and scoped credentials (Proposal 159)
