@@ -1,0 +1,8 @@
+[
+  { "name": "ts", "lang": "ts", "licence": "MIT", "input": "ts/input.ts", "expected": "ts/expected.ts" },
+  { "name": "ts-shebang", "lang": "js", "licence": "GPL-3.0-or-later", "input": "ts-shebang/input.mjs", "expected": "ts-shebang/expected.mjs" },
+  { "name": "rust", "lang": "rust", "licence": "LicenseRef-Proprietary", "input": "rust/input.rs", "expected": "rust/expected.rs" },
+  { "name": "astro", "lang": "astro", "licence": "MIT", "input": "astro/input.astro", "expected": "astro/expected.astro" },
+  { "name": "astro-no-frontmatter", "lang": "astro", "licence": "MIT", "input": "astro-no-fm/input.astro", "expected": "astro-no-fm/expected.astro" },
+  { "name": "already-spdx", "lang": "ts", "licence": "GPL-3.0-or-later", "input": "already-spdx/input.ts", "expected": "already-spdx/expected.ts" }
+]

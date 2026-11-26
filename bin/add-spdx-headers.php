@@ -1,9 +1,8 @@
-#!/usr/bin/env php
 <?php
 /**
  * add-spdx-headers.php — normalise licence declarations and add SPDX identifiers.
  *
- * The repo holds three differently-licensed products in one tree. Each source
+ * The repo holds four differently-licensed products in one tree. Each source
  * file must declare the same licence as the package it belongs to, and expose
  * it in SPDX form so tooling can read it without parsing docblock tags.
  *
@@ -12,25 +11,49 @@
  *   addons/pro/includes/   Proprietary
  *   addons/canvas/         Proprietary
  *
- * For each file this script:
- *   1. Normalises the existing `@license` docblock tag to the tree's licence.
- *   2. Adds a `SPDX-License-Identifier:` line inside the file docblock.
+ * PHP files keep their file-level docblock (`@license` + SPDX). Every other
+ * first-party source file gets a single SPDX line resolved from
+ * `.github/docs-scopes.json`:
+ *
+ *   TS / JS / Astro   // SPDX-License-Identifier: …   (line 1, or after #!)
+ *   Rust              // SPDX-License-Identifier: …   (line 1, before //!)
+ *
+ * This script never writes prose. A missing `@fileoverview` / `//!` purpose
+ * header is left for the author; see `bin/check-file-docs.php`.
  *
  * It is idempotent — files already carrying an SPDX identifier are skipped —
  * and dry-run by default.
  *
  * Usage:
- *   php bin/add-spdx-headers.php                 # report what would change
- *   php bin/add-spdx-headers.php --apply         # write the changes
- *   php bin/add-spdx-headers.php --tree=lib/core/src --apply
+ *   php bin/add-spdx-headers.php                       # dry-run, all scopes + PHP trees
+ *   php bin/add-spdx-headers.php --apply               # write
+ *   php bin/add-spdx-headers.php --scope=rust:dictate  # one or more scopes
+ *   php bin/add-spdx-headers.php --tree=lib/core/src   # legacy PHP tree selector
+ *   php bin/add-spdx-headers.php --allow-dirty         # include files with uncommitted changes
+ *   php bin/add-spdx-headers.php --json                # machine-readable summary
  *
  * @package WP_MCP_AI
+ * @license GPL-3.0-or-later
+ *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 declare( strict_types=1 );
 
-$root = dirname( __DIR__ );
+require_once __DIR__ . '/lib/header-contract.php';
+
+use function WP_MCP_AI\Bin\DocsContract\dirty_files;
+use function WP_MCP_AI\Bin\DocsContract\insert_spdx;
+use function WP_MCP_AI\Bin\DocsContract\lang_for;
+use function WP_MCP_AI\Bin\DocsContract\list_files;
+use function WP_MCP_AI\Bin\DocsContract\load_config;
+use function WP_MCP_AI\Bin\DocsContract\path_excluded;
+use function WP_MCP_AI\Bin\DocsContract\pending_product;
+use function WP_MCP_AI\Bin\DocsContract\resolve_licence;
+use function WP_MCP_AI\Bin\DocsContract\root as repo_root;
+use function WP_MCP_AI\Bin\DocsContract\scope_for;
+
+$root = repo_root();
 
 /**
  * tree => [docblock @license value, SPDX identifier]
@@ -44,16 +67,27 @@ $LICENCE_MAP = array(
 	'addons/canvas'       => array( 'Proprietary', 'LicenseRef-Proprietary' ),
 );
 
-$apply = false;
-$only  = null;
+$apply       = false;
+$only        = null;
+$scopes      = array();
+$json        = false;
+$allow_dirty = false;
 
 foreach ( array_slice( $argv, 1 ) as $arg ) {
 	if ( '--apply' === $arg ) {
 		$apply = true;
+	} elseif ( '--json' === $arg ) {
+		$json = true;
+	} elseif ( '--allow-dirty' === $arg ) {
+		$allow_dirty = true;
 	} elseif ( 0 === strpos( $arg, '--tree=' ) ) {
 		$only = substr( $arg, 7 );
+	} elseif ( 0 === strpos( $arg, '--scope=' ) ) {
+		$scopes = array_filter( array_map( 'trim', explode( ',', substr( $arg, 8 ) ) ) );
 	} elseif ( '--help' === $arg || '-h' === $arg ) {
-		fwrite( STDOUT, "Usage: php bin/add-spdx-headers.php [--apply] [--tree=<path>]\n" );
+		$help = "Usage: php bin/add-spdx-headers.php [--apply] [--scope=a,b] [--tree=<path>]\n"
+			. "       [--allow-dirty] [--json]\n";
+		fwrite( STDOUT, $help );
 		exit( 0 );
 	} else {
 		fwrite( STDERR, "Unknown argument: {$arg}\n" );
@@ -61,8 +95,12 @@ foreach ( array_slice( $argv, 1 ) as $arg ) {
 	}
 }
 
+/* -------------------------------------------------------------------------- */
+/* PHP trees — preserved behaviour                                            */
+/* -------------------------------------------------------------------------- */
+
 /**
- * Insert or normalise licence + SPDX in a single file's docblock.
+ * Insert or normalise licence + SPDX in a single PHP file's docblock.
  *
  * @param string $path    Absolute file path.
  * @param string $licence Docblock @license value for this tree.
@@ -70,7 +108,7 @@ foreach ( array_slice( $argv, 1 ) as $arg ) {
  * @param bool   $apply   Whether to write changes to disk.
  * @return string One of 'changed', 'unchanged', 'skipped', 'error'.
  */
-function process_file( string $path, string $licence, string $spdx, bool $apply ): string {
+function process_php_file( string $path, string $licence, string $spdx, bool $apply ): string {
 	$code = file_get_contents( $path );
 	if ( false === $code ) {
 		return 'error';
@@ -98,7 +136,7 @@ function process_file( string $path, string $licence, string $spdx, bool $apply 
 
 	// No file-level docblock before the first declaration — synthesise one.
 	if ( false === $doc_start || $doc_start > $first_decl ) {
-		$php_pos = strpos( $code, '<?php' );
+		$php_pos  = strpos( $code, '<?php' );
 		$line_end = strpos( $code, $eol, $php_pos );
 		if ( false === $line_end ) {
 			$line_end = strlen( $code );
@@ -185,69 +223,166 @@ function collect_php( string $dir ): array {
 	return $out;
 }
 
-$total = array(
-	'changed'   => 0,
-	'unchanged' => 0,
-	'skipped'   => 0,
-	'error'     => 0,
+$summary = array(
+	'php'        => array( 'changed' => 0, 'unchanged' => 0, 'skipped' => 0, 'error' => 0 ),
+	'source'     => array( 'changed' => 0, 'unchanged' => 0, 'skipped' => 0, 'error' => 0 ),
+	'pending'    => array(),
+	'unresolved' => array(),
+	'by_scope'   => array(),
 );
 
-fwrite( STDOUT, $apply ? "MODE: apply\n\n" : "MODE: dry-run (pass --apply to write)\n\n" );
+if ( ! $json ) {
+	fwrite( STDOUT, $apply ? "MODE: apply\n\n" : "MODE: dry-run (pass --apply to write)\n\n" );
+}
 
-foreach ( $LICENCE_MAP as $tree => $spec ) {
-	if ( null !== $only && $only !== $tree ) {
+/* -------------------------------------------------------------------------- */
+/* PHP trees                                                                  */
+/* -------------------------------------------------------------------------- */
+
+if ( empty( $scopes ) ) {
+	foreach ( $LICENCE_MAP as $tree => $spec ) {
+		if ( null !== $only && $only !== $tree ) {
+			continue;
+		}
+
+		list( $licence, $spdx ) = $spec;
+
+		$dir = $root . '/' . $tree;
+		if ( ! is_dir( $dir ) ) {
+			continue;
+		}
+
+		$files   = collect_php( $dir );
+		$changed = 0;
+
+		foreach ( $files as $file ) {
+			$result = process_php_file( $file, $licence, $spdx, $apply );
+			++$summary['php'][ $result ];
+			if ( 'changed' === $result ) {
+				++$changed;
+			}
+		}
+
+		if ( ! $json ) {
+			fwrite(
+				STDOUT,
+				sprintf(
+					"%-22s %-18s %5d files  %5d changed\n",
+					$tree,
+					$licence,
+					count( $files ),
+					$changed
+				)
+			);
+		}
+	}
+}
+
+/* -------------------------------------------------------------------------- */
+/* Non-PHP source trees                                                       */
+/* -------------------------------------------------------------------------- */
+
+$config = load_config( $root );
+	$dirty  = $allow_dirty ? array() : dirty_files( $root );
+$files  = list_files( $root );
+
+foreach ( $files as $rel ) {
+	if ( path_excluded( $rel, $config ) ) {
 		continue;
 	}
 
-	list( $licence, $spdx ) = $spec;
-
-	$dir = $root . '/' . $tree;
-	if ( ! is_dir( $dir ) ) {
-		fwrite( STDOUT, sprintf( "%-22s (absent)\n", $tree ) );
+	$scope = scope_for( $rel, $config );
+	if ( null === $scope ) {
 		continue;
 	}
 
-	$files   = collect_php( $dir );
-	$changed = array();
+	if ( ! empty( $scopes ) && ! in_array( $scope['name'], $scopes, true ) ) {
+		continue;
+	}
 
-	foreach ( $files as $file ) {
-		$result = process_file( $file, $licence, $spdx, $apply );
-		++$total[ $result ];
-		if ( 'changed' === $result ) {
-			$changed[] = str_replace( '\\', '/', substr( $file, strlen( $root ) + 1 ) );
+	$pending = pending_product( $rel, $config );
+	if ( null !== $pending ) {
+		$summary['pending'][ $pending ] = ( $summary['pending'][ $pending ] ?? 0 ) + 1;
+		continue;
+	}
+
+	if ( isset( $dirty[ $rel ] ) ) {
+		++$summary['source']['skipped'];
+		continue;
+	}
+
+	$licence = resolve_licence( $root, $rel, $scope, $config );
+	if ( null === $licence ) {
+		$summary['unresolved'][] = $rel;
+		++$summary['source']['error'];
+		continue;
+	}
+
+	$lang = (string) lang_for( $rel );
+	$abs  = $root . '/' . $rel;
+	$code = file_get_contents( $abs );
+	if ( false === $code ) {
+		++$summary['source']['error'];
+		continue;
+	}
+
+	$new = insert_spdx( $code, $lang, $licence );
+
+	if ( $new === $code ) {
+		++$summary['source']['unchanged'];
+		continue;
+	}
+
+	if ( $apply ) {
+		if ( false === file_put_contents( $abs, $new ) ) {
+			++$summary['source']['error'];
+			continue;
+		}
+	}
+
+	++$summary['source']['changed'];
+	$summary['by_scope'][ $scope['name'] ] = ( $summary['by_scope'][ $scope['name'] ] ?? 0 ) + 1;
+}
+
+if ( $json ) {
+	fwrite( STDOUT, json_encode( $summary, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) . "\n" );
+} else {
+	if ( ! empty( $summary['by_scope'] ) ) {
+		fwrite( STDOUT, "\nSource scopes:\n" );
+		foreach ( $summary['by_scope'] as $name => $count ) {
+			fwrite( STDOUT, sprintf( "  %-18s %5d changed\n", $name, $count ) );
+		}
+	}
+
+	if ( ! empty( $summary['pending'] ) ) {
+		fwrite( STDOUT, "\nPending licence decisions (skipped):\n" );
+		foreach ( $summary['pending'] as $prefix => $count ) {
+			fwrite( STDOUT, sprintf( "  %-46s %4d files\n", $prefix, $count ) );
+		}
+	}
+
+	if ( ! empty( $summary['unresolved'] ) ) {
+		fwrite( STDOUT, "\nUnresolved licences (skipped, first 10):\n" );
+		foreach ( array_slice( $summary['unresolved'], 0, 10 ) as $rel ) {
+			fwrite( STDOUT, "  - {$rel}\n" );
 		}
 	}
 
 	fwrite(
 		STDOUT,
 		sprintf(
-			"%-22s %-18s %5d files  %5d changed\n",
-			$tree,
-			$licence,
-			count( $files ),
-			count( $changed )
+			"\nTotals: PHP %d changed / %d annotated / %d skipped / %d errors\n"
+			. "        source %d changed / %d annotated / %d dirty-skipped / %d errors\n",
+			$summary['php']['changed'],
+			$summary['php']['unchanged'],
+			$summary['php']['skipped'],
+			$summary['php']['error'],
+			$summary['source']['changed'],
+			$summary['source']['unchanged'],
+			$summary['source']['skipped'],
+			$summary['source']['error']
 		)
 	);
-
-	if ( ! $apply && count( $changed ) > 0 ) {
-		foreach ( array_slice( $changed, 0, 5 ) as $rel ) {
-			fwrite( STDOUT, "    • {$rel}\n" );
-		}
-		if ( count( $changed ) > 5 ) {
-			fwrite( STDOUT, '    … and ' . ( count( $changed ) - 5 ) . " more\n" );
-		}
-	}
 }
 
-fwrite(
-	STDOUT,
-	sprintf(
-		"\nTotals: %d changed, %d already annotated, %d skipped, %d errors\n",
-		$total['changed'],
-		$total['unchanged'],
-		$total['skipped'],
-		$total['error']
-	)
-);
-
-exit( $total['error'] > 0 ? 1 : 0 );
+exit( ( $summary['php']['error'] + $summary['source']['error'] ) > 0 ? 1 : 0 );

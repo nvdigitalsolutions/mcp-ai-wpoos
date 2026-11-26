@@ -88,6 +88,9 @@
         "docs:check-folder-readmes": "php bin/check-folder-readmes.php --scope=base",
         "docs:check-folder-readmes:all": "php bin/check-folder-readmes.php --scope=all",
         "docs:check-folder-readmes:strict": "php bin/check-folder-readmes.php --scope=base --strict",
+        "docs:check-file": "php bin/check-file-docs.php",
+        "docs:check-file:strict": "php bin/check-file-docs.php --strict",
+        "docs:budget": "php bin/check-file-docs.php --update",
         "quality:domain-purity": "@php bin/check-domain-purity.php",
         "quality:domain-purity:strict": "@php bin/check-domain-purity.php --strict",
         "quality:wifi-host": "@php bin/check-wifi-host-adapters.php",
@@ -97,6 +100,7 @@
         "ci:all": [
             "@lint:errors-only",
             "@docs:check-folder-readmes",
+            "@docs:check-file",
             "@quality:domain-purity",
             "@quality:endpoint-wiring",
             "@vendor:check",
