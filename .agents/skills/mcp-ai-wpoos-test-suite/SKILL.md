@@ -1283,8 +1283,8 @@ the changed files is the substantive gate; plan CI waits accordingly.
       (never write into the bind mount), `wp core download --skip-content`,
       write `vendor/wp-phpunit/wp-phpunit/wp-tests-config.php` in the COPY
       with all four constants plus `DB_*` pointing at `oos-wp-db`, then run
-      `vendor/bin/phpunit -c phpunit.xml.dist`. forge-bridge 0.3.2: 80/80
-      tests, 229 assertions, ~5 s. Host gates (`php -l`, `phpcs`) remain
+      `vendor/bin/phpunit -c phpunit.xml.dist`. forge-bridge 0.3.4: 83/83
+      tests, 239 assertions, ~10 s. Host gates (`php -l`, `phpcs`) remain
       useful, but do not report "lint only" when the container run passed.
   92. **Shared-state flakes in a parallel JS suite.** `examples/nvoos-astro-forge`
       `tests/sites.test.ts` reads the shared `~/.nvoos-forge/sites.json`: it

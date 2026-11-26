@@ -508,6 +508,48 @@ BUILT ZIP (see "Final artifact gate" below), not the working tree. 0.3.2:
 `build/nvoos-forge-bridge-v0.3.2.zip`. Listing screenshots 3–4 (Stored
 redirects + revalidate fields) were added in the same PR.
 
+### forge-bridge — approved and live (2026-11-26)
+
+The 0.3.2 submission was **approved 2026-11-24**. The initial directory
+release ships **0.3.4** — 0.3.2 plus two post-review form-dispatch fixes:
+
+- **0.3.3 — Elementor dispatch action.** The in-process ajax emulation sent
+  `$_POST['action'] = 'elementor_pro_forms'` (the nonce action), but
+  `Ajax_Handler::is_form_submitted()` gates on
+  `elementor_pro_forms_send_form`. Every Elementor Pro form answered "the form
+  is invalid" and recorded nothing. `elementor_request()` now builds the
+  payload so the contract cannot drift again.
+- **0.3.3 — JetFormBuilder native `form_fields` map.** PHP nests
+  `form_fields[name]` keys from a real POST; the bridge's flat payload left
+  `$_POST['form_fields']` empty, so JFB saw the submission but not its values.
+  `bracket_fields()` mirrors the native shape.
+- **0.3.4 — typed 400 for a missing Elementor carrier post** —
+  `nvoos_forge_form_post_id_required` instead of the handler's generic
+  rejection.
+
+**Initial-release packaging drift (the pre-upload gate caught it):** the POT
+still said 0.3.2 and was missing the 0.3.4 message; the 0.3.3 changelog entry
+omitted the JFB fix; and
+`test_bracket_fields_rebuild_the_native_form_fields_map` called a **protected**
+helper, so the suite was red (83 tests, 1 error) — fixed with reflection in the
+test, never by widening the shipped API. The SVN runbook examples still said
+0.3.2. This is the third consecutive release where the POT/changelog lagged
+the header (0.2.0, 0.3.2, 0.3.4) — **the POT and changelog are part of the
+version sweep, not optional polish.**
+
+**Upload + gates:** trunk r3827294, `tags/0.3.4` r3827296, assets r3827301.
+PCP at full severity against the exported TAG: 0 errors / 0 warnings. PHPUnit
+83/83 (239 assertions) on WP 7.1.5 / PHP 8.2. Clean install from the directory
+ZIP with `WP_DEBUG` on: 8 routes, `/health` + `/gate` 200, empty `debug.log`.
+The downloads.wordpress.org ZIP is 16/16 files identical to the build. Public
+page: https://wordpress.org/plugins/nvoos-forge-bridge/ (version 0.3.4).
+`svn diff trunk tags/0.3.4` is empty.
+
+**Release-discipline note:** wp.org approval is not version-pinned — the
+approved submission was 0.3.2, but shipping it would have published a
+known-broken Elementor path. Upload the latest fully gated release, and record
+the version delta in the signoff (done: `WPORG-REVIEW-18POINT-SIGNOFF.md`).
+
 ### Fourth pass: docs-hub 0.5.2 — NV oOS Complete checkout integration (PR #6963)
 
 Docs Hub added the ported commerce stack (upsell card after the settings
