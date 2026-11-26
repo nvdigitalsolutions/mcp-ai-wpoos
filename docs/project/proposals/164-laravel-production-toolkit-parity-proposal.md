@@ -5847,3 +5847,122 @@ mode selects only the rows the sort removes. A test pins both.
 | phpcs | clean, no fixes needed |
 
 Slice 6 is the last pair: `crm_capture_interaction` and `research_company`.
+
+## 164.70 The capture and research pair — `crm` complete at 13/13
+
+Slice 6 closes the toolkit. Two tools, and neither is what the file names
+suggest: the capture writes a memory drawer, and the research is a single
+query plus a projection.
+
+### A hypothesis this slice disproved
+
+§164.69 recorded that the correspondence keys (`last_contacted`,
+`contact_count`) have no writer. A hypothesis during slice 5c was that
+`crm_capture_interaction` is that writer — it is named "capture interaction"
+and it sits in the same toolkit. Reading it disproves the hypothesis: it writes
+a MemPalace drawer in the wing `account/{account_id}` and nothing else. **No
+part of `crm_capture_interaction` touches the contact store**, so §164.69's
+finding stands unqualified. The correction is recorded here because a plausible
+reading is how a dead key family survives an audit.
+
+### Capture: the service's normalisation moved into the tool
+
+The WordPress tool is a thin subclass of `WP_MCP_AI_Pro_Capture_Tool_Base`,
+which builds a fourteen-field envelope and hands it to
+`WP_MCP_AI_Memory_Capture_Service`. The service is where the checks lived, so
+porting the tool without the service means porting the reachable part of
+`normalise_envelope()` — the tool is now the last line before the store:
+
+| service behaviour | port |
+|---|---|
+| `content` required (`mempalace_capture_missing_content`) | `validation_failed` "content is required." — a failure envelope is not a tool result |
+| `importance` clamped to 0–1 | clamped |
+| `ttl <= 0` becomes one day | floored at `MIN_TTL` |
+| an unknown `tier` becomes `recall` | falls back to `recall` |
+| array/object content is JSON-encoded | encoded |
+| `subject_refs` filtered to non-empty scalars | filtered |
+
+Two consequences are worth naming. **The wing slug is a key**: the Pro base
+runs the account id through `sanitize_key()` before it forms `account/{id}`, so
+`Acme Corp` addresses `account/acmecorp`; a port that trimmed would write a
+record nothing else can find, and a test pins it. And **the service checked for
+itself before it validated anything**, so a host with no memory store answers
+`memory_store_unavailable` even to a malformed call — pinned rather than
+tidied.
+
+`MemoryStoreInterface` has no columns for the capture policy, so `sensitivity`,
+`consent_basis`, `verbatim`, `source`, `context_type`, `subject_refs`,
+`attachments`, `recorded_at`, `valid_from` and `valid_until` travel in
+`metadata`, which the contract documents as the place for exactly that. Only
+supplied provenance is written, as in `docgen_capture_style_memory`. WordPress
+fills `recorded_at`/`valid_from`/`valid_until` from now and the expiry; here the
+store timestamps the record and derives `expires_at` from `ttl`, so defaults in
+`metadata` would be a second clock. The success payload keeps the WordPress
+keys except one: `context_id` is `memory_id`, the store's name. `expires_at` is
+restated because the WordPress tool returned it; the store derives the same
+instant from the same `ttl`.
+
+### Research: an argument that never arrived
+
+The WordPress tool calls the base search tool with
+
+```php
+array( 'query' => $search_query, 'num_results' => 5 )
+```
+
+and the search tool it calls reads **`max_results`**. There is no
+`num_results` parameter anywhere in that tool, so the request was silently
+ignored and the provider used its own default — which is also five, so the
+behaviour matched by luck and the defect was invisible. This is the
+accepted-then-ignored class the port keeps finding. The port passes `count`,
+the core tool's real parameter; the count now reaches the callee.
+
+Three further measurements:
+
+1. **`summary` and `sources` are always empty in WordPress too.** Its search
+   tool returns `results` and nothing else, so `structure_research_data()`'s two
+   keys are constants there. The port keeps the keys for shape compatibility and
+   says so instead of pretending a summariser exists.
+2. **Hit items are forwarded, not reshaped.** WordPress items carry `title` /
+   `url` / `snippet` / `source` / `type`; the core's carry `title` / `url` /
+   `description`. This tool counts the hits and reads no field, so the port
+   forwards the search tool's own shape rather than inventing `source` and
+   `type` values.
+3. **The focus is not validated in `execute()`.** The schema has an enum; the
+   code falls through a `switch` whose `default` is the general tail, and the
+   argument is echoed back unchanged. `research_focus: vibes` therefore
+   searches generally and reports `vibes`. Pinned, and a test asserts it.
+
+The declared capability stays `edit_posts` while `execute()` re-checks `read`,
+as the original does; the declared one is the effective gate because the
+registry checks it first. The multisite membership check
+(`is_user_member_of_blog`) and `do_action( 'wp_mcp_ai_company_researched' )`
+have no core counterpart and remain the host's.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,251 / 20,340** (32 tests added) |
+| adapter `ToolProbesTest` | **137**, 970 assertions, **1 skipped, 0 failures** — the skip is `export_eca_data` on a host without `ext-fileinfo` |
+| adapter `CrmCaptureAndResearchTest` | **2**, 22 assertions — the capture is written and read back through the real `MemoryStoreInterface`; the research runs against a faked provider with a catch-all 500 |
+| tool readiness audit | **358 / 358**, servable **339** (+2), no violations |
+| toolkit parity | **137 of 854**; `crm` **13 ported**, 0 declined, 0 deferred, **0 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist` — `phpcs.xml.dist` excludes `*/lib/*`, so a run against it checks nothing and exits 0 |
+
+### `crm` is complete
+
+All thirteen declared slugs are ported: the company pair, the interaction pair,
+the contact pair, the hygiene pair, the three email searches, and this pair.
+The toolkit closes at **13 ported, 0 declined, 0 deferred, 0 remaining** — the
+largest family in this proposal to reach its full declared count. It produced
+four defect classes worth carrying into the next repository: **dead key
+families** (three groups of meta keys nothing writes), **defaults that cancel
+each other** (the correspondence search), **arguments that never arrive**
+(`num_results`), and **labels that are not switches** (`score_model`). Each is
+recorded, pinned by a test, and stated in the readiness row rather than quietly
+corrected.
+
+Next is the next repository in the queue — the toolkit order is the owner's to
+choose; the register now reads 137 ported, 8 declined, 35 deferred, 674
+remaining.

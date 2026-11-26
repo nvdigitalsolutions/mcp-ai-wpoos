@@ -410,9 +410,11 @@ final class CrmEmailSearchCorrespondenceToolTest extends TestCase
                         if (null !== $query->search && '' !== $query->search) {
                             $needle = strtolower($query->search);
 
-                            if (! str_contains(strtolower($item->title), $needle)
+                            if (
+                                ! str_contains(strtolower($item->title), $needle)
                                 && ! str_contains(strtolower($item->content), $needle)
-                                && ! str_contains(strtolower((string) ( $item->excerpt ?? '' )), $needle)) {
+                                && ! str_contains(strtolower((string) ( $item->excerpt ?? '' )), $needle)
+                            ) {
                                 return false;
                             }
                         }

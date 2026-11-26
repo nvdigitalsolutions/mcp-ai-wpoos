@@ -648,6 +648,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoCompositionAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'crm_capture_interaction' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Crm\\CrmCaptureInteractionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the MemPalace capture over MemoryStoreInterface (Proposal 164 section 164.70): wing account/{account_id}, the interactions/objections/next-actions room enum, importance 0.6, ttl 365 days and tags crm+capture, with sensitivity, consent_basis, verbatim, source, context_type, subject_refs, attachments, recorded_at and valid_from/valid_until carried in metadata because the core record has no columns for them. The account id and room pass through sanitize_key before the wing slug is formed, as the Pro base does, so Acme Corp addresses account/acmecorp. The capture service normalisation moved into the tool: content is required, importance is clamped to 0-1, ttl floors at one day and an unrecognised tier falls back to recall. It does not write the contact store: the record is a memory drawer only, which is why the correspondence keys still have no writer. The WordPress success envelope is kept except that context_id is named memory_id, the core store name, and expires_at is restated from the same ttl.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CrmCaptureAndResearchToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'crm_email_search_accounting' => array(
 			'class' => 'Nvoos\Core\Tool\Crm\\CrmEmailSearchAccountingTool',
 			'readiness' => 'ready',
@@ -2419,6 +2428,15 @@ return array(
 			'parity' => 'port',
 			'probe' => 'call',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/SearchAndProviderToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
+		'research_company' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Crm\\CrmResearchCompanyTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the one-query company research over the core WebSearchTool (Proposal 164 section 164.70): the same focus taxonomy, the same query strings, the same guidance text and the same payload. The WordPress call passed num_results to a search tool that reads max_results, so the count never arrived and the provider default, also five, hid it; the port passes count, the core parameter. summary and sources are constant-empty in both runtimes because neither search tool returns them, and the hits are forwarded in the search tool own shape (title/url/description here, title/url/snippet/source/type in WordPress) because this tool counts them and reads no field. The declared capability stays edit_posts while execute re-checks read, as the original does. The multisite membership check and the wp_mcp_ai_company_researched action have no core counterpart and remain the host responsibility.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CrmCaptureAndResearchToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
 		'resize_image' => array(
