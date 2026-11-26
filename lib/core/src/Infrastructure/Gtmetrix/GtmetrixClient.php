@@ -66,6 +66,9 @@ final class GtmetrixClient implements GtmetrixClientInterface
         'E40100' => array('gtmetrix_auth_failed', 'Invalid GTmetrix API key.'),
         'E40300' => array('gtmetrix_email_unvalidated', 'GTmetrix account e-mail address is not validated.'),
         'E40301' => array('gtmetrix_role_denied', 'Your GTmetrix role does not permit this operation.'),
+        // The docs use E40303 for both a monitoring restriction (plan, location
+        // or browser) and a tag limit; the shared meaning is a plan ceiling.
+        'E40303' => array('gtmetrix_plan_denied', 'This GTmetrix plan does not permit the operation.'),
         'E40201' => array('gtmetrix_insufficient_credits', 'Insufficient GTmetrix API credits for this request.'),
         'E41500' => array('gtmetrix_unsupported_media_type', 'Unsupported media type (JSON:API content type required).'),
         'E42900' => array('gtmetrix_too_many_tests', 'Too many tests pending — retry after an existing test completes.'),

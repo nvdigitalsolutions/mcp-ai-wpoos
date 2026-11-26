@@ -252,6 +252,43 @@ abstract class GtmetrixTool extends AbstractTool implements ToolCapabilityFlagsI
     }
 
     /**
+     * Scalar-only rows from a JSON array of objects.
+     *
+     * Alert conditions, recipients and alert entries are arrays of arrays. A
+     * nested value is dropped rather than forwarded: these rows are a wire
+     * shape, not a document, and a nested array in one of them has no meaning a
+     * caller could act on.
+     *
+     * @return list<array<string, int|float|string|bool>>
+     */
+    protected function scalarRows(mixed $rows): array
+    {
+        if (! is_array($rows)) {
+            return array();
+        }
+
+        $out = array();
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $clean = array();
+
+            foreach ($row as $key => $value) {
+                if (is_scalar($value)) {
+                    $clean[ (string) $key ] = $value;
+                }
+            }
+
+            $out[] = $clean;
+        }
+
+        return $out;
+    }
+
+    /**
      * A boolean field from an API row.
      */
     protected function flag(mixed $value): bool

@@ -422,6 +422,14 @@ Probe Club,club
 			array( 'gtmetrix_get_page', array( 'page_id' => 'probe-page' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'gtmetrix_list_pages', array(), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'gtmetrix_retest_page', array( 'page_id' => 'probe-page' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.97 — monitoring and alerts. All four answer the guard on this
+			// keyless host; the write probes pass valid arguments so the refusal is
+			// the guard rather than validation.
+			array( 'gtmetrix_set_monitoring', array( 'page_id' => 'probe-page', 'frequency' => 'daily' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'gtmetrix_get_alert_conditions', array( 'page_id' => 'probe-page' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'gtmetrix_set_alert_conditions', array( 'page_id' => 'probe-page', 'conditions' => array() ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'gtmetrix_get_alert_events', array( 'page_id' => 'probe-page' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
