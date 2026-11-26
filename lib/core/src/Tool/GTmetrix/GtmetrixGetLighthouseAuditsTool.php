@@ -41,21 +41,11 @@ use Nvoos\Core\Domain\Error\GtmetrixApiException;
 
 class GtmetrixGetLighthouseAuditsTool extends GtmetrixTool
 {
-    /**
-     * Impact band → order. `None` is reachable from the data but is not a
-     * filter value: asking for "no impact" is not a request a caller makes.
-     */
-    public const BANDS = array(
-        'None'     => 0,
-        'Low'      => 1,
-        'Med-Low'  => 2,
-        'Med'      => 3,
-        'Med-High' => 4,
-        'High'     => 5,
-    );
-
+    /** How many audits to return by default. */
     public const DEFAULT_LIMIT = 25;
-    public const MAX_LIMIT     = 200;
+
+    /** The hard ceiling on one page of audits. */
+    public const MAX_LIMIT = 200;
 
     /** The bands a caller may filter by. */
     public const FILTERABLE = array('Low', 'Med-Low', 'Med', 'Med-High', 'High');
@@ -148,13 +138,13 @@ class GtmetrixGetLighthouseAuditsTool extends GtmetrixTool
 
         $document = $this->resourceBody($response);
         $audits   = is_array($document['audits'] ?? null) ? $document['audits'] : array();
-        $rows     = $this->impactOrder($audits);
-        $minIndex = '' === $minImpact ? 0 : self::BANDS[ $minImpact ];
+        $rows     = GtmetrixScoreEngine::impactOrder($audits);
+        $minIndex = '' === $minImpact ? 0 : GtmetrixScoreEngine::BAND_ORDER[ $minImpact ];
 
         $filtered = array();
 
         foreach ($rows as $row) {
-            if (self::BANDS[ $row['impact_band'] ] < $minIndex) {
+            if (GtmetrixScoreEngine::BAND_ORDER[ $row['impact_band'] ] < $minIndex) {
                 continue;
             }
 
@@ -177,113 +167,8 @@ class GtmetrixGetLighthouseAuditsTool extends GtmetrixTool
                 'audits'       => $filtered,
                 'count'        => count($filtered),
                 'total_audits' => count($rows),
-                'lcp_phases'   => $this->lcpPhases($document),
+                'lcp_phases'   => GtmetrixScoreEngine::lcpPhases($document),
             )
-        );
-    }
-
-    /**
-     * Audits ordered by impact, highest first; an absent impact sorts last.
-     *
-     * @param array<string, mixed> $audits Lighthouse `audits` block.
-     *
-     * @return list<array<string, mixed>>
-     */
-    private function impactOrder(array $audits): array
-    {
-        $rows = array();
-
-        foreach ($audits as $id => $audit) {
-            if (! is_array($audit)) {
-                continue;
-            }
-
-            $impact = $this->numeric($audit['_impactScore'] ?? null);
-            $title  = $this->text($audit['title'] ?? '');
-            $rows[] = array(
-                'id'              => (string) $id,
-                'title'           => '' !== $title ? $title : (string) $id,
-                'display_value'   => $this->text($audit['displayValue'] ?? ''),
-                'score'           => $this->numeric($audit['score'] ?? null),
-                'impact'          => $impact,
-                'impact_band'     => $this->impactBand($impact),
-                'structure_score' => $this->numeric($audit['_structureScore'] ?? null),
-            );
-        }
-
-        usort(
-            $rows,
-            static function (array $a, array $b): int {
-                $left  = null === $a['impact'] ? -1.0 : (float) $a['impact'];
-                $right = null === $b['impact'] ? -1.0 : (float) $b['impact'];
-
-                return $right <=> $left;
-            }
-        );
-
-        return $rows;
-    }
-
-    /**
-     * The published impact band for a 0–1 score.
-     */
-    private function impactBand(int|float|null $impact): string
-    {
-        if (null === $impact || $impact <= 0) {
-            return 'None';
-        }
-
-        if ($impact <= 0.12) {
-            return 'Low';
-        }
-
-        if ($impact <= 0.24) {
-            return 'Med-Low';
-        }
-
-        if ($impact <= 0.36) {
-            return 'Med';
-        }
-
-        if ($impact <= 0.48) {
-            return 'Med-High';
-        }
-
-        return 'High';
-    }
-
-    /**
-     * The LCP phase breakdown, or an estimate marker when phases are absent.
-     *
-     * @param array<string, mixed> $document Lighthouse body.
-     *
-     * @return array<string, int|bool>
-     */
-    private function lcpPhases(array $document): array
-    {
-        $audit = is_array($document['audits']['largest-contentful-paint'] ?? null)
-            ? $document['audits']['largest-contentful-paint']
-            : array();
-        $item  = is_array($audit['details']['items'][0] ?? null) ? $audit['details']['items'][0] : array();
-        $phase = is_array($item['phaseBreakdown'] ?? null) ? $item['phaseBreakdown'] : null;
-
-        if (null !== $phase) {
-            return array(
-                'ttfb'         => $this->number($phase['ttfb'] ?? 0),
-                'load_delay'   => $this->number($phase['loadDelay'] ?? 0),
-                'load_time'    => $this->number($phase['loadTime'] ?? 0),
-                'render_delay' => $this->number($phase['renderDelay'] ?? 0),
-                'estimated'    => false,
-            );
-        }
-
-        return array(
-            'ttfb'         => 0,
-            'load_delay'   => 0,
-            'load_time'    => 0,
-            'render_delay' => 0,
-            'lcp'          => $this->number($audit['numericValue'] ?? 0),
-            'estimated'    => true,
         );
     }
 }

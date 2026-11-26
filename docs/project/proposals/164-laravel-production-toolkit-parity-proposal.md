@@ -8324,3 +8324,85 @@ the fixtures alone.
 
 Next: slice 4, the score engine — `gtmetrix_analyze_report` and
 `gtmetrix_compare_reports`.
+
+## 164.94 `gtmetrix`, slice 4 — the score engine, and a grade that was never earned
+
+`gtmetrix_analyze_report` and `gtmetrix_compare_reports`, with the assessment
+engine and the fix matcher they share. The toolkit moves from 11 to **13 of
+23**.
+
+### The engine is arithmetic
+
+`GtmetrixScoreEngine` is pure: thresholds in, verdicts out, no API and no
+storage. It holds the 2026 Core Web Vitals table (LCP 2500/4000, CLS 0.1/0.25,
+TBT 200/600, TTFB 600/1800, Speed Index 3400/5800, onload and fully-loaded
+3000/5000), the four page-weight budget classes, the grade floors, the impact
+bands, the LCP phase reader and the eight delta rules.
+
+The band ladder and the phase reader moved out of `get_lighthouse_audits` into
+the engine, so the audit tool, the analysis tool and the summary all read the
+same table rather than three copies that agree until one is edited.
+
+`GtmetrixFixEngine` holds the nine-entry remediation table and the matcher. Its
+snippet half is slice 5.
+
+### Corrections
+
+1. **A report without a score is not an F.** WordPress derived
+   `band_grade( gtmetrix_score / 100 )` unconditionally, so a metrics-only
+   report — which has no grade and no GTmetrix score — was reported as an F.
+   The grade is derived only when a score exists; otherwise it is empty and the
+   scores block shows `null`, which is what the API said.
+2. **A failed Lighthouse fetch is reported.** WordPress wrapped the resource
+   fetch in `if ( ! is_wp_error() )` and answered an empty audit list for both a
+   metrics-only report and a network failure. The second case read as "nothing
+   to fix". The reply now carries a `lighthouse` block with `available` and,
+   when not, the classified `error_code` and message; the audit list is empty
+   only when the resource genuinely has no audits.
+3. **The budget describes the next class.** WordPress returned
+   `next_class: <the class you are already in>` with `bytes_to_next: 0`, and for
+   a `very_heavy` page returned `next_class: heavy` with the bytes *over* the
+   heavy limit. The port returns the next heavier class (`null` for
+   `very_heavy`) and the headroom left before leaving the current class, which
+   is the question a page-weight triage actually asks.
+4. **Every fix that names an audit is returned.** Two entries —
+   `third-party-recaptcha` and `third-party-duplicate-ga` — name
+   `third-party-summary`, and WordPress broke after the first match, so the
+   duplicate-analytics advice was unreachable: the engine always answered the
+   reCAPTCHA fix. The matcher row (`id`, `title`, `display_value`, `impact`)
+   cannot tell the two apart, so both are returned with the `matched_audit` that
+   produced them and the human or the caller decides from the audit detail.
+
+### Adaptations
+
+- **`url` is not offered, and is refused by name.** WordPress resolved the two
+  newest local snapshots for a URL; the core has no snapshot store (section
+  164.92), so the parameter cannot work. A caller that still sends it gets
+  `gtmetrix_no_snapshot_store` rather than a silent ignore.
+- Report ids are path-validated in both tools, as in slice 3.
+- A metric absent on either side is omitted from the comparison rather than
+  reported as `steady`, which the WordPress engine already did; the port keeps
+  it and says so, because "not measured" and "did not move" are different
+  answers.
+- The comparison names each side by its datum id, falling back to the id that
+  was requested; WordPress reported an empty id when the datum omitted one.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,904 / 23,128** (27 tests and 132 assertions added) |
+| adapter `ToolProbesTest` | **233 / 1,602**, 2 skipped, 0 failures — two new probes |
+| tool readiness audit | **453 / 453**, servable **434** (+2), no violations |
+| toolkit parity | **232 of 854**; `gtmetrix` **13 ported**, 0 declined, 0 deferred, **10 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The boundary cases are pinned to the WordPress smoke-run oracles
+(`tests/smoke-run.php`): LCP 2500 is good and 2501 is not, CLS 0.10 is good and
+0.11 is not, `budget_class( 2621440, 91 )` is heavy because the request ceiling
+gates regardless of bytes, and every grade floor is inclusive. The two probes
+answer the not-configured guard on the keyless host.
+
+Next: slice 5, the fix engine — `gtmetrix_generate_wpcode_snippet`, and the
+register entry for `gtmetrix_install_wpcode_fix` (deferred: it needs a
+code-snippet store contract the core does not have).

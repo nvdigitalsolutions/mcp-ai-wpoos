@@ -1,0 +1,230 @@
+<?php
+
+/**
+ * GTmetrix audit → remediation mapping.
+ *
+ * Port of `WP_MCP_AI_GTmetrix_Fix_Engine` (Proposal 164 section 164.94), the
+ * matching half. The snippet half lands with the WPCode tool in section 164.95.
+ *
+ * ## Correction
+ *
+ * **Every fix that names an audit is returned.** WordPress broke out of the
+ * loop after the first match, and both `third-party-recaptcha` and
+ * `third-party-duplicate-ga` name the `third-party-summary` audit, so the
+ * duplicate-GA advice was unreachable: the engine always answered the reCAPTCHA
+ * fix, even when the flagged third party was an analytics tag. The row the
+ * matcher receives (`id`, `title`, `display_value`, `impact`) cannot tell the
+ * two apart, so the port returns both and lets the caller or the human decide
+ * from the audit detail. Each fix carries the `matched_audit` that produced it.
+ *
+ * A diagnostic audit — no impact score — never produces a fix: it describes
+ * the page rather than a cost. The `unfixable` list names the audits that are a
+ * host or third-party concern, so an agent does not report them as gaps.
+ *
+ * @package Nvoos\Core
+ * @since   3.0.0
+ * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+declare(strict_types=1);
+
+namespace Nvoos\Core\Tool\GTmetrix;
+
+final class GtmetrixFixEngine
+{
+    /**
+     * The remediation table. `audit_ids` are Lighthouse audit ids or the
+     * report-derived keys the toolkit scans for.
+     *
+     * @var array<string, array{
+     *     audit_ids: list<string>,
+     *     symptom: string,
+     *     action: string,
+     *     target: string,
+     *     risk: string,
+     *     block: string,
+     *     code_type: string,
+     *     conditional: array<string, string>
+     * }>
+     */
+    public const FIXES = array(
+        'lcp-lazy-loaded'           => array(
+            'audit_ids'   => array('lcp-lazy-loaded'),
+            'symptom'     => 'The LCP image is lazy-loaded, delaying the largest paint.',
+            'action'      => 'Exclude the hero image from lazy-load: set the Elementor Image widget to "Lazy Load: No", or add a filter to stop WordPress adding loading="lazy" to the first content image, or exclude it in Breeze lazy-load settings.',
+            'target'      => 'Elementor widget / WordPress core / Breeze',
+            'risk'        => 'low',
+            'block'       => 'lcp-eager-hero',
+            'code_type'   => 'php',
+            'conditional' => array(
+                'rule_type' => 'front_page',
+                'operator'  => '=',
+                'value'     => '1',
+            ),
+        ),
+        'uses-optimized-images'     => array(
+            'audit_ids'   => array('uses-optimized-images', 'uses-responsive-images'),
+            'symptom'     => 'Images are served in heavier formats or at full size.',
+            'action'      => 'Convert PNGs to WebP/AVIF (Breeze, ShortPixel or Imagify) and recompress large JPEGs to quality ~82. For srcset gaps, register an intermediate size with add_image_size() and regenerate thumbnails.',
+            'target'      => 'Breeze / ShortPixel / Imagify / media settings',
+            'risk'        => 'low',
+            'block'       => 'image-weight',
+            'code_type'   => 'php',
+            'conditional' => array(),
+        ),
+        'font-display'              => array(
+            'audit_ids'   => array('font-display'),
+            'symptom'     => 'Text is invisible while webfonts load.',
+            'action'      => 'Set font-display: swap for Elementor Pro custom fonts via the elementor_pro_custom_fonts_font_display filter, redeclare theme @font-face rules with swap, and preload the 2-3 critical woff2 files.',
+            'target'      => 'Elementor Pro / child theme CSS',
+            'risk'        => 'medium',
+            'block'       => 'font-display-swap',
+            'code_type'   => 'php',
+            'conditional' => array(),
+        ),
+        'render-blocking-resources' => array(
+            'audit_ids'   => array('render-blocking-resources'),
+            'symptom'     => 'Render-blocking requests chain in the head.',
+            'action'      => 'Remove hardcoded CDN jQuery/jQuery UI script tags (WordPress core already ships jquery-ui-core) and dequeue FontAwesome v4 shims if no legacy fa-* icons are used. Test menus, popups and sliders on staging.',
+            'target'      => 'Header template / WPCode HTML snippet',
+            'risk'        => 'high',
+            'block'       => 'dequeue-fa4-shims',
+            'code_type'   => 'php',
+            'conditional' => array(),
+        ),
+        'unused-css-rules'          => array(
+            'audit_ids'   => array('unused-css-rules'),
+            'symptom'     => 'Plugin CSS loads site-wide where the plugin UI is absent.',
+            'action'      => 'Dequeue the plugin stylesheet on pages that do not use its UI via a URL-based style_loader_src filter. Verify the handle against the live page source first.',
+            'target'      => 'WPCode PHP snippet',
+            'risk'        => 'high',
+            'block'       => 'conditional-plugin-css',
+            'code_type'   => 'php',
+            'conditional' => array(),
+        ),
+        'third-party-recaptcha'     => array(
+            'audit_ids'   => array('third-party-summary'),
+            'symptom'     => 'reCAPTCHA (~348 KB) loads on every page.',
+            'action'      => 'Preferred: switch the form to Cloudflare Turnstile or hCaptcha (native Elementor Pro Form options, ~30 KB). Alternative: lazy-load reCAPTCHA on first interaction. Test form submissions on staging.',
+            'target'      => 'Elementor Pro Form widget / WPCode snippet',
+            'risk'        => 'high',
+            'block'       => 'lazy-recaptcha',
+            'code_type'   => 'php',
+            'conditional' => array(),
+        ),
+        'third-party-duplicate-ga'  => array(
+            'audit_ids'   => array('third-party-summary'),
+            'symptom'     => 'The same analytics tag fires multiple times (GTM + direct + local plugin).',
+            'action'      => 'Keep ONE analytics path (usually GTM alone). Remove the local-GA plugin and find the direct enqueue by grepping for the measurement ID; disable duplicate plugins instead of hacking around them.',
+            'target'      => 'Plugin deactivation / snippet cleanup',
+            'risk'        => 'medium',
+            'block'       => '',
+            'code_type'   => '',
+            'conditional' => array(),
+        ),
+        'cache-busting'             => array(
+            'audit_ids'   => array('_code-scan-cache-busting'),
+            'symptom'     => 'rand()/time() enqueue versions defeat browser and CDN caching.',
+            'action'      => 'Replace rand()/time() script/style versions with (string) ( filemtime( $file ) ?: 1 ) so assets cache until they actually change.',
+            'target'      => 'functions.php / WPCode snippet',
+            'risk'        => 'low',
+            'block'       => 'filemtime-cache-busting',
+            'code_type'   => 'php',
+            'conditional' => array(),
+        ),
+        'cls-shifts'                => array(
+            'audit_ids'   => array('layout-shifts', 'cls'),
+            'symptom'     => 'Visible content shifts during load (dimensionless SVGs, above-fold animations).',
+            'action'      => 'Set fixed width/height or aspect-ratio on SVGs and banners, and remove Elementor entrance animations above the fold.',
+            'target'      => 'Widget settings / child theme CSS',
+            'risk'        => 'medium',
+            'block'       => 'cls-stabilize',
+            'code_type'   => 'css',
+            'conditional' => array(),
+        ),
+    );
+
+    /**
+     * Audits the engine deliberately does not "fix" from the site.
+     */
+    public const UNFIXABLE = array(
+        'uses-long-cache-ttl',
+        'third-party-facades',
+        'legacy-javascript',
+        'dom-size',
+        'uses-text-compression',
+    );
+
+    /**
+     * Match impact-ordered audits to fix records.
+     *
+     * @param list<array<string, mixed>> $rows Rows from GtmetrixScoreEngine::impactOrder().
+     *
+     * @return array{
+     *     fixes: list<array<string, mixed>>,
+     *     unfixable: list<array<string, mixed>>,
+     *     unknown: list<array<string, mixed>>
+     * }
+     */
+    public static function match(array $rows): array
+    {
+        $fixes     = array();
+        $unfixable = array();
+        $unknown   = array();
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $id = is_scalar($row['id'] ?? null) ? (string) $row['id'] : '';
+
+            if ('' === $id) {
+                continue;
+            }
+
+            // A diagnostic has no impact score and describes rather than costs.
+            if (! is_numeric($row['impact'] ?? null)) {
+                continue;
+            }
+
+            $matched = false;
+
+            foreach (self::FIXES as $fix) {
+                if (! in_array($id, $fix['audit_ids'], true)) {
+                    continue;
+                }
+
+                $fix['matched_audit'] = $id;
+                $fix['impact']        = $row['impact'] + 0;
+                $fixes[]              = $fix;
+                $matched              = true;
+            }
+
+            if ($matched) {
+                continue;
+            }
+
+            $entry = array(
+                'id'            => $id,
+                'title'         => is_scalar($row['title'] ?? null) && '' !== trim((string) $row['title']) ? (string) $row['title'] : $id,
+                'display_value' => is_scalar($row['display_value'] ?? null) ? (string) $row['display_value'] : '',
+            );
+
+            if (in_array($id, self::UNFIXABLE, true)) {
+                $entry['reason'] = 'Third-party or host-level concern; not fixable from the site.';
+                $unfixable[]     = $entry;
+            } else {
+                $unknown[] = $entry;
+            }
+        }
+
+        return array(
+            'fixes'     => $fixes,
+            'unfixable' => $unfixable,
+            'unknown'   => $unknown,
+        );
+    }
+}

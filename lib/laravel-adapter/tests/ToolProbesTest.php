@@ -406,6 +406,12 @@ Probe Club,club
 			array( 'gtmetrix_get_lighthouse_audits', array( 'report_id' => 'probe-report' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'gtmetrix_get_resource_summary', array( 'report_id' => 'probe-report' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'gtmetrix_list_report_resources', array( 'report_id' => 'probe-report' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.94 — the score engine. Both read live reports and answer the
+			// guard on this keyless host; the ids are valid so the refusal is the
+			// guard, not validation.
+			array( 'gtmetrix_analyze_report', array( 'report_id' => 'probe-report' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'gtmetrix_compare_reports', array( 'report_id_a' => 'probe-a', 'report_id_b' => 'probe-b' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
