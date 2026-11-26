@@ -175,6 +175,11 @@ Probe Club,club
 			// toolkit contact; the scanner answers on an empty corpus.
 			array( 'manage_crm_contact', array( 'action' => 'read', 'contact_id' => 999999 ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'scan_duplicate_contacts', array(), 'success', array( 'match_field', 'total_contacts', 'duplicate_groups', 'duplicates' ), array( 'user_id' => 1 ) ),
+
+			// §164.66 — the hygiene pair. Both default to a dry run; the archive
+			// reports on an empty corpus and the scorer refuses an unknown contact.
+			array( 'archive_stale_contacts', array(), 'success', array( 'archived_count', 'skipped_count', 'contacts' ), array( 'user_id' => 1 ) ),
+			array( 'recalculate_engagement_scores', array( 'contact_ids' => array( 999999 ) ), 'success', array( 'scored_count', 'failed_count', 'contacts' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
