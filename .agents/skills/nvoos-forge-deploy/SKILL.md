@@ -125,6 +125,36 @@ Symptom-to-cause table when a Velocity deploy fails at "Starting application":
 | missing dependency manifest | managed tree without `dependencies`/lockfile | `sync-deploy-tree.mjs`; `mirror-push` refuses it |
 | `Port detected from .env: N` vs the DNS record's port | mismatch | align the record |
 
+### Reading a managed 502 correctly (2026-11-26)
+
+An edge in front of the app (Cloudflare, or the Cloudways node proxy)
+**replaces a 5xx body with its own**, so a 16-byte `error code: 502` is not
+proof the origin is down — it only proves the app (or nginx) answered 5xx. The
+app's own access log is the truthful source, and it is reachable without SSH:
+
+```
+monitoring / get_app_logs → type=access, resource=backend, app_fqdn=<app_fqdn>
+```
+
+That log shows what the Node process returned, which maps 1:1 onto the generated
+BFF:
+
+| App answers | Meaning | Fix |
+|---|---|---|
+| `502` + `upstream_unreachable` | the proxy's `fetch()` threw: a malformed `NVOOS_TARGET_SITE` (a stray space/newline survives `replace(/\/+$/, '')` → `Failed to parse URL`), DNS, or **no IPv6 egress** for the CF AAAA record | re-enter the env var, then restart |
+| `504` + `upstream_timeout` | CMS slower than `NVOOS_PROXY_TIMEOUT_MS` (default 10 s) | raise it, or fix the origin |
+| `503` `NVOOS_TARGET_SITE is not configured.` | the env is not on the running process | set it, then restart |
+| `404` with an **HTML** body | the route is absent from the build | rebuild; the boot gate now fails this |
+
+`GET /api/health?probe=1` answers the same question in one request — it reports
+the wiring and the redacted upstream error, so a broken BFF is diagnosable from
+a browser. `/api/revalidate` is **POST-only**: a `GET` that returns the 404 page
+is correct, not a missing route (a false positive worth not repeating).
+
+The Cloudways *error* log (`resource=apache`) carries nginx only for Velocity
+apps — not the PM2/Node stdout — so it will never show the proxy's
+`[proxy] … unreachable (…)` line. Use the access log.
+
 ### You can diagnose the app settings but not write them
 
 `velocity_build_config_get` reads the whole Deployment Settings tab (framework,

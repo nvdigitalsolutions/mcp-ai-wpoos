@@ -19,7 +19,7 @@ import { behaviors } from '../lib/behaviors.generated.ts';
 import { hasInfiniteMotion } from '../lib/animations.generated.ts';
 import { webFonts } from '../lib/design.generated.ts';
 import { canonicalFontFamily } from '../lib/fonts.ts';
-import { repairMediaUrl } from '../lib/media.ts';
+import { mediaUrl, repairMediaUrl } from '../lib/media.ts';
 import { composeDocumentTitle } from '../lib/seo.ts';
 
 /**
@@ -375,7 +375,7 @@ const headerActions = (chrome?.headerActions ?? [])
 		<link rel="describedby" href="/llms.txt" />
 		{markdownHref && <link rel="alternate" type="text/markdown" href={markdownHref} />}
 		{hasFeed && <link rel="alternate" type="application/rss+xml" title={siteTitle} href="/feed.xml" />}
-		{chrome?.favicon && <link rel="icon" href={chrome.favicon} />}
+		{chrome?.favicon && <link rel="icon" href={mediaUrl(chrome.favicon)} />}
 		{chrome?.iconCss && <link rel="stylesheet" href={repairMediaUrl(chrome.iconCss)} media="all" />}
 		{/* The brand-icon sheet (FontAwesome) — draws the footer socials' source
 		 * glyph classes for networks the rebuild has no inline path for. */}
@@ -558,7 +558,7 @@ const headerActions = (chrome?.headerActions ?? [])
 			<div class="site-header-inner">
 			<div class="brand-block">
 				<a class="brand" href="/">
-					{chrome?.logo?.src ? <img class="brand-logo" src={chrome.logo.src} alt={chrome.logo.alt ?? siteTitle} /> : siteTitle}
+					{chrome?.logo?.src ? <img class="brand-logo" src={mediaUrl(chrome.logo.src)} alt={chrome.logo.alt ?? siteTitle} /> : siteTitle}
 				</a>
 				{chrome?.tagline && <p class="brand-tagline">{chrome.tagline}</p>}
 			</div>

@@ -32,7 +32,7 @@ import { readLock } from './lock.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
 import { ECA_CONFIG_PATH, ecaCollection, ecaScaffoldWarnings, renderEcaGenerated } from './eca-scaffold.ts';
 import { ecaDataPages, ecaRouteFiles } from './eca-ui.ts';
-import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree, renderVerifyDeployTree } from './managed-runtime.ts';
+import { renderApiProxyTs, renderFormsProxyTs, renderHealthTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree, renderVerifyDeployTree } from './managed-runtime.ts';
 import { TURNSTILE_DIRECTIVES, TURNSTILE_ORIGIN, consentCategoryFor, cspDirectivesFor, isCookielessVendor } from './tracking.ts';
 import type { BandBoxFacts, BandGeometry, BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeRedirect, ForgeSection, ForgeSectionColumn, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
@@ -5162,6 +5162,10 @@ async function scaffoldProject(
 			'utf8'
 		);
 		await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'revalidate.ts'), renderRevalidateTs(), 'utf8');
+		// The diagnostic surface: one request answers "is the BFF wired, and what
+		// does the CMS say?" without shell access to the running app
+		// (2026-11-26 — the only copy of the real upstream error was in PM2 stdout).
+		await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'health.ts'), renderHealthTs(), 'utf8');
 		// Proposal 135 Phase 5 — the preview exchange + the draft-aware page.
 		// `/manage` mints the token on the CMS; this route only transports it
 		// into a host-only cookie and redirects to /preview/<slug>/.
