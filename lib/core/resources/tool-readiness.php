@@ -648,6 +648,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoCompositionAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'crm_email_search_leads' => array(
+			'class' => 'Nvoos\Core\Tool\Crm\\CrmEmailSearchLeadsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the lead email search over ContentStoreInterface (Proposal 164 section 164.67): the declared filter family (pipeline stage, inquiry type, source, priority, MQL stage, owner, score range, email domain, date range), the relevance order, and the cache actions. Two WordPress defaults return nothing on a store written only by manage_crm_contact, and both are pinned: lead_status defaults to new (a key the manager never writes) and orderby defaults to lead_score, which WordPress sorts through a meta_key INNER JOIN that excludes rows without the key. The working invocation is lead_status: all, orderby: date. Meta sorts and relevance fetch a bounded 500-row window and sort in memory because ContentQuery sorts on date, title and id only. Cache is an optional CacheStoreInterface; without it the payload reports cached: false. schedule, unschedule, import_from_gmail and include_external answer with typed *_unavailable errors because the core carries no cron or Gmail service.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CrmEmailSearchLeadsToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'crop_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CropImageTool',
 			'readiness' => 'ready',

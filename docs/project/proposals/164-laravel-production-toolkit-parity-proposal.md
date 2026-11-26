@@ -5655,3 +5655,75 @@ the item keeps its content, so an operator can restore it by publishing.
 
 Next is slice 5, the email search trio: `crm_email_search_leads`,
 `crm_email_search_accounting` and `crm_email_search_correspondence`.
+
+## 164.67 The lead email search — a slice split, and a default that finds nothing twice
+
+Slice 5 is three tools of roughly 1,000 lines each, plus the 542-line relevance
+trait they share. That is three times any previous slice, so it is split:
+**5a** is the shared ranker plus `crm_email_search_leads`; 5b and 5c follow.
+
+### The shared ranker
+
+`WP_MCP_AI_CRM_Relevance_Search` reads fields from posts by id. The port is a
+record-based `RelevanceRanker` that takes a text provider, so the same maths
+runs over content items or arrays. The formulas are unchanged: the TF-IDF token
+length proxy, `min(100, round(…))` scaling, the BM25 `k1 = 1.5` / `b = 0.75`
+with corpus IDF, and the stable tie-break on arrival order.
+
+### A default that finds nothing, twice over
+
+On a store written only by `manage_crm_contact`, a default
+`crm_email_search_leads` call returns zero rows for **two independent reasons**:
+
+1. `lead_status` defaults to `new`. The contact manager never writes
+   `lead_status`; the lead tools write it to `mcp_ai_lead`, a different store.
+2. `orderby` defaults to `lead_score`. WordPress sorts that through a
+   `meta_key` INNER JOIN, so rows **without** the key are not in the result at
+   all — a missing score is not a zero.
+
+Both are WordPress behaviour and both are pinned. The working invocation is
+`lead_status: all, orderby: date`, and the readiness note states it. Widening
+the defaults here would change what the tool returns on data WordPress already
+has.
+
+The same INNER JOIN rule is applied to the `company` sort: a contact with no
+`company` meta is excluded when sorting by company.
+
+### Sorting the core cannot do natively
+
+`ContentQuery` sorts on `date`, `title` and `id` only. Two consequences, both
+documented:
+
+- The `relevance` order and the two meta sorts (`lead_score`, `company`) fetch
+a bounded 500-row window and sort in memory — the same cap the WordPress
+relevance path uses. The window is filled in 200-row pages because that is the
+adapter's documented page ceiling.
+- Date ranges have no `ContentQuery` clause either, so the range is applied
+while filling that window, at day granularity (`date_query`'s midnight
+exclusivity is not reproduced).
+
+### Cache and host services
+
+Caching is the same cache-aside shape, keyed by an md5 of the sorted filter
+set. The cache is an **optional** `CacheStoreInterface`: without it a search
+runs live and the payload says `cached: false` rather than claiming a cache it
+never wrote.
+
+Four declared actions depend on services the core does not carry: `schedule`
+and `unschedule` (WP-Cron), `import_from_gmail`, and `include_external` (the
+Gmail client). They stay in the schema and answer with typed
+`schedule_unavailable` / `external_search_unavailable` errors. No silent
+no-op, no fabricated results.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,186 / 20,159** (16 tests added) |
+| adapter PHPUnit | **134**, 942 assertions — the new probe passes; the same unrelated `export_eca_data` host-MIME failure remains |
+| tool readiness audit | **354 / 354**, servable **335** (+1), no violations |
+| toolkit parity | **133 of 854**; `crm` **9 ported**, 0 declined, 0 deferred, **4 remaining** |
+| phpcs | clean, no fixes needed |
+
+Next is 5b, `crm_email_search_accounting`, which reuses the ranker and the
+cache/shape base from this section.
