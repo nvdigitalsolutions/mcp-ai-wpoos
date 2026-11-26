@@ -170,6 +170,21 @@ everything:
   as a new PR. (The reverse direction shows rebase-at-merge artifacts —
   newer base content your tip predates — those are fine.)
 
+### Auto-merge has no review window (2026-11-26)
+
+Auto-merge fires as soon as GitHub considers the PR mergeable — **before the
+checks finish**. Measured: #8302 merged 29 s after `gh pr create` while
+`Licence Boundary` was still running; that job failed 25 s later, leaving
+`alpha-working` red. The follow-up #8304 merged **26 s** after opening.
+
+- Open the PR only when the branch is final. Run the gates locally first;
+  there is no window to add a fix afterwards.
+- `gh pr reopen` refuses a merged PR (`can't be reopened because it was
+  already merged`). Recovery is a fresh branch off the updated base plus a new
+  PR — never a push to the merged branch.
+- `state: closed` does not distinguish merged from abandoned:
+  `gh api repos/<o>/<r>/pulls/<n> --jq '{state,merged,merged_at}'`.
+
 ## GitHub Actions expressions: `||` is `if:`-only (2026-11-06)
 
 The `||` / `&&` operators exist ONLY inside `if:` conditionals. In
@@ -607,6 +622,14 @@ comm -13 /tmp/staged.txt /tmp/expected.txt   # missing      — must be empty
   to other agents' sessions. Enumerate with
   `git worktree list --porcelain` before removing anything, and report what you
   deliberately left behind.
+- **Editor file tools are rooted at the open project, not at a sibling
+  worktree (2026-11-26).** With the editor open on
+  `stark-linden/mcp-ai-wpoos`, an `edit_file` on `docs/...` silently wrote to
+  that shared tree; `../mcp-ai-wpoos-166/...` is outside the allowed roots and
+  cannot be addressed at all. Write to a second worktree with an absolute
+  filesystem-tool path (`F:/GITHUB/worktrees/mcp-ai-wpoos/<worktree>/...`), then
+  prove it with `grep -c <marker> <absolute path>`. Recovery for a mis-targeted
+  edit: reverse it in the shared tree, then re-apply at the absolute path.
 
 ## Windows reserved-name artifacts (learned 2026-10-29)
 
@@ -660,6 +683,11 @@ can appear in the repo root. Two failure modes follow:
   `node -e "fs.rmSync('nul',{force:true})"`.
 - `findstr /C:"..."` quoting breaks under sh — pipe to node for filtering
   or use the terminal tool's `tail_lines`.
+- **`git show <ref>:<path>` is mangled by MSYS path conversion (2026-11-26).**
+  `git show origin/alpha-working:.github/docs-scopes.json` arrives as
+  `origin\alpha-working;.github\docs-scopes.json` → "ambiguous argument".
+  Keep the ref and the path as separate arguments — `git grep <ref> -- <path>`
+  — or prefix `MSYS_NO_PATHCONV=1`. `git -C <worktree> …` is unaffected.
 - `node --test <directory>` does **not** recurse on this setup (runs one
   file) — pass explicit files or the package's `npm test` script.
 - **Windows-reserved names:** see the `nul`-artifact section above (same
@@ -757,6 +785,27 @@ can appear in the repo root. Two failure modes follow:
   `error parsing "inputs[package]" value: open nvdigitalsolutions/...`.
   Use `--input -` with a JSON body on stdin instead:
   `gh api --method POST "<endpoint>" --input - <<'JSON' … JSON`.
+
+## CI checkout on a ~39 GB repo (2026-11-26)
+
+`git count-objects -vH` reports **38.7 GiB** packed for 2,136 commits, so
+`actions/checkout` with `fetch-depth: 0` cannot finish: the new `Docs Contract`
+job sat in **Checkout repository for 20+ minutes** and had to be cancelled. Use
+depth 1 and fetch the base explicitly:
+
+```yaml
+with:
+  fetch-depth: 1
+# ...
+run: git fetch --no-tags --depth=1 origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+```
+
+A three-dot diff (`base...HEAD`) needs a merge base, which a shallow clone does
+not have, so "new files since base" logic must fall back to a two-dot tree diff:
+`git diff --diff-filter=A --no-renames <base> HEAD`. Detect the clone with
+`git rev-parse --is-shallow-repository`. The gate itself is
+`php bin/check-file-docs.php --strict`; the rules live in
+`docs/developer/file-header-convention.md`.
 
 ## gh CLI gotchas
 
