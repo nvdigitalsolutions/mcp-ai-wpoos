@@ -3990,7 +3990,8 @@ The adapter's package migration `2026_01_01_000006_create_nvoos_files_table`
 predates `visibility`, `slug`, `checksum`, `tenant_id` and `metadata`, all of which
 `FileStore` writes. A package-only install cannot store a file at all. The app
 skeleton has the columns, so no deployment is affected; it needs its own migration
-and its own slice rather than a half-fix here.
+and its own slice rather than a half-fix here. **Repaired in §164.52**, which adds
+the five columns from the package side, guarded so a deployment sees a no-op.
 
 ## 164.47 resize_image_smart, and the arguments the WordPress tool never read
 
@@ -4087,13 +4088,16 @@ have to exist first.
 | tool readiness audit | **317 / 317**, servable **298** (+1), no violations |
 | toolkit parity | **96 of 854**; `image-production` **12 of 22**, 0 remaining |
 
-### A pre-existing defect, reported not repaired
+### A reported defect, checked and not found
 
-The tail of §164.46 is corrupted on `alpha-working`: a paragraph and the
-measurement table are spliced together (`| gate | value |e tool will list the video
-again …`), which is what a bad conflict resolution looks like. It predates this
-slice and repairing it means reconstructing text, so it is left for its own change
-rather than folded into a slice whose diff should be insertions only.
+This section originally recorded the tail of §164.46 as corrupted on
+`alpha-working` — a paragraph and the measurement table spliced together, which is
+what a bad conflict resolution looks like. Checked again on `da9a658447`: §164.46
+is byte-identical to the version #8285 introduced, every measurement table in the
+document has a valid separator row, and no line glues prose to a table row. The
+report was wrong, or the splice never reached the file; either way there is nothing
+to reconstruct, and saying so is better than leaving a defect on the record that
+cannot be found.
 
 ## 164.48 The Paper Store learns to leave the building
 
@@ -4390,9 +4394,9 @@ largest of the four and has a partial analogue already (`query_remote_site` plus
 
 ## 164.51 The last three near-closed toolkits, and where they actually stop
 
-**On the numbering:** §164.49 (`toolkit_cpt`) merged ahead of this one, and §164.50
-(OKF) is open in its own change. This section takes the next free number rather
-than waiting.
+**On the numbering:** §164.49 (`toolkit_cpt`) and §164.50 (OKF) merged ahead of
+this one. This section keeps the number it was written with rather than
+renumbering.
 
 ### A delivery gap that looks like a capability gap
 
