@@ -37,6 +37,10 @@
             "decision": "declined",
             "reason": "Superseded by get_video_metadata, which is served: it returns the container, duration and bitrate plus the video and audio streams (codec, dimensions, frame rate, channels), and accepts file_id or a URL where this tool accepts only video_id. Its analyze_audio flag asks for the audio-stream detail the served tool already returns, so a port would be a second slug for one answer. Declined rather than deferred because there is nothing left to build."
         },
+        "fnb_import_table": {
+            "decision": "deferred",
+            "reason": "It imports transactional rows from the Drive/CSV source into five WordPress native-storage CPTs, and this runtime has one table backend by decision (Proposal 164 section 164.71 deliberately dropped the native-storage hint and the CPT-backed tables). A port today would write rows that nothing reads: fnb_read_table and all twenty-one metric tools read FnbTableSource, so the import would be a write with no reader and the probe gate would be right to refuse it. The import itself is sound once something reads the store, which is why this is deferred rather than declined. Prerequisite: a native-table store plus a read fallback in FnbTableSource, which changes the storage contract for the whole toolkit and belongs in its own proposal."
+        },
         "generate_architectural_drawing": {
             "decision": "deferred",
             "reason": "Its value is the structured-prompt compiler — scale notation, dimension callouts, materials, building codes — wrapped around a DALL-E/Imagen call and a raster-to-SVG step this runtime already serves as `output_format: svg` on the image tools. There is no image-generation contract here: each of the three served generators speaks to a provider through SettingsStoreInterface and HttpClientInterface directly, so a faithful port today would be a fourth copy of that plumbing plus a second vectoriser. Prerequisite: a shared image-generation seam the prompt compiler can sit on. Deferred rather than declined because the capability is worth having once that seam exists."

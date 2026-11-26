@@ -239,6 +239,11 @@ Probe Club,club
 			array( 'fnb_export_report', array( 'report_id' => 'R-05', 'format' => 'pdf', 'month' => '2026-09' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'fnb_save_draft', array( 'title' => 'F&B probe draft', 'content' => 'Probe body' ), 'success', array( 'location', 'status' ), array( 'user_id' => 1 ) ),
 			array( 'fnb_list_drafts', array(), 'success', array( 'drafts', 'count' ), array( 'user_id' => 1 ) ),
+
+			// §164.76 — the audit viewer. The adapter package binds no
+			// SystemLogInterface, so the honest "no queryable log" answer is the
+			// probe; the entry filter and act-tier flag are pinned in lib/core.
+			array( 'fnb_audit_log', array(), 'success', array( 'entries', 'count', 'sources' ), array( 'user_id' => 1 ) ),
 		);
 	}
 
