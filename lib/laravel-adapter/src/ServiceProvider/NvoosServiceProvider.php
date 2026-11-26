@@ -26,6 +26,7 @@ use Nvoos\Core\Application\Tool\NecessityGuard;
 use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
 use Nvoos\Core\Application\Tool\ToolReadiness;
 use Nvoos\Core\Application\Tool\ToolRegistry;
+use Nvoos\Core\Infrastructure\Cloudways\CloudwaysClient;
 use Nvoos\Core\Infrastructure\Okf\FilesystemBundleLocator;
 use Nvoos\Core\Infrastructure\PaperStore\JsonPaperStore;
 use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
@@ -54,6 +55,7 @@ use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\HealthReportInterface;
 use Nvoos\Laravel\Health\PackageHealthReport;
+use Nvoos\Core\Domain\Contract\CloudwaysClientInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\HtmlToPdfInterface;
 use Nvoos\Core\Domain\Contract\BrowserCaptureInterface;
@@ -436,6 +438,22 @@ class NvoosServiceProvider extends ServiceProvider {
 			);
 		} );
 		$this->app->bind( HttpClientInterface::class, HttpClient::class );
+
+		// The Cloudways toolkit ports read their own paths through this contract.
+		// Singleton on purpose: the client caches the OAuth token in settings, so a
+		// per-resolution instance would exchange credentials again for every tool
+		// call in one turn. Credentials and the token cache use the same keys as the
+		// WordPress client, so an install connected through either runtime is
+		// connected for both.
+		$this->app->singleton(
+			CloudwaysClientInterface::class,
+			static function ( $app ) {
+				return new CloudwaysClient(
+					$app->make( SettingsStoreInterface::class ),
+					$app->make( HttpClientInterface::class ),
+				);
+			}
+		);
 		$this->app->bind( TranscriptStoreInterface::class, TranscriptStore::class );
 		$this->app->bind( MemoryStoreInterface::class, MemoryStore::class );
 		$this->app->bind( SessionLogStoreInterface::class, SessionLogStore::class );

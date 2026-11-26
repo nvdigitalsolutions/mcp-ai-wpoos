@@ -5042,3 +5042,107 @@ inside a long file that truncated mid-token at line 353. Every file is now built
 short chunks and byte-scanned for 0x09/0x0B/0x0C/0x0D before any gate runs. The
 paragraph above §164.58 that the transport had corrupted was repaired in the same
 commit.
+
+
+## 164.60 The Cloudways client, and the four reads that prove it
+
+`cloudways` is the largest remaining toolkit: **60 declared slugs, none ported**.
+It is also the most uniform — every tool is a path through the same API with the
+same OAuth flow — so the order is inverted from ECA. Here the shared machinery
+lands first and alone, and the tools follow it in slices.
+
+This section covers the machinery and **four reads**: `cloudways_list_servers`,
+`cloudways_get_server`, `cloudways_list_apps`, `cloudways_get_app`.
+
+### Why the client comes first
+
+The WordPress toolkit is a base class, a client and sixty subclasses. Porting the
+subclasses without the client would have copied the credential exchange and the
+error taxonomy sixty times. Instead:
+
+| piece | location |
+|---|---|
+| `CloudwaysClientInterface` | `lib/core/src/Domain/Contract` — four verbs over a path |
+| `CloudwaysApiException` | `lib/core/src/Domain/Error` — classified refusal with its HTTP status |
+| `CloudwaysClient` | `lib/core/src/Infrastructure/Cloudways` — auth, token cache, error mapping |
+| `CloudwaysTool` | `lib/core/src/Tool/Cloudways` — `manage_options`, one failure-to-envelope path |
+
+The tools keep their own paths. That is deliberate: the WordPress tools already
+encode the API surface, and a client method per endpoint would be a second copy
+that drifts. The client answers "how do I talk to Cloudways", never "what are
+the endpoints".
+
+### Credentials and token are the WordPress keys
+
+`cloudways_email`, `cloudways_api_key`, `cloudways_access_token`,
+`cloudways_token_expires_at`, `cloudways_connected`, `cloudways_connection_time`.
+On WordPress both clients write the same `wp_mcp_ai_settings` option, so a site
+connected through either runtime is connected for both, and a site that migrates
+between runtimes needs no credential work. The token refresh keeps the
+sixty-second safety margin.
+
+The adapter binds the client as a **singleton**: the token lives in settings, so
+a per-resolution instance would exchange the credentials again for every tool
+call in one turn. That is the same reasoning as the event dispatcher binding
+recorded in the admin-parity plan.
+
+### What the four reads decide
+
+- **The projection is the contract, not the API.** Nine fields for the server
+  list, eight for the single server (the list's set minus `app_count`, which the
+  single-server response does not carry — a zero would read as "this server has
+  no apps"), four for an app. The v2 payload carries more; widening it would
+  change a shape that already has consumers, so a caller that needs more asks
+  another tool.
+- **`cloudways_get_app` requires both ids.** v2 has no per-app route, so the
+  read is the collection endpoint with both ids in the query. A request with one
+  id returns the whole app list, which reads as a successful lookup; both are
+  refused locally instead.
+- **An empty list is an answer; a missing list is not.** A PHP-only server has
+  no apps, and that is a success with zero rows. A response with no `apps` key
+  is `cloudways_invalid_response`, because an empty account and an API change
+  are indistinguishable in a count and only one of them is the operator's.
+- **A missing id is refused before the request.** WordPress lets Cloudways
+  answer with a 404 that does not say which argument was wrong.
+- **Rows are read tolerantly.** The WordPress projection calls `absint(
+  $server['id'] )` on keys the API may omit, which emits a warning and yields
+  zero; the port yields zero without the warning. `ram` stays text, as it is in
+  the API and in the WordPress payload.
+
+### Registration
+
+No `includes/bootstrap/oos-bridge.php` change, for the same reason the classroom
+family has none: the WordPress runtime already serves these slugs through the
+legacy registry's anti-corruption layer, and the Pro implementations stay
+authoritative there. The native ports exist for the Laravel runtime, which
+builds every manifest `ready` row through the container — hence the binding.
+
+### The remaining 56, in the order they will land
+
+| slice | tools | why this order |
+|---|---|---|
+| services, operations, labels | 4 | smallest mutation surface; proves `post` against operations that return an operation id |
+| servers: lifecycle | 6 | start, stop, restart, clone, delete, create — delete needs the destructive confirmation discipline |
+| servers: settings and scale | 4 | settings get/update, scale, scale-volume |
+| backups and monitoring | 4 | server/app backups, server/app monitor summaries |
+| apps: lifecycle | 5 | create, clone, clone-to-server, delete, update-label |
+| apps: settings | 8 | fpm, varnish, cname, cors, credentials, purge-cache |
+| apps: restore and analytics | 6 | restore, restore-rollback, mysql, php, traffic, cron |
+| ssh keys | 3 | create, list, delete |
+| git | 6 | key, generate, clone, pull, branches, history |
+| dns | 4 | domains, records, add, delete |
+| cloudflare, addons, copilot, projects | 7 | independent of the above |
+
+Sixty slugs is ten slices at the rhythm this programme has been merging at. The
+slices are ordered by blast radius, not by count: the reads and the service
+restarts land before anything that deletes.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,090 / 19,788** (18 tests added) |
+| adapter PHPUnit | **90 / 898** on the two affected files, OK (4 probes added) |
+| tool readiness audit | **341 / 341**, servable **322** (+4), no violations |
+| toolkit parity | **120 of 854**; `cloudways` **4 ported**, 0 declined, 0 deferred, **56 remaining** |
+| phpcs | clean (11 files) |
