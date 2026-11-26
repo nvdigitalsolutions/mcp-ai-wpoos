@@ -195,6 +195,13 @@ Probe Club,club
 	 */
 	#[DataProvider( 'probes' )]
 	public function test_promoted_tool_does_its_own_work( string $slug, array $arguments, string $expect, array $keys, array $context = array() ): void {
+		// The ECA export is the one probe that writes through the file store,
+		// which refuses bytes it cannot sniff. A host without ext-fileinfo cannot
+		// honour that tool, so the claim is skipped rather than failed.
+		if ( 'export_eca_data' === $slug && ! \function_exists( 'finfo_open' ) ) {
+			$this->markTestSkipped( 'export_eca_data needs ext-fileinfo: the file store cannot sniff without it.' );
+		}
+
 		$registry = $this->app->make( ToolRegistry::class );
 
 		$this->assertTrue( $registry->has( $slug ), "Promoted tool '{$slug}' is not registered." );
