@@ -61,6 +61,7 @@
         ],
         "eca-management": [
             "bulk_enroll_students",
+            "check_eca_conflicts",
             "create_eca",
             "create_student",
             "delete_eca",

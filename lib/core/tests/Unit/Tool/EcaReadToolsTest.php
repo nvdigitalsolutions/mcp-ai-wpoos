@@ -30,6 +30,7 @@ use Nvoos\Core\Domain\Entity\ContentItem;
 use Nvoos\Core\Domain\Entity\ContentQuery;
 use Nvoos\Core\Domain\Entity\CreateContentCommand;
 use Nvoos\Core\Domain\Entity\UpdateContentCommand;
+use Nvoos\Core\Tool\Classroom\CheckEcaConflictsTool;
 use Nvoos\Core\Tool\Classroom\GetEcaAttendanceReportTool;
 use Nvoos\Core\Tool\Classroom\GetEcaTimetableTool;
 use Nvoos\Core\Tool\Classroom\GetStudentParticipationSummaryTool;
@@ -423,6 +424,96 @@ final class EcaReadToolsTest extends TestCase
         );
     }
 
+    // ─── Conflict check ────────────────────────────────────────────────────
+
+    public function test_a_student_check_finds_the_overlap_and_skips_the_excluded_activity(): void
+    {
+        $store = $this->store(array(
+            10 => $this->item(10, 'mcp_ai_eca', array(
+                '_eca_day' => 'Monday', '_eca_start_time' => '15:00', '_eca_end_time' => '16:00',
+                '_eca_venue' => 'Hall',
+                '_eca_student_enrollments' => array(30 => array('student_id' => 30)),
+            )),
+            11 => $this->item(11, 'mcp_ai_eca', array(
+                '_eca_day' => 'Monday', '_eca_start_time' => '15:30', '_eca_end_time' => '16:30',
+                '_eca_venue' => 'Gym',
+                '_eca_student_enrollments' => array(30 => array('student_id' => 30)),
+            )),
+        ));
+
+        $hit = $this->conflicts($store)->execute(
+            array('check_type' => 'student', 'student_id' => 30, 'day' => 'Monday', 'start_time' => '15:30', 'end_time' => '16:30'),
+            array('user_id' => 7)
+        );
+
+        $this->assertTrue($hit['data']['has_conflicts']);
+        $this->assertSame(array(10, 11), array_column($hit['data']['conflicts'], 'eca_id'));
+
+        $excluded = $this->conflicts($store)->execute(
+            array(
+                'check_type' => 'student', 'student_id' => 30, 'day' => 'Monday',
+                'start_time' => '15:30', 'end_time' => '16:30', 'exclude_eca_id' => 11,
+            ),
+            array('user_id' => 7)
+        );
+
+        $this->assertSame(array(10), array_column($excluded['data']['conflicts'], 'eca_id'));
+    }
+
+    public function test_a_teacher_check_matches_a_csv_list_and_a_touching_slot_does_not_collide(): void
+    {
+        $store = $this->store(array(
+            10 => $this->item(10, 'mcp_ai_eca', array(
+                '_eca_day' => 'Tuesday', '_eca_start_time' => '09:00', '_eca_end_time' => '10:00',
+                '_eca_teachers' => 'Ms Lee, Mr Smith',
+            )),
+        ));
+
+        $touching = $this->conflicts($store)->execute(
+            array('check_type' => 'teacher', 'teacher_name' => 'Mr Smith', 'day' => 'Tuesday', 'start_time' => '10:00', 'end_time' => '11:00'),
+            array('user_id' => 7)
+        );
+
+        $this->assertFalse($touching['data']['has_conflicts']);
+
+        $overlapping = $this->conflicts($store)->execute(
+            array('check_type' => 'teacher', 'teacher_name' => 'Mr Smith', 'day' => 'Tuesday', 'start_time' => '09:30', 'end_time' => '10:30'),
+            array('user_id' => 7)
+        );
+
+        $this->assertTrue($overlapping['data']['has_conflicts']);
+        $this->assertSame(10, $overlapping['data']['conflicts'][0]['eca_id']);
+    }
+
+    public function test_a_venue_check_is_exact_and_the_arguments_are_validated(): void
+    {
+        $store = $this->store(array(
+            10 => $this->item(10, 'mcp_ai_eca', array(
+                '_eca_day' => 'Monday', '_eca_start_time' => '09:00', '_eca_end_time' => '10:00', '_eca_venue' => 'Main Hall 2',
+            )),
+        ));
+
+        $near = $this->conflicts($store)->execute(
+            array('check_type' => 'venue', 'venue' => 'Main Hall', 'day' => 'Monday', 'start_time' => '09:00', 'end_time' => '10:00'),
+            array('user_id' => 7)
+        );
+
+        $this->assertFalse($near['data']['has_conflicts']);
+
+        foreach (array(
+            array('check_type' => 'venue', 'venue' => 'Main Hall', 'day' => 'Funday', 'start_time' => '09:00', 'end_time' => '10:00'),
+            array('check_type' => 'venue', 'venue' => 'Main Hall', 'day' => 'Monday', 'start_time' => '25:00', 'end_time' => '26:00'),
+            array('check_type' => 'venue', 'venue' => 'Main Hall', 'day' => 'Monday', 'start_time' => '10:00', 'end_time' => '09:00'),
+            array('check_type' => 'venue', 'day' => 'Monday', 'start_time' => '09:00', 'end_time' => '10:00'),
+            array('check_type' => 'student', 'day' => 'Monday', 'start_time' => '09:00', 'end_time' => '10:00'),
+        ) as $bad) {
+            $this->assertSame(
+                'validation_failed',
+                $this->conflicts($store)->execute($bad, array('user_id' => 7))['error']['code']
+            );
+        }
+    }
+
     // ─── Doubles ──────────────────────────────────────────────────────────
 
     private function timetable(ContentStoreInterface $store): GetEcaTimetableTool
@@ -438,6 +529,11 @@ final class EcaReadToolsTest extends TestCase
     private function participation(ContentStoreInterface $store): GetStudentParticipationSummaryTool
     {
         return new GetStudentParticipationSummaryTool($this->errors, $store);
+    }
+
+    private function conflicts(ContentStoreInterface $store): CheckEcaConflictsTool
+    {
+        return new CheckEcaConflictsTool($this->errors, $store);
     }
 
     /**

@@ -249,6 +249,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ToolsReadinessTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'check_eca_conflicts' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Classroom\\CheckEcaConflictsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Answers "would this slot collide?" before a write, over the same rows the timetable reads (Proposal 164 section 164.58): roster, teacher list and venue, with minute-range overlap from Schedule so touching slots are not conflicts. `exclude_eca_id` covers the edit case. It sees only what this runtime stores; a room booking held elsewhere is invisible, and the description says so.',
+			'evidence' => 'lib/core/tests/Unit/Tool/EcaReadToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'check_higgsfield_request' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CheckHiggsfieldRequestTool',
 			'readiness' => 'ready',
