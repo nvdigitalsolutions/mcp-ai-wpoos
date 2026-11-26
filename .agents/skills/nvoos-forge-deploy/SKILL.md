@@ -553,6 +553,29 @@ flood, the token/provenance checks stop a single crafted request.
     `mediaUrl()` (header logo, favicon); band/CSS images rely on the TTL cap, which
     bounds a bad copy to five minutes.
 
+18. **A managed deploy can gate perfectly and still refuse every login POST.**
+    Cloudflare → nginx → PM2 rewrites `Host`, so the Node process sees the
+    internal hostname; Astro's `security.checkOrigin` compares the browser's
+    `Origin` with it and answers `403 Cross-site POST form submissions are
+    forbidden` **before** the route runs. The symptoms mislead: `/manage`
+    renders fine, a `curl` POST with no `Origin` passes (that path is allowed),
+    and only the browser's POST dies — so it reads like a credential bug. Fix
+    with `security.allowedDomains` naming the public host in
+    `astro.config.mjs`, plus `x-forwarded-host` pinned from `ASTRO_SITE` in
+    `server.js`. Triage `/manage` by its `?error=` code: `config` = no signing
+    key, `origin` = this, `credentials` = WordPress said no, `upstream` = the
+    CMS did not answer in time (4–9 s per REST call is normal on an Elementor
+    site with no object cache, and the login client caps at 8 s).
+
+19. **A forged page only exists at its slashed URL — verify with the slash.**
+    `build.format 'directory'` emits `dist/client/<slug>/index.html` alone, so
+    `/about-us` 404s while `/about-us/` serves the same document with 200.
+    Before #8330 shipped, `createStatic` had no directory-index fallback, so
+    every legacy WordPress inbound link 404'd after cutover. A 404 on a live
+    site is therefore worth re-requesting with the trailing slash first — it is
+    a routing fact, not a content, gate or build failure (SSR routes such as
+    `/manage` and `/api/*` match both forms and mask the pattern).
+
 ## Mirror-push mechanics (verified 2026-11-24)
 
 - **`forge deploy --mirror-repo` is self-sufficient.** It emits
