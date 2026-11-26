@@ -469,15 +469,25 @@ function errorRedirect(code: string): Response {
 	return response;
 }
 
-/** The wordpress_logged_in_* cookie a successful wp-login.php sets. */
-function loggedInCookie(response: Response): string {
+/** Every wordpress_* cookie wp-login.php set, plus the logged-in one on its own.
+ *  REST ignores wordpress_logged_in_* without an X-WP-Nonce, but the
+ *  wordpress_<hash> auth cookie authenticates it — dropping that cookie made a
+ *  valid administrator look unauthenticated over REST (2026-11-26). */
+function wpCookies( response: Response ): { jar: string; loggedIn: string } {
 	const all = typeof response.headers.getSetCookie === 'function' ? response.headers.getSetCookie() : [];
-	for (const line of all) {
-		if (line.toLowerCase().startsWith('wordpress_logged_in_')) {
-			return line.split(';')[0];
+	const pairs: string[] = [];
+	let loggedIn = '';
+	for ( const line of all ) {
+		if ( ! line.toLowerCase().startsWith( 'wordpress_' ) ) {
+			continue;
+		}
+		const pair = line.split( ';' )[0];
+		pairs.push( pair );
+		if ( pair.toLowerCase().startsWith( 'wordpress_logged_in_' ) ) {
+			loggedIn = pair;
 		}
 	}
-	return '';
+	return { jar: pairs.join( '; ' ), loggedIn };
 }
 
 /** POST the ACCOUNT password to wp-login.php — the door Basic auth cannot open. */
@@ -500,17 +510,25 @@ async function passwordLogin(username: string, password: string): Promise< strin
 		signal: AbortSignal.timeout(TIMEOUT_MS),
 	});
 	await response.body?.cancel();
-	return loggedInCookie(response);
+	const cookies = wpCookies( response );
+	return cookies.loggedIn ? cookies.jar : '';
 }
 
 /** The login name WordPress encodes in that cookie (user|exp|token|hmac). */
 function cookieUser(cookie: string): string {
-	const raw = cookie.slice(cookie.indexOf('=') + 1);
-	try {
-		return decodeURIComponent(raw).split('|')[0] ?? '';
-	} catch {
-		return '';
+	for ( const part of cookie.split( ';' ) ) {
+		const pair = part.trim();
+		if ( ! pair.toLowerCase().startsWith( 'wordpress_logged_in_' ) ) {
+			continue;
+		}
+		const raw = pair.slice( pair.indexOf( '=' ) + 1 );
+		try {
+			return decodeURIComponent( raw ).split( '|' )[0] ?? '';
+		} catch {
+			return '';
+		}
 	}
+	return '';
 }
 
 /** edit.php answers 200 to anyone who may edit posts, 403 to a subscriber. */
