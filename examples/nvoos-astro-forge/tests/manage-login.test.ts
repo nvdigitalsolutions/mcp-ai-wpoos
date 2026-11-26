@@ -95,6 +95,34 @@ function stubWp( options: { password: boolean; mayEdit: boolean } ) {
 	return calls;
 }
 
+/** The contract door: one call, one answer, no probing. */
+function stubContract( options: { canManage?: boolean; status?: number } = {} ) {
+	const calls: string[] = [];
+	globalThis.fetch = ( async ( input: string | URL | Request ) => {
+		const url = String( typeof input === 'string' ? input : input instanceof URL ? input : input.url );
+		calls.push( url );
+		if ( url.includes( '/nvoos-commerce/v1/auth/login' ) ) {
+			if ( options.status && options.status !== 200 ) {
+				return new Response( JSON.stringify( { code: 'nvoos_invalid_credentials' } ), {
+					status: options.status,
+					headers: { 'content-type': 'application/json' },
+				} );
+			}
+			return new Response(
+				JSON.stringify( {
+					id: 7,
+					name: 'editor',
+					canManage: options.canManage === true,
+					capabilities: [ 'edit_posts' ],
+				} ),
+				{ status: 200, headers: { 'content-type': 'application/json' } }
+			);
+		}
+		return new Response( 'unexpected', { status: 500 } );
+	} ) as typeof fetch;
+	return calls;
+}
+
 async function post(
 	login: { POST( c: Record< string, unknown > ): Promise< Response > },
 	body: string,
@@ -173,6 +201,41 @@ describe( 'manage sign-in — the WordPress password path', () => {
 		expect( crossSite.response.headers.get( 'location' ) ?? '' ).toContain( 'error=origin' );
 	} );
 
+	it( 'signs in from ONE contract call and never probes WordPress', async () => {
+		const calls = stubContract( { canManage: true } );
+		const { login, session } = await loadLogin();
+
+		const { response, cookies } = await post( login, 'username=editor&password=correct-horse' );
+
+		expect( response.status ).toBe( 303 );
+		expect( response.headers.get( 'location' ) ?? '' ).not.toContain( 'error=' );
+		expect( calls ).toHaveLength( 1 );
+		expect( calls[ 0 ] ).toContain( '/nvoos-commerce/v1/auth/login' );
+
+		const managed = cookies.find( ( cookie ) => cookie.name === 'nvoos_forge_session' );
+		expect( session.verifyManageSession( managed?.value ?? '' )?.uid ).toBe( '7' );
+	} );
+
+	it( 'takes a contract 401 as final instead of probing again', async () => {
+		const calls = stubContract( { status: 401 } );
+		const { login } = await loadLogin();
+
+		const { response } = await post( login, 'username=editor&password=wrong' );
+
+		expect( response.headers.get( 'location' ) ?? '' ).toContain( 'error=credentials' );
+		expect( calls ).toHaveLength( 1 );
+	} );
+
+	it( 'reads canManage=false from the contract as a permission refusal', async () => {
+		stubContract( { canManage: false } );
+		const { login } = await loadLogin();
+
+		const { response, cookies } = await post( login, 'username=editor&password=correct-horse' );
+
+		expect( response.headers.get( 'location' ) ?? '' ).toContain( 'error=permission' );
+		expect( cookies ).toHaveLength( 0 );
+	} );
+
 	it( 'refuses a wrong password with error=credentials', async () => {
 		stubWp( { password: false, mayEdit: true } );
 		const { login } = await loadLogin();
@@ -182,6 +245,10 @@ describe( 'manage sign-in — the WordPress password path', () => {
 		expect( response.status ).toBe( 303 );
 		expect( response.headers.get( 'location' ) ?? '' ).toContain( 'error=credentials' );
 		expect( cookies ).toHaveLength( 0 );
+		// The refusal names the layer that answered: WordPress said no, and it
+		// said why (invalid_username vs incorrect_password).
+		expect( response.headers.get( 'x-nvoos-cred' ) ?? '' ).toContain( 'basic=401' );
+		expect( response.headers.get( 'x-nvoos-cred' ) ?? '' ).toContain( 'wp_login=no' );
 	} );
 
 	it( 'refuses an account that may sign in but not edit posts', async () => {

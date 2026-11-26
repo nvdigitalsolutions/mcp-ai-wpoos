@@ -673,7 +673,56 @@ export const POST: APIRoute = async ({ request, cookies, url, clientAddress }) =
 			: errorRedirect('credentials');
 	}
 
+	// Contract door first (bridge-backed CMS): ONE call answers identity AND
+	// capability, so none of the legacy probing below is needed. It takes the
+	// account password, which is what a visitor expects to type.
+	let contract: Response | null = null;
+	try {
+		contract = await fetch( TARGET + '/wp-json/nvoos-commerce/v1/auth/login', {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				accept: 'application/json',
+				'user-agent': 'nvoos-forge-manage',
+			},
+			body: JSON.stringify( { email: username, password } ),
+			signal: AbortSignal.timeout( TIMEOUT_MS ),
+		} );
+		if ( contract.status === 401 ) {
+			// The contract is authoritative: it has already run wp_signon.
+			await contract.body?.cancel();
+			remember( key );
+			const refusal = json
+				? new Response( JSON.stringify( { error: 'Invalid email or password.' } ), {
+						status: 401,
+						headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+				  } )
+				: errorRedirect( 'credentials' );
+			refusal.headers.set( 'x-nvoos-cred', 'contract=401' );
+			return refusal;
+		}
+	} catch {
+		// Unreachable contract: fall through, the legacy doors still speak REST.
+		contract = null;
+	}
+
 	let response: Response;
+	if ( contract && contract.ok ) {
+		// Normalise the contract payload into the users/me shape the tail reads.
+		const payload = ( await contract.json().catch( () => null ) ) as Record< string, unknown > | null;
+		const allowed = payload && payload.canManage === true;
+		response = new Response(
+			JSON.stringify( {
+				id: payload?.id ?? 0,
+				name: typeof payload?.name === 'string' && payload.name ? payload.name : username,
+				capabilities: { edit_posts: allowed },
+			} ),
+			{ status: 200, headers: { 'content-type': 'application/json' } }
+		);
+	} else {
+	if ( contract ) {
+		await contract.body?.cancel();
+	}
 	try {
 		response = await fetch(TARGET + '/wp-json/wp/v2/users/me?context=edit', {
 			headers: {
@@ -706,6 +755,7 @@ export const POST: APIRoute = async ({ request, cookies, url, clientAddress }) =
 			: errorRedirect( 'upstream' );
 		refusal.headers.set( 'x-nvoos-cred', detail );
 		return refusal;
+	}
 	}
 
 	let passwordUser: Record< string, unknown > | null = null;
@@ -1320,7 +1370,7 @@ __BUNDLE_BLOCK__
 						{message && <p class="error" role="alert">{message}</p>}
 						<form method="post" action="/api/manage/login">
 							<input type="hidden" name="next" value={next} />
-							<label for="username">WordPress username</label>
+							<label for="username">WordPress username or email</label>
 							<input
 								id="username"
 								name="username"
@@ -1330,7 +1380,7 @@ __BUNDLE_BLOCK__
 								spellcheck="false"
 								required
 							/>
-							<label for="password">Application password</label>
+							<label for="password">WordPress password</label>
 							<input
 								id="password"
 								name="password"
@@ -1341,8 +1391,8 @@ __BUNDLE_BLOCK__
 							<button type="submit">Sign in</button>
 						</form>
 						<p class="hint">
-							Use a WordPress <strong>Application Password</strong>, not your normal login
-							password. Create or revoke one in
+							Use your normal <strong>WordPress password</strong>. Where the site has no
+							bridge, an Application Password works instead — create or revoke one in
 							{profileUrl ? <a href={profileUrl}>your profile</a> : 'your profile'}.
 						</p>
 					</div>
