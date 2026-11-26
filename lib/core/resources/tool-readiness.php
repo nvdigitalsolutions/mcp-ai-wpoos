@@ -535,6 +535,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ChartAndPlanningToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'create_company' => array(
+			'class' => 'Nvoos\Core\Tool\Crm\\CreateCompanyTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress company create over ContentStoreInterface as type mcp_ai_company with the _company_* meta family unchanged (Proposal 164 section 164.63), so a WordPress export is readable here. No target_status default is invented: the WordPress handler only stores the field when supplied. revenue is stored as a number where WordPress sanitises text, and get_companies reads either. tags stays one string. edit_url is present and null because this runtime has no admin edit screen.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CrmCompanyToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'create_cron_job' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CreateCronJobTool',
 			'readiness' => 'ready',
@@ -1402,6 +1411,15 @@ return array(
 			'probe' => 'call',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/CacheQueueAndBatchToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'get_companies' => array(
+			'class' => 'Nvoos\Core\Tool\Crm\\GetCompaniesTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress company listing over ContentStoreInterface (Proposal 164 section 164.63). Filter semantics are kept exactly: industry, city, state and country are substring matches, company_size and target_status are exact, all ANDed, alphabetical by name, 20 per page and 100 at most. total_companies is the whole matching set and filters_applied echoes the filters so an empty result is not confused with a forgotten filter. Gated on read, as WordPress gates it, not the family default.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CrmCompanyToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_current_user' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GetCurrentUserTool',
