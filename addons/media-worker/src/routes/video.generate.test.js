@@ -20,6 +20,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
 import axios from 'axios';
+import sharp from 'sharp';
 import { videoRouter } from './video.js';
 import { resetProviderKeysCache } from '../utils/provider-keys.js';
 
@@ -120,7 +121,7 @@ test( 'generate uses the key configured for the calling site', async ( t ) => {
 				const res = await fetch( `${ url }/generate`, {
 					method: 'POST',
 					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify( { prompt: 'waves at dusk' } ),
+					body: JSON.stringify( { prompt: 'waves at dusk', model: 'zeroscope-v2' } ),
 				} );
 
 				assert.equal( res.status, 200 );
@@ -146,7 +147,7 @@ test( 'generate names the missing key instead of reaching for the environment on
 			const res = await fetch( `${ url }/generate`, {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify( { prompt: 'waves at dusk' } ),
+				body: JSON.stringify( { prompt: 'waves at dusk', model: 'zeroscope-v2' } ),
 			} );
 
 			assert.equal( res.status, 503 );
@@ -220,7 +221,7 @@ test( 'wait false returns a prediction id without polling, in both representatio
 				const res = await fetch( `${ url }/generate`, {
 					method: 'POST',
 					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify( { prompt: 'waves at dusk', wait } ),
+					body: JSON.stringify( { prompt: 'waves at dusk', model: 'zeroscope-v2', wait } ),
 				} );
 
 				assert.equal( res.status, 200 );
@@ -235,5 +236,154 @@ test( 'wait false returns a prediction id without polling, in both representatio
 		}
 
 		assert.equal( posts, 2, 'one create call each, no polling' );
+	} );
+} );
+
+/**
+ * A PNG data URI, large enough that bounding it is observable.
+ *
+ * @param {number} width  Width in px.
+ * @param {number} height Height in px.
+ * @return {Promise<string>} Data URI.
+ */
+async function pngDataUri( width = 2000, height = 1200 ) {
+	const bytes = await sharp( { create: { width, height, channels: 3, background: '#336699' } } ).png().toBuffer();
+	return `data:image/png;base64,${ bytes.toString( 'base64' ) }`;
+}
+
+test( 'an image-conditioned model sends the bounded frame and no text prompt', async ( t ) => {
+	await withEnv( { REPLICATE_API_KEY: 'r8_test' }, async () => {
+		let sent = null;
+
+		t.mock.method( axios, 'post', async ( _url, body ) => {
+			sent = body;
+			return { data: prediction( 'https://cdn.example.test/clip.mp4' ) };
+		} );
+
+		const { server, url } = await startServer();
+		try {
+			const res = await fetch( `${ url }/generate`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify( {
+					model: 'stable-video-diffusion',
+					reference_image: await pngDataUri(),
+				} ),
+			} );
+
+			assert.equal( res.status, 200, 'a reference frame alone is enough' );
+		} finally {
+			server.close();
+		}
+
+		const input = sent?.input || {};
+
+		assert.ok( String( input.input_image ).startsWith( 'data:image/jpeg;base64,' ), 're-encoded as a bounded JPEG' );
+		assert.equal( input.video_length, '14_frames_with_svd', 'the base model has only the 14-frame option' );
+		assert.equal( input.frames_per_second, 6, 'SVD default, not the text route 24' );
+		assert.equal( input.sizing_strategy, 'maintain_aspect_ratio' );
+		assert.equal( undefined, input.prompt, 'the model cannot read a prompt' );
+		assert.equal( undefined, input.num_frames );
+		assert.equal( undefined, input.width );
+
+		const encoded = String( input.input_image ).split( ',' )[ 1 ];
+		const meta = await sharp( Buffer.from( encoded, 'base64' ) ).metadata();
+		assert.equal( meta.format, 'jpeg' );
+		assert.equal( meta.width, 1024, '2000 px is bounded to 1024' );
+		assert.equal( meta.height, 614 );
+	} );
+} );
+
+test( 'the XT model takes the 25-frame option when the clip is longer', async ( t ) => {
+	await withEnv( { REPLICATE_API_KEY: 'r8_test' }, async () => {
+		let sent = null;
+
+		t.mock.method( axios, 'post', async ( _url, body ) => {
+			sent = body;
+			return { data: prediction( 'https://cdn.example.test/clip.mp4' ) };
+		} );
+
+		const { server, url } = await startServer();
+		try {
+			const res = await fetch( `${ url }/generate`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify( {
+					model: 'stable-video-diffusion-xt',
+					duration: 4,
+					reference_image: await pngDataUri( 320, 240 ),
+				} ),
+			} );
+
+			assert.equal( res.status, 200 );
+		} finally {
+			server.close();
+		}
+
+		assert.equal( sent?.input?.video_length, '25_frames_with_svd_xt' );
+	} );
+} );
+
+test( 'a text-to-video model refuses a reference image rather than dropping it', async () => {
+	await withEnv( { REPLICATE_API_KEY: 'r8_test' }, async () => {
+		const { server, url } = await startServer();
+		try {
+			const res = await fetch( `${ url }/generate`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify( {
+					prompt: 'waves',
+					model: 'zeroscope-v2',
+					reference_image: await pngDataUri( 64, 48 ),
+				} ),
+			} );
+
+			assert.equal( res.status, 400 );
+			const body = await res.json();
+			assert.match( body.error, /does not accept a reference image/ );
+		} finally {
+			server.close();
+		}
+	} );
+} );
+
+test( 'an image-conditioned model refuses a missing reference frame', async () => {
+	await withEnv( { REPLICATE_API_KEY: 'r8_test' }, async () => {
+		const { server, url } = await startServer();
+		try {
+			const res = await fetch( `${ url }/generate`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify( { prompt: 'waves', model: 'stable-video-diffusion' } ),
+			} );
+
+			assert.equal( res.status, 400 );
+			const body = await res.json();
+			assert.match( body.error, /needs reference_image/ );
+		} finally {
+			server.close();
+		}
+	} );
+} );
+
+test( 'a malformed reference frame is refused with a reason', async () => {
+	await withEnv( { REPLICATE_API_KEY: 'r8_test' }, async () => {
+		const { server, url } = await startServer();
+		try {
+			const res = await fetch( `${ url }/generate`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify( {
+					model: 'stable-video-diffusion',
+					reference_image: 'not-a-data-uri',
+				} ),
+			} );
+
+			assert.equal( res.status, 400 );
+			const body = await res.json();
+			assert.match( body.error, /must be a data: URI/ );
+		} finally {
+			server.close();
+		}
 	} );
 } );

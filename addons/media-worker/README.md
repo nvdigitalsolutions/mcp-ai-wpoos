@@ -101,6 +101,30 @@ route returns the full matrix by default; no hidden row cap). The scanned-PDF
 chain returns `503 capability_unavailable` for `pdf-rasterization` when the
 optional `canvas` module is not installed.
 
+### Video generation (Proposal 164, section 164.131)
+
+`POST /api/video/generate` has two model families whose inputs do not overlap:
+
+| Family | Models | Input |
+|---|---|---|
+| Image-to-video | `stable-video-diffusion`, `stable-video-diffusion-xt` | `reference_image`, plus `video_length`, `sizing_strategy`, `frames_per_second` |
+| Text-to-video | `zeroscope-v2`, `zeroscope-v2-576`, `cogvideox-5b`, `cogvideox-2b` | `prompt`, plus `num_frames`, `fps`, `width`, `height` |
+
+`stable-video-diffusion` is the **default**, so a prompt-only call must name a
+text-to-video model. The families refuse each other's inputs rather than
+dropping them, and the refusal says which alternative to use.
+
+- `reference_image` is a `data:image/png;base64,…` (or JPEG/WebP) URI — Replicate
+  accepts data URIs, so the frame never needs a public URL. The route bounds it
+  to 1024 px on the longest edge and re-encodes it as JPEG before sending.
+- `duration` is approximate for image-to-video: the model exposes frame counts,
+  not seconds. The XT version uses `25_frames_with_svd_xt` above three seconds;
+  the base version has only `14_frames_with_svd`.
+- `wait: false` returns `{ prediction_id, status, video_url: null }` as soon as
+  the prediction exists; omit it (or send `true`) to block until finished, which
+  can take up to ten minutes. `GET /api/video/prediction/:id` answers `status`
+  and, on success, a single `video_url` string.
+
 ## Plugin Integration
 
 The WordPress plugin auto-detects the sidecar. Set the constant in `wp-config.php`:
