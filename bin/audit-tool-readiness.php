@@ -427,6 +427,17 @@ $sanitizer_baseline = array(
 	'generate_openai_speech_validated',
 );
 
+// Tools that pass an encoded key *into* a store rather than returning it. The
+// check below is source-text based, so a persister call reads as a payload.
+// Recording the judgement here keeps the baseline's meaning intact: a baselined
+// row returns the encoded key and relies on the runtime backstop, while these
+// rows never put it in their result at all.
+$sanitizer_exempt = array(
+	// GeneratedMediaPersister consumes b64_json and returns media ids; the
+	// tool's own payload carries URL, dimensions and byte count only.
+	'capture_webpage_screenshot',
+);
+
 $sanitizer = array(
 	'baselined'  => array(),
 	'undeclared' => array(),
@@ -462,6 +473,10 @@ foreach ( $existing as $slug => $row ) {
 	}
 
 	if ( is_subclass_of( $fqcn, LlmSanitizerInterface::class ) ) {
+		continue;
+	}
+
+	if ( in_array( $slug, $sanitizer_exempt, true ) ) {
 		continue;
 	}
 
