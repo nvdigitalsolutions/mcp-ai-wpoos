@@ -2054,7 +2054,7 @@ class ChatOrchestrator
      * capability outage.
      *
      * @param array<int, string>                 $slugs    Resolved slugs, in configured order.
-     * @param array<string, ToolInterface>       $resolved Slug → tool.
+     * @param array<string, \Nvoos\Core\Domain\Contract\ToolInterface> $resolved Slug → tool.
      * @param array<string, mixed>|null          $profile  Resolved profile, if any.
      * @return array<int, string>
      */

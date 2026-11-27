@@ -213,7 +213,7 @@ class ExportEcaDataTool extends AbstractTool
 
     /**
      * @param array<string, mixed> $filters
-     * @return array{header: list<string>, rows: list<list<mixed>>, truncated: bool}|array{error: mixed}
+     * @return array{header: list<string>, rows: list<list<mixed>>, truncated: bool}
      */
     private function build(string $type, array $filters, string $from, string $to): array
     {

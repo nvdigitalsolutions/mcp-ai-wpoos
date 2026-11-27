@@ -19,6 +19,9 @@ parameters:
     # ProviderResponse) and `array<string, mixed>` on the remainder, then
     # promote to level 8 — see Proposal 134 (functional type signatures).
     #
-    # Progress (Proposal 134): levels 5-8 are now clean, so level 8 (the
-    # maximum) is enforced here. See Proposal 134 section 14 for the
-    # implementation record.
+    # State at 2026-11-27: **level 8 is configured but not clean** — 216 findings
+    # across 86 files. 91 are `missingType.iterableValue`, 62 `argument.type`,
+    # 19 `return.type`, 18 `method.nonObject`, 16 `offsetAccess.notFound`, and a
+    # tail of one-offs. No CI job enforces this file, so nothing prevents growth.
+    # Proposal 164 section 164.112 records the triage and the recommended fix:
+    # a committed baseline plus a CI job, not a hand cleanup of 216 annotations.

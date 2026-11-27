@@ -37,6 +37,8 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Contract;
 
+use Nvoos\Core\Domain\Error\NotFoundException;
+
 interface DocsCorpusInterface
 {
     /**

@@ -45,7 +45,7 @@ final class GtmetrixScoreEngine
     /**
      * Core Web Vitals thresholds: good / poor boundaries.
      *
-     * @var array<string, array{good: float, poor: float}>
+     * @var array<string, array{good: int|float, poor: int|float}>
      */
     public const THRESHOLDS = array(
         'lcp'          => array(
