@@ -194,7 +194,8 @@
             "shopify_inventory",
             "shopify_orders",
             "shopify_products",
-            "validate_image_for_product"
+            "validate_image_for_product",
+            "validate_image_for_vehicle"
         ],
         "email-marketing": [],
         "erp-ezuite": [],

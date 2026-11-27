@@ -4312,6 +4312,15 @@ return array(
 		            'evidence' => 'lib/core/tests/Unit/Tool/ValidateImageForProductToolTest.php',
 		            'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => false, 'openWorldHint' => true ),
 		        ),
+		        'validate_image_for_vehicle' => array(
+		            'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\ValidateImageForVehicleTool',
+		            'readiness' => 'ready',
+		            'parity' => 'port',
+		            'probe' => 'call',
+		            'reason' => 'Ports the WordPress vehicle estimate validator (Proposal 164 section 164.124) onto the completion path, and is the reason CompletionRequest::messages accepts an array: a coverage question is about the set, so several data URIs travel as one user turn with several image_url parts. Cleaning and repair keep their separate weight sets (vehicle detection 25 for cleaning, coverage completeness 25 for repair), their separate check builders, and the four required repair views each stay critical, so three sides of four is refused even though coverage scores 75. Recommended views never score. Four corrections: a critical technical failure refuses before the model is called rather than paying for an analysis that cannot change the verdict, an unresolvable image reference is reported instead of silently skipped, no remote URL input because ImageInput never fetches a caller-supplied host, and the capability is upload_files, which is what the original enforced in its body while declaring edit_posts.',
+		            'evidence' => 'lib/core/tests/Unit/Tool/ValidateImageForVehicleToolTest.php',
+		            'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => false, 'openWorldHint' => true ),
+		        ),
 		        'validate_tool_schema' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ValidateToolSchemaTool',
 			'readiness' => 'ready',

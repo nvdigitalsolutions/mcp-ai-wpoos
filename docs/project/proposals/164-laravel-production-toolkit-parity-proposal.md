@@ -11288,3 +11288,78 @@ the fixture, not the code, was the thing that was wrong.
 checking rather than assuming: it takes several images, and its `estimate_type`
 is `cleaning` or `repair` rather than a body part. Then
 `rfdetr_catalog_search`, which needs a Roboflow key and a chosen checkpoint.
+
+### §164.124 — Slice 3d: `validate_image_for_vehicle`, and an array in the message
+
+**Recorded.** `validate_image_for_vehicle` is served, and `ecommerce` moves from
+10 to **11 of 44**. It needed one small core change, argued here rather than
+smuggled in.
+
+#### A coverage question is about the set, so the message carries several images
+
+`CompletionRequest::messages()` took one `?string $dataUri` and `completeTool()`
+passed one through. That is the right shape for "what is in this image" and the
+wrong shape for "are all four sides of this vehicle here", which cannot be asked
+image by image.
+
+Both signatures now accept `string|array|null`. A string behaves exactly as
+before, so all twelve `completeTool()` callers and both `messages()` callers are
+unaffected; an array becomes one user turn carrying one `image_url` part per
+image. The alternative — a second method for multi-image — would have duplicated
+the provider-refusal and empty-answer handling that `completeTool()` exists to
+owe once.
+
+#### Two tools in one action, and the weights are not shared
+
+| Category | Cleaning | Repair |
+|---|---|---|
+| vehicle detected | 25 | 15 |
+| full vehicle visible / coverage completeness | 20 | 25 |
+| damage visibility | — | 20 |
+| technical format | 15 | 10 |
+| image dimensions | 8 | 5 |
+| lighting | 12 | 10 |
+| sharpness | 8 | 8 |
+| condition visibility | 10 | — |
+| VIN visibility | — | 5 |
+| single vehicle | 2 | 2 |
+
+Both total 100 and both grade at 90/75/60/40. The dimension floor is **720 px**
+here rather than the product validator's 512, with 1080 as the no-warning
+threshold, because a panel cannot be priced from a thumbnail.
+
+`repair` makes each of the four required views **critical**, so three sides of
+four is refused even though `coverage_completeness` scores 75% and only warns —
+the missing side fails on its own terms. Recommended views (the four corners,
+a damage close-up, the VIN plate) are `info` and are deliberately excluded from
+scoring, so a complete repair set with no corner shots still scores 100.
+
+#### Four corrections
+
+| Correction | The WordPress behaviour |
+|---|---|
+| **A technical failure refuses before the model** | Merged every technical failure into the checks and called the model anyway, so a set containing a 100-pixel thumbnail paid for an analysis that could not change the verdict. §164.123's product validator already refuses early and this one matches it |
+| **An unresolvable reference is reported** | Skipped every reference it could not resolve and carried on, so a caller who passed four views and had three resolve was told coverage was incomplete without being told why |
+| **No remote URL input** | Accepted attachment ids, file ids and public URLs. Core resolves a registry `file_id` or a `data:` URI and never fetches a caller-supplied host |
+| **The capability is the enforced one** | `get_required_capability()` answered `edit_posts` while `execute()` refused without `upload_files`. The stricter of the two is the behaviour, so it is the one declared |
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `ValidateImageForVehicleToolTest` | **19 tests, 48 assertions**, 0 failures |
+| `lib/core` unit suite | 3,764 → **3,783 tests, 21,900 assertions**, 0 failures |
+| `lib/laravel-adapter` suite | **679 tests, 3,614 assertions**; the one error is the local `finfo` environment gap, pre-existing and green in CI |
+| Readiness manifest | `ready` 457 → **458**; servable 498 → **499**; no violations |
+| Toolkit parity | 296 → **297 ported**, 549 → **548 remaining**; `ecommerce` `44 \| 10 \| 1 \| 28 \| 33` → `44 \| 11 \| 1 \| 28 \| 32`; baseline rewritten |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on the four touched files |
+| PHPStan level 8, `lib/core` | no errors against the baseline |
+
+#### Next
+
+Two of the seven undecided `ecommerce` tools are now ported. What remains is
+`rfdetr_catalog_search` (needs a Roboflow key and a chosen checkpoint),
+`product_actualization` (needs an image and video **generation** contract that
+does not exist), and the QuickBooks pair (Online needs an OAuth credential store,
+Desktop needs a host running QODBC). §164.120's seam matrix still describes all
+four accurately, and none of them is a copy of a validator.

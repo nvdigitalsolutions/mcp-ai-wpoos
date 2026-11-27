@@ -26,13 +26,17 @@ namespace Nvoos\Core\Application\Provider;
 final class CompletionRequest
 {
     /**
-     * @param string      $prompt  The instruction.
-     * @param string|null $dataUri An image, when the model is being asked about one.
-     * @param string      $system  A system prompt, when the tool has one.
+     * @param string                    $prompt  The instruction.
+     * @param string|array<int, string>|null $dataUri An image, or several, when the model is being
+     *                                               asked about them. Several images are one user turn
+     *                                               carrying several `image_url` parts, which is how a
+     *                                               coverage question ("are all four sides of this car
+     *                                               here?") is asked at all.
+     * @param string                    $system  A system prompt, when the tool has one.
      *
      * @return array<int, array<string, mixed>>
      */
-    public static function messages(string $prompt, ?string $dataUri = null, string $system = ''): array
+    public static function messages(string $prompt, string|array|null $dataUri = null, string $system = ''): array
     {
         $messages = array();
 
@@ -50,10 +54,10 @@ final class CompletionRequest
             ),
         );
 
-        if (null !== $dataUri) {
+        foreach (self::uris($dataUri) as $uri) {
             $content[] = array(
                 'type'      => 'image_url',
-                'image_url' => array( 'url' => $dataUri ),
+                'image_url' => array( 'url' => $uri ),
             );
         }
 
@@ -63,5 +67,34 @@ final class CompletionRequest
         );
 
         return $messages;
+    }
+
+    /**
+     * Normalise the image argument to a list of non-empty data URIs.
+     *
+     * A bare string stays a single image, so every existing caller is unaffected;
+     * an array is one user turn with several images, which is the shape a
+     * multi-view question needs.
+     *
+     * @param string|array<int, string>|null $dataUri One, several, or none.
+     *
+     * @return array<int, string>
+     */
+    private static function uris(string|array|null $dataUri): array
+    {
+        if (null === $dataUri) {
+            return array();
+        }
+
+        $uris = is_array($dataUri) ? $dataUri : array($dataUri);
+        $list = array();
+
+        foreach ($uris as $uri) {
+            if (is_string($uri) && '' !== trim($uri)) {
+                $list[] = $uri;
+            }
+        }
+
+        return $list;
     }
 }
