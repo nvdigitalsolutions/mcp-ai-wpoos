@@ -12,6 +12,10 @@
 
 includes:
     - phpstan.neon.dist
+    # The 216 findings that predate the ratchet. New findings fail the build;
+    # this file only shrinks, one file at a time, as each is next touched.
+    # Regenerate deliberately, never automatically.
+    - phpstan-baseline.neon
 
 parameters:
     typeAliases:

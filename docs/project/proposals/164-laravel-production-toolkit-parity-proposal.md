@@ -10160,3 +10160,158 @@ catalog is its own slice, and it needs a decision about shipping an MCP client i
 Slice 2 — Printful, trade.gov tariff rates and the carrier rate shop — or
 `shopify_catalog` as its own slice, whichever the owner prefers. The three
 decisions from §164.111 and §164.112 are still open and still cheap to take now.
+
+---
+
+### §164.114 — the three open decisions taken, and the first catalog adapter
+
+**Recorded.** The three decisions §164.113 left open are closed here, and the
+first implementation of `ProductCatalogInterface` ships with them. Two of the
+three are register-and-infrastructure work; the third is the adapter that makes
+the contract more than an interface.
+
+#### 1. The 27 deferrals and one decline, registered
+
+§164.110 named 27 ecommerce tools blocked on a prerequisite and one tool that
+should not be ported at all. All 28 are now in
+`lib/core/resources/toolkit-parity-decisions.json`, each naming its
+prerequisite:
+
+- **27 deferred.** Every reason names the contract or store that would unblock
+  the tool — `OrderStoreInterface` plus a status-transition rule for
+  `bulk_order_status_update`, a promotion/coupon store for
+  `create_discount_campaign`, an order model carrying an invoiced marker for the
+  order-invoice tools. A deferral that does not name its prerequisite is a
+  hidden decision; these do.
+- **1 declined: `lookup_product_price`.** Its mechanism is scraping retailer
+  search pages (`amazon.com/s`, `ebay.com/sch`, `target.com/s`) through
+  `run_crawl4ai_job` and guessing which result is the product. Retailer search
+  HTML is neither stable nor a licensed interface, so the tool would break
+  quietly and repeatedly. Declined rather than deferred because no prerequisite
+  would make the *mechanism* sound — the crawl and vision primitives remain
+  available to a caller that wants to compose its own lookup.
+
+The register is decisions-only, so `toolkit-parity.php --check` is unchanged:
+**291 ported, 9 declined, 77 deferred, 554 remaining**. That is the intended
+behaviour — a deferral stays inside `remaining`, and only a served slug moves a
+tool into `ported`.
+
+#### 2. PHPStan: a baseline and a gate, rather than a comment
+
+§164.112 fixed the findings that were defects and left **216** that were
+annotation debt, recommending a baseline plus a CI gate. Both are in:
+
+- **`lib/core/phpstan-baseline.neon`** — 216 findings collapsed into **189
+  entries**. PHPStan groups by message and path and records the multiplicity in
+  `count:`, so the sum of the counts is 216; nothing was dropped.
+- **`lib/core/phpstan.neon`** includes the baseline. It is included from the
+  *aliases* file rather than from `.dist`, because `phpstan.neon` is the file the
+  local and CI runs actually load.
+- **`.github/workflows/phpstan-core.yml`** runs level 8 in `lib/core` on pushes
+  and PRs to `main` and `alpha-working`, failing on **new** findings only.
+- **`phpstan.neon.dist`'s comment is corrected.** It claimed levels 5-8 were
+  clean; level 8 is now *gated*, which is a different and true statement.
+
+The ratchet is the WPCS ratchet already used here: as a file is next touched,
+its baseline entries are removed. Without the gate the number re-rots; without
+the baseline the gate can never be switched on.
+
+#### 3. The first adapter is the Laravel target
+
+`ProductCatalogInterface` now has a real implementation:
+`Nvoos\Laravel\Adapter\ProductCatalog`, bound in `NvoosServiceProvider`. Three
+reasons decided it over a WooCommerce adapter:
+
+1. **The product tools are mostly reads**, and the migration (§164.111
+   `CommerceMigrator`) runs WooCommerce → Laravel. Laravel is the destination of
+   record, so that is where the store has to be queryable first.
+2. **A WooCommerce adapter would drag WordPress into a framework-agnostic
+   layer.** `WC_Product` and postmeta are exactly what §164.111 exists to keep
+   out of `lib/core`.
+3. **The Laravel app is the only one deployable and testable here.**
+
+#### What the platform actually runs, verified rather than assumed
+
+Probed through the Cloudways API against server **1686836** on 2026-11-27, and
+against Cloudways' documented limits:
+
+| Fact | Consequence for the adapter |
+|---|---|
+| Services: `mysql` (**MariaDB 10.11**), `php8.2-fpm`, `php8.3-fpm`, `redis`, `rabbitmq`, `varnish`, `nginx`, `apache2`, `memcached`, `imunify360`. **No PostgreSQL.** | MariaDB is the target today; PostgreSQL is a portability constraint, not a current deployment |
+| Cloudways PHP servers offer **MySQL 8.4 or MariaDB 10.11 only**; PostgreSQL is a **Velocity (Node)** feature where the vendor creates the database and the app must already support PG | The adapter may not use a PostgreSQL-only type or a MySQL-only function. JSON goes through Eloquent casts and `whereJsonContains`; price ordering is a standard scalar subquery |
+| **`character_set_server = latin1`** | Every new table pins `charset=utf8mb4` / `collation=utf8mb4_unicode_ci` explicitly, or a non-ASCII product name is mangled by a server default nobody chose |
+
+#### The schema, and three decisions inside it
+
+- **Money is an integer plus a currency.** `price_minor BIGINT` + `price_currency
+  CHAR(3)`, and the same pair for `compare_at_price` and `cost`. §164.111's
+  `Money` refuses to be a float because a catalogue migrated through floats
+  accumulates drift no reconciliation can undo; storing the minor unit carries
+  that decision into the database instead of undoing it at the boundary.
+- **`sku` and `external_ref` are 191 characters and unique.** 191 × 4 bytes
+  fits MySQL's 767-byte index limit at utf8mb4; a 255-character unique key is
+  truncated or refused depending on the row format. Multiple NULLs are allowed,
+  which is what makes `external_ref` optional.
+- **`description` is nullable, not `default('')`.** MySQL rejects a default on
+  `TEXT`; the adapter coalesces null to the empty string on read.
+- **Option definitions are JSON on the product; the chosen values are JSON on
+  the variant.** They are product-scoped and never queried across products, so a
+  normalised option table would add two joins to every read for a value that only
+  ever travels with its product.
+
+#### Two defects the adapter had before it ever ran, and one silent one
+
+The adapter was written in the previous session but never executed. The first
+execution found:
+
+1. **`Carbon` is not `\DateTimeImmutable`.** Eloquent's `datetime` cast returns
+   `Carbon`, which extends `\DateTime`; `Product::createdAt` is typed
+   `?\DateTimeImmutable`. Every hydrated product was a `TypeError`, so `find()`
+   and `query()` could never have worked. Fixed with
+   `\DateTimeImmutable::createFromInterface()`, which preserves the timezone.
+2. **The unique `sku` index had no matching guard.** `assertIdentityIsFree()`
+   only compared against siblings *within the product*, so a SKU already used by
+   another product reached the driver and surfaced as a `QueryException` — while
+   the migration docblock promised a validation error naming the SKU. The guard
+   now checks catalog-wide and returns `ValidationException` with
+   `errors: {sku: [...]}`.
+3. **`created_at` is not mass-assignable**, so a migration passing the source's
+   creation time had it silently dropped by `fill()` and replaced with "now" —
+   losing the only record of when the product was created. It is now assigned as
+   a date attribute on insert. On update it is deliberately *not* rewritten:
+   creation time is history.
+
+`delete()` also deletes the variants explicitly instead of relying on the
+foreign key's `ON DELETE CASCADE`. That cascade is a property of the connection —
+SQLite leaves foreign keys off unless the PDO layer enables them — and a
+contract that promises "the product and every variant it owns" should not depend
+on how a host configured its database.
+
+#### The empty selection is legal
+
+`OptionSelection` now accepts `array()`. Refusing it forced every simple product
+— one variant, no options — to invent a fake option, which is a worse lie than an
+empty map. `key()` on an empty selection is `''`, and `Product::hasVariants()`
+still distinguishes one variant from many. `ProductModelTest` was updated to
+assert the new rule rather than the old one.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `ProductCatalogTest` | **17 tests, 115 assertions**, 0 failures |
+| `lib/core` unit suite | **3,649 tests, 21,400 assertions**, 0 failures |
+| Laravel adapter suite | 661 tests, 3,567 assertions, 4 skipped, **1 pre-existing environment error** (`finfo` extension disabled in the local `php.ini`; the test and the extension are both untouched by this work) |
+| Readiness manifest | 512 classes / 512 rows, **493 servable**, no violations |
+| Toolkit parity | **291 ported / 9 declined / 77 deferred / 554 remaining**; `ecommerce` `44 \| 5 \| 1 \| 27 \| 38` |
+| phpcs (`phpcs-laravel.xml.dist`) | **0 errors across 1,909 files** |
+| PHPStan level 8, `lib/core` | **no errors** against a 189-entry baseline covering 216 findings |
+| Adapter migrations | 2 tables, both pinning utf8mb4 |
+
+#### Next
+
+Slice 2 — Printful, trade.gov tariff rates and the carrier rate shop — or
+`shopify_catalog` as its own slice, which still needs a decision about shipping
+an MCP client inside `lib/core`. On the catalog side the next useful increment is
+`CommerceMigrator` running against this adapter, because that is what proves the
+contract against a real WooCommerce export rather than against fixtures.

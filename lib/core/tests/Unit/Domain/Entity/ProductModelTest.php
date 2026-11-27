@@ -70,11 +70,13 @@ final class ProductModelTest extends TestCase
         $this->assertNull($selection->value('Colour'));
     }
 
-    public function test_an_empty_selection_is_refused(): void
+    public function test_an_empty_selection_means_a_variant_without_options(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $selection = new OptionSelection(array());
 
-        new OptionSelection(array());
+        $this->assertSame(array(), $selection->values);
+        $this->assertSame('', $selection->key());
+        $this->assertNull($selection->value('Size'));
     }
 
     public function test_a_blank_selection_value_is_refused(): void

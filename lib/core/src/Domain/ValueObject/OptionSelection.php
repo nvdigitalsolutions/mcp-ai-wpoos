@@ -12,6 +12,11 @@
  * `selectedOptions` array, the `attribute_sku` pivot — compare equal when they
  * mean the same thing. Order is provider noise; identity is not.
  *
+ * An **empty** selection is valid and means "this variant has no options": a
+ * simple product's single variant, or a Shopify product with no options at all.
+ * Refusing it would force every such product to invent a fake option, which is a
+ * worse lie than an empty map. `key()` on an empty selection is `''`.
+ *
  * `key()` is the canonical signature used to match a variant across systems
  * when it has no SKU. It is lowercase and name-sorted, so `Red / M` and
  * `m / red` produce the same key. Two variants of one product that share a key
@@ -38,16 +43,12 @@ final readonly class OptionSelection implements \JsonSerializable
     public array $values;
 
     /**
-     * @param array<string, string> $values Option name → chosen value.
+     * @param array<string, string> $values Option name → chosen value. May be empty.
      *
      * @throws \InvalidArgumentException When a name or value is blank.
      */
     public function __construct(array $values)
     {
-        if (array() === $values) {
-            throw new \InvalidArgumentException('A variant selection cannot be empty.');
-        }
-
         $normalised = array();
 
         foreach ($values as $name => $value) {
