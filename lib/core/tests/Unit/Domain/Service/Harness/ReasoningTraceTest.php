@@ -18,6 +18,7 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tests\Unit\Domain\Service\Harness;
 
 use Nvoos\Core\Domain\Service\Harness\ReasoningTrace;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ReasoningTraceTest extends TestCase
@@ -37,9 +38,7 @@ final class ReasoningTraceTest extends TestCase
         $this->assertSame(1700000000, $trace['created_at']);
     }
 
-    /**
-     * @dataProvider junk
-     */
+    #[DataProvider('junk')]
     public function test_junk_degrades_to_a_fresh_trace(mixed $raw): void
     {
         $trace = ReasoningTrace::sanitize($raw);

@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tests\Unit\Domain\Service\Harness;
 
 use Nvoos\Core\Domain\Service\Harness\OutputGuardrail;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class OutputGuardrailTest extends TestCase
@@ -81,9 +82,7 @@ final class OutputGuardrailTest extends TestCase
         $this->assertSame(array(), $result['findings']);
     }
 
-    /**
-     * @dataProvider leaks
-     */
+    #[DataProvider('leaks')]
     public function test_a_leak_is_reported_at_every_strictness(string $content): void
     {
         foreach (array( 'low', 'medium', 'high' ) as $strictness) {

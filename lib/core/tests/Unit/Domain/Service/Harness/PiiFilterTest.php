@@ -18,13 +18,12 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tests\Unit\Domain\Service\Harness;
 
 use Nvoos\Core\Domain\Service\Harness\PiiFilter;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class PiiFilterTest extends TestCase
 {
-    /**
-     * @dataProvider redactions
-     */
+    #[DataProvider('redactions')]
     public function test_it_redacts_known_shapes(string $input, string $expectedToken, string $strippedFragment): void
     {
         $result = PiiFilter::scrub($input);
@@ -194,9 +193,7 @@ final class PiiFilterTest extends TestCase
         $this->assertSame('see ' . PiiFilter::REDACTED_KEY . '.', $result['text']);
     }
 
-    /**
-     * @dataProvider ordinaryProse
-     */
+    #[DataProvider('ordinaryProse')]
     public function test_ordinary_prose_is_never_redacted(string $input): void
     {
         $result = PiiFilter::scrub($input);

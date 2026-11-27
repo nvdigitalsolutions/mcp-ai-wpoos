@@ -22,6 +22,7 @@ namespace Nvoos\Core\Tests\Unit\Domain\Service\Harness;
 use Nvoos\Core\Domain\Service\Harness\HarnessProfile;
 use Nvoos\Core\Domain\Service\Harness\SelfRefineException;
 use Nvoos\Core\Domain\Service\Harness\SelfRefineLoop;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class SelfRefineLoopTest extends TestCase
@@ -270,9 +271,7 @@ final class SelfRefineLoopTest extends TestCase
         }
     }
 
-    /**
-     * @dataProvider verdicts
-     */
+    #[DataProvider('verdicts')]
     public function test_a_verdict_is_normalised_to_the_contract(mixed $raw, string $verdict, string $feedback): void
     {
         $result = SelfRefineLoop::sanitizeVerdict($raw);

@@ -245,10 +245,9 @@ final class CalendarBookingLinksTest extends TestCase
     }
 
     /**
-     * @dataProvider invalidFields
-     *
      * @param array<string, mixed> $arguments Tool arguments.
      */
+    #[DataProvider('invalidFields')]
     public function test_out_of_range_fields_are_refused(array $arguments, string $field): void
     {
         $store  = new FakeCalendarStore();
@@ -301,10 +300,9 @@ final class CalendarBookingLinksTest extends TestCase
     }
 
     /**
-     * @dataProvider linkStates
-     *
      * @param array<string, mixed> $meta Stored meta.
      */
+    #[DataProvider('linkStates')]
     public function test_state_reports_the_first_blocking_reason(array $meta, string $reason): void
     {
         $item = (new FakeCalendarStore())->seed(81, BookingLinkDefinition::TYPE, 'Link', $meta);

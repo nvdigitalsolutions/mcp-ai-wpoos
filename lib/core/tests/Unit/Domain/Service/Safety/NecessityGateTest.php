@@ -19,15 +19,15 @@ namespace Nvoos\Core\Tests\Unit\Domain\Service\Safety;
 
 use Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile;
 use Nvoos\Core\Domain\Service\Safety\NecessityGate;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class NecessityGateTest extends TestCase
 {
     /**
-     * @dataProvider safeToolCases
-     *
      * @param array<int, string> $flags
      */
+    #[DataProvider('safeToolCases')]
     public function test_safe_tools_need_no_further_thought(array $flags, bool $expected): void
     {
         $this->assertSame($expected, NecessityGate::isSafeTool($flags));
@@ -56,10 +56,9 @@ final class NecessityGateTest extends TestCase
     }
 
     /**
-     * @dataProvider necessityCases
-     *
      * @param array<string, mixed> $arguments
      */
+    #[DataProvider('necessityCases')]
     public function test_necessity_classification(string $slug, array $arguments, string $expected): void
     {
         $this->assertSame($expected, NecessityGate::classifyNecessity($slug, $arguments));

@@ -34,6 +34,7 @@ use Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile;
 use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 use Nvoos\Core\Domain\Service\Safety\NecessityGate;
 use Nvoos\Core\Domain\Service\Safety\ToolCapabilityFlagCatalogue;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class SocialPublishingSafetyTest extends TestCase
@@ -84,9 +85,7 @@ final class SocialPublishingSafetyTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider publishingSlugs
-     */
+    #[DataProvider('publishingSlugs')]
     public function test_publishing_to_a_platform_requires_human_approval(string $slug): void
     {
         $this->assertTrue(
@@ -117,9 +116,7 @@ final class SocialPublishingSafetyTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider publishingSlugs
-     */
+    #[DataProvider('publishingSlugs')]
     public function test_no_publisher_claims_to_be_read_only(string $slug): void
     {
         $flags = CapabilityFlagVocabulary::normalise(ToolCapabilityFlagCatalogue::for($slug));
@@ -136,9 +133,7 @@ final class SocialPublishingSafetyTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider readOnlySlugs
-     */
+    #[DataProvider('readOnlySlugs')]
     public function test_a_read_only_social_tool_stays_on_the_safe_path(string $slug): void
     {
         $this->assertTrue(

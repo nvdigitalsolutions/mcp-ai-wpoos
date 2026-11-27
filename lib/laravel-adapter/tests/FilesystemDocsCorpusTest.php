@@ -5,6 +5,7 @@ namespace Nvoos\Laravel\Tests;
 use Nvoos\Core\Domain\Contract\DocsCorpusInterface;
 use Nvoos\Core\Domain\Error\NotFoundException;
 use Nvoos\Laravel\Adapter\FilesystemDocsCorpus;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -67,9 +68,7 @@ final class FilesystemDocsCorpusTest extends TestCase {
 
 	// ── Traversal: segment validation ───────────────────────────────────
 
-	/**
-	 * @dataProvider escapingPaths
-	 */
+	#[DataProvider('escapingPaths')]
 	public function test_a_path_that_escapes_is_refused( string $path ): void {
 		$this->expectException( \InvalidArgumentException::class );
 
