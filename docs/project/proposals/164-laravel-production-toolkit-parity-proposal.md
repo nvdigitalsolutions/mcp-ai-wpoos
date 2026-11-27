@@ -12025,3 +12025,118 @@ description says the render is about two seconds.
 | PHPStan (core) | clean |
 | phpcs | clean |
 | `node --check` | clean on both edited worker files |
+
+### §164.132 — `sync_google_calendar`: four keys that were never written, and a deferral register that described the wrong tools
+
+**Recorded.** §164.89 closed `calendar-booking` at *25 ported, 0 declined, 9
+deferred* and said the next work was "the prerequisites themselves". Re-reading
+the nine deferrals against the WordPress sources they name refuted three of the
+reasons, and turned one of the nine into a port that runs.
+
+#### The nine, re-measured
+
+| Tool | What the WordPress code actually does | Disposition |
+|---|---|---|
+| `get_jetappointment_providers`, `get_jetappointment_services` | One call each to `WP_MCP_AI_Booking_Adapter_Factory::get_jetappointment()`, which reads JetEngine tables | deferred, unchanged: no Jet data layer exists here |
+| `get_jetbooking_instances`, `get_jetbooking_units` | Same, against the JetBooking adapter | deferred, unchanged |
+| `sync_from_jetappointment`, `sync_from_jetbooking` | **A date-window upsert, not a cursor sync.** Reads `get_bookings(date_from, date_to)`, matches on `_jetappointment_id` meta, inserts or updates `mcp_appointment` | deferred, **reason corrected**: the prerequisite is a booking source; there is no cursor to store |
+| `sync_to_jetappointment` | Writes the appointment into JetAppointment | deferred, unchanged: needs write scope and a conflict policy |
+| `sync_outlook_calendar` | **Performs no sync.** Fires `wp_mcp_ai_outlook_calendar_sync`; when nothing handles it, marks the appointment `pending` and returns `success: true` with `event_id = 'pending-' . time()` | deferred, **reason rewritten**: there is no Graph call to port, and a faithful port would port a fabricated success |
+| `sync_google_calendar` | **A real outbound push**, 385 lines: OAuth credentials, scope check, event resource, create/update/recreate | **ported** |
+
+A contract gap surfaced while reading the first four: the declared
+`WP_MCP_AI_Booking_Adapter_Interface` has no `get_booking_instances()`,
+`get_units()` or `get_unit_availability()`, yet two of the readers call all
+three. PHP resolves them against the concrete adapter, so it works — but the
+interface that claims to be "every method an adapter must implement" does not
+describe the surface the tools use. Recorded, not fixed; it belongs to the
+WordPress plugin.
+
+#### The WordPress tool could never sync
+
+`sync_google_calendar` read four appointment keys. Nothing in the toolkit writes
+any of them:
+
+| Key it read | Written by | What the writers use |
+|---|---|---|
+| `_appointment_start` | **nothing** | `_start_time` (18 files) |
+| `_appointment_end` | **nothing** | `_end_time` (14 files) |
+| `_appointment_location` | **nothing** | `_location` (3 files) |
+| `_appointment_customer_email` | **nothing** | `_client_email` (14 files) |
+
+Because the start read was always empty, every call returned
+`wp_mcp_ai_appointment_missing_start` with a 400 **before** reaching Google. The
+location and attendee branches were unreachable, and the 385 lines of client
+plumbing were dead. The port reads the keys the writers store, which is what
+makes this a capability rather than a name in a table.
+
+#### Design
+
+Three pieces, each small:
+
+- **`GoogleCalendarClientInterface`** — `insertEvent`, `updateEvent`, and the
+  three resolutions a response needs (`calendarId`, `defaultTimeZone`,
+  `connectionName`). Narrow on purpose: the WordPress tool is an outbound write,
+  not a pull sync, so there is no list, no `syncToken` and no tombstone.
+- **`GoogleCalendarClient`** (Infrastructure) — one `grant_type=refresh_token`
+  POST to `oauth2.googleapis.com/token`, cached for the lifetime of the
+  instance, then bearer-authenticated JSON calls. No vendor SDK, so the client
+  is testable against `HttpClientInterface`.
+- **`SyncGoogleCalendarTool`** — reads the appointment, builds the event, keys
+  the link on `_google_calendar_event_id`, and writes the three
+  `_google_calendar_*` meta keys back.
+
+Credentials come from one `google_calendar` settings block
+(`client_id`/`client_secret`/`refresh_token`/`calendar_id`/`timezone`), which is
+the settings path the WordPress tool documented but routed through a Remote
+Sites connection store this runtime does not have.
+
+#### Five corrections
+
+| Correction | The WordPress behaviour |
+|---|---|
+| **The written keys are read** | Four keys nothing writes, so the tool always failed before the API call |
+| **The date/dateTime pair is one shape** | A date-only start with the defaulted one-hour end emitted `date` for start and `dateTime` for end. Google rejects a mixed pair; both now match, and an all-day end is advanced a day because Google's all-day end is exclusive |
+| **`send_updates: externalOnly` is sent** | `sanitize_key()` lower-cased it to `externalonly`, which is not a Google value, so it silently became `none` — the value its own schema advertises was unreachable. Matched case-insensitively now |
+| **`from_google` and `bidirectional` are refused** | Accepted by the schema and ignored; the tool pushed regardless. A caller asking for an import now gets a named refusal |
+| **A 404 on update and a 404 on insert differ** | One code for both, so a mistyped calendar id read as a deleted event and the "recreate" path inserted into the same bad calendar. Updating a vanished event recreates it (`google_calendar_event_not_found`/`_deleted`); inserting into a missing calendar names the calendar |
+
+Two smaller ones: a named `connection_id` is refused by name instead of being
+silently downgraded to settings, and `invalid_grant` from the token endpoint is
+classified as `google_calendar_credentials_revoked` rather than a generic auth
+failure.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `CalendarGoogleSyncTest` | **26 tests, 73 assertions**, 0 failures |
+| `GoogleCalendarClientTest` | **25 tests, 68 assertions**, 0 failures |
+| `lib/core` unit suite | **3,866 tests / 22,157 assertions** (+51 tests, +141 assertions), 0 failures |
+| `lib/laravel-adapter` suite | 698 tests / **3,714 assertions**, 2 skipped; the full local run hit one temp-directory cleanup race in `ProfessionRepositoryTest`, green in isolation |
+| Readiness manifest | 520 → **521 rows**; servable 501 → **502**; ready 461; no violations |
+| Toolkit parity | 299 → **300 ported**, 9 declined, 80 → **79 deferred**, 546 → **545 remaining**; `calendar-booking` `34 \| 25 \| 0 \| 9 \| 9` → `34 \| 26 \| 0 \| 8 \| 8`; baseline rewritten |
+| `toolkit-parity.php --check` | no regression across 52 toolkits |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on the nine touched paths |
+
+The capability-flag catalogue is unchanged: it is generated from the WordPress
+corpus, which already carried `sync_google_calendar` with its WordPress flags.
+
+#### What remains in this family
+
+Eight tools, and no slug among them is blocked on tool code:
+
+- **Six JetAppointment/JetBooking tools** need a booking-source client. The
+  inbound syncs also show that the register's "sync-state store holding the last
+  cursor" was never the real prerequisite — they upsert a date window against a
+  meta id map. The honest blocker is narrower and harder: a Laravel app cannot
+  read JetEngine tables, so this needs a WordPress bridge (Remote Sites MCP) or
+  a booking source that speaks HTTP.
+- **`sync_outlook_calendar`** needs a Microsoft Graph client with a
+  refresh-token store. Unlike the Google tool there is nothing to port: the
+  plugin's tool is a hook, a `pending` marker and a clock-derived id.
+
+Both are additive client work, not parity work. The calendar toolkit's port
+queue is empty again — this time because the remaining entries were checked
+against their sources rather than counted from their names.

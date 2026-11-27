@@ -3986,6 +3986,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/CalendarAvailabilityToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'sync_google_calendar' => array(
+			'class' => 'Nvoos\Core\Tool\Calendar\SyncGoogleCalendarTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the outbound Google Calendar push (Proposal 164 section 164.136). The WordPress tool could never sync: it read _appointment_start, _appointment_end, _appointment_location and _appointment_customer_email, and nothing in the toolkit writes any of those four keys, so every call returned a missing-start error before reaching Google; the writers store _start_time, _end_time, _location and _client_email, and the port reads those. Three further corrections: an all-day start paired with the defaulted one-hour end emitted a mixed date/dateTime pair that Google rejects, so the pair is now consistent and the exclusive all-day end is advanced a day; send_updates externalOnly was lower-cased by sanitize_key into a value Google does not accept and silently became none, which the port matches case-insensitively; and the import directions plus a named Remote Sites connection are refused by name rather than ignored. The client refreshes the token once per instance with grant_type=refresh_token, classifies invalid_grant as a revoked credential, and keeps a 404 on update (deleted event, recreated) apart from a 404 on insert (wrong calendar). The event id is stored in _google_calendar_event_id so repeated syncs update one event.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CalendarGoogleSyncTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
 		'set_cache' => array(
 			'class' => 'Nvoos\\Core\\Tool\\SetCacheTool',
 			'readiness' => 'ready',
