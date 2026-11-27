@@ -10610,3 +10610,84 @@ to call `BoxPacker::pack()` instead of instantiating a tool. The five defects
 hardcoded USPS rows, another plugin's option, and first-connection credentials —
 are the work items, and `estimate_order_rates` stays deferred with the order
 model.
+
+---
+
+### §164.117 — Slice 2b: the rate estimator, and three products called ShipStation
+
+**Recorded.** `shipping_rate_estimator` is served with `estimate_rates` and
+`test_connection`. `estimate_order_rates` is **not**: it calls `wc_get_order()`
+and reads the destination off a WooCommerce order, so it belongs with the 27
+deferred order tools. The five defects §164.115 recorded are fixed, and each has
+a test that fails against the WordPress original.
+
+#### The naming problem, verified at the vendor
+
+ShipEngine was rebranded as the **ShipStation API**, which leaves three products
+sharing a name. Checked against `docs.shipstation.com/api-overview` on
+2026-11-27:
+
+| Product | Base URL | Notes |
+|---|---|---|
+| ShipStation API (formerly ShipEngine) | `https://api.shipengine.com/v1` | Standalone; what the WordPress tool called `shipengine` |
+| ShipStation API V1 | `https://ssapi.shipstation.com` | "Legacy", still supported and maintained |
+| ShipStation API V2 | `https://api.shipstation.com/v2` | Early release; Standard and Premium plans only |
+
+V2 is not a substitute for either of the others, so it is not offered. The
+provider values are now `shipstation_standalone` and `shipstation_v1`, and the
+**old names are refused with a message naming the replacement**. Accepting
+`shipengine` silently would keep a caller describing a product that no longer
+exists under that name.
+
+#### The five corrections
+
+| Correction | What the original did |
+|---|---|
+| **No quote is a refusal** | Set `success: true` before rating, then returned `total_rate_amount: 0.0` with warnings when it had no credentials or every package failed. Credentials and the origin are now validated **before any request is spent** |
+| **Totals are per currency** | Summed every package into one number and overwrote `currency` with whichever package came last. Totals are now keyed by currency and `Money::add()` never sees two |
+| **V1 reports what it charged** | Sorted by `shipmentCost + otherCost` and returned `shipmentCost` alone, so the reported price could be lower than the compared one. The amount is now the sum, with `other_cost` returned separately |
+| **No invented carrier rows** | Emitted `pirateship_rows` with `carrier: USPS` and `service: Priority Mail` written into the code, whatever rate came back. Those rows are gone; each package reports the provider's own `carrier` and `service_code` |
+| **No hidden stores** | Read the carrier and API keys from another plugin's option (`fk_usps_optimizer_settings`), fell back to the WooCommerce store address, and took the *first* enabled connection of a type when no id was given. `credentials` and `ship_from` are now arguments, so nothing can be looked up wrongly |
+
+Two related cleanups: the hardcoded `service_code: usps_priority_mail` is gone
+(with `carrier_ids` alone the provider rate-shops every service those carriers
+offer — which is what "rate-shopping" means; a caller restricts explicitly by
+passing `service_code`), and `get_required_capability()` is `edit_posts` rather
+than `manage_woocommerce`, which this runtime does not have.
+
+#### Deliberate differences from the original
+
+- **No sleeping.** The WordPress client retried a `429` twice with `sleep()`,
+  blocking the tool for up to 20 seconds. A rate-limited quote is returned as a
+  refusal; the caller decides whether to wait. A queue-backed runtime should not
+  hold a worker hostage to a carrier's throttle.
+- **One provider call per package**, as before, but the cost is stated: a
+  ten-package plan is ten requests. `test_connection` reports the remaining
+  quota from the provider's own headers, so a caller can see the budget.
+- **`pirateship_rows` is dropped outright.** It was an export format, not a
+  capability, and it was built on a carrier assumption that is now false. A
+  PirateShip CSV belongs in an integration, not in a rate tool.
+- **`api_credentials` is still accepted** as an alias for `credentials`, so a
+  caller migrating from the WordPress schema does not have to rename its
+  payload.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `EcommerceShippingRateEstimatorTest` | **17 tests, 108 assertions**, 0 failures |
+| `lib/core` unit suite | 3,667 → **3,684 tests, 21,591 assertions**, 0 failures |
+| Readiness manifest | 513 → **514 rows**, 494 → **495 servable** |
+| Toolkit parity | 292 → **293 ported**, 553 → **552 remaining**; `ecommerce` `44 \| 6 \| 1 \| 27 \| 37` → `44 \| 7 \| 1 \| 27 \| 36` |
+| Adapter registration | 12 tests, 692 assertions; every servable tool still constructs |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors across 1,914 files |
+| PHPStan level 8, `lib/core` | no errors against the baseline |
+| Provider contracts | 2 of 2 verified at the vendor; V2 documented as out of scope |
+
+#### Next
+
+Slice 2c: `printful`, split by object (catalog, sync products, orders,
+reports/mockups) rather than as the 24-action monolith, with the cache key
+carrying the store id and the limiter keyed on the account. Then the
+`get_import_duty` deferral goes into the decisions register with its two named
+prerequisites, which closes slice 2.
