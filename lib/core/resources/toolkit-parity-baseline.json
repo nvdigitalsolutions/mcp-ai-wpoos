@@ -186,6 +186,7 @@
         ],
         "ecommerce": [
             "generate_invoice_pdf",
+            "printful",
             "shipping_box_packer",
             "shipping_rate_estimator",
             "shopify_customers",
