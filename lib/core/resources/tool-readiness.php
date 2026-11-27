@@ -3327,6 +3327,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ProviderConnectorToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
+		'product_actualization' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\ProductActualizationTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress AI product actualization tool (Proposal 164 section 164.130) as two model turns over ImageProductionInterface: generate the scene from scene_prompt, then compose the product into it, because this runtime owns no image blend and the compose route is its only two-image primitive. The integration prompt still tells the model the product must not be altered, and the placement hint now reaches that prompt instead of being composite-only. Aspect ratios keep the WordPress set and round to a canvas both providers accept. The product is read through the file registry with the same ownership check ImageInput uses, so a caller cannot send a file it could not download. Three refusals carry a next step: video mode needs a video-generation contract that is not bound while the worker artifact lifetime is unresolved; composite mode needs a local blend this runtime does not ship; background_mode remove needs a removal capability the worker does not expose, so auto is treated as preserve and the payload reports background_removed false rather than implying a cut-out. The composition is stored through GeneratedMediaPersister and the worker scratch scene is deleted.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ProductActualizationToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
 		'printful' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\PrintfulTool',
 			'readiness' => 'ready',

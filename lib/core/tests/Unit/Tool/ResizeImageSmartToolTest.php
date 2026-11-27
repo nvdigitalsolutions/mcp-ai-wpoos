@@ -401,6 +401,16 @@ final class ResizeImageSmartToolTest extends TestCase
                 throw new \LogicException('not used');
             }
 
+            public function compose(string $scenePath, string $productPath, array $options = array()): array
+            {
+                throw new \LogicException('not used');
+            }
+
+            public function generate(string $prompt, array $options = array()): array
+            {
+                throw new \LogicException('not used');
+            }
+
             public function supports(string $operation): bool
             {
                 return 'resize_smart' === $operation && $this->supported;

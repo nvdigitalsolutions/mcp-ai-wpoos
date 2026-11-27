@@ -2,6 +2,7 @@
 
 namespace Nvoos\Laravel\Adapter;
 
+use Illuminate\Support\Facades\Http;
 use Nvoos\Core\Domain\Contract\ImageProductionInterface;
 
 /**
@@ -57,6 +58,12 @@ final class MediaWorkerImageProduction implements ImageProductionInterface
         'upscale'      => 'image_upscaling',
         'batch'        => 'image_batch',
         'edit'         => 'image_editing',
+        // Composition needs a provider that accepts two images in one turn, so
+        // it is a narrower capability than `image_editing`: a worker holding
+        // only a Replicate key can edit and cannot compose, and this map has to
+        // reflect that rather than infer it from the edit key.
+        'compose'      => 'image_composition',
+        'generate'     => 'image_generation',
     );
 
     /**
@@ -442,6 +449,158 @@ final class MediaWorkerImageProduction implements ImageProductionInterface
     /**
      * {@inheritDoc}
      */
+    public function compose(string $scenePath, string $productPath, array $options = array()): array
+    {
+        $provider = \strtolower(\trim((string) ($options['provider'] ?? 'auto')));
+
+        if (! \in_array($provider, array('auto', 'gemini', 'openai'), true)) {
+            throw new \InvalidArgumentException('Unsupported compose provider: '.$provider);
+        }
+
+        $this->assertReadable($scenePath);
+        $this->assertReadable($productPath);
+
+        $fields = array('provider' => $provider);
+
+        $prompt = \trim((string) ($options['prompt'] ?? ''));
+
+        if ('' !== $prompt) {
+            $fields['prompt'] = $prompt;
+        }
+
+        // Scene first, product second. The order is the instruction, and the
+        // worker sorts `files[n]` by the index in the name rather than trusting
+        // arrival order, so `uploadFiles()`'s sequence is what carries it.
+        $body = $this->worker->uploadFiles(
+            '/api/image/compose',
+            array($scenePath, $productPath),
+            $fields,
+            $this->timeout('compose_timeout', 180),
+        );
+
+        $format = (string) ($body['format'] ?? 'png');
+
+        $path = MediaWorkerOutput::persist(
+            $body['b64'] ?? null,
+            'composed',
+            $this->extension($format),
+            MediaWorkerOutput::fingerprint(array($scenePath, $productPath, 'compose', $fields)),
+            'image',
+        );
+
+        // No `original_bytes`: two sources do not add up to anything meaningful.
+        // The worker's `bytes` is the output's own count, which is what a caller
+        // reporting savings or quota needs.
+        return array(
+            'path' => $path,
+            'width' => (int) ($body['width'] ?? 0),
+            'height' => (int) ($body['height'] ?? 0),
+            'format' => $format,
+            'mime_type' => self::MIME[$format] ?? 'application/octet-stream',
+            'bytes' => (int) ($body['bytes'] ?? (\is_file($path) ? \filesize($path) : 0)),
+            'scene_bytes' => (int) (\is_file($scenePath) ? \filesize($scenePath) : 0),
+            'product_bytes' => (int) (\is_file($productPath) ? \filesize($productPath) : 0),
+            'operation' => 'compose',
+            'provider' => (string) ($body['provider'] ?? $provider),
+            'model' => (string) ($body['model'] ?? ''),
+            'prompt' => (string) ($body['prompt'] ?? $prompt),
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function generate(string $prompt, array $options = array()): array
+    {
+        $prompt = \trim($prompt);
+
+        if ('' === $prompt) {
+            throw new \InvalidArgumentException('A prompt is required.');
+        }
+
+        $provider = \strtolower(\trim((string) ($options['provider'] ?? 'auto')));
+
+        if (! \in_array($provider, array('auto', 'gemini', 'openai'), true)) {
+            throw new \InvalidArgumentException('Unsupported generate provider: '.$provider);
+        }
+
+        $aspectRatio = \strtolower(\trim((string) ($options['aspect_ratio'] ?? '3:2')));
+
+        $request = array(
+            'prompt' => $prompt,
+            'provider' => $provider,
+            'size' => $this->generationSize($aspectRatio),
+            'count' => 1,
+        );
+
+        // `auto` is resolved by the worker, which is the only side that can see
+        // the keys. Naming a model here would name the wrong provider's model
+        // whenever the resolution went the other way.
+        $model = \trim((string) ($options['model'] ?? ''));
+
+        if ('' !== $model) {
+            $request['model'] = $model;
+        } elseif ('auto' !== $provider) {
+            $request['model'] = 'gemini' === $provider ? 'gemini-2.5-flash-image' : 'dall-e-3';
+        }
+
+        $body = $this->worker->postJson(
+            '/api/image/generate',
+            $request,
+            $this->timeout('generate_timeout', 180),
+        );
+
+        $images = (array) ($body['images'] ?? array());
+        $image = (array) ($images[0] ?? array());
+        $bytes = $this->generatedBytes($image);
+
+        if ('' === $bytes) {
+            throw new \RuntimeException('The media worker returned no image for the generation.');
+        }
+
+        $format = $this->formatFromBytes($bytes, $image['mime'] ?? null);
+
+        $path = MediaWorkerOutput::persist(
+            \base64_encode($bytes),
+            'generated',
+            $this->extension($format),
+            MediaWorkerOutput::fingerprint(array($prompt, 'generate', $request)),
+            'image',
+        );
+
+        // The worker may not know the geometry (OpenAI answers a URL), so read
+        // it from the bytes that were actually stored. `getimagesize()` is part
+        // of ext/standard and does not need GD or Imagick.
+        $size = @\getimagesize($path);
+
+        $width = \is_array($size) ? (int) $size[0] : null;
+        $height = \is_array($size) ? (int) $size[1] : null;
+
+        if (null === $width && isset($image['width'])) {
+            $width = (int) $image['width'];
+        }
+
+        if (null === $height && isset($image['height'])) {
+            $height = (int) $image['height'];
+        }
+
+        return array(
+            'path' => $path,
+            'width' => $width,
+            'height' => $height,
+            'format' => $format,
+            'mime_type' => self::MIME[$format] ?? 'application/octet-stream',
+            'bytes' => \strlen($bytes),
+            'operation' => 'generate',
+            'provider' => (string) ($body['provider'] ?? $provider),
+            'model' => (string) ($image['model'] ?? ($body['model'] ?? '')),
+            'prompt' => (string) ($body['prompt'] ?? $prompt),
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function supports(string $operation): bool
     {
         $capability = self::CAPABILITIES[$operation] ?? null;
@@ -459,6 +618,120 @@ final class MediaWorkerImageProduction implements ImageProductionInterface
     public function isAvailable(): bool
     {
         return $this->worker->isConfigured();
+    }
+
+    /**
+     * The bytes of a generation entry, whichever shape the provider answered.
+     *
+     * Gemini and Imagen answer inline base64; OpenAI answers a short-lived URL.
+     * Both are handled here so the tool above sees one representation.
+     *
+     * @param array<string, mixed> $image
+     */
+    private function generatedBytes(array $image): string
+    {
+        $encoded = $image['b64_json'] ?? null;
+
+        if (\is_string($encoded) && '' !== $encoded) {
+            $bytes = \base64_decode($encoded, true);
+
+            if (! \is_string($bytes) || '' === $bytes) {
+                throw new \RuntimeException('The media worker returned undecodable image data.');
+            }
+
+            return $bytes;
+        }
+
+        $url = $image['url'] ?? null;
+
+        return \is_string($url) && '' !== $url ? $this->fetchGeneratedUrl($url) : '';
+    }
+
+    /**
+     * Download an image the worker's provider hosted.
+     *
+     * The URL is the worker's answer, not caller input, so it is not an SSRF
+     * surface introduced here — but only http(s) is followed, and the response
+     * must be non-empty, because a torn download would be stored as a corrupt
+     * image and only fail when someone opened it.
+     */
+    private function fetchGeneratedUrl(string $url): string
+    {
+        $scheme = \strtolower((string) \parse_url($url, PHP_URL_SCHEME));
+
+        if (! \in_array($scheme, array('http', 'https'), true)) {
+            throw new \RuntimeException('The provider returned an image URL this adapter will not fetch.');
+        }
+
+        try {
+            $response = Http::timeout($this->timeout('generate_timeout', 180))->get($url);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Could not download the generated image: '.$e->getMessage(), 0, $e);
+        }
+
+        if (! $response->ok() || '' === $response->body()) {
+            throw new \RuntimeException('The generated image URL answered HTTP '.$response->status().'.');
+        }
+
+        return $response->body();
+    }
+
+    /**
+     * The format of the bytes themselves, not what a route claimed.
+     *
+     * Magic bytes first because they are the bytes that will be stored; the
+     * declared MIME is only a fallback, and a format nothing recognises is
+     * named `png` so the file has a usable extension rather than none.
+     */
+    private function formatFromBytes(string $bytes, mixed $mime): string
+    {
+        $header = \substr($bytes, 0, 12);
+
+        if (0 === \strncmp($header, "\x89PNG", 4)) {
+            return 'png';
+        }
+
+        if (0 === \strncmp($header, "\xFF\xD8\xFF", 3)) {
+            return 'jpeg';
+        }
+
+        if ('RIFF' === \substr($header, 0, 4) && 'WEBP' === \substr($header, 8, 4)) {
+            return 'webp';
+        }
+
+        if (0 === \strncmp($header, 'GIF8', 4)) {
+            return 'gif';
+        }
+
+        if (\is_string($mime) && \str_starts_with($mime, 'image/')) {
+            return $this->format(\substr($mime, 6), array('png', 'jpeg', 'webp', 'avif', 'gif'), 'png');
+        }
+
+        return 'png';
+    }
+
+    /**
+     * The canvas to ask for, in the intersection of both providers' vocabularies.
+     *
+     * DALL·E 3 accepts only 1024x1024, 1792x1024 and 1024x1792, so those three
+     * serve every ratio; Gemini treats the size as a text hint and follows the
+     * stated dimensions, so the same three work there. `4:5` rounds to square
+     * because it is the nearest of the three to 0.8, which is the same choice
+     * the WordPress tool documented.
+     */
+    private function generationSize(string $aspectRatio): string
+    {
+        $map = array(
+            '1:1' => '1024x1024',
+            '4:5' => '1024x1024',
+            '16:9' => '1792x1024',
+            '9:16' => '1024x1792',
+            '3:2' => '1792x1024',
+            '2:3' => '1024x1792',
+            'auto' => '1024x1024',
+        );
+
+        return $map[$aspectRatio] ?? '1024x1024';
     }
 
     /**
