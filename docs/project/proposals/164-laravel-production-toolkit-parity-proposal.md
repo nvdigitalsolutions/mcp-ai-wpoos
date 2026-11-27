@@ -10691,3 +10691,89 @@ reports/mockups) rather than as the 24-action monolith, with the cache key
 carrying the store id and the limiter keyed on the account. Then the
 `get_import_duty` deferral goes into the decisions register with its two named
 prerequisites, which closes slice 2.
+
+---
+
+### §164.118 — Slice 2c: `printful`, and a recommendation reversed
+
+**Recorded.** `printful` is served with 24 actions. Two of §164.115's
+recommendations were **not** followed, and this section is where that is argued
+rather than quietly done.
+
+#### One tool, not four
+
+§164.115 recommended splitting the 24 actions into four tools by object. That is
+the better shape for a reader, and it is not what shipped, for a bookkeeping
+reason that outranks it:
+
+**Toolkit parity is counted slug-for-slug against the WordPress corpus, and that
+corpus has exactly one `printful` slug.** Four core slugs would leave `printful`
+listed as unported while the work was finished — the register would say the
+opposite of the truth, and the number that measures this whole proposal would be
+wrong. The actions are grouped in the schema instead, so the split is a rename
+away whenever the parity tool can express one-to-many.
+
+The four unguarded `$arguments[...]` reads the measurement found are gone: every
+identifier goes through one accessor, so a missing one is a named validation
+failure instead of a warning and a lookup of id `0`.
+
+#### V1, because V2 cannot do a third of the job
+
+§164.115 recorded that Printful's v2 is beta. The documentation fetched on
+2026-11-27 makes the consequence concrete:
+
+| Fact | Effect |
+|---|---|
+| *"Product management, with sync products or product templates, is not available in version 2 of the API yet."* | Seven of the 24 actions are sync-product or template operations. A v2 port would **drop them silently** |
+| The `/files` list endpoint is **removed** in v2 — a call answers `410 Gone` | The file-library reads cannot move either |
+| V2's RFC 9457 error format is *"not yet supported by all endpoints"*, and the exceptions are **Catalog, Orders and Webhook** | Exactly the endpoints this tool uses; the v1 error envelope is what has to be parsed |
+
+The port therefore pins **v1** in `PrintfulTool::API_VERSION`, returns that version
+on every response, and reports the version the *provider* says it served when it
+sends `X-PF-API-Version`. Moving to v2 later is a constant plus the sync-product
+question, not a rewrite.
+
+#### Four corrections
+
+| Correction | What the original did |
+|---|---|
+| **No GET cache** | Cached every GET in a transient keyed on `md5(url)` alone — no token, no `X-PF-Store-Id` — so two stores sharing a URL shared an entry and one could be served the other's products. The cache is gone rather than narrowed: the caller decides, the way `ShopifySmartSearch` declines to |
+| **No local rate limiter** | Allowed 30 requests/minute **per user** against a provider limit of 120/minute **per account**, so five users could spend 150 and have the last thirty rejected. A counter keyed on the wrong dimension is limit-shaped and does not limit. A `429` is now a refusal carrying `Retry-After`, and every response surfaces `X-Ratelimit-*` |
+| **Paging does not relabel the payload** | Wrapped any array-shaped `result` as `{items: …, paging: …}` when the envelope had `paging`, so a single-object response changed shape depending on whether that endpoint paginated. `data` is now the provider's `result` and `paging` is its sibling |
+| **No hidden connection store** | `list_connections`, `connection_id` and per-assistant enablement read a WordPress `Remote Sites` store this runtime does not have. The token and optional store id are arguments |
+
+The organisation's reason for the second correction is worth keeping: the
+original's guard was **stricter than the provider and blind to the dimension
+that matters**, which is the worst combination — it fails calls that would have
+succeeded and permits bursts that will not.
+
+#### The statistics cap is now enforced
+
+The schema documented "max 6 months range" and the code never checked it, so an
+over-long range cost a round trip and came back as a provider error. `date_from`
+and `date_to` are validated, ordered, and compared against a six-month window
+before the request is sent.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `EcommercePrintfulToolTest` | **22 tests, 113 assertions**, 0 failures |
+| `lib/core` unit suite | 3,684 → **3,706 tests, 21,704 assertions**, 0 failures |
+| Readiness manifest | `ready` 454 → **455**; no violations |
+| Toolkit parity | 293 → **294 ported**, 552 → **551 remaining**; `ecommerce` `44 \| 7 \| 1 \| 27 \| 36` → `44 \| 8 \| 1 \| 27 \| 35` |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on the three touched files |
+| PHPStan level 8, `lib/core` | no errors against the baseline |
+| Provider contracts | Printful v1/v2 compared at the vendor; three v2 gaps recorded |
+
+#### Next
+
+Slice 2 closes with one register entry: `get_import_duty` deferred, with the two
+prerequisites §164.115 named — a live `api.trade.gov/v1/tariff_rates/search` call
+showing the real parameters, and a decision on direction, because the tool
+estimates imports while the API publishes export rates. That entry, plus
+`estimate_order_rates`, finishes what §164.115 re-planned.
+
+After that, `ecommerce` stands at 8 ported of 44 with 27 deferred and one
+declined. The remaining 8 are the composite and vision tools §164.110 measured
+one at a time.
