@@ -12,10 +12,11 @@
  * says product management is not there yet: *"Product management, with sync
  * products or product templates, is not available in version 2 of the API yet."*
  * The `/files` list endpoint was removed in V2 as well (a call now answers `410
- * Gone`). Seven of this tool's actions are sync-product or template operations,
- * so a V2 port would silently drop a third of the surface. V1 stays, pinned in
- * {@see self::BASE} and {@see self::API_VERSION}, and `version` is returned on
- * every response so a caller can see which API answered.
+ * Gone`). Five of this tool's actions are sync-product operations and it
+ * exposes no template action, so a V2 port would silently drop a fifth of the
+ * surface. V1 stays, pinned in {@see self::BASE} and {@see self::API_VERSION},
+ * and `version` is returned on every response so a caller can see which API
+ * answered.
  *
  * V2 also does not use its new RFC 9457 error format for Catalog, Orders or
  * Webhooks yet — those still return the V1 `{code, result, error{reason,message}}`
@@ -176,7 +177,10 @@ final class PrintfulTool extends AbstractTool implements ToolCapabilityFlagsInte
                 'api_token' => array(
                     'type' => 'string',
                     'description' => 'Printful private token or OAuth token. Required for every '
-                        . 'action except list_countries, which Printful serves without one.',
+                        . 'action except list_countries. Printful also serves the catalog reads '
+                        . '(products, variants, categories, size guides) without a token; this '
+                        . 'tool still asks for one so every call site has a single credential '
+                        . 'path.',
                 ),
                 'store_id' => array(
                     'type' => 'string',
