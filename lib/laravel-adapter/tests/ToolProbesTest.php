@@ -412,6 +412,10 @@ Probe Club,club
 			// guard, not validation.
 			array( 'gtmetrix_analyze_report', array( 'report_id' => 'probe-report' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'gtmetrix_compare_reports', array( 'report_id_a' => 'probe-a', 'report_id_b' => 'probe-b' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.95 — the snippet emitter. It fetches the report before it can
+			// generate anything, so it answers the guard on this keyless host.
+			array( 'gtmetrix_generate_wpcode_snippet', array( 'report_id' => 'probe-report' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 

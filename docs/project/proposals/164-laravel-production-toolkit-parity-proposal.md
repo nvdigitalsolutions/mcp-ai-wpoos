@@ -8406,3 +8406,70 @@ answer the not-configured guard on the keyless host.
 Next: slice 5, the fix engine — `gtmetrix_generate_wpcode_snippet`, and the
 register entry for `gtmetrix_install_wpcode_fix` (deferred: it needs a
 code-snippet store contract the core does not have).
+
+## 164.95 `gtmetrix`, slice 5 — the snippet emitter, and an install that is deferred
+
+`gtmetrix_generate_wpcode_snippet` with the emitter half of the fix engine, and
+the register entry that keeps `gtmetrix_install_wpcode_fix` visible as blocked
+work. The toolkit moves from 13 to **14 of 23**; the deferred count for the
+toolkit moves from 0 to 1 and `remaining` from 10 to 9.
+
+### What the emitter does
+
+`GtmetrixFixEngine::generateSnippet()` emits a self-contained PHP file: the
+`ABSPATH` guard, a header naming the report and page, and one commented section
+per matched finding with the code block that finding names. A `high`-risk block
+— dequeuing a script, rewriting `style_loader_src` — is wrapped in a comment
+under a staging warning, because that change needs a browser and not a review.
+A fix with no block (keep one analytics path) contributes its advice and no
+code. Seven block templates cover the nine fixes; two are advice-only.
+
+### Corrections
+
+1. **Only a missing resource is a missing resource.** WordPress replaced every
+   Lighthouse fetch failure — a network error, a rate limit, a 500 — with
+   "this report has no Lighthouse JSON (metrics-only or legacy report)", which
+   hid the cause. A `gtmetrix_not_found` classification keeps that message
+   (`gtmetrix_no_lighthouse`, with `status` and `api_code`); anything else is
+   returned as the classified failure it is.
+2. **Matched fixes and emitted blocks are counted apart.** A configuration-only
+   fix matched a finding, so WordPress counted it in `count`, while the
+   emitter skipped it. The reply claimed one more block than the snippet held.
+   `count` is the matched fixes (the advice list) and `emitted` is the code
+   blocks actually in the file.
+
+### Deferred, with a name
+
+`gtmetrix_install_wpcode_fix` writes the snippet into WPCode and activates it.
+Nothing in this runtime stores code snippets: no record contract, no activation
+seam, no store to read back, and inventing a WPCode-shaped table in the core
+would be the wrong shape for every other host. The register entry names the
+prerequisite — a code-snippet store contract (create, activate, read back) that
+both WPCode and any other snippet host could implement as an adapter — so the
+slug stays in `remaining` as work rather than disappearing as a decision.
+
+### Adaptations
+
+- `include_risky` uses the tool boolean coercion, so a JSON string `"false"` is
+  false rather than PHP-cast true.
+- The tool is read-only (`read`), flagged `external-api, network-dependent,
+  read-only, requires-credentials`: it fetches a report and returns code, and
+  installs nothing.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,913 / 23,168** (9 tests and 40 assertions added) |
+| adapter `ToolProbesTest` | **234 / 1,606**, 2 skipped, 0 failures — one new probe |
+| tool readiness audit | **454 / 454**, servable **435** (+1), no violations |
+| toolkit parity | **233 of 854**; `gtmetrix` **14 ported**, 0 declined, **1 deferred**, **9 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The probe answers the not-configured guard on the keyless host. The snippet
+structure — header, `ABSPATH` guard, only matching blocks, a commented
+high-risk block, and a configuration-only fix that adds no code — is pinned in
+`lib/core`.
+
+Next: slice 6, the pages — `gtmetrix_get_page`, `gtmetrix_list_pages` and
+`gtmetrix_retest_page`.

@@ -3,8 +3,8 @@
 /**
  * GTmetrix audit → remediation mapping.
  *
- * Port of `WP_MCP_AI_GTmetrix_Fix_Engine` (Proposal 164 section 164.94), the
- * matching half. The snippet half lands with the WPCode tool in section 164.95.
+ * Port of `WP_MCP_AI_GTmetrix_Fix_Engine` (Proposal 164 sections 164.94 and
+ * 164.95): the matcher and the WPCode snippet emitter.
  *
  * ## Correction
  *
@@ -20,6 +20,13 @@
  * A diagnostic audit — no impact score — never produces a fix: it describes
  * the page rather than a cost. The `unfixable` list names the audits that are a
  * host or third-party concern, so an agent does not report them as gaps.
+ *
+ * ## The snippet
+ *
+ * `generateSnippet()` emits a self-contained PHP file with an `ABSPATH` guard,
+ * one commented block per matched finding, and only the blocks that finding
+ * names. A `high`-risk block is commented out under a staging warning, because
+ * dequeuing a script is a change that needs a browser, not a review.
  *
  * @package Nvoos\Core
  * @since   3.0.0
@@ -226,5 +233,165 @@ final class GtmetrixFixEngine
             'unfixable' => $unfixable,
             'unknown'   => $unknown,
         );
+    }
+
+    /**
+     * Emit a WPCode-ready PHP snippet for the matched fixes.
+     *
+     * A fix with no `block` is advice without code (deactivate a plugin, keep
+     * one analytics path) and contributes a comment only.
+     *
+     * @param list<array<string, mixed>> $fixes  Matched fix records.
+     * @param string                     $reportId Report id the snippet came from.
+     * @param string                     $url      Tested page, or ''.
+     */
+    public static function generateSnippet(array $fixes, string $reportId, string $url = ''): string
+    {
+        $blocks = array();
+
+        foreach ($fixes as $fix) {
+            $block = is_scalar($fix['block'] ?? null) ? (string) $fix['block'] : '';
+
+            if ('' === $block) {
+                continue;
+            }
+
+            $blocks[ $block ] = $fix;
+        }
+
+        $lines = array(
+            '<?php',
+            '/**',
+            ' * GTmetrix Performance Optimizations (WPCode snippet).',
+            ' *',
+            ' * Generated from GTmetrix report: ' . $reportId,
+        );
+
+        if ('' !== $url) {
+            $lines[] = ' * Page: ' . $url;
+        }
+
+        $lines = array_merge(
+            $lines,
+            array(
+                ' *',
+                ' * RULES FOR USE:',
+                " *   - Only blocks matching this report's findings are included.",
+                ' *   - Safe blocks are enabled; risky blocks stay commented out',
+                ' *     until verified on STAGING.',
+                ' *   - Verify handle names and URLs against the live page view-source.',
+                ' *',
+                ' * Deploy: WPCode -> Add Snippet -> PHP -> Insert method: Auto Insert ->',
+                ' * Run Everywhere. Enable blocks one at a time and re-test.',
+                ' */',
+                '',
+                "if ( ! defined( 'ABSPATH' ) ) {",
+                "\texit; // Prevent direct access.",
+                '}',
+                '',
+            )
+        );
+
+        foreach ($blocks as $block => $fix) {
+            $symptom = is_scalar($fix['symptom'] ?? null) ? (string) $fix['symptom'] : '';
+            $action  = is_scalar($fix['action'] ?? null) ? (string) $fix['action'] : '';
+            $risk    = is_scalar($fix['risk'] ?? null) ? (string) $fix['risk'] : '';
+
+            $lines[] = '/*';
+            $lines[] = ' * Fix: ' . $symptom;
+            $lines[] = ' * Action: ' . $action;
+            $lines[] = ' */';
+
+            if ('high' === $risk) {
+                $lines[] = '/* TEST ON STAGING BEFORE ENABLING - RISK: HIGH. */';
+                $lines[] = '/*';
+            }
+
+            $lines = array_merge($lines, self::blockCode($block));
+
+            if ('high' === $risk) {
+                $lines[] = '*/';
+            }
+
+            $lines[] = '';
+        }
+
+        return implode("\n", $lines) . "\n";
+    }
+
+    /**
+     * The code for one block, or an empty list for an unknown block.
+     *
+     * @return list<string>
+     */
+    private static function blockCode(string $block): array
+    {
+        switch ($block) {
+            case 'lcp-eager-hero':
+                return array(
+                    '// Stop WordPress adding loading="lazy" to the first content image.',
+                    "add_filter( 'wp_omit_loading_attr_threshold', function () {",
+                    "\treturn 1;",
+                    '} );',
+                );
+
+            case 'font-display-swap':
+                return array(
+                    '// Ensure Elementor Pro custom fonts swap (text stays visible).',
+                    "add_filter( 'elementor_pro_custom_fonts_font_display', function () {",
+                    "\treturn 'swap';",
+                    '} );',
+                );
+
+            case 'dequeue-fa4-shims':
+                return array(
+                    '// Dequeue FontAwesome v4 shims (remove only if no legacy fa-* icons).',
+                    "add_action( 'wp_enqueue_scripts', function () {",
+                    "\twp_dequeue_style( 'font-awesome-4-shim-css' );",
+                    "\twp_dequeue_script( 'font-awesome-4-shim-js' );",
+                    '}, 999 );',
+                );
+
+            case 'conditional-plugin-css':
+                return array(
+                    '// Dequeue a plugin stylesheet everywhere except its own pages.',
+                    '// Verify the handle and the URL patterns against view-source first.',
+                    "add_filter( 'style_loader_src', function ( $src, $handle ) {",
+                    "\tif ( 'REPLACE_WITH_HANDLE' !== $handle || is_page( 'REPLACE_WITH_SLUG' ) ) {",
+                    "\t\treturn $src;",
+                    "\t}",
+                    "\treturn false;",
+                    '}, 10, 2 );',
+                );
+
+            case 'lazy-recaptcha':
+                return array(
+                    '// Lazy-load reCAPTCHA on first interaction (experimental).',
+                    "add_action( 'wp_enqueue_scripts', function () {",
+                    "\twp_dequeue_script( 'elementor-recaptcha_v3-api' );",
+                    '} );',
+                    "add_action( 'wp_footer', function () {",
+                    <<<'JS'
+	echo '<script>(function(){var s=document.createElement("script");s.src="https://www.google.com/recaptcha/api.js?render=explicit";s.async=true;var l=function(){document.head.appendChild(s);["mouseover","touchstart","keydown","scroll"].forEach(function(e){window.removeEventListener(e,l)});};["mouseover","touchstart","keydown","scroll"].forEach(function(e){window.addEventListener(e,l,{once:true})});})();</script>';
+JS,
+                    '} );',
+                );
+
+            case 'filemtime-cache-busting':
+                return array(
+                    '// Replace rand()/time() enqueue versions with filemtime so assets',
+                    '// cache until they actually change.',
+                    '// Example: wp_enqueue_script( \'handle\', $url, array(), (string) ( filemtime( $file ) ?: 1 ) );',
+                );
+
+            case 'cls-stabilize':
+                return array(
+                    '/* CSS: fix layout shifts - give SVGs/banners fixed dimensions. */',
+                    '/* .site-header svg { width: 180px; height: 40px; } */',
+                );
+
+            default:
+                return array();
+        }
     }
 }
