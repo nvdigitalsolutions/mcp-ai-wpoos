@@ -40,14 +40,19 @@
         ],
         "chat-channels": [
             "add_discord_message_reaction",
+            "add_telegram_message_reaction",
             "create_discord_channel",
             "create_slack_channel",
             "get_discord_channels",
             "get_discord_messages",
             "get_slack_channels",
             "get_slack_messages",
+            "get_telegram_updates",
+            "manage_telegram_commands",
+            "manage_telegram_webhook",
             "send_discord_message",
-            "send_slack_message"
+            "send_slack_message",
+            "send_telegram_message"
         ],
         "cloudways": [
             "cloudways_get_app",
