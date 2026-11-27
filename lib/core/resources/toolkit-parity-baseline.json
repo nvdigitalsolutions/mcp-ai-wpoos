@@ -52,7 +52,11 @@
             "manage_telegram_webhook",
             "send_discord_message",
             "send_slack_message",
-            "send_telegram_message"
+            "send_telegram_message",
+            "send_whatsapp_interactive",
+            "send_whatsapp_media",
+            "send_whatsapp_message",
+            "send_whatsapp_template"
         ],
         "cloudways": [
             "cloudways_get_app",
