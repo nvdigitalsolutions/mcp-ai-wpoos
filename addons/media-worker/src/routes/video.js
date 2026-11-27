@@ -7,6 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import axios from 'axios';
 import { detectCapabilities } from '../utils/capabilities.js';
+import { getCredential } from '../utils/provider-keys.js';
 import { siteUploadDir, siteDirFor } from '../utils/site-paths.js';
 
 const execFileAsync = promisify( execFile );
@@ -788,10 +789,14 @@ router.post('/generate', async (req, res) => {
       });
     }
 
-    if (!process.env.REPLICATE_API_KEY) {
+    if (!getCredential(req.site, 'REPLICATE_API_KEY')) {
       return res.status(503).json({
         error: 'Replicate API key not configured',
-        tip: 'Set REPLICATE_API_KEY in .env',
+        capability: 'video_generation',
+        provider: 'replicate',
+        env_var: 'REPLICATE_API_KEY',
+        site: req.site,
+        tip: 'Set REPLICATE_API_KEY in the environment or SITE_PROVIDER_KEYS for this site.',
         fallback_providers: {
           runway: 'https://runwayml.com — Gen-2, Gen-3 Alpha',
           pika: 'https://pika.art — Pika 1.0',
@@ -799,6 +804,10 @@ router.post('/generate', async (req, res) => {
         },
       });
     }
+
+    // Resolved per site, like every image route: the env var is the fallback for
+    // the default site, not the only source.
+    const apiKey = getCredential(req.site, 'REPLICATE_API_KEY');
 
     console.log(`[Video Gen] Starting: ${model} — "${prompt.substring(0, 80)}..."`);
 
@@ -821,7 +830,7 @@ router.post('/generate', async (req, res) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.REPLICATE_API_KEY}`,
+          Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         timeout: 30000,
@@ -850,7 +859,7 @@ router.post('/generate', async (req, res) => {
       const pollResp = await axios.get(
         `https://api.replicate.com/v1/predictions/${predictionId}`,
         {
-          headers: { Authorization: `Bearer ${process.env.REPLICATE_API_KEY}` },
+          headers: { Authorization: `Bearer ${apiKey}` },
         }
       );
       prediction = pollResp.data;
@@ -901,21 +910,36 @@ router.post('/generate', async (req, res) => {
 // ── Check prediction status ──────────────────────────────
 router.get('/prediction/:id', async (req, res) => {
   try {
-    if (!process.env.REPLICATE_API_KEY) {
-      return res.status(503).json({ error: 'Replicate API key not configured' });
+    const apiKey = getCredential(req.site, 'REPLICATE_API_KEY');
+
+    if (!apiKey) {
+      return res.status(503).json({
+        error: 'Replicate API key not configured',
+        capability: 'video_generation',
+        provider: 'replicate',
+        env_var: 'REPLICATE_API_KEY',
+        site: req.site,
+        tip: 'Set REPLICATE_API_KEY in the environment or SITE_PROVIDER_KEYS for this site.',
+      });
     }
 
     const { id } = req.params;
     const resp = await axios.get(`https://api.replicate.com/v1/predictions/${id}`, {
-      headers: { Authorization: `Bearer ${process.env.REPLICATE_API_KEY}` },
+      headers: { Authorization: `Bearer ${apiKey}` },
     });
 
     const prediction = resp.data;
+
+    // Replicate answers a single URL for some models and an array of them for
+    // others; `/generate` flattens it, so the status route must too or a caller
+    // parses one shape and silently mishandles the other.
+    const output = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
+
     res.json({
       id: prediction.id,
       status: prediction.status,
       model: prediction.version,
-      video_url: prediction.output,
+      video_url: output || null,
       error: prediction.error,
       metrics: prediction.metrics,
       created_at: prediction.created_at,
@@ -928,14 +952,16 @@ router.get('/prediction/:id', async (req, res) => {
 });
 
 // ── List available models ────────────────────────────────
-router.get('/models', (_req, res) => {
+router.get('/models', (req, res) => {
+  const configured = !!getCredential(req.site, 'REPLICATE_API_KEY');
+
   res.json({
     models: Object.keys(REPLICATE_MODELS).map((key) => ({
       id: key,
       version: REPLICATE_MODELS[key].split(':')[1],
       provider: 'Replicate',
       type: 'text-to-video',
-      configured: !!process.env.REPLICATE_API_KEY,
+      configured,
     })),
     other_providers: {
       runway: { name: 'Runway Gen-3 Alpha', url: 'https://runwayml.com' },
