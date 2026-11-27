@@ -189,6 +189,7 @@
             "printful",
             "shipping_box_packer",
             "shipping_rate_estimator",
+            "shopify_catalog",
             "shopify_customers",
             "shopify_inventory",
             "shopify_orders",
