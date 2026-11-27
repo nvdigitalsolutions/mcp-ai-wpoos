@@ -448,6 +448,14 @@ Probe Club,club
 			array( 'get_discord_messages', array( 'channel_id' => '1' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'create_discord_channel', array( 'guild_id' => '1', 'name' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'add_discord_message_reaction', array( 'channel_id' => '1', 'message_id' => '2', 'emoji' => '👍' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.102 — the Telegram five. No token is passed, so each answers
+			// the credential refusal by name without a network call.
+			array( 'send_telegram_message', array( 'chat_id' => '1', 'text' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_telegram_updates', array(), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'add_telegram_message_reaction', array( 'chat_id' => '1', 'message_id' => 2, 'emoji' => '👍' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'manage_telegram_commands', array( 'action' => 'get' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'manage_telegram_webhook', array( 'action' => 'delete' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 

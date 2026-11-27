@@ -8963,3 +8963,79 @@ Slice 3, Telegram: send, updates, reaction, commands, webhook. Five tools over
 snowflake guard proves its worth in a second shape; the classifier is
 `ok:false` with a numeric `error_code`, and 429 carries `retry_after` in the
 body, which the new axis already carries.
+
+### §164.102 — Slice 3: Telegram
+
+**Recorded.** Fourteen of fifty ported; `chat-channels` is now **14 ported,
+0 declined, 2 deferred, 36 remaining**.
+
+| slug | call | kind |
+|---|---|---|
+| `send_telegram_message` | `sendMessage`, chunked at 4,096 characters | write |
+| `get_telegram_updates` | `getUpdates`, offset in and `next_offset` out | read |
+| `add_telegram_message_reaction` | `setMessageReaction` | write |
+| `manage_telegram_commands` | `setMyCommands`, `deleteMyCommands`, `getMyCommands` under a `BotCommandScope` | write |
+| `manage_telegram_webhook` | `setWebhook`, `deleteWebhook` | write |
+
+The token is the route: `/bot{token}/{method}`, encoded once. `TelegramTool`
+keeps `error_code` as the provider code and reads `parameters.retry_after`, so
+the axis added in §164.101 carries a Telegram 429 without a second mechanism.
+An empty payload is sent as **no body**, not `[]`: the parameterless methods
+take none, and a JSON array is not a JSON object.
+
+#### Corrections
+
+1. **An unsupported `parse_mode` is refused.** WordPress checked the value and
+   silently sent plain text when it did not match, so a caller that asked for
+   `markdown` got unformatted output with no signal.
+2. **A partial chunked send reports what was delivered.** WordPress's error
+   named the failed chunk but not the ids of the chunks already sent, so a
+   retry could duplicate them. `telegram_chunk_error` carries `sent`.
+3. **A command name is lowercased and then validated, not rewritten.**
+   WordPress stripped every character outside `[a-zA-Z0-9_]`, so `hello-world`
+   became `helloworld` and the registered name was not the one the caller
+   wrote. Only case is normalised now; anything else is refused.
+4. **A chat-level scope must carry its id.** WordPress built
+   `{"type":"chat","chat_id":""}` and `{"type":"chat_member","user_id":0}`
+   from missing arguments, so the request failed at Telegram rather than where
+   the mistake was.
+5. **The webhook URL and secret are validated in the tool.** The URL must be
+   absolute https with a host; the secret must match `[A-Za-z0-9_-]{1,256}`.
+   WordPress delegated the secret check to a WordPress remote-site class and
+   fell back to a stored connection value; nothing is stored here.
+6. **The message id must be a positive integer.** `absint()` refused zero but
+   turned a non-numeric value into zero; the refusal is now explicit.
+7. **An over-long command description is refused** rather than truncated with
+   byte-based `substr()`, which can split a multi-byte character.
+
+#### Adaptations
+
+- The chunker is kept whole: paragraph boundaries, then lines, then a hard
+  split at the last space near the limit, and a hard-split part is sent without
+  `parse_mode` because the split can cut a markup entity in half.
+- The WordPress kses pass is dropped. `parse_mode: HTML` is a supported input
+  and the core has no sanitiser for a provider's markup dialect.
+- The automatic `setMyCommands` fan-out after `setWebhook` is dropped: it
+  registered the WordPress plugin's default command list from a controller that
+  has no core counterpart. `manage_telegram_commands` covers it explicitly.
+- The fixed `allowed_updates` list is kept. A webhook that omits it does not
+  receive `chat_member` updates, and the WordPress tool asked for them.
+
+#### Measurements
+
+| gate | before | after |
+|---|---|---|
+| `lib/core` PHPUnit | 4,005 / 23,511 | 4,033 / 23,630 |
+| adapter `ToolProbesTest` | 251 / 1,674 | 256 / 1,694 |
+| tool readiness audit | 471 / 471, servable 452 | 476 / 476, servable 457 |
+| toolkit parity | 250 of 854 | 255 of 854 |
+| `chat-channels` | 9 / 0 / 2 / 41 | 14 / 0 / 2 / 36 |
+| phpcs | clean | clean |
+
+#### Next
+
+Slice 4, WhatsApp: send, template, interactive, media and get messages. Five
+tools over the Meta Cloud API, whose nested `error.code` and
+`error_data.details` need their own classifier and whose `phone_number_id`
+joins the `access_token` as a credential argument. Media is a `link` or an
+`id` in the JSON body, not an upload, so no multipart body is needed.
