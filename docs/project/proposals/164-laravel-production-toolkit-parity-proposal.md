@@ -9307,3 +9307,131 @@ Slice 7, Twitter: send a DM, list DMs and manage the webhook. Three tools over
 OAuth 1.0a — a signed request rather than a bearer, so the family gets its
 first request signer, and the webhook tool registers a caller-supplied URL under
 the guard added here.
+
+### §164.107 — Slice 7: Twitter/X
+
+**Recorded.** Thirty-eight of fifty ported; `chat-channels` is now **38 ported,
+0 declined, 4 deferred, 12 remaining**. Eight tools are left: Apple (4), iCloud
+(3) and the unified broadcaster.
+
+| slug | call | kind |
+|---|---|---|
+| `send_twitter_dm` | `POST /2/dm_conversations/with/{recipient_id}/messages` | write |
+| `get_twitter_dms` | `GET /2/dm_events`, or `/2/dm_conversations/{id}/dm_events` | read |
+| `manage_twitter_webhook` | `POST`/`DELETE`/`GET` `/1.1/account_activity/all/{env}/…` | write |
+
+#### The finding: there is no `/2/webhooks`
+
+WordPress chose its webhook endpoint from `env_name`:
+
+```php
+'' !== $env_name
+    ? 'https://api.twitter.com/1.1/account_activity/all/' . rawurlencode( $env_name ) . '/webhooks.json'
+    : 'https://api.twitter.com/2/webhooks';
+```
+
+The second branch does not exist. Webhook management is the **Account Activity
+API**, which X documents only under v1.1 and only per environment:
+`…/all/:env_name/webhooks.json`, `…/webhooks/:webhook_id.json` and
+`…/subscriptions.json`. The v2 reference carries the DM endpoints and no
+webhook route at all. `env_name` defaults to `''` in the WordPress schema, so
+the documented default path of the tool asked for a route that 404s.
+
+The port therefore **requires `env_name`**. There is a real prerequisite behind
+the requirement — a paid Account Activity subscription, which is what creates an
+environment — and it is named in the description rather than discovered from a
+404.
+
+Two smaller things fell out of the same reading. `subscribe` required a
+`webhook_id` and then did not use it on the Premium route, which subscribes the
+user whose tokens sign the request; the argument is no longer required. And
+`list` has three response shapes (`environments[] → webhooks[]`, a bare list,
+and a single object), so the projection flattens all three into one `webhooks`
+array.
+
+#### The signer
+
+This is the family's first non-bearer credential. Four values produce a
+per-request `Authorization: OAuth …` header, HMAC-SHA1 over the RFC 5849
+signature base string.
+
+The implementation is checked against the **provider's own worked example**:
+the base string and the digest `hCtSmYh+iHYCEqBWrE7C7hYmtUk=` published on X's
+"Creating a signature" page are reproduced byte for byte by
+`TwitterTool::signatureBaseString()` and `TwitterTool::sign()`. That is a check
+against X's arithmetic, not against this implementation's.
+
+**Correction.** WordPress signed `rawurlencode($fullUrl)` and ignored the query
+string. That is correct only while the URL has no query, no default port and no
+upper-case host — which happened to hold for all four of its signed endpoints.
+The port derives the base URI per RFC 5849 §3.4.1.2: lower-cased scheme and
+host, the port only when it is not the scheme default, no query, no fragment.
+Parameters are sorted by encoded name then encoded value rather than by raw key.
+A future signed endpoint with a query string cannot silently produce an invalid
+signature.
+
+#### Corrections
+
+1. **Both DM id shapes are validated, not sanitised.** WordPress ran
+   `sanitize_text_field()` and interpolated the result into a path:
+   `/2/dm_conversations/with/{recipient_id}/messages` and
+   `/2/dm_conversations/{dm_conversation_id}/dm_events`. A value containing `/`
+   or a dot sequence addresses a different route. `recipient_id` is the
+   documented `^[0-9]{1,19}$`; the conversation id is the safe subset
+   `[A-Za-z0-9_-]{1,64}` because X publishes two shapes for it (two user ids
+   joined by a hyphen for one-to-one, numeric for a group).
+2. **The 10,000-character ceiling is enforced locally.** WordPress declared it
+   in the schema and then sent whatever it was given, so the refusal arrived
+   after the round trip.
+3. **The pagination token is checked against its documented floor.** It is
+   base32hex and at least 16 characters; the floor catches an event id or a page
+   size passed where a token belongs, which WordPress forwarded and the API
+   answered with a 400.
+4. **A webhook URL must be publicly resolvable.** WordPress accepted
+   `esc_url_raw()` with the https scheme, which passes
+   `https://127.0.0.1/hook` and `https://user:pass@host/hook`. X sends a CRC
+   challenge to that URL, so a private or credentialed one is both useless and a
+   way to make the host issue an authenticated request inward. `publicUrl()`
+   refuses it.
+5. **`env_name` and `webhook_id` are path segments.** Both are validated and
+   encoded once.
+6. **Text that cannot be JSON-encoded is refused**, where WordPress built the
+   request first and returned an encoding error afterwards.
+
+#### Adaptations
+
+- **The reply projects the event, not the envelope.** `get_twitter_dms` returns
+  `events[]` with id, type, text, timestamp, sender and conversation, plus
+  `next_token`, `previous_token` and `result_count`. WordPress returned the v2
+  document verbatim, so a caller had to know the envelope to find the cursor.
+- **`event_types` is fixed to `MessageCreate`**, as WordPress fixed it. A caller
+  asking for DMs does not want `ParticipantsJoin` rows interleaved, and the tool
+  that would surface them does not exist. The description says so rather than
+  pretending the parameter is absent.
+- **The credential for reading is an OAuth 2.0 *user* token**, not the app-only
+  bearer token used for public reads; an app-only token answers 403 on
+  `/2/dm_events`. The schema description states the scope (`dm.read`).
+- **The API host stays `api.twitter.com`.** X documents `api.x.com` and keeps
+  the older host as an alias; the alias is used so a credential set issued
+  against the older host keeps addressing it.
+- A 429 carries `x-rate-limit-reset` as a **Unix timestamp**, not a delay, so
+  the remaining seconds are measured against now; a `Retry-After` header, when a
+  proxy adds one, wins because it is already a delay.
+
+#### Measurements
+
+| gate | before | after |
+|---|---|---|
+| `lib/core` PHPUnit | 4,118 / 23,938 | 4,146 / 24,038 |
+| adapter `ToolProbesTest` | 277 / 1,778 | 280 / 1,790 |
+| tool readiness audit | 497 / 497, servable 478 | 500 / 500, servable 481 |
+| toolkit parity | 276 of 854 | 279 of 854 |
+| `chat-channels` | 35 / 0 / 4 / 15 | 38 / 0 / 4 / 12 |
+| phpcs | clean | clean |
+
+#### Next
+
+Slice 8, Apple Messages (4) and iCloud Drive (3). Both families take a
+caller-supplied `msp_api_url` / `gateway_url`, so `publicUrl()` is the guard for
+all seven, and both are bridge protocols rather than first-party APIs — the
+provider is a host-run gateway, which makes the description the contract.
