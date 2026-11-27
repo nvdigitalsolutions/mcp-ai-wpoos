@@ -11874,10 +11874,85 @@ address that carries an ownership check.
 
 #### What remains
 
-- **P3 video.** `/api/video/generate` plus `GET /api/video/prediction/:id` is the
-  submit-and-poll shape the tool needs, and the tool already refuses `video`
-  with a next step. The blocker is unchanged and factual: how long the worker
-  keeps the artifact, which decides the `video_artifact_expired` message.
+- **P3 video.** The route shape was measured in §164.131 and it is **not**
+  submit-and-poll: `/api/video/generate` blocks internally and returns a
+  provider URL, and there is no worker artifact, so the TTL premise was wrong.
+  P3 now waits on an async-response decision, not on a fact.
 - **A key on the worker.** `image_generation` and `image_composition` need
   Gemini or OpenAI. A Replicate-only host can edit and cannot compose, which is
   now visible in the capability matrix before a caller spends a request.
+
+### §164.131 — P3 measured: the video route is not submit-and-poll
+
+**Recorded.** §164.129 called P3 "unblocked in principle" and blocked on one
+factual question: the worker's artifact TTL, which would decide the
+`video_artifact_expired` message. Reading the route answers the question and
+refutes the premise it rested on.
+
+#### The measured contract
+
+| Route | Behaviour |
+|---|---|
+| `POST /api/video/generate` | **Blocks.** Creates a Replicate prediction, then polls it every 5 s up to 120 attempts (≈10 min). Answers `video_url` (a provider URL), `prediction_id`, `duration`, `fps`, `metrics` |
+| `GET /api/video/prediction/:id` | Forwards to Replicate and answers `status`, `video_url`, `error`, `metrics` |
+| `GET /api/video/models` | Six pinned Replicate model versions |
+
+**There is no worker artifact, so there is no TTL.** The worker never stores the
+generated video; it hands back the provider's URL. `video_artifact_expired`
+would name an event that cannot happen. What does expire is Replicate's URL,
+whose lifetime Replicate owns — a different fact with a different owner.
+
+#### Three defects found while measuring
+
+1. **Per-site keys were ignored.** `/generate`, `/prediction/:id` and `/models`
+   read `process.env.REPLICATE_API_KEY` directly, so a multi-tenant worker could
+   not serve a site whose key lives in `SITE_PROVIDER_KEYS`, unlike every image
+   route. Now resolved through `getCredential(req.site, …)`; the env var remains
+   the fallback for the default site, so the `media-studio` caller is unaffected.
+   The 503 now names `capability`, `provider`, `env_var`, `site` and the tip, the
+   same shape the image routes use.
+2. **`/prediction/:id` did not flatten `output`.** Replicate answers a string
+   for some models and an array for others; `/generate` already flattened it, so
+   the status route returned a different type for the same field. Now flattened,
+   and an absent output is `null` rather than an empty value a caller could read
+   as a URL.
+3. **The generic job ceiling is shorter than the route.** `NvoosToolJob` allows
+   `$timeout = 300` and `retryUntil()` five minutes, while the route may block
+   for ten. This is not a bug in isolation — it is the reason P3 cannot be a
+   single synchronous call.
+
+#### Why P3 cannot be built as planned
+
+§164.128 planned "`VideoGenerationInterface` + a queue job that polls". The
+measurement makes that shape wrong in three ways:
+
+- the worker already polls internally and returns only when finished, so a poll
+  **job** would poll a call that is itself polling — the second loop adds
+  nothing;
+- a synchronous tool call would occupy a chat turn for up to ten minutes;
+- the adapter's job would be killed at 300 s, before the route's own ceiling.
+
+#### Recommended re-scope
+
+1. **Worker, additive:** `POST /api/video/generate` accepts `wait: false` and
+   returns `{prediction_id, status}` immediately. The default stays blocking, so
+   the existing `media-studio` caller is untouched.
+2. **Core:** `VideoGenerationInterface::submit()` and `status()`, plus
+   `supports('video_generation')`. `status()` returns the provider state and the
+   URL; it stores nothing, so the "registry is durable, worker storage is
+   scratch" rule is not bent.
+3. **Adapter:** a job handler that submits, polls with backoff, downloads the
+   finished URL into the file registry and completes the job with the media
+   entry. The caller reads the result through `QueueClientInterface::getStatus()`,
+   which already exists.
+4. **Tool:** `product_actualization` `mode: video` would answer
+   `{status: 'queued', job_id}` instead of a finished asset. That is a response
+   shape that varies by mode, which is a decision for the owner — the reason this
+   section stops at measurement plus the two prerequisite fixes.
+
+#### Gates
+
+| Gate | Result |
+|---|---|
+| Media worker | 252 tests, 0 failures (4 new) |
+| `node --check` | clean on both edited files |
