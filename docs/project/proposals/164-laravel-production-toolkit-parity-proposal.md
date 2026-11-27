@@ -10502,3 +10502,111 @@ real parameters and response, and (b) a decision on direction, because an
 the estimator's two provider-independent actions, then Printful by object. The
 trade.gov deferral should go into the decisions register with its two
 prerequisites when 2a lands.
+
+---
+
+### §164.116 — Slice 2a: `shipping_box_packer`, and a USPS rule that changed in July
+
+**Recorded.** The packer shipped as a **pure domain service plus a thin tool**:
+`Nvoos\Core\Domain\Service\Shipping\BoxPacker` holds the algorithm and the cubic
+rules, `Nvoos\Core\Tool\Ecommerce\ShippingBoxPackerTool` is the MCP surface.
+That split is the point of doing this slice first — §164.115 found the rate
+estimator doing `new WP_MCP_AI_Tool_Shipping_Box_Packer()` and calling
+`execute()`, and a tool that calls another tool cannot be composed in a
+framework-agnostic core without dragging the registry in. The estimator can now
+depend on `BoxPacker::pack()` directly.
+
+`pack_items` and `list_boxes` are served. **`pack_order` is not**: it called
+`wc_get_order()` and read each line item's product weight and dimensions, so it
+needs an order model and belongs with the 27 deferred tools. The `requires-plugin`
+capability flag went with it — it existed only because `is_available()` demanded
+WooCommerce, and the port has no such dependency.
+
+#### The finding: USPS moved the goalposts on 2026-07-12
+
+The WordPress tool tests three gates for Priority Mail Cubic: volume ≤ 0.5 cu ft,
+weight ≤ 20 lb, and **longest side ≤ 18 inches**. USPS **raised the longest-side
+limit from 18 to 22 inches on 2026-07-12**. Two independent sources confirm the
+new limit (Ship.com states the date explicitly; Shippo's cubic guide describes
+the 22-inch rule), and a third still publishes 18 — which is how a shipped tool
+keeps an expired rule for five months without anyone noticing.
+
+The consequence is not cosmetic. A 20 × 6 × 4 in package is 0.278 cu ft and
+weighs far under 20 lb, so it qualifies today; the original reported
+`cubic_eligible: false` and an empty tier, and the operator paid weight-based
+instead of cubic. The port uses 22, exposes it as
+`BoxPacker::CUBIC_MAX_LONGEST_SIDE`, and returns all three thresholds in the
+`list_boxes` payload so a rate table can be reconciled against them.
+
+#### Four more corrections, each with a test that the original fails
+
+| Correction | What the original did | Why it mattered |
+|---|---|---|
+| An item must **dimensionally** fit a box to join its package | Checked only summed volume | A 20 × 1 × 1 item joined an 8 × 8 × 6 box: 47 in³ of 384, and physically impossible. A packing plan that cannot be carried out is worse than none |
+| The **empty box counts** towards the limit when the box is chosen | `find_best_box()` compared the item alone; the open-package test compared contents + box | A 318 oz item was assigned a 20 lb box with a 4 oz carton: the package was 322 oz from birth, and the two checks disagreed about what "fits" means |
+| A **malformed box list is refused** | Fell back to the default boxes when none parsed | A typo in `outer_depth` turned into a plausible, wrong plan using boxes the caller never named |
+| **`cubic_eligible` agrees with `cubic_tier`** | Computed eligibility for every box regardless of type | A USPS flat-rate box reported `cubic_eligible: true` beside a blank tier — an invitation to quote a cubic rate on a box USPS prices flat |
+
+#### Two things deliberately not corrected
+
+Both are documented in the class rather than quietly changed, because changing
+them would be redesigning the tool rather than porting it:
+
+- **Contents are fitted by summed volume, not geometry.** Ten 2 × 1 × 1 items
+  "fit" a 20 × 1 × 1 box. Real bin packing needs a placement solver; this is the
+  fast heuristic the original documented, and it is what the rate estimator
+  needs — a plan good enough to price, not a loading diagram.
+- **`keep_flat` is carried but not enforced.** It round-trips in the item record
+  so a caller's data is not lost, and the heuristic never consults it. The
+  schema description now says so explicitly rather than claiming support that
+  does not exist.
+
+#### The default catalogue contradicts itself, and that is left visible
+
+Three of the six default boxes are named "Cubic". Only one can qualify:
+
+| Box | Inner volume | Cu ft | Cubic-eligible | Tier |
+|---|---:|---:|---|---|
+| Cubic Small 8 × 8 × 6 | 384 in³ | 0.222 | **yes** | 0.3 |
+| Cubic Medium 12 × 10 × 8 | 960 in³ | 0.556 | no | — |
+| Cubic Large 14 × 12 × 10 | 1,680 in³ | 0.972 | no | — |
+
+The two larger boxes exceed the 0.5 cu ft ceiling by their own dimensions, so
+their names promise a rate class they cannot reach. The dimensions are kept —
+changing them would change every packing plan a caller has — and
+`list_boxes` now reports `cubic_eligible: false` for both, so the contradiction
+is a visible fact rather than an implied one. Renaming or resizing them is an
+owner decision, not a port decision.
+
+#### One thing left alone on purpose
+
+`ToolCapabilityFlagCatalogue` already carries `shipping_box_packer` with the
+WordPress flags `('pro', 'read-only', 'requires-plugin')`, while the ported tool
+declares `PURE_LOCAL` (`cacheable`, `idempotent`, `local-only`, `read-only`). The
+catalogue is a **generated file** mirrored from the corpus — its header says
+"do not edit by hand" — so it was reverted rather than hand-patched. The
+mismatch is real and belongs to the generator: a slug that has been ported now
+has a runtime declaration that contradicts its corpus entry. Worth fixing in
+`bin/generate-tool-capability-flags.php` the next time that file is regenerated.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `EcommerceShippingBoxPackerTest` | **18 tests, 83 assertions**, 0 failures |
+| `lib/core` unit suite | 3,649 → **3,667 tests, 21,483 assertions**, 0 failures |
+| Readiness manifest | 512 → **513 rows**, 493 → **494 servable**; `pure` 34 → 35 |
+| Toolkit parity | 291 → **292 ported**, 554 → **553 remaining**; `ecommerce` `44 \| 5 \| 1 \| 27 \| 38` → `44 \| 6 \| 1 \| 27 \| 37` |
+| Adapter catalogue | 12 tests, 691 assertions (self-contained registration still instantiates) |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors across 1,912 files |
+| PHPStan level 8, `lib/core` | no errors against the baseline |
+| Code | +2 classes, +1 test file; no dependency added |
+
+#### Next
+
+Slice 2b: the rate estimator's `estimate_rates` and `test_connection`, now able
+to call `BoxPacker::pack()` instead of instantiating a tool. The five defects
+§164.115 recorded — `success: true` on a total failure, cross-currency totals,
+hardcoded USPS rows, another plugin's option, and first-connection credentials —
+are the work items, and `estimate_order_rates` stays deferred with the order
+model.
