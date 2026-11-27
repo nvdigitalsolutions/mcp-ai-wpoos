@@ -70,8 +70,8 @@ abstract class AbstractCompletionTool extends AbstractTool implements ToolCapabi
      * @param array<string, mixed> $arguments  The tool arguments, for `provider`,
      *                                         `model` and `max_tokens`.
      * @param string               $prompt     What to ask.
-     * @param string|null          $dataUri    An image, when the model is being
-     *                                         asked about one.
+     * @param string|array<int, string>|null $dataUri An image, or several, when the model is being
+     *                                      asked about them.
      * @param string               $system     An optional system prompt.
      * @param bool                 $allowEmpty A tool whose empty answer is a
      *                                         finding rather than a failure — OCR
@@ -86,7 +86,7 @@ abstract class AbstractCompletionTool extends AbstractTool implements ToolCapabi
     protected function completeTool(
         array $arguments,
         string $prompt,
-        ?string $dataUri = null,
+        string|array|null $dataUri = null,
         string $system = '',
         bool $allowEmpty = false,
     ): mixed {
