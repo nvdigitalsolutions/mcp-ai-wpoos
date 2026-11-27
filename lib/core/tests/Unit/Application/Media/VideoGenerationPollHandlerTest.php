@@ -249,13 +249,13 @@ final class VideoGenerationPollHandlerTest extends TestCase
 
                 return new StoredFile(
                     901,
-                    $filename.'.mp4',
+                    $filename . '.mp4',
                     $mimeType,
                     (int) \strlen($this->bytes),
                     $localPath,
                     $userId,
                     new \DateTimeImmutable(),
-                    'https://example.test/media/'.$filename.'.mp4',
+                    'https://example.test/media/' . $filename . '.mp4',
                     array(),
                     $visibility,
                     'video'
