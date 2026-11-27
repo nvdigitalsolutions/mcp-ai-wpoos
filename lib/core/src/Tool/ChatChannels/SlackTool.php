@@ -71,7 +71,7 @@ abstract class SlackTool extends ChatChannelTool
      *
      * @param array<string, scalar> $query Query parameters.
      *
-     * @return array<string, mixed> The decoded `ok: true` payload.
+     * @return array<array-key, mixed> The decoded `ok: true` payload.
      *
      * @throws ChatChannelApiException On a transport failure or a refusal.
      */
@@ -95,7 +95,7 @@ abstract class SlackTool extends ChatChannelTool
      *
      * @param array<string, mixed> $payload JSON body.
      *
-     * @return array<string, mixed> The decoded `ok: true` payload.
+     * @return array<array-key, mixed> The decoded `ok: true` payload.
      *
      * @throws ChatChannelApiException On a transport failure or a refusal.
      */
@@ -112,7 +112,7 @@ abstract class SlackTool extends ChatChannelTool
     /**
      * One request and its classification.
      *
-     * @return array<string, mixed>
+     * @return array<array-key, mixed>
      *
      * @throws ChatChannelApiException
      */
@@ -204,7 +204,7 @@ abstract class SlackTool extends ChatChannelTool
     /**
      * The next page's cursor, or null on the last page.
      *
-     * @param array<string, mixed> $payload A decoded list payload.
+     * @param array<array-key, mixed> $payload A decoded list payload.
      */
     protected function nextCursor(array $payload): ?string
     {

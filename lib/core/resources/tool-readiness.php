@@ -38,6 +38,15 @@ declare(strict_types=1);
 return array(
 	'version' => 1,
 	'tools'   => array(
+		'add_discord_message_reaction' => array(
+			'class' => 'Nvoos\Core\Tool\ChatChannels\AddDiscordMessageReactionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the reaction writer (Proposal 164 section 164.101). One PUT to the reactions route as the bot, with the emoji URL-encoded once in the path; Discord answers 204 and the reply reports the target and that the reaction was added. Corrections: the channel and message ids are validated as numeric snowflakes before they become path segments, where WordPress passed sanitize_text_field output that leaves slashes and dots intact into the URL; and success is any 2xx, where WordPress required exactly 204. Gated on manage_options.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ChatChannelDiscordToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
 		'add_watermark_to_pdf' => array(
 			'class' => 'Nvoos\\Core\\Tool\\AddWatermarkToPdfTool',
 			'readiness' => 'ready',
@@ -677,6 +686,15 @@ return array(
 			'reason' => 'Extends CreateCronJobTool, so it shares the same queue path and evidence.',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/CacheQueueAndBatchToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => false ),
+		),
+		'create_discord_channel' => array(
+			'class' => 'Nvoos\Core\Tool\ChatChannels\CreateDiscordChannelTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the guild channel creator (Proposal 164 section 164.101). One POST /guilds/{id}/channels with a name and a type from the vocabulary 0 text, 2 voice, 4 category and 5 announcement; Discord answers 201 with the channel, projected to id, name, type, position and parent. Corrections: an unsupported type is refused, where WordPress ran absint and silently created a text channel for any other value, so a caller that asked for a forum got a text channel with no signal; the guild id is validated as a snowflake before it becomes a path segment; and success is any 2xx rather than exactly 201. Gated on manage_options.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ChatChannelDiscordToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
 		'create_eca' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\CreateEcaTool',
@@ -1985,6 +2003,24 @@ return array(
 			'probe' => 'call',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/AdminReadAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'get_discord_channels' => array(
+			'class' => 'Nvoos\Core\Tool\ChatChannels\GetDiscordChannelsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the guild channel list (Proposal 164 section 164.101). One GET /guilds/{id}/channels, an unpaginated array, projected to id, name, type, position and parent so a caller can pick a channel and read the tree without Discord permission overwrites. Corrections: the guild id is validated as a snowflake before it becomes a path segment, where WordPress passed sanitize_text_field output into the URL; and a non-array body is an empty list rather than a scalar inside one. Gated on manage_options.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ChatChannelDiscordToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
+		'get_discord_messages' => array(
+			'class' => 'Nvoos\Core\Tool\ChatChannels\GetDiscordMessagesTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the channel history reader (Proposal 164 section 164.101). One GET /channels/{id}/messages, newest first, with Discord own 1-100 page ceiling; rows keep id, channel, author id and username, content, sent time and edited time. Corrections: the channel id is validated as a snowflake before it becomes a path segment; the limit is read with the shared numeric clamp rather than absint, which silently turned a non-numeric argument into zero and then one; and rows are projected, where WordPress returned the full message objects. Gated on manage_options.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ChatChannelDiscordToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
 		'get_eca' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\GetEcaTool',
@@ -3502,6 +3538,15 @@ return array(
 			'probe' => 'call',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/MemorySettingsAndEventToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'send_discord_message' => array(
+			'class' => 'Nvoos\Core\Tool\ChatChannels\SendDiscordMessageTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the message poster (Proposal 164 section 164.101). One POST /channels/{id}/messages returning the created message id, channel, content and timestamp; the id is what a reaction or a reply needs. Corrections: the channel id is validated as a snowflake before it becomes a path segment, where WordPress passed sanitize_text_field output that leaves slashes and dots intact into the URL; and success is any 2xx rather than exactly 200. The token is an argument, marked writeOnly, and never echoed in a reply or an error. Gated on manage_options.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ChatChannelDiscordToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
 		'send_eca_notification' => array(
 			'class' => 'Nvoos\Core\Tool\Classroom\\SendEcaNotificationTool',

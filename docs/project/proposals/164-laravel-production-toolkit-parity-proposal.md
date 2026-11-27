@@ -8883,3 +8883,83 @@ create channel, add reaction. Six tools over a bot-token REST API. Discord
 reports errors with real HTTP status codes and a `{code, message}` body, so
 `DiscordTool` gets its own classifier while the transport normalisation and
 the credential shape stay in `ChatChannelTool`.
+
+### §164.101 — Slice 2: Discord, five portable and one impossible
+
+**Recorded.** Nine of fifty ported; `chat-channels` is now **9 ported,
+0 declined, 2 deferred, 41 remaining**. The slice was planned as six tools; one
+of the six cannot do what it says, and it is recorded rather than shipped.
+
+| slug | call | kind |
+|---|---|---|
+| `send_discord_message` | `POST /channels/{id}/messages`; returns the message id a reaction or reply needs | write |
+| `get_discord_channels` | `GET /guilds/{id}/channels`; id, name, type, position, parent | read |
+| `get_discord_messages` | `GET /channels/{id}/messages`, newest first, 1-100 | read |
+| `create_discord_channel` | `POST /guilds/{id}/channels`; id, name, type, position, parent | write |
+| `add_discord_message_reaction` | `PUT .../reactions/{emoji}/@me`, then 204 | write |
+
+#### The finding: `get_discord_voice_channel_members` cannot work
+
+The WordPress tool reads `voice_states` from `GET /channels/{id}` and returns
+the members with their mute, deaf, stream and video flags. Discord's REST
+channel object does not carry `voice_states`. Voice state is a **gateway**
+event (`VOICE_STATE_UPDATE`), and there is no REST route that lists the members
+of a voice channel — the feature requests asking for one are open. The tool
+therefore passes its channel-type check and then always answers
+`member_count: 0`, whatever the channel actually holds.
+
+So it is **deferred**, not ported: a tool whose contract is a lie is worse than
+a missing tool, and this programme already took that position on
+`schedule_notify_sms`. Prerequisite: a gateway connection, or a host-maintained
+voice-state cache fed by `VOICE_STATE_UPDATE`, exposed through a port the tool
+can read. The toolkit closes at **48 ported, 2 deferred, 0 declined**.
+
+#### Corrections
+
+1. **Ids are path segments, so they are validated.** Discord interpolates
+   channel, guild and message ids into the URL, and WordPress passed
+   `sanitize_text_field()` output — which leaves `/` and `..` intact — straight
+   into the path. Every id is now checked as a 1-20 digit snowflake before a
+   request is made.
+2. **`create_discord_channel` refuses an unsupported type.** WordPress ran
+   `absint()` and replaced anything outside 0/2/4/5 with 0, so a caller that
+   asked for a forum (15) silently got a text channel and no signal.
+3. **Success is any 2xx.** The WordPress tools required exactly 200, 201 or 204
+   per route. Those are the codes Discord sends, so behaviour is unchanged for
+   a conforming response; a valid but differently-numbered success is no longer
+   an error.
+4. **The limit is read with the shared numeric clamp** rather than `absint()`,
+   which turned a non-numeric argument into 0 and then into 1.
+5. **Rows are projected** — message, channel and reaction reports carry the
+   documented fields, not Discord's full objects (avatars, embeds, permission
+   overwrites).
+
+#### Adaptations
+
+- `retry_after` is a new axis on the family exception and envelope. Every
+  provider in the toolkit rate-limits; Discord says so in the body
+  (`retry_after`, seconds, fractional), Telegram the same, Slack in the
+  `Retry-After` header. A 429 now surfaces the interval instead of only the
+  status.
+- Discord's numeric error code (`50013`, `10003`) is the provider code, which
+  is what lets a caller distinguish a missing permission from an unknown
+  channel without reading the message.
+
+#### Measurements
+
+| gate | before | after |
+|---|---|---|
+| `lib/core` PHPUnit | 3,982 / 23,430 | 4,005 / 23,511 |
+| adapter `ToolProbesTest` | 246 / 1,654 | 251 / 1,674 |
+| tool readiness audit | 466 / 466, servable 447 | 471 / 471, servable 452 |
+| toolkit parity | 245 of 854 | 250 of 854 |
+| `chat-channels` | 4 / 0 / 1 / 46 | 9 / 0 / 2 / 41 |
+| phpcs | clean | clean |
+
+#### Next
+
+Slice 3, Telegram: send, updates, reaction, commands, webhook. Five tools over
+`api.telegram.org/bot{token}/…`. The token is a path segment here, so the
+snowflake guard proves its worth in a second shape; the classifier is
+`ok:false` with a numeric `error_code`, and 429 carries `retry_after` in the
+body, which the new axis already carries.

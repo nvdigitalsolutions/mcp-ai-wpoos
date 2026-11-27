@@ -7,8 +7,14 @@
  * its own shape — Slack with HTTP 200 and `ok: false`, Graph with a nested
  * `error.message`, Telegram with `ok: false` and a numeric `error_code` — and a
  * transport failure answers none at all. The exception keeps the core code,
+ * the core code,
  * the HTTP status, the provider's own code and the decoded payload apart so one
  * `failure()` can build the canonical envelope for all of them.
+ *
+ * `retryAfter` is the fourth axis: every provider in the family rate-limits,
+ * and each says so differently — Discord in the `retry_after` body field,
+ * Telegram the same, Slack in the `Retry-After` header. Seconds, rounded up,
+ * zero when the answer was not a rate limit.
  *
  * @package Nvoos\Core
  * @since   3.0.0
@@ -29,6 +35,7 @@ final class ChatChannelApiException extends \RuntimeException
      * @param int                  $statusCode   HTTP status, 0 when no response arrived.
      * @param string               $providerCode The provider's own error code or string.
      * @param array<string, mixed> $payload      The decoded provider body, for diagnostics.
+     * @param int                  $retryAfter   Seconds to wait, when the answer was a rate limit.
      */
     public function __construct(
         string $message,
@@ -36,6 +43,7 @@ final class ChatChannelApiException extends \RuntimeException
         public readonly int $statusCode = 0,
         public readonly string $providerCode = '',
         public readonly array $payload = array(),
+        public readonly int $retryAfter = 0,
     ) {
         parent::__construct($message);
     }

@@ -85,6 +85,10 @@ abstract class ChatChannelTool extends AbstractTool implements ToolCapabilityFla
             $data['code'] = $error->providerCode;
         }
 
+        if ($error->retryAfter > 0) {
+            $data['retry_after'] = $error->retryAfter;
+        }
+
         return $this->errors->create($error->errorCode, $error->getMessage(), $data);
     }
 
@@ -133,10 +137,13 @@ abstract class ChatChannelTool extends AbstractTool implements ToolCapabilityFla
 
     /**
      * A decoded JSON body, or an empty array when the body is empty or not an
-     * object. A provider that answers 204 No Content has said everything it has
+     * array. A provider that answers 204 No Content has said everything it has
      * to say.
      *
-     * @return array<string, mixed>
+     * The key type is `array-key`, not `string`: some endpoints answer with a
+     * list (Discord's channel and message collections) and some with an object.
+     *
+     * @return array<array-key, mixed>
      */
     protected function decode(HttpResponse $response): array
     {
