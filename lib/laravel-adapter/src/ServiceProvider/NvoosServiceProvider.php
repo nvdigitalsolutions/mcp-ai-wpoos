@@ -68,6 +68,7 @@ use Nvoos\Core\Domain\Contract\HtmlToPdfInterface;
 use Nvoos\Core\Domain\Contract\BrowserCaptureInterface;
 use Nvoos\Core\Domain\Contract\ImageProcessingInterface;
 use Nvoos\Core\Domain\Contract\ImageProductionInterface;
+use Nvoos\Core\Domain\Contract\VideoGenerationInterface;
 use Nvoos\Core\Domain\Contract\MediaWorkerClientInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\OfficeWriterInterface;
@@ -159,6 +160,7 @@ use Nvoos\Laravel\Adapter\MediaWorkerClient;
 use Nvoos\Laravel\Adapter\MediaWorkerHtmlToPdf;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProcessing;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProduction;
+use Nvoos\Laravel\Adapter\MediaWorkerVideoGeneration;
 use Nvoos\Laravel\Adapter\MediaWorkerOfficeWriter;
 use Nvoos\Laravel\Adapter\MediaWorkerBrowserCapture;
 use Nvoos\Laravel\Adapter\MediaWorkerPdfMutator;
@@ -245,6 +247,13 @@ class NvoosServiceProvider extends ServiceProvider {
 		// capability matrix, so a worker older than the route answers a named
 		// refusal instead of a 404 mid-run.
 		$this->app->bind( ImageProductionInterface::class, MediaWorkerImageProduction::class );
+
+		// Video generation is two operations (Proposal 164 section 164.131):
+		// `submit()` returns a prediction id and `status()` answers where it is.
+		// The worker's route blocks for up to ten minutes by default; the adapter
+		// sends `wait: false`, so a queued job owns the waiting instead of one
+		// request holding a connection for the duration of the render.
+		$this->app->bind( VideoGenerationInterface::class, MediaWorkerVideoGeneration::class );
 
 		// Social read-only capability (Proposal 164 section 164.4.6). The worker
 		// lists channels and composes copy; publishing stays out of this contract

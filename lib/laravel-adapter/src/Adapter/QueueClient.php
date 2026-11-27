@@ -56,7 +56,9 @@ class QueueClient implements QueueClientInterface {
 	 *
 	 * @param string               $handler  Fully-qualified class name or registered handler ID.
 	 * @param array<string, mixed> $payload  Serializable payload passed to the handler.
-	 * @param array<string, mixed> $options  Optional: group, delay_seconds, unique, priority.
+	 * @param array<string, mixed> $options  Optional: group, delay_seconds, unique, priority,
+	 *                                      and the job budget (`tries`, `backoff`,
+	 *                                      `timeout`, `retry_until_minutes`).
 	 *
 	 * @return string  Job ID for tracking.
 	 */
@@ -73,6 +75,10 @@ class QueueClient implements QueueClientInterface {
 			jobId: $jobId,
 			handler: $handler,
 			payload: $payload,
+			tries: isset( $options['tries'] ) ? (int) $options['tries'] : null,
+			backoff: isset( $options['backoff'] ) && is_array( $options['backoff'] ) ? $options['backoff'] : null,
+			timeout: isset( $options['timeout'] ) ? (int) $options['timeout'] : null,
+			retryUntilMinutes: isset( $options['retry_until_minutes'] ) ? (int) $options['retry_until_minutes'] : null,
 		);
 
 		if ( $delay > 0 ) {

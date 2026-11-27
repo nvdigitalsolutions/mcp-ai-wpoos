@@ -42,10 +42,13 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tool\Ecommerce;
 
 use Nvoos\Core\Application\Media\GeneratedMediaPersister;
+use Nvoos\Core\Application\Media\VideoGenerationPollHandler;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\ImageProductionInterface;
+use Nvoos\Core\Domain\Contract\QueueClientInterface;
+use Nvoos\Core\Domain\Contract\VideoGenerationInterface;
 use Nvoos\Core\Tool\AbstractTool;
 
 class ProductActualizationTool extends AbstractTool
@@ -69,6 +72,8 @@ class ProductActualizationTool extends AbstractTool
         private readonly ImageProductionInterface $images,
         private readonly ?FileStoreInterface $files = null,
         private readonly ?FileVisibilityStoreInterface $store = null,
+        private readonly ?VideoGenerationInterface $videos = null,
+        private readonly ?QueueClientInterface $queue = null,
     ) {
         parent::__construct($e);
     }
@@ -88,9 +93,10 @@ class ProductActualizationTool extends AbstractTool
         return 'Photograph a product in a scene that does not exist. Generates the scene from '
             . 'scene_prompt, then integrates the product photo into it with matching lighting, '
             . 'shadows and perspective, so a catalog image looks shot on location. Needs a Gemini '
-            . 'or OpenAI key on the media worker. Composite mode (blend the product onto a '
-            . 'background locally) and video mode are not available in this runtime and are '
-            . 'refused by name. Supply the product as file_id.';
+            . 'or OpenAI key on the media worker. mode "video" animates the composed still with '
+            . 'image-to-video and returns a queue job id: poll that job for the stored clip, which '
+            . 'is about two seconds. Composite mode (blend the product onto a background locally) '
+            . 'is not available in this runtime and is refused by name. Supply the product as file_id.';
     }
 
     /**
@@ -136,7 +142,7 @@ class ProductActualizationTool extends AbstractTool
                 ),
                 'mode' => array(
                     'type' => 'string',
-                    'description' => '"image" is the only mode this runtime can serve. "video" needs a video-generation contract that is not bound yet, and is refused by name.',
+                    'description' => '"image" renders and stores a still. "video" composes that still, animates it with image-to-video, and answers a queue job id; poll the job for the stored clip.',
                     'enum' => array('image', 'video'),
                     'default' => 'image',
                 ),
@@ -170,9 +176,16 @@ class ProductActualizationTool extends AbstractTool
                     'enum' => array('ai', 'composite'),
                     'default' => 'ai',
                 ),
+                'duration_seconds' => array(
+                    'type' => 'integer',
+                    'minimum' => 4,
+                    'maximum' => 10,
+                    'default' => 6,
+                    'description' => 'Accepted for WordPress shape compatibility. The image-to-video model renders 14 frames at 6 fps, about two seconds, so this does not change the length.',
+                ),
                 'provider' => array(
                     'type' => 'string',
-                    'description' => '"auto" prefers Gemini and falls back to OpenAI, resolved by the worker. Replicate cannot take two images and is not offered.',
+                    'description' => 'Used by the image turns: "auto" prefers Gemini and falls back to OpenAI, resolved by the worker. Video generation uses Replicate and needs REPLICATE_API_KEY on the worker.',
                     'enum' => self::PROVIDERS,
                     'default' => 'auto',
                 ),
@@ -205,11 +218,8 @@ class ProductActualizationTool extends AbstractTool
 
         $mode = \strtolower($this->stringParam($arguments, 'mode', 'image'));
 
-        if ('video' === $mode) {
-            return $this->errors->create(
-                'video_generation_unavailable',
-                'Video mode needs two things this runtime does not have: an image-to-video route (the worker generation route takes a prompt, not a reference frame, and its default model requires an input image the route never sends) and a bound video-generation contract. Use mode "image"; the composed still is the reference frame a later pass needs.'
-            );
+        if (! \in_array($mode, array('image', 'video'), true)) {
+            $mode = 'image';
         }
 
         $integration = \strtolower($this->stringParam($arguments, 'integration_mode', 'ai'));
@@ -264,6 +274,10 @@ class ProductActualizationTool extends AbstractTool
                 'no_image_composition_provider',
                 'The media worker does not declare image composition. Composition needs a provider that accepts two images in one turn (Gemini or OpenAI); a Replicate-only host can edit but cannot compose.'
             );
+        }
+
+        if ('video' === $mode) {
+            return $this->video($scenePrompt, (string) $product['path'], $provider, $ratio, $backgroundMode, $context, $arguments);
         }
 
         $scene = null;
@@ -327,6 +341,111 @@ class ProductActualizationTool extends AbstractTool
         return $this->success(
             'Product placed in a generated scene with ' . $result['provider'] . '.',
             $payload
+        );
+    }
+
+    /**
+     * Compose the still, animate it, and hand the waiting to a queue job.
+     *
+     * The still is the reference frame, which is why the image half runs first:
+     * a text prompt cannot describe a specific garment, a frame can. The clip is
+     * submitted, not awaited — the job polls and stores, and the caller reads the
+     * result from the queue status. Both scratch images are deleted here because
+     * the worker already has the bytes and the registry will own the video.
+     *
+     * @param array<string, mixed> $context
+     * @param array<string, mixed> $arguments
+     */
+    private function video(
+        string $scenePrompt,
+        string $productPath,
+        string $provider,
+        string $ratio,
+        string $backgroundMode,
+        array $context,
+        array $arguments
+    ): mixed {
+        if (null === $this->videos || null === $this->queue) {
+            return $this->errors->create(
+                'video_generation_unavailable',
+                'No video-generation contract is bound on this host. Bind VideoGenerationInterface and QueueClientInterface to use mode "video"; mode "image" needs neither.'
+            );
+        }
+
+        if (! $this->videos->supports('generate')) {
+            return $this->errors->create(
+                'no_video_generation_provider',
+                'The media worker does not declare video generation, or no Replicate key resolves for this site. Set REPLICATE_API_KEY on the worker.'
+            );
+        }
+
+        $scene = null;
+        $still = null;
+
+        try {
+            $scene = $this->images->generate($scenePrompt, array('aspect_ratio' => $ratio, 'provider' => $provider));
+
+            $still = $this->images->compose(
+                (string) $scene['path'],
+                $productPath,
+                array(
+                    'prompt' => $this->integrationPrompt($scenePrompt, $this->stringParam($arguments, 'placement_hint')),
+                    'provider' => $provider,
+                )
+            );
+
+            $job = $this->videos->submit(
+                'Smooth camera motion around the product. Keep the product, its colours and its materials identical in every frame.',
+                array(
+                    'reference_path' => (string) $still['path'],
+                    'model' => 'stable-video-diffusion',
+                )
+            );
+
+            $jobId = $this->queue->enqueue(
+                VideoGenerationPollHandler::class,
+                array(
+                    'prediction_id' => (string) $job['prediction_id'],
+                    'user_id' => (int) ($context['user_id'] ?? $context['owner_id'] ?? 0),
+                    'visibility' => $this->stringParam($arguments, 'visibility', FileVisibilityStoreInterface::VISIBILITY_PUBLIC),
+                    'file_name' => GeneratedMediaPersister::displayName($arguments, $context, 'product-video'),
+                ),
+                array(
+                    // A render takes minutes, so the budget is many short attempts:
+                    // one status call every fifteen seconds for twenty minutes.
+                    'tries' => 60,
+                    'backoff' => array(15),
+                    'timeout' => 120,
+                    'retry_until_minutes' => 20,
+                )
+            );
+        } catch (\Throwable $e) {
+            return $this->errors->create('product_actualization_failed', $e->getMessage());
+        } finally {
+            foreach (array($still, $scene) as $artifact) {
+                if (\is_array($artifact) && \is_string($artifact['path'] ?? null) && \is_file($artifact['path'])) {
+                    @\unlink($artifact['path']);
+                }
+            }
+        }
+
+        return $this->success(
+            'Video queued with ' . $job['provider'] . '. Poll the job for the stored result.',
+            array(
+                'status' => 'queued',
+                'job_id' => $jobId,
+                'prediction_id' => $job['prediction_id'],
+                'provider' => $job['provider'],
+                'model' => $job['model'],
+                'mode' => 'video',
+                'integration_mode' => 'ai',
+                'aspect_ratio' => $ratio,
+                'background_mode' => $backgroundMode,
+                'background_removed' => false,
+                'scene_prompt' => $scenePrompt,
+                'reference_dimensions' => array('width' => $still['width'] ?? null, 'height' => $still['height'] ?? null),
+                'note' => 'The image-to-video model renders about two seconds; duration_seconds is accepted for shape compatibility.',
+            )
         );
     }
 

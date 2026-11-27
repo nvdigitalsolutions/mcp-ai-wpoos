@@ -11874,12 +11874,10 @@ address that carries an ownership check.
 
 #### What remains
 
-- **P3 video.** The route shape was measured in §164.131 and it is **not**
-  submit-and-poll: `/api/video/generate` blocks internally and returns a
-  provider URL, and there is no worker artifact, so the TTL premise was wrong.
-  P3 now waits on image-to-video support in the worker (§164.131 found the
-  default model needs an `input_image` the route never sends); the async half
-  (`wait: false`) has landed.
+- **P3 video.** Shipped in §164.131: the route's real shape is recorded there,
+  along with the async layer and the two-schema model families. The clip is about
+  two seconds because no model in the catalog does longer image-to-video; a
+  longer render needs a model addition, not a code fix.
 - **A key on the worker.** `image_generation` and `image_composition` need
   Gemini or OpenAI. A Replicate-only host can edit and cannot compose, which is
   now visible in the capability matrix before a caller spends a request.
@@ -11979,19 +11977,38 @@ unaffected.
 now names image-to-video plus the unbound contract, instead of an artifact TTL
 that does not exist.
 
-#### Recommended re-scope
+**The async layer.** `VideoGenerationInterface` splits start from ask:
+`submit()` posts with `wait: false` and returns a prediction id, and `status()`
+reports a closed terminal set so a poller stops on one boolean.
+`MediaWorkerVideoGeneration` reads a reference frame from a local path, sniffs
+its type from the bytes and inlines it, and refuses a prompt-only call that
+names no text model before spending a request. `VideoGenerationPollHandler`
+(core) asks once per run: pending throws a retryable marker, a terminal failure
+throws `NonRetryableJobException` so the generic job stops instead of repeating
+a paid render, and success downloads the URL into the registry.
+`NvoosToolJob` and `QueueClient` gained per-dispatch `tries`, `backoff`,
+`timeout` and `retry_until_minutes` — defaulting to the previous values, so no
+other job changes — which is what lets the poll run every 15 s for 20 minutes
+while one attempt stays short. `product_actualization(mode: video)` composes the
+still, submits it, enqueues the poll and answers
+`{status: 'queued', job_id, prediction_id}`; the caller reads the result from
+the existing queue status surface, so no read tool was invented.
 
-1. ~~Worker reference frames~~ — **landed above.** The data-URI question was
-   answered from two published input maps, so the Files API is not needed for a
-   frame bounded to 1024 px.
-2. **Core:** `VideoGenerationInterface::submit()` and `status()`, plus
-   `supports('video_generation')`. `status()` returns the provider state and the
-   URL; it stores nothing, so the "registry is durable, worker storage is
-   scratch" rule is not bent.
-3. **Adapter:** a job that submits, re-dispatches a delayed status check until
-   terminal (each run under the 300 s ceiling), downloads the finished URL into
-   the file registry and completes with the media entry. The caller reads the
-   result through `QueueClientInterface::getStatus()`, which already exists.
+A shape detail worth naming: `duration_seconds` is now in the tool's schema
+although the model ignores it. WordPress-shaped calls send it, and
+`additionalProperties: false` would have rejected the whole call without it; the
+description says the render is about two seconds.
+
+#### Re-scope status
+
+1. ~~Worker reference frames~~ — **landed** in the previous change. The data-URI
+   question was answered from two published input maps, so the Files API is not
+   needed for a frame bounded to 1024 px.
+2. ~~Core contract~~ — **landed:** `VideoGenerationInterface`, with
+   `supports('video_generation')` reading the worker matrix.
+3. ~~Adapter and polling job~~ — **landed:** `MediaWorkerVideoGeneration` plus
+   `VideoGenerationPollHandler`, with a per-dispatch job budget.
+4. ~~Tool~~ — **landed:** `mode: video` answers `{status: 'queued', job_id}`.
 4. **Tool:** `product_actualization` `mode: video` answers
    `{status: 'queued', job_id}` once 2–3 exist. That response shape varies by
    mode, which the owner approved in principle.
@@ -12001,4 +12018,10 @@ that does not exist.
 | Gate | Result |
 |---|---|
 | Media worker | 258 tests, 0 failures |
-| `node --check` | clean on both edited files |
+| `lib/core` unit suite | 3,815 tests / 22,018 assertions |
+| `lib/laravel-adapter` suite | 698 tests / 3,713 assertions |
+| Readiness audit | OK; servable 501 |
+| Parity | 299 ported / 9 declined / 80 deferred / 546 remaining |
+| PHPStan (core) | clean |
+| phpcs | clean |
+| `node --check` | clean on both edited worker files |
