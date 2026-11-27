@@ -201,6 +201,18 @@
             "decision": "deferred",
             "reason": "Runs a multi-step order workflow: status, note, customer email and stock movement. Prerequisite: OrderStoreInterface, which does not exist yet — section 164.111 covers the catalog only — plus the store's mail and stock seams."
         },
+        "product_actualization": {
+            "decision": "deferred",
+            "reason": "Places a product photo into a generated scene, in image mode or video mode, using Gemini, OpenAI or Google Veo, then composites the product into the result. Prerequisite: an image and video generation contract. ImageProductionInterface is processing only (optimize, enhance, upscale, resizeSmart, edit) and the only generation contract in core is MusicGenerationInterface, so there is nothing to call. It also needs provider credentials and an attachment-to-local-path resolver, which the WordPress tool gets from the media library and the OpenAI files endpoint."
+        },
+        "quickbooks_desktop_sync": {
+            "decision": "deferred",
+            "reason": "Relays QODBC queries and record writes to a PHP endpoint on the Windows machine that runs QuickBooks Desktop and the QODBC driver. Prerequisite: that host, which is a desktop application plus a database driver on someone's PC rather than a service this runtime can stand up, and a relay client to reach it. One further caution for whoever ports it: the arguments include a free-form `where` clause and a `record_data` object passed to QODBC, so it is a SQL surface in tool clothing and the clause needs constraining rather than passing through."
+        },
+        "quickbooks_report": {
+            "decision": "deferred",
+            "reason": "Pulls a QuickBooks Online report from https://quickbooks.api.intuit.com/v3/company/{realm}/reports/{report}. Prerequisite: an OAuth2 credential store holding a realm id and a refresh token, plus a replacement for WP_MCP_AI_Pro_Remote_Site_Manager::get_connection() and is_connection_enabled_for_assistant(), which the WordPress tool reads and this runtime does not have. QuickBooks Online is a different product from the Desktop company file the qb-desktop MCP covers, so one tool cannot serve both without lying about which it read."
+        },
         "refund_order_advanced": {
             "decision": "deferred",
             "reason": "Issues a full or partial refund with line-level quantities. Prerequisite: OrderStoreInterface with refund support. It is also a payments concern rather than CRUD: the original calls the gateway, and a contract for that is a separate decision."
@@ -224,6 +236,10 @@
         "research_eca": {
             "decision": "declined",
             "reason": "It is a provider prompt preset: it composes a research prompt and calls the model client, and returns the text. deep_research and web_search already serve that capability, and the WordPress tool's own usage guidance points at both of them. A third name for \"research this topic\" would add a slug without adding a capability, so it is declined rather than deferred: no prerequisite would make the duplicate worth a slot."
+        },
+        "rfdetr_catalog_search": {
+            "decision": "deferred",
+            "reason": "Detects catalog-specific objects, such as brand packaging or SKU-specific products, with a fine-tuned RF-DETR checkpoint served through Roboflow's inference API. Prerequisite: a Roboflow key and a chosen checkpoint (a workspace/project/version or an alias), because a fine-tuned detector is account-specific and is not interchangeable with the chat model that the completion path and VisionInferenceInterface select. The transport is not the blocker, the model is: the detection itself would ride a vision seam."
         },
         "sales_performance_dashboard": {
             "decision": "deferred",
