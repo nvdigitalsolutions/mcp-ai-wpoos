@@ -134,9 +134,7 @@ final class CalendarReminderToolsTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider smsTypes
-     */
+    #[DataProvider('smsTypes')]
     public function test_a_reminder_refuses_sms(string $type): void
     {
         $store = new FakeCalendarStore();
@@ -163,9 +161,7 @@ final class CalendarReminderToolsTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider badHours
-     */
+    #[DataProvider('badHours')]
     public function test_hours_before_is_bounded(int $hours): void
     {
         $store = new FakeCalendarStore();

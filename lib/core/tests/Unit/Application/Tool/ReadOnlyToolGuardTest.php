@@ -20,6 +20,7 @@ use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
 use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
 use Nvoos\Core\Domain\Contract\ToolInterface;
 use Nvoos\Core\Domain\Contract\ToolResolverInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ReadOnlyToolGuardTest extends TestCase
@@ -108,9 +109,7 @@ final class ReadOnlyToolGuardTest extends TestCase
         $this->assertNotNull($guard->evaluate('update_post', array(), array()));
     }
 
-    /**
-     * @dataProvider wordpressGatedFlags
-     */
+    #[DataProvider('wordpressGatedFlags')]
     public function test_every_flag_the_wordpress_profile_gates_is_denied(string $flag): void
     {
         $guard = new ReadOnlyToolGuard(self::resolver(array('tool' => array($flag))));

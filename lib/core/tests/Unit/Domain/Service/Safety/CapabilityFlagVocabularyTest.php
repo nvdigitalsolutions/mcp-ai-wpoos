@@ -18,16 +18,16 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tests\Unit\Domain\Service\Safety;
 
 use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CapabilityFlagVocabularyTest extends TestCase
 {
     /**
-     * @dataProvider normaliseCases
-     *
      * @param array<int, mixed>  $flags
      * @param list<string>       $expected
      */
+    #[DataProvider('normaliseCases')]
     public function test_flags_are_normalised(array $flags, array $expected): void
     {
         $this->assertSame($expected, CapabilityFlagVocabulary::normalise($flags));
@@ -69,10 +69,9 @@ final class CapabilityFlagVocabularyTest extends TestCase
     }
 
     /**
-     * @dataProvider outboundMutationCases
-     *
      * @param array<int, string> $flags
      */
+    #[DataProvider('outboundMutationCases')]
     public function test_outbound_mutation_is_narrower_than_outbound(array $flags, bool $expected): void
     {
         $this->assertSame($expected, CapabilityFlagVocabulary::hasOutboundMutation($flags));

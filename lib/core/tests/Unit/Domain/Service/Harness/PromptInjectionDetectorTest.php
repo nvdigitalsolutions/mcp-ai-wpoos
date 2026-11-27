@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tests\Unit\Domain\Service\Harness;
 
 use Nvoos\Core\Domain\Service\Harness\PromptInjectionDetector;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class PromptInjectionDetectorTest extends TestCase
@@ -39,9 +40,7 @@ final class PromptInjectionDetectorTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider jailbreaks
-     */
+    #[DataProvider('jailbreaks')]
     public function test_it_detects_jailbreaks(string $message): void
     {
         $analysis = PromptInjectionDetector::analyze($message);
@@ -65,9 +64,7 @@ final class PromptInjectionDetectorTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider injections
-     */
+    #[DataProvider('injections')]
     public function test_it_detects_injection_shapes(string $message): void
     {
         $analysis = PromptInjectionDetector::analyze($message);

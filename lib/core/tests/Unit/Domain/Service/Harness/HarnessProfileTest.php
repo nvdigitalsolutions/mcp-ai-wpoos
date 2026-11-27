@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tests\Unit\Domain\Service\Harness;
 
 use Nvoos\Core\Domain\Service\Harness\HarnessProfile;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class HarnessProfileTest extends TestCase
@@ -44,9 +45,7 @@ final class HarnessProfileTest extends TestCase
         $this->assertTrue(HarnessProfile::defaults()['memory']['pii_filter']);
     }
 
-    /**
-     * @dataProvider junk
-     */
+    #[DataProvider('junk')]
     public function test_junk_degrades_to_the_default_profile(mixed $raw): void
     {
         $this->assertSame(HarnessProfile::defaults(), HarnessProfile::sanitize($raw));
@@ -71,9 +70,7 @@ final class HarnessProfileTest extends TestCase
         $this->assertSame(7, $profile['retrieval']['k']);
     }
 
-    /**
-     * @dataProvider clamped
-     */
+    #[DataProvider('clamped')]
     public function test_values_are_clamped_to_their_documented_ranges(array $raw, string $path, mixed $expected): void
     {
         $profile = HarnessProfile::sanitize($raw);

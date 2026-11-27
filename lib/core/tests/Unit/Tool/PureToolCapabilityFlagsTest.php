@@ -20,15 +20,15 @@ namespace Nvoos\Core\Tests\Unit\Tool;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
 use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class PureToolCapabilityFlagsTest extends TestCase
 {
     /**
-     * @dataProvider deterministicTools
-     *
      * @param class-string $class
      */
+    #[DataProvider('deterministicTools')]
     public function test_a_deterministic_tool_declares_the_pure_local_flags(string $class): void
     {
         $this->assertSame(CapabilityFlagVocabulary::PURE_LOCAL, $this->tool($class)->getCapabilityFlags());
@@ -60,10 +60,9 @@ final class PureToolCapabilityFlagsTest extends TestCase
     }
 
     /**
-     * @dataProvider nonDeterministicTools
-     *
      * @param class-string $class
      */
+    #[DataProvider('nonDeterministicTools')]
     public function test_a_non_deterministic_tool_is_not_cacheable(string $class): void
     {
         $flags = $this->tool($class)->getCapabilityFlags();

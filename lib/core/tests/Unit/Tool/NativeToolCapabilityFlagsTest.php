@@ -20,6 +20,7 @@ namespace Nvoos\Core\Tests\Unit\Tool;
 use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
 use Nvoos\Core\Domain\Service\Safety\CapabilityFlagVocabulary;
 use Nvoos\Core\Domain\Service\Safety\ToolCapabilityFlagCatalogue;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionNamedType;
@@ -27,10 +28,9 @@ use ReflectionNamedType;
 final class NativeToolCapabilityFlagsTest extends TestCase
 {
     /**
-     * @dataProvider pureLocalTools
-     *
      * @param class-string $class
      */
+    #[DataProvider('pureLocalTools')]
     public function test_a_pure_tool_declares_the_pure_local_flags(string $class): void
     {
         $this->assertSame(CapabilityFlagVocabulary::PURE_LOCAL, $this->tool($class)->getCapabilityFlags());
@@ -48,10 +48,9 @@ final class NativeToolCapabilityFlagsTest extends TestCase
     }
 
     /**
-     * @dataProvider localReadTools
-     *
      * @param class-string $class
      */
+    #[DataProvider('localReadTools')]
     public function test_a_store_read_declares_the_local_read_flags(string $class): void
     {
         $flags = $this->tool($class)->getCapabilityFlags();
@@ -86,10 +85,9 @@ final class NativeToolCapabilityFlagsTest extends TestCase
     }
 
     /**
-     * @dataProvider reversibleWriteTools
-     *
      * @param class-string $class
      */
+    #[DataProvider('reversibleWriteTools')]
     public function test_a_reversible_write_declares_the_reversible_flags(string $class): void
     {
         $this->assertSame(
@@ -115,10 +113,9 @@ final class NativeToolCapabilityFlagsTest extends TestCase
     }
 
     /**
-     * @dataProvider persistentWriteTools
-     *
      * @param class-string $class
      */
+    #[DataProvider('persistentWriteTools')]
     public function test_a_persistent_write_is_not_declared_reversible(string $class): void
     {
         $flags = $this->tool($class)->getCapabilityFlags();

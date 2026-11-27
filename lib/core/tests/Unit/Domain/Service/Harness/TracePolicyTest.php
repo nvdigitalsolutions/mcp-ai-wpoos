@@ -20,6 +20,7 @@ namespace Nvoos\Core\Tests\Unit\Domain\Service\Harness;
 use Nvoos\Core\Domain\Service\Harness\HarnessProfile;
 use Nvoos\Core\Domain\Service\Harness\NullTraceStore;
 use Nvoos\Core\Domain\Service\Harness\TracePolicy;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class TracePolicyTest extends TestCase
@@ -72,9 +73,7 @@ final class TracePolicyTest extends TestCase
         $this->assertSame(25, TracePolicy::retentionRuns($profile));
     }
 
-    /**
-     * @dataProvider outOfBoundsWindows
-     */
+    #[DataProvider('outOfBoundsWindows')]
     public function test_a_window_outside_the_bounds_is_clamped(int $requested, int $expected): void
     {
         $this->assertSame($expected, TracePolicy::clampRuns($requested));

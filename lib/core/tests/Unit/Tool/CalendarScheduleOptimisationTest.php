@@ -91,10 +91,9 @@ final class CalendarScheduleOptimisationTest extends TestCase
     }
 
     /**
-     * @dataProvider invalidRanges
-     *
      * @param array<string, mixed> $arguments Tool arguments.
      */
+    #[DataProvider('invalidRanges')]
     public function test_an_unusable_range_is_refused(array $arguments, string $field): void
     {
         $result = $this->tool(new FakeCalendarStore())->execute($arguments, self::CONTEXT);

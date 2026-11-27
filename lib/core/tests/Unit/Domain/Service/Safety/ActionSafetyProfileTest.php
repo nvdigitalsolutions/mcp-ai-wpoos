@@ -18,13 +18,12 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tests\Unit\Domain\Service\Safety;
 
 use Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ActionSafetyProfileTest extends TestCase
 {
-    /**
-     * @dataProvider matrix
-     */
+    #[DataProvider('matrix')]
     public function test_the_matrix_matches_the_wordpress_original(
         float $irreversibility,
         string $necessity,
@@ -113,10 +112,9 @@ final class ActionSafetyProfileTest extends TestCase
     }
 
     /**
-     * @dataProvider flagDerivations
-     *
      * @param array<int, string> $flags
      */
+    #[DataProvider('flagDerivations')]
     public function test_irreversibility_is_derived_from_flags(array $flags, float $expected): void
     {
         $this->assertSame($expected, ActionSafetyProfile::deriveIrreversibilityFromFlags($flags));
