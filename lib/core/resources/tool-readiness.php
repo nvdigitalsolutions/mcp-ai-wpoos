@@ -4012,6 +4012,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/EcommerceShopifyToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
+		'shipping_box_packer' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\ShippingBoxPackerTool',
+			'readiness' => 'pure',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress bin packer (Proposal 164 section 164.116). Pure computation: no store, credentials or network, so it is the substrate the rate estimator composes. pack_order is not ported because it reads WooCommerce line items and needs an order model. Five corrections: the USPS longest-side ceiling is 22 inches since 2026-07-12 (the original tested 18), an item must dimensionally fit a box to join its package (volume alone admitted a 20-inch item into an 8-inch box), the empty box counts towards the weight limit when the box is chosen, a malformed box list is refused instead of replaced by defaults, and cubic_eligible now agrees with cubic_tier for flat-rate boxes.',
+			'evidence' => 'lib/core/tests/Unit/Tool/EcommerceShippingBoxPackerTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'store_agent_context' => array(
 			'class' => 'Nvoos\\Core\\Tool\\StoreAgentContextTool',
 			'readiness' => 'ready',

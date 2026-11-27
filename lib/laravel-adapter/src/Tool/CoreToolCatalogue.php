@@ -49,6 +49,7 @@ use Nvoos\Core\Tool\MathEvalTool;
 use Nvoos\Core\Tool\MergeArraysTool;
 use Nvoos\Core\Tool\ParseCsvTool;
 use Nvoos\Core\Tool\ScopeMemoryTool;
+use Nvoos\Core\Tool\Ecommerce\ShippingBoxPackerTool;
 use Nvoos\Core\Tool\StripHtmlTool;
 use Nvoos\Core\Tool\SuggestBestModelTool;
 use Nvoos\Core\Tool\TimeAgoTool;
@@ -94,6 +95,12 @@ final class CoreToolCatalogue {
 
 			// Model advisory (no network; reads a local matrix).
 			SuggestBestModelTool::class,
+
+			// Domain computation (Proposal 164 section 164.116): a pure bin packer.
+			// It composes nothing and calls nothing, so it needs only the error
+			// factory — which is what makes it the substrate the rate estimator
+			// can be built on here.
+			ShippingBoxPackerTool::class,
 
 			// Client-side tools: the browser performs the work, so the server
 			// half needs no provider, no HTTP client and no stored state.

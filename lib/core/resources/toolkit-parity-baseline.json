@@ -186,6 +186,7 @@
         ],
         "ecommerce": [
             "generate_invoice_pdf",
+            "shipping_box_packer",
             "shopify_customers",
             "shopify_inventory",
             "shopify_orders",
