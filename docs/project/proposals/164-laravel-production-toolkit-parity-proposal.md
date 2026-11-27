@@ -11430,3 +11430,65 @@ The other 32 are blocked on something the table above names, and the three
 things that would unlock the most at once are, in order: an OAuth2 credential
 store (it also unblocks the remote-connection family), an image/video generation
 contract, and a decision on the vision seam.
+
+### §164.126 — The vision seam, decided: keep it, and say what it is for
+
+**Recorded.** §164.125 asked for an owner decision between retiring
+`VisionInferenceInterface`, migrating the completion path onto it, and keeping it
+narrowly. This is that decision, and the evidence moved it.
+
+#### What the evidence actually showed
+
+Reading the consumer graph rather than the declarations:
+
+| Fact | Consequence |
+|---|---|
+| No core tool implements, injects or calls `VisionInferenceInterface` | It is unused today, which is what §164.123 reported |
+| The WordPress extended-cognition tools that *do* detection — `detect_objects`, `analyze_video_feed` — instantiate `WP_MCP_AI_HF_Vision_Inference_Service` directly | Even the WordPress side does not go through the contract, so it is not "used through another door" |
+| A text completion returns text | `rfdetr_catalog_search` needs boxes, labels and scores. No amount of prompting makes a chat completion express a detection list reliably, and it cannot be told to use a particular checkpoint rather than the host's chat model |
+
+That third row is the one that decides it. The two seams are not duplicates; they
+answer different questions, and collapsing them would mean a detection tool that
+cannot return detections.
+
+#### The decision
+
+**Keep `VisionInferenceInterface`, and define it.** Retiring it was the leading
+option until the detection requirement was checked; migrating the completion path
+onto it would mean routing `analyze_image` and both validators through an
+interface that carries less than `CompletionRequest` does — no provider routing,
+no token budget, no multi-image.
+
+| | `AbstractCompletionTool` path | `VisionInferenceInterface` |
+|---|---|---|
+| The question | "what is in this image", answered in prose or JSON | "run *this* model over the image" |
+| The model | chosen by `ProviderRouter` from a host default | pinned by the caller |
+| The answer | text | whatever the model emits: detections, boxes, labels, scores |
+| Multi-image | yes, one turn with several parts | one image per call |
+
+The contract is therefore declared ahead of its first caller **on purpose**, with
+`rfdetr_catalog_search` named as the intended consumer. That tool is deferred on
+an account-specific checkpoint rather than on this transport, so the transport
+gap is closed and the model gap is the real one.
+
+#### What was actually missing
+
+The interface had a placeholder docblock — `File header.` — and no statement of
+what separates it from the completion path. That absence is the direct cause of
+§164.122's wrong attribution: an undocumented port with two implementations and
+no caller is indistinguishable from a general-purpose one. It now carries the
+comparison table above, the return-shape convention both adapters implement, the
+`InvalidArgumentException` boundary, and the names of its implementers and its
+intended consumer.
+
+No code changed. The seam that needed work was the one in the documentation.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `lib/core` unit suite | **3,783 tests, 21,900 assertions**, unchanged and green |
+| Readiness manifest | `ready` 458, servable 499 — unchanged, because a docblock adds no tool |
+| Toolkit parity | **297 ported, 9 declined, 82 deferred, 548 remaining** — unchanged |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on the touched file |
+| PHPStan level 8, `lib/core` | no errors against the baseline |
