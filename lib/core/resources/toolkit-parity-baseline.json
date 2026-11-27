@@ -192,6 +192,7 @@
             "gtmetrix_list_report_resources",
             "gtmetrix_list_simulated_devices",
             "gtmetrix_list_tests",
+            "gtmetrix_manage_page_tags",
             "gtmetrix_retest_page",
             "gtmetrix_set_alert_conditions",
             "gtmetrix_set_monitoring",

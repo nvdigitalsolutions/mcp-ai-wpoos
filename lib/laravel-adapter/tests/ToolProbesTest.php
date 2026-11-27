@@ -430,6 +430,9 @@ Probe Club,club
 			array( 'gtmetrix_get_alert_conditions', array( 'page_id' => 'probe-page' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'gtmetrix_set_alert_conditions', array( 'page_id' => 'probe-page', 'conditions' => array() ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'gtmetrix_get_alert_events', array( 'page_id' => 'probe-page' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.98 — tags. The action is valid so the refusal is the guard.
+			array( 'gtmetrix_manage_page_tags', array( 'action' => 'list' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
