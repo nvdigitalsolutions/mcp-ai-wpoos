@@ -11363,3 +11363,70 @@ Two of the seven undecided `ecommerce` tools are now ported. What remains is
 does not exist), and the QuickBooks pair (Online needs an OAuth credential store,
 Desktop needs a host running QODBC). §164.120's seam matrix still describes all
 four accurately, and none of them is a copy of a validator.
+
+### §164.125 — `ecommerce` closed: every one of the forty-four has a decision
+
+**Recorded.** The last four undecided tools are registered `deferred` with named
+prerequisites, which closes the toolkit: **11 ported, 1 declined, 32 deferred**,
+and therefore **zero undecided**. Nothing about `remaining` changes — a deferral
+stays in it — but the number now means "blocked on something named" rather than
+"nobody has looked".
+
+#### The four, and what each is actually waiting for
+
+| Slug | Prerequisite |
+|---|---|
+| `product_actualization` | An image **and** video generation contract. `ImageProductionInterface` is processing only — `optimize`, `enhance`, `upscale`, `resizeSmart`, `edit` — and the only generation contract in core is `MusicGenerationInterface`, so there is nothing to call. It also needs provider credentials and an attachment-to-path resolver, which the WordPress tool gets from the media library |
+| `quickbooks_desktop_sync` | A Windows host running QuickBooks Desktop and the QODBC driver, reached through a relay. That is a desktop application on someone's PC rather than a service this runtime can stand up. Also a caution: it relays a free-form `where` clause to QODBC, so it is a SQL surface in tool clothing |
+| `quickbooks_report` | An OAuth2 credential store with a realm id and refresh token, plus a replacement for `Remote_Site_Manager::get_connection()` and `is_connection_enabled_for_assistant()`. QuickBooks **Online** is a different product from the Desktop file the `qb-desktop` MCP covers, so one tool cannot serve both |
+| `rfdetr_catalog_search` | A Roboflow key and a chosen checkpoint. The transport is not the blocker — the detection would ride the vision seam — the **model** is, because a fine-tuned detector is account-specific and is not interchangeable with the chat model |
+
+#### The decision this slice cannot make for you
+
+Recorded in §164.123 and repeated here because it needs an owner rather than
+another port: **core now has two vision seams.**
+
+| Seam | Bound in `lib/laravel-adapter` | Consumers |
+|---|---|---|
+| `AbstractCompletionTool` + `VisionRequest` + `ImageInput` + `ProviderRouter` | yes, already | `analyze_image` and both validators |
+| `VisionInferenceInterface` | yes, since §164.122 | **none** |
+
+§164.122 bound the interface on the belief it was the prerequisite for the
+validators. It was not — the completion path was, and §164.123 corrected that.
+The interface is now a contract with a working binding and no caller.
+
+The options are not equivalent, and leaving both indefinitely is the only one
+that is clearly wrong:
+
+1. **Retire `VisionInferenceInterface`.** It was declared before anything needed
+   it; nothing does. Deleting a contract with one thin WordPress adapter is a
+   small change and removes the ambiguity.
+2. **Keep it and migrate the completion path onto it.** That is a real
+   architecture with a single vision entry point, but it means routing
+   `analyze_image` and the validators through an interface that currently carries
+   less than `CompletionRequest` does — no `response_format`, no multi-image.
+3. **Keep it as the Hugging Face seam specifically.** The WordPress adapter it
+   mirrors wraps `WP_MCP_AI_HF_Vision_Inference_Service`, so a model-specific
+   seam beside the provider-routed one is defensible if Hugging Face is meant to
+   be reachable at all.
+
+Until an owner picks one, the adapter added in §164.122 is dead weight rather
+than a bug, and `rfdetr_catalog_search` names the seam it would use.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `toolkit-parity.php --check` | no regression: **297 ported, 9 declined, 82 deferred, 548 remaining** |
+| `ecommerce` row | `44 \| 11 \| 1 \| 28 \| 32` → `44 \| 11 \| 1 \| 32 \| 32` — 11 + 1 + 32 = 44, zero undecided |
+| Readiness manifest | `ready` 458, servable 499; no violations — unchanged, because a decision adds no tool |
+| Baseline | not rewritten: declined and deferred are not served slugs |
+
+#### Where the toolkit now stands
+
+The three that shipped since §164.120 — `shopify_catalog`, `validate_image_for_product`,
+`validate_image_for_vehicle` — plus the eight from slice 2 make **11 of 44**.
+The other 32 are blocked on something the table above names, and the three
+things that would unlock the most at once are, in order: an OAuth2 credential
+store (it also unblocks the remote-connection family), an image/video generation
+contract, and a decision on the vision seam.
