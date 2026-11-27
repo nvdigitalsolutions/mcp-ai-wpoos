@@ -218,13 +218,125 @@ interface ImageProductionInterface
     public function edit(string $sourcePath, string $operation, array $options = array()): array;
 
     /**
+     * Place one image inside another with a model-backed edit.
+     *
+     * `edit()` cannot express this: its operations are a closed set and it
+     * sends a single image. Composition is a question about two images at
+     * once — "put this product in that scene" — so both travel to the
+     * provider in one turn. It lives on this contract rather than a new one
+     * because any host that can `edit()` has the same keys, the same worker
+     * and the same synchronous shape; a separate interface would draw a
+     * boundary no implementer can satisfy differently.
+     *
+     * ## The order is part of the instruction
+     *
+     * Scene first, product second. A caller that swaps them gets the product
+     * painted into the scene's role — a plausible image and a wrong one — so
+     * implementations preserve the order and the worker orders `files[n]`
+     * parts by their index rather than trusting arrival order.
+     *
+     * ## The geometry is the output's
+     *
+     * Unlike `edit()`, which reports `format`/`width`/`height` from the
+     * uploaded source, this reports the provider's image. A composition may
+     * change the canvas, so a caller that resized to the input's dimensions
+     * would be reading the wrong number.
+     *
+     * ## Why there is no `original_bytes`
+     *
+     * Two sources do not add up to anything meaningful. Their sizes are
+     * reported separately and `bytes` describes the output.
+     *
+     * @param string               $scenePath   Absolute path to the scene image.
+     * @param string               $productPath Absolute path to the product image.
+     * @param array<string, mixed> $options {
+     *     @type string $prompt   Instruction; an implementation supplies a
+     *                            default when empty.
+     *     @type string $provider `auto` (default), `gemini` or `openai`.
+     *                            Replicate is not offered — its style models
+     *                            take one image.
+     * }
+     *
+     * @return array{
+     *     path: string,
+     *     width: int,
+     *     height: int,
+     *     format: string,
+     *     mime_type: string,
+     *     bytes: int,
+     *     scene_bytes: int,
+     *     product_bytes: int,
+     *     operation: string,
+     *     provider: string,
+     *     model: string,
+     *     prompt: string
+     * }
+     *
+     * @throws \InvalidArgumentException When a path is empty or unreadable, or the provider is unknown.
+     * @throws \RuntimeException         When no provider is configured, or the provider fails.
+     *
+     * @since 3.0.0
+     */
+    public function compose(string $scenePath, string $productPath, array $options = array()): array;
+
+    /**
+     * Create an image from a text prompt.
+     *
+     * The only production method with no source path: everything else
+     * transforms an image that already exists. It lives on this contract for
+     * the same reason `compose()` does — same host capability, same worker,
+     * same synchronous shape — so a separate generation interface would draw
+     * a boundary no implementer could satisfy differently.
+     *
+     * ## Dimensions may be read from the bytes
+     *
+     * A generation route may or may not report geometry: a provider that
+     * answers inline can include it, one that answers a URL cannot. An
+     * implementation reads the dimensions from the stored bytes when the
+     * worker does not. `null` means neither knew, which a caller can print;
+     * `0` would be a size.
+     *
+     * @param string               $prompt  What to draw.
+     * @param array<string, mixed> $options {
+     *     @type string $aspect_ratio `1:1`, `4:5`, `16:9`, `9:16`, `3:2`, `2:3`
+     *                                or `auto` (default `3:2`). Implementations
+     *                                may round to the nearest size a provider
+     *                                accepts.
+     *     @type string $provider     `auto` (default), `gemini` or `openai` —
+     *                                the same closed set as `compose()`, so a
+     *                                scene and its composition resolve alike.
+     *     @type string $model        Provider model id; an implementation picks
+     *                                a default when empty.
+     * }
+     *
+     * @return array{
+     *     path: string,
+     *     width: int|null,
+     *     height: int|null,
+     *     format: string,
+     *     mime_type: string,
+     *     bytes: int,
+     *     operation: string,
+     *     provider: string,
+     *     model: string,
+     *     prompt: string
+     * }
+     *
+     * @throws \InvalidArgumentException When the prompt is empty or the provider is unknown.
+     * @throws \RuntimeException         When no provider is configured, or the provider fails.
+     *
+     * @since 3.0.0
+     */
+    public function generate(string $prompt, array $options = array()): array;
+
+    /**
      * Whether one operation can be served right now.
      *
      * A host may have the deterministic ops and no model keys, so this is asked
      * per operation rather than once for the whole contract. Unknown operations
      * answer false — a capability nobody vouched for is not offered.
      *
-     * @param string $operation `optimize`, `enhance`, `upscale`, `resize_smart`, `batch`, `edit`.
+     * @param string $operation `optimize`, `enhance`, `upscale`, `resize_smart`, `batch`, `edit`, `compose`, `generate`.
      */
     public function supports(string $operation): bool;
 

@@ -222,6 +222,15 @@ app.get( '/api/health/full', async (_req, res) => {
 					providers.openai ||
 					providers.replicate
 				),
+				// Composition sends two images in one turn, so Replicate does not
+				// count here even though it serves `/api/image/edit`: its style
+				// models take one image. A host holding only a Replicate key can
+				// edit but cannot compose, and the matrix has to say so before a
+				// caller spends a request finding out.
+				image_composition: !!(
+					providers.gemini ||
+					providers.openai
+				),
 				video_generation: !!process.env.REPLICATE_API_KEY,
 				video_processing: caps.ffmpeg && caps.ffprobe,
 				pdf_extraction: true,

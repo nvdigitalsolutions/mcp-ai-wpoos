@@ -56,12 +56,21 @@ const MODELS_BY_PROVIDER = {
 };
 
 // ── POST /api/image/generate ──────────────────────────────
+// The model to use when the caller named a provider but no model. Picking the
+// default at destructure time (OpenAI's) meant an explicit `provider: gemini`
+// reached the Gemini branch as `dall-e-3` and the response echoed a model that
+// never ran.
+const DEFAULT_GENERATE_MODELS = {
+  openai: 'dall-e-3',
+  gemini: 'gemini-2.5-flash-image',
+};
+
 router.post('/generate', async (req, res) => {
   let activeProvider = null;
   try {
     const {
       prompt,
-      model = 'dall-e-3',
+      model: modelInput,
       provider,
       size = '1024x1024',
       style = 'natural',
@@ -77,8 +86,34 @@ router.post('/generate', async (req, res) => {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
+    const explicitModel = 'string' === typeof modelInput && '' !== modelInput.trim();
+    let model = explicitModel ? modelInput.trim() : 'dall-e-3';
+
     // Auto-detect provider from model name if not specified
     let providerId = provider;
+
+    // `auto` picks a configured provider with the same precedence `/edit`
+    // uses. Without this the route could only be driven by an explicit
+    // provider or a model that mapped to one, so a tool-level `provider: auto`
+    // had no way to be honoured.
+    if ('auto' === providerId) {
+      if (getCredential(req.site, 'GEMINI_API_KEY')) {
+        providerId = 'gemini';
+      } else if (getCredential(req.site, 'OPENAI_API_KEY')) {
+        providerId = 'openai';
+      } else {
+        recordUsage(req.site, null, 'missing_key');
+        return res.status(503).json({
+          error: 'No AI provider key is configured for image generation',
+          capability: 'image_generation',
+          provider: null,
+          env_var: 'GEMINI_API_KEY or OPENAI_API_KEY',
+          site: req.site,
+          tip: 'Set GEMINI_API_KEY or OPENAI_API_KEY in the environment or SITE_PROVIDER_KEYS for this site.',
+        });
+      }
+    }
+
     if (!providerId) {
       for (const [pid, models] of Object.entries(MODELS_BY_PROVIDER)) {
         if (models.includes(model)) { providerId = pid; break; }
@@ -96,6 +131,11 @@ router.post('/generate', async (req, res) => {
     if (!providerCfg) {
       return res.status(400).json({ error: `Unknown provider: ${providerId}` });
     }
+
+    if (!explicitModel) {
+      model = DEFAULT_GENERATE_MODELS[providerId] || model;
+    }
+
     activeProvider = providerId;
 
     // Per-site credential resolution (Phase 2): site key -> shared pool ->
@@ -153,7 +193,13 @@ async function generateWithProvider(providerId, model, opts, site) {
     // OpenAI — DALL·E 3 / DALL·E 2
     // ═══════════════════════════════════════════════
     case 'openai': {
-      const openai = new OpenAI({ apiKey: getCredential(site, 'OPENAI_API_KEY') });
+      const openai = new OpenAI({
+        apiKey: getCredential(site, 'OPENAI_API_KEY'),
+        // Match `/edit` and `/compose`: bind the current global fetch so a host
+        // that installs one (proxy, telemetry, tests) is honoured. Without it
+        // the SDK captures its own implementation at load time.
+        fetch: globalThis.fetch,
+      });
       const dalleModel = model === 'dall-e-2' ? 'dall-e-2' : 'dall-e-3';
       const response = await openai.images.generate({
         model: dalleModel,
@@ -1543,6 +1589,214 @@ router.post('/edit', upload.single('file'), async (req, res) => {
     });
   }
 });
+
+// ── POST /compose — place a product into a scene ──────────
+// Two images are required and both reach the provider in one turn, because
+// "put this product in that scene" is a question about two images at once.
+// `/edit` cannot express it: its operations are a closed set and it sends a
+// single image.
+//
+// Accepted shapes, so both callers work:
+//   scene + product   — named parts (preferred, order-independent)
+//   files / files[n]  — positional, scene first (the pdf/merge convention)
+//
+// Unlike `/edit`, `format`, `width` and `height` here describe the **output**:
+// `/edit` reads them from the uploaded source through sharp, so its response
+// reports the input's dimensions beside the output's byte count.
+router.post('/compose', upload.any(), async (req, res) => {
+  try {
+    const files = Array.isArray(req.files) ? req.files : [];
+    const named = (name) => files.find((f) => name === f.fieldname) || null;
+
+    let scene = named('scene');
+    let product = named('product');
+
+    if (!scene || !product) {
+      // Positional fallback: `files[n]` parts, ordered by the index in the
+      // field name (the pdf/merge convention). A composition that swapped scene
+      // and product would be a silent corruption, so the order is carried in
+      // the name rather than trusted to arrival order. Unindexed parts keep
+      // their arrival order.
+      const loose = files
+        .filter((f) => 'scene' !== f.fieldname && 'product' !== f.fieldname)
+        .map((file, arrival) => {
+          const match = /\[(\d+)\]$/.exec(file.fieldname);
+          return { file, rank: match ? Number(match[1]) : arrival };
+        })
+        .sort((a, b) => a.rank - b.rank)
+        .map((entry) => entry.file);
+
+      // Three positional images leave it ambiguous which two were meant. Refuse
+      // rather than silently compose the wrong pair.
+      if (loose.length > 2) {
+        return res.status(400).json({
+          error: `Compose needs exactly 2 images; received ${files.length}.`,
+          expected: 'Send scene and product, or two files with the scene first.',
+        });
+      }
+
+      scene = scene || loose[0] || null;
+      product = product || loose[1] || null;
+    }
+
+    if (!scene || !product) {
+      return res.status(400).json({
+        error: `Compose needs exactly 2 images; received ${files.length}.`,
+        expected: 'Send scene and product, or two files with the scene first.',
+      });
+    }
+
+    const prompt = String(req.body.prompt || '').trim()
+      || 'Place the product shown in the second image into the scene in the first image. '
+        + 'Match the scene perspective, scale and lighting, keep the product shape, colour and '
+        + 'details unchanged, and add a natural contact shadow.';
+
+    const requested = String(req.body.provider || 'auto').trim();
+
+    // Only providers that accept more than one image in a single edit. Replicate
+    // is deliberately absent: its style models take one image.
+    const allowed = ['gemini', 'openai'];
+
+    if ('auto' !== requested && !allowed.includes(requested)) {
+      return res.status(400).json({
+        error: `Unknown compose provider: ${requested}.`,
+        allowed_providers: ['auto'].concat(allowed),
+      });
+    }
+
+    let providerId = requested;
+
+    if ('auto' === providerId) {
+      if (getCredential(req.site, 'GEMINI_API_KEY')) {
+        providerId = 'gemini';
+      } else if (getCredential(req.site, 'OPENAI_API_KEY')) {
+        providerId = 'openai';
+      } else {
+        recordUsage(req.site, null, 'missing_key');
+        return res.status(503).json({
+          error: 'No AI provider key is configured for image composition',
+          capability: 'image_composition',
+          provider: null,
+          env_var: 'GEMINI_API_KEY or OPENAI_API_KEY',
+          site: req.site,
+          tip: 'Set GEMINI_API_KEY (preferred) or OPENAI_API_KEY in the environment or SITE_PROVIDER_KEYS for this site.',
+        });
+      }
+    }
+
+    const envVar = 'gemini' === providerId ? 'GEMINI_API_KEY' : 'OPENAI_API_KEY';
+
+    if (!getCredential(req.site, envVar)) {
+      recordUsage(req.site, providerId, 'missing_key');
+      return res.status(503).json({
+        error: `${'gemini' === providerId ? 'Gemini' : 'OpenAI'} API key not configured`,
+        capability: 'image_composition',
+        provider: providerId,
+        env_var: envVar,
+        site: req.site,
+        tip: `Set ${envVar} in the environment or SITE_PROVIDER_KEYS for this site.`,
+      });
+    }
+
+    const { b64, model } = await composeWithProvider(providerId, scene, product, prompt, req.site);
+    const outputBuffer = Buffer.from(b64, 'base64');
+    const metadata = await sharp(outputBuffer).metadata();
+
+    recordUsage(req.site, providerId, 'success');
+
+    res.json({
+      success: true,
+      provider: providerId,
+      model,
+      operation: 'compose',
+      prompt,
+      format: metadata.format || 'png',
+      width: metadata.width || null,
+      height: metadata.height || null,
+      bytes: outputBuffer.length,
+      b64,
+    });
+  } catch (err) {
+    console.error('[Image Compose]', err.message);
+    if (err.response) {
+      recordUsage(req.site, null, 'provider_error');
+    }
+    const status = err.response?.status || err.status || 500;
+    res.status(status).json({
+      error: err.message,
+      provider_error: err.response?.data || null,
+    });
+  }
+});
+
+/**
+ * Composite a product into a scene with a provider that takes two images.
+ *
+ * @param {string} providerId 'gemini' or 'openai'.
+ * @param {Object} scene      The uploaded scene part.
+ * @param {Object} product    The uploaded product part.
+ * @param {string} prompt     The instruction.
+ * @param {string} site       Site slug for credential resolution.
+ * @return {Promise<{b64: string, model: string}>} Output bytes and model.
+ */
+async function composeWithProvider(providerId, scene, product, prompt, site) {
+  switch (providerId) {
+    // ── Gemini: both images as inline parts in one turn ──
+    case 'gemini': {
+      const genAI = new GoogleGenerativeAI(getCredential(site, 'GEMINI_API_KEY'));
+      const genModel = genAI.getGenerativeModel({
+        model: EDIT_GEMINI_MODEL,
+        generationConfig: { responseModalities: ['Text', 'Image'] },
+      });
+
+      // Scene first, product second: the order is part of the instruction.
+      const result = await genModel.generateContent([
+        { text: prompt },
+        { inlineData: { mimeType: scene.mimetype || 'image/png', data: scene.buffer.toString('base64') } },
+        { inlineData: { mimeType: product.mimetype || 'image/png', data: product.buffer.toString('base64') } },
+      ]);
+
+      for (const part of result.response.candidates?.[0]?.content?.parts || []) {
+        if (part.inlineData?.data) {
+          return { b64: part.inlineData.data, model: EDIT_GEMINI_MODEL };
+        }
+      }
+
+      throw new Error('Gemini returned no image data for the composition.');
+    }
+
+    // ── OpenAI: `image` is an array, scene then product ──
+    case 'openai': {
+      const openai = new OpenAI({
+        apiKey: getCredential(site, 'OPENAI_API_KEY'),
+        fetch: globalThis.fetch,
+      });
+
+      const response = await openai.images.edit({
+        model: EDIT_OPENAI_MODEL,
+        image: [scene.buffer, product.buffer],
+        prompt,
+        n: 1,
+      });
+
+      const first = response.data?.[0];
+
+      if (first?.b64_json) {
+        return { b64: first.b64_json, model: EDIT_OPENAI_MODEL };
+      }
+
+      if (first?.url) {
+        const download = await axios.get(first.url, { responseType: 'arraybuffer', timeout: 60000 });
+        return { b64: Buffer.from(download.data).toString('base64'), model: EDIT_OPENAI_MODEL };
+      }
+
+      throw new Error('OpenAI composition returned no usable image.');
+    }
+
+    default:
+      throw new Error(`Unsupported compose provider: ${providerId}`);
+  }
+}
 
 // ── Batch Image Processing ────────────────────────────────
 // ── POST /batch — bulk optimize (Sharp) ────────────────────

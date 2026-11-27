@@ -84,6 +84,12 @@ return array(
 		'timeout' => (int) env( 'NVOOS_MEDIA_WORKER_TIMEOUT', 3 ),
 		// Per-image optimisation is a real Sharp pipeline, not a probe.
 		'optimize_timeout' => (int) env( 'NVOOS_MEDIA_WORKER_OPTIMIZE_TIMEOUT', 60 ),
+		// Composition sends two images to a model provider, which is slower than
+		// any Sharp pipeline; it is allowed longer than the edit default.
+		'compose_timeout' => (int) env( 'NVOOS_MEDIA_WORKER_COMPOSE_TIMEOUT', 180 ),
+		// A generation may download a provider-hosted image after the model
+		// answers (OpenAI returns a URL), so the budget covers both hops.
+		'generate_timeout' => (int) env( 'NVOOS_MEDIA_WORKER_GENERATE_TIMEOUT', 180 ),
 		// Cron expression for the nightly sweep; empty disables it. The
 		// schedule is registered in `bootstrap/app.php` only when this is a
 		// valid expression, so an empty value schedules nothing.

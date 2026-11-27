@@ -11762,3 +11762,122 @@ existing edit route, so either a worker route is added or the tool ships with
 that mode refused and a named reason. That is a scope decision for the owner, not
 a porting detail, because it moves work into a second language and a second
 deploy pipeline.
+
+### §164.130 — P2 and P4 shipped: composition, generation, and `product_actualization`
+
+**Recorded.** §164.128 argued that P2 and P4 are one slice, because a
+composition route with no tool is the unused seam a third time. This slice ships
+both, plus the generation primitive the tool needs before it can do anything.
+
+| Layer | What landed |
+|---|---|
+| Worker route | `POST /api/image/compose` — two images in one turn, output geometry |
+| Worker matrix | `image_composition`, separate from `image_editing` |
+| Worker route | `/api/image/generate` now accepts `provider: auto` |
+| Core contract | `ImageProductionInterface::compose()` and `generate()` |
+| Laravel adapter | `MediaWorkerImageProduction::compose()` and `generate()` |
+| Pro tool | `product_actualization` — ecommerce 12 → 13 |
+
+**Two methods on the existing contract, not a new interface.** §164.128 sketched
+an `ImageGenerationInterface`. Measurement replaced it: composition and
+generation need the same host capability (a model key on the worker), the same
+transport and the same synchronous shape as `edit()`, so a separate interface
+would be a boundary no implementer can satisfy differently. Both methods live on
+`ImageProductionInterface`, and the two implementers — the adapter and a test
+double — implement all three.
+
+**Composition is not an `edit` operation.** `/edit` sends one image and its
+operations are a closed set (`colorize`, `style_transfer`), so there is no
+argument that turns it into "place image two in image one". The new route takes
+named `scene`/`product` parts or positional `files[n]`, orders positional parts
+by the index in the name rather than arrival order, and refuses three parts as
+ambiguous. Unlike `/edit`, which reads `format`/`width`/`height` from the
+uploaded source, its response describes the **output** — the bug that made the
+`/edit` measurement interesting is not repeated.
+
+#### Seven findings that changed the implementation
+
+1. **`/generate` answers URLs for OpenAI, not base64.** The P1 measurement
+   described the inline shape, which is what Gemini returns. OpenAI's branch
+   hard-codes `response_format: 'url'`, so the adapter downloads the provider
+   URL and sniffs the format from magic bytes rather than trusting a claim. The
+   URL is the worker's own answer, not caller input, and only `http(s)` is
+   followed.
+
+2. **`1536x1024` is gpt-image-1's vocabulary, not DALL·E 3's.** The WordPress
+   tool's `aspect_ratio_to_size()` maps 3:2 to `1536x1024`, which is valid for
+   the model it used and a 400 for the one this route calls. The adapter's map
+   uses the only three sizes DALL·E 3 accepts — 1024², 1792×1024, 1024×1792 —
+   and rounds 4:5 to square, which is the choice the WordPress docblock itself
+   documented for the same reason. Gemini treats the size as a text hint, so the
+   same three serve both providers, and `auto` can stay unresolved until the
+   worker picks a key.
+
+3. **The original's `ai` prompt is a question about one image.** It says "create
+   a scene around this product". The port asks about two images — the generated
+   scene and the product — and repeats the scene sentence in the instruction so
+   the lighting and mood the caller asked for survive the second turn.
+
+4. **`placement_hint` was composite-only.** Composite is refused here, so
+   leaving the hint unused would have made a documented parameter silently
+   inert. It now reaches the integration prompt, and the schema says so.
+
+5. **`background_mode: auto` cannot mean what it meant.** The original removes
+   the background unless the image already has transparency, via remove.bg. The
+   worker exposes no removal route, so `auto` is treated as `preserve`, `remove`
+   is refused by name with the two working values, and the payload reports
+   `background_removed: false` rather than implying a cut-out. The integration
+   prompt already tells the model to keep the product unchanged, so a busy
+   original background is handled in the render.
+
+6. **`/generate` never bound `globalThis.fetch`.** The `/edit` and `/compose`
+   OpenAI clients pass the global fetch so a host that installs one — proxy,
+   telemetry, test — is honoured; `/generate` let the SDK capture its own at
+   load time. That is a latent instrumentation hole and it is why the first
+   generation test failed 401 against the real API instead of the stub. Fixed
+   at the call site.
+
+7. **The model default was chosen before the provider was known.** `model`
+   defaulted to `dall-e-3` at destructure time, so an explicit
+   `provider: 'gemini'` with no model reached the Gemini branch as `dall-e-3`,
+   silently fell back to `gemini-2.5-flash-image`, and the response echoed the
+   model that never ran. The default is now applied *after* resolution, per
+   provider. The adapter always names a model for an explicit provider and
+   omits it for `auto`, so no ported caller was bitten — a direct HTTP caller
+   was.
+
+#### What is refused, and what the refusal says
+
+| Input | Answer | Next step in the message |
+|---|---|---|
+| `mode: video` | `video_generation_unavailable` | Use `image`; the still can be the first frame. P3 is blocked on the worker's artifact TTL, a factual question for the worker owner |
+| `integration_mode: composite` | `composite_not_available` | Use `ai`; no local blend exists in this runtime |
+| `background_mode: remove` | `background_removal_unavailable` | Use `auto` or `preserve` |
+| `provider: replicate` | `InvalidArgumentException` (`Unsupported compose provider`) | Replicate takes one image; the closed set is `auto`, `gemini`, `openai` |
+
+The product input is `file_id` only. The WordPress tool also accepted an
+attachment id, a public URL or a chat `file_id`; `ImageInput`'s rule is that
+this runtime never fetches a caller-supplied host, and a registry id is the one
+address that carries an ownership check.
+
+#### Gates
+
+| Gate | Result |
+|---|---|
+| `lib/core` unit suite | 3,808 tests / 21,981 assertions |
+| `lib/laravel-adapter` suite | 688 tests / 3,663 assertions; 1 error = the known local `finfo` gap, green in CI |
+| Media worker | 248 tests, 0 failures |
+| Readiness | 520 manifest rows / 520 classes; servable 501; ready 460 |
+| Parity | 299 ported / 9 declined / 80 deferred / 546 remaining; `ecommerce` 44 \| 13 \| 1 \| 30 \| 30 |
+| PHPStan (core) | clean |
+| phpcs | clean |
+
+#### What remains
+
+- **P3 video.** `/api/video/generate` plus `GET /api/video/prediction/:id` is the
+  submit-and-poll shape the tool needs, and the tool already refuses `video`
+  with a next step. The blocker is unchanged and factual: how long the worker
+  keeps the artifact, which decides the `video_artifact_expired` message.
+- **A key on the worker.** `image_generation` and `image_composition` need
+  Gemini or OpenAI. A Replicate-only host can edit and cannot compose, which is
+  now visible in the capability matrix before a caller spends a request.

@@ -201,10 +201,6 @@
             "decision": "deferred",
             "reason": "Runs a multi-step order workflow: status, note, customer email and stock movement. Prerequisite: OrderStoreInterface, which does not exist yet — section 164.111 covers the catalog only — plus the store's mail and stock seams."
         },
-        "product_actualization": {
-            "decision": "deferred",
-            "reason": "Places a product photo into a generated scene, in image mode or video mode, using Gemini, OpenAI or Google Veo, then composites the product into the result. Prerequisite: an image and video generation contract. ImageProductionInterface is processing only (optimize, enhance, upscale, resizeSmart, edit) and the only generation contract in core is MusicGenerationInterface, so there is nothing to call. It also needs provider credentials and an attachment-to-local-path resolver, which the WordPress tool gets from the media library and the OpenAI files endpoint."
-        },
         "quickbooks_desktop_sync": {
             "decision": "deferred",
             "reason": "Relays QODBC queries and record writes to a PHP endpoint on the Windows machine that runs QuickBooks Desktop and the QODBC driver. Prerequisite: that host, which is a desktop application plus a database driver on someone's PC rather than a service this runtime can stand up, and a relay client to reach it. One further caution for whoever ports it: the arguments include a free-form `where` clause and a `record_data` object passed to QODBC, so it is a SQL surface in tool clothing and the clause needs constraining rather than passing through."
