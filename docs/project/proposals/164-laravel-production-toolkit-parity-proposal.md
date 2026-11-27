@@ -11201,3 +11201,90 @@ JSON object, and keep the per-product-type prompts, which are the actual domain
 knowledge in those tools. `rfdetr_catalog_search` follows them and additionally
 needs a Roboflow key and a chosen checkpoint, because a fine-tuned detector is
 not interchangeable with a chat model.
+
+### §164.123 — Slice 3c: `validate_image_for_product`, and §164.122 corrected
+
+**Recorded.** `validate_image_for_product` is served, and `ecommerce` moves from
+9 to **10 of 44**. It does **not** use the `VisionInferenceInterface` binding
+that §164.122 built for it, and that is the first thing this section has to say.
+
+#### The prerequisite §164.122 named was not the one this needed
+
+§164.122 bound `VisionInferenceInterface` on the argument that a validator ported
+without it could only refuse. The argument was sound about the gap — the
+interface really was declared and unwired — but **wrong about the seam**. Reading
+`analyze_image` before writing this tool showed that core already had a complete,
+fully wired vision path:
+
+| Piece | What it owns |
+|---|---|
+| `AbstractCompletionTool` | the call, the provider refusal, the empty-answer refusal |
+| `VisionRequest` | the multimodal message and the data URI |
+| `ImageInput` | where the bytes come from, with an ownership check |
+| `ProviderRouter` | which client answers |
+
+That is the path a host already configures, and it is the one this tool uses. So
+core now has **two vision seams**, and `VisionInferenceInterface` still has **no
+consumer** — §164.122 gave it a binding and this section gives it nothing to do.
+
+This is recorded rather than tidied away because it is a decision someone should
+make: either the interface is retired once nothing needs it, or `OpenAiVision`
+becomes the adapter behind a contract that the completion path is migrated onto.
+Leaving two parallel paths indefinitely is the one option that is clearly wrong.
+
+#### Two passes, and the first one is free
+
+The technical pass is local: format, byte size, and dimensions read from the
+bytes with `getimagesizefromstring()`. A critical technical failure returns
+**before** the provider is called, and a test asserts `chat` is never invoked.
+That is the point of the split — a 300-pixel thumbnail cannot be rescued by a
+model, so charging for the question is waste.
+
+The vision pass then maps the answer onto named checks. Everything that carries
+domain meaning is preserved:
+
+| Element | Preserved |
+|---|---|
+| All nine product types, with their required and optional body parts | yes |
+| Required parts fail the image; optional parts are `info` | yes |
+| `strict_mode` fails on any warning | yes |
+| Ten weighted categories totalling 100 | yes |
+| A–F grades at 90/75/60/40 | yes |
+| A category with no checks scores 100 | yes — `general` has no optional parts |
+
+#### Five corrections
+
+| Correction | The WordPress behaviour |
+|---|---|
+| **No remote URL input** | Accepted an attachment id, a file id, a URL and a raw image URL, and ran its own `wp_remote_head` against the URL before fetching it. `ImageInput` accepts a registry `file_id` or a `data:` URI and never fetches a caller-supplied host, so the URL input is not ported rather than ported unsafely |
+| **No `response_format` on this path** | Set `response_format: json_object` on a chat completion. `completeTool()` carries no such option, so the prompt asks for JSON and `decode()` tolerates a fence or surrounding prose; pure prose is a named refusal |
+| **Unreadable dimensions are `info`** | Skipped the check silently when width or height was zero, so an unparseable image scored as if it were large enough |
+| **No emoji in the summary** | `✅`/`❌` prefixed a string that also feeds a machine-readable payload; the verdict is already `valid` |
+| **No `image_url` echoed back** | Reported the URL it had been given. The response reports the mime type and byte count the runtime actually saw |
+
+#### A test that was wrong about the weights
+
+The first run asserted that a photo missing one of two required parts would score
+`required_body_parts` at 50. It scored **66.7**, and the code was right:
+`person_detected` maps to the same category as the body parts — that is the
+WordPress mapping — so the category averages three checks, not two. The test now
+pins 66.7 and 23.3 weighted, and says why. This is the third slice in a row where
+the fixture, not the code, was the thing that was wrong.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `ValidateImageForProductToolTest` | **17 tests, 42 assertions**, 0 failures |
+| `lib/core` unit suite | 3,747 → **3,764 tests, 21,852 assertions**, 0 failures |
+| Readiness manifest | `ready` 456 → **457**; servable 497 → **498**; no violations |
+| Toolkit parity | 295 → **296 ported**, 550 → **549 remaining**; `ecommerce` `44 \| 9 \| 1 \| 28 \| 34` → `44 \| 10 \| 1 \| 28 \| 33`; baseline rewritten |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on the three touched files |
+| PHPStan level 8, `lib/core` | no errors against the baseline |
+
+#### Next
+
+`validate_image_for_vehicle` is the same shape with two differences worth
+checking rather than assuming: it takes several images, and its `estimate_type`
+is `cleaning` or `repair` rather than a body part. Then
+`rfdetr_catalog_search`, which needs a Roboflow key and a chosen checkpoint.

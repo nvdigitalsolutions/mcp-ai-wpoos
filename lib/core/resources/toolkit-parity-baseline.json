@@ -193,7 +193,8 @@
             "shopify_customers",
             "shopify_inventory",
             "shopify_orders",
-            "shopify_products"
+            "shopify_products",
+            "validate_image_for_product"
         ],
         "email-marketing": [],
         "erp-ezuite": [],
