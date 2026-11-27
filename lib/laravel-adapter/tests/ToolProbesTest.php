@@ -463,6 +463,17 @@ Probe Club,club
 			array( 'send_whatsapp_template', array( 'phone_number_id' => '1', 'to' => '+1', 'template_name' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'send_whatsapp_interactive', array( 'phone_number_id' => '1', 'to' => '+1', 'type' => 'button', 'body' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'send_whatsapp_media', array( 'phone_number_id' => '1', 'to' => '+1', 'type' => 'image', 'media_id' => '1' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.104 — the Microsoft Graph eight. No access token is passed,
+			// so each answers the credential refusal by name.
+			array( 'get_teams_channels', array( 'team_id' => '11111111-2222-3333-4444-555555555555' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_teams_messages', array( 'team_id' => '11111111-2222-3333-4444-555555555555', 'channel_id' => '19:abc@thread.tacv2' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'send_teams_message', array( 'team_id' => '11111111-2222-3333-4444-555555555555', 'channel_id' => '19:abc@thread.tacv2', 'content' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_outlook_messages', array(), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'send_outlook_mail', array( 'to_email' => 'probe@example.com', 'subject' => 'probe', 'body' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_onedrive_file', array( 'item_id' => '01PROBE' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'list_onedrive_files', array(), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'upload_onedrive_file', array( 'file_path' => 'probe.txt', 'content' => 'cHJvYmU=' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 

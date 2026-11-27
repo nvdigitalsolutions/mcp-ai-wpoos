@@ -9122,3 +9122,92 @@ Slice 5, Microsoft Graph: Teams three, Outlook two, OneDrive three. One bearer
 family over `graph.microsoft.com/v1.0`, with `@odata.nextLink` pagination — the
 first tools in the family that page by URL rather than by cursor, so the
 host-restricted link check lands there.
+
+### §164.104 — Slice 5: Microsoft Graph
+
+**Recorded.** Twenty-six of fifty ported; `chat-channels` is now **26 ported,
+0 declined, 3 deferred, 24 remaining**.
+
+| slug | route | kind |
+|---|---|---|
+| `get_teams_channels` | `GET /teams/{id}/channels` | read |
+| `get_teams_messages` | `GET /teams/{id}/channels/{id}/messages` | read |
+| `send_teams_message` | `POST` the same route | write |
+| `get_outlook_messages` | `GET /me/mailFolders/{id}/messages` | read |
+| `send_outlook_mail` | `POST /me/sendMail` → 202, no body | write |
+| `get_onedrive_file` | `GET /me/drive/items/{id}` or `/me/drive/root:/{path}` | read |
+| `list_onedrive_files` | `GET /me/drive/root/children` or `…:/{path}:/children` | read |
+| `upload_onedrive_file` | `PUT /me/drive/root:/{path}:/content` with the decoded bytes | write |
+
+#### The link guard
+
+Graph paginates with `@odata.nextLink`: an **absolute URL** that the next
+request fetches with the caller's bearer token. The four list tools return it
+and accept it back as `next_link`, but only after checking that it is https and
+its host is `graph.microsoft.com` or `graph.microsoft.us` and its path is under
+`/v1.0`. Without that check, a `next_link` of `https://evil.example/steal`
+would hand the caller's token to the host it named. WordPress dropped the link
+entirely, so only the first page of any large collection was visible.
+
+#### Corrections
+
+1. **Every id that becomes a path segment is validated.** A team id is a GUID;
+   a channel id is restricted to the characters a Teams channel id uses
+   (`19:abc@thread.tacv2`) and percent-encoded; a drive path is split, each
+   part encoded, and empty, `.` and `..` parts refused (encoding does not
+   change those two). WordPress interpolated `sanitize_text_field()` output
+   into team and channel paths and allowed `..` in drive paths.
+2. **A traversal-shaped id never reaches the client**, which the tests assert
+   by leaving the response queue empty: a request would throw.
+3. **Success is any 2xx** for the two writers that had exact-code checks, where
+   Graph sends 201 and 202.
+4. **An invalid CC is refused.** WordPress checked `is_email()` and silently
+   dropped a CC that failed, so the sender believed the copy had gone.
+5. **`content_type` is validated.** WordPress mapped anything that was not
+   `html` to Text, so a typo quietly sent plain text.
+6. **Exactly one of `item_id` and `file_path`** in the OneDrive reader, where
+   WordPress preferred the id and ignored the path.
+7. **`top` is read with the numeric clamp**, so a non-numeric value means the
+   default rather than `absint()` and then one.
+8. **Rows are projected** in all eight tools.
+
+#### A bug this slice found in itself
+
+The first test run failed five cases with a `null` error slot. The paging helper
+returns either a page or an error envelope, and the four callers tested
+`is_array()` — which is true for an array-shaped error. In production the
+Laravel factory returns an object, so the bug would have hidden; the mock
+returned an array and did not. `ErrorFactoryInterface::isError()` is the
+contract's discriminator and is now used instead. The same pattern is already
+used by the WhatsApp interactive builder.
+
+#### Adaptations
+
+- Graph reports `error.code` as a **word** (`Forbidden`, `itemNotFound`) rather
+  than a number; it is carried as the provider code so a caller can branch on
+  it without reading the message.
+- A 429 carries `Retry-After` in a header; the family envelope surfaces it as
+  `retry_after`, the same key Discord and Telegram use.
+- The OneDrive reader returns **metadata**, not bytes, as the WordPress tool
+  did. Downloading content would be a second endpoint whose body is the file.
+- Graph's simple-upload size ceiling is not guessed locally: a larger file
+  surfaces Graph's own refusal with its message.
+
+#### Measurements
+
+| gate | before | after |
+|---|---|---|
+| `lib/core` PHPUnit | 4,060 / 23,718 | 4,090 / 23,828 |
+| adapter `ToolProbesTest` | 260 / 1,710 | 268 / 1,742 |
+| tool readiness audit | 480 / 480, servable 461 | 488 / 488, servable 469 |
+| toolkit parity | 259 of 854 | 267 of 854 |
+| `chat-channels` | 18 / 0 / 3 / 32 | 26 / 0 / 3 / 24 |
+| phpcs | clean | clean |
+
+#### Next
+
+Slice 6, Messenger three and Google Chat seven. Messenger is Meta Graph with a
+page token and a different recipient shape; Google Chat is the first tool in
+the family whose endpoint is **caller-supplied** (a webhook URL), so the URL
+guard promised in §164.99 finally has its consumer, and the service-account JWT
+tools need a token cache.
