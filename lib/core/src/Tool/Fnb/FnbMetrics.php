@@ -326,9 +326,20 @@ class FnbMetrics
      *
      * Opening value (the last count on or before the previous month's end) plus
      * purchases during the month minus closing value (the last count on or
-     * before this month's end) — the Check totals definition.
+     * before this month's end) — the Check totals definition. The error path
+     * returns the four figures as zero plus `error`, so callers can add without
+     * checking.
      *
-     * @return array<string, mixed>
+     * @return array{
+     *     value: float,
+     *     opening: float,
+     *     purchases: float,
+     *     closing: float,
+     *     open_date?: string,
+     *     close_date?: string,
+     *     source?: string,
+     *     error?: string
+     * }
      */
     public function stockUsed(string $month, string $category): array
     {

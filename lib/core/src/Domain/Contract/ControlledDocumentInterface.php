@@ -43,6 +43,8 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Contract;
 
+use Nvoos\Core\Domain\Error\NotFoundException;
+
 interface ControlledDocumentInterface
 {
     /**
@@ -80,14 +82,20 @@ interface ControlledDocumentInterface
     /**
      * Record a signature against a document.
      *
+     * `meaning` is required, so the argument is too — an audit entry that records
+     * no meaning is not auditable, and a default of `array()` would advertise an
+     * omission the implementation has to refuse anyway.
+     *
      * @param array{meaning: string, user_id?: int, comment?: string} $meta
      *
      * @return array{path: string, meaning: string, signed_at: string, signed_by: int, revision: string}
      *
-     * @throws \InvalidArgumentException When the path is refused or the meaning is not one of {@see \Nvoos\Core\Domain\Qms\DocumentLifecycle::MEANINGS}.
+     * @throws \InvalidArgumentException When the path is refused, or the meaning
+     *                                   is not one of
+     *                                   {@see \Nvoos\Core\Domain\Qms\DocumentLifecycle::MEANINGS}.
      * @throws NotFoundException         When the path names nothing.
      */
-    public function sign(string $path, array $meta = array()): array;
+    public function sign(string $path, array $meta): array;
 
     /**
      * Set the date the next periodic review is due.

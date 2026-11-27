@@ -9834,3 +9834,234 @@ establish the family's conventions before the more varied slices.
 Slice 1, Shopify. Each tool is read line by line before it is ported, as
 §164.100 requires: the Admin GraphQL document, the pagination shape, the error
 vocabulary, and whether the tool's own behaviour matches the documented API.
+
+---
+
+### §164.111 — the commerce contract, and why it stays open
+
+**Recorded.** §164.110 measured `ecommerce` and deferred 27 WooCommerce-local
+tools on "no commerce contract". The owner's constraint on the answer was
+explicit: the contract stays **open**, because stores move from WooCommerce to
+the Laravel runtime and that migration has to stay possible. So this section does
+not defer the model. It defines it, in `lib/core`, with no WordPress symbol in it.
+
+Nothing here is a tool port, so the parity table does not move. What changes is
+that the 27 have a prerequisite that **exists** rather than one that is named.
+
+#### What the three source models agree on
+
+The design was not invented. It is the intersection of three independent models,
+read rather than assumed:
+
+| `lib/core` | WooCommerce | Shopify (2026-10) | Thornburgh (Laravel, 2023) |
+|---|---|---|---|
+| `Product` | `product` post | `Product` | `products` |
+| `ProductOption` | `_product_attributes`, or the `pa_*` taxonomy | `product.options[]` | `attributes` rows, scoped to the product |
+| `ProductVariant` | `product_variation` post under its parent | `ProductVariant` | `skus` rows |
+| `OptionSelection` | `attribute_pa_<name>` / `attribute_<name>` meta | `variant.selectedOptions[]` | `attribute_sku.value` on the pivot |
+
+The intersection is non-empty and it is the same three levels in all three: a
+product owns its **option definitions**, and each variant owns **one value per
+option**. That is the model. Everything else — categories, media, promotions — is
+a different aggregate and is not in this contract.
+
+WooCommerce's two kinds of attribute are the one place the intersection is ragged:
+a global attribute stores a **term slug** in `attribute_pa_<name>`, a custom one
+stores a **value** in `attribute_<name>`. Resolving a slug to its display name is
+the adapter's job, and `OptionSelection` is deliberately value-based so the
+adapter has to do it rather than leaking a slug into the canonical model.
+
+#### Two things the reference article gets wrong, and one it gets right
+
+The Laravel model this follows is Shaun Thornburgh's *Managing Product Variants
+in an E-Commerce Store with Laravel* (2023). Its structure is sound and is what
+the port adopts. Two details are not:
+
+1. **`skus.unit_amount` is a `float`.** A float cannot represent `0.10` exactly.
+   Every price in this contract is a `Money` — integer minor units plus an ISO
+   4217 currency — and the exponent is resolved per currency, because JPY has no
+   minor unit and KWD has three. `Money::fromDecimal()` refuses more fractional
+   digits than the currency allows instead of rounding them: a caller passing
+   `19.999` USD has a bug upstream, and silently writing `20.00` hides it.
+2. **There is no stock column anywhere.** A SKU with no quantity is not a
+   sellable thing, so `ProductVariant` carries `stock` and `trackInventory`.
+   `stock` is **nullable** because "untracked" and "zero on hand" are different
+   answers — WooCommerce distinguishes them with `_manage_stock` + `_stock`, and
+   Shopify with `inventoryItem.tracked` + the quantity.
+
+What it gets right, and this contract keeps: **`sku` is unique**, and the option
+name is scoped to the product while the value lives on the variant. The uniqueness
+is what a migration matches on, so it is enforced rather than hoped for.
+
+#### The model
+
+| Symbol | Kind | The one decision it encodes |
+|---|---|---|
+| `Money` | value object | amount in minor units; per-currency exponent; refuses excess precision |
+| `ProductStatus` | enum | `draft` / `published` / `archived`; `private` and `pending` collapse to `draft` because no storefront can act on the difference |
+| `ProductOption` | value object | option name + the values it offers; `offers()` is case-insensitive |
+| `OptionSelection` | value object | a variant's chosen values, name-sorted; `key()` is order- and case-independent |
+| `ProductVariant` | entity | `identity()` is the SKU when there is one, the option key otherwise |
+| `Product` | entity (aggregate) | owns options and variants; `priceRange()` and `totalStock()` are derived, never stored |
+| `ProductQuery` / `ProductCollection` | entity | the same pagination idiom as `ContentQuery` / `ContentCollection` |
+| `ProductCatalogInterface` | contract | find, `findByExternalRef`, `findBySku`, query, save, delete, saveVariant, deleteVariant |
+| `CommerceMigrator` | application service | idempotent, dry-runnable, page-wise copy between two catalogs |
+| `CommerceMigrationReport` | entity | per-item `created` / `updated` / `skipped` / `warning` / `failed`, never just a total |
+
+Two invariants are enforced in the constructors rather than trusted to adapters:
+
+- **No two variants of one product may share an identity.** Two rows resolving to
+  the same SKU (or, with no SKU, the same option signature) make every later
+  lookup arbitrary, and the row that wins is whichever the storage returns first.
+- **Option coherence is reported, not thrown.** `Product::optionErrors()` names a
+  variant that selects an option the product does not define, or a value the option
+  does not offer. It does not throw, because Woo stores built by hand routinely
+  contain exactly that, and an importer must be able to *describe* partial data
+  instead of refusing the whole catalogue.
+
+#### The write rule
+
+`save()` creates a product and its variants together, and on **update replaces the
+product fields and option definitions but does not touch the stored variant list**.
+Variant lifecycle after creation is explicit (`saveVariant` / `deleteVariant`).
+
+That asymmetry is the point. The alternative — "upsert the whole aggregate" — lets
+any partial payload wipe a variant list by omission: an admin form that edits the
+title, a sync that only knows the price, a migration that lost a page. The rule
+makes the destructive case impossible to express.
+
+`externalRef` is the anti-corruption key: `woocommerce:product:101`,
+`shopify:gid://shopify/Product/123`. The core never interprets it; it exists so a
+re-run can find what a previous run wrote. `save()` must refuse a duplicate.
+
+Unlike `ContentStoreInterface`, there is **no `userId`**: catalog permissions are
+store-wide, so the calling tool checks its capability once. An adapter that can
+enforce tenancy still may.
+
+#### The migration is part of the design, not a follow-up
+
+`CommerceMigrator` copies one `ProductCatalogInterface` into another. It is the
+executable form of the claim that this contract is sufficient, and it runs with no
+framework:
+
+- **idempotent** — matches on `externalRef`, then on the first variant SKU, never
+  on storage id (the target's ids are its own);
+- **dry-runnable** — the same walk, the same report, no `save()`;
+- **fault-isolating** — one bad product is recorded and the run continues;
+- **paged** — it queries the source page by page and stops on `hasMorePages()`.
+
+A store moving WooCommerce → Laravel points it at a Woo-backed source adapter and
+a Laravel-backed target adapter. A migration that fails halfway is simply run
+again, because the matcher holds.
+
+#### Deliberately absent
+
+- **Orders and customers.** The 27 need them; product writes do not. They follow
+  the same pattern as the next slice, and `OrderStoreInterface` /
+  `CustomerStoreInterface` are not guessed at here.
+- **Tax, shipping, discounts, media, locations, translations.** Separate concerns
+  with separate owners. In particular a per-location stock model is *not* being
+  modelled before there is a caller that needs it: one quantity per variant is
+  what all three sources agree on.
+- **The storefront's flat `product.price`.** Proposal 148 stores one price per
+  product. In this model that value is `Product::priceRange()['min']` — a
+  projection, so the two cannot drift.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `lib/core` unit suite | 3,603 tests, 21,174 assertions, **0 failures** (52 new tests / 115 assertions) |
+| phpcs (`phpcs-laravel.xml.dist`) | clean on the 15 new or changed files |
+| Toolkit parity | unchanged — this adds no tool |
+| Adapter probes | none yet: no adapter implements the port in this change |
+
+#### Decisions required
+
+1. **Write the deferrals into the register.** §164.110 recommends 27 deferred
+   (WooCommerce-local, prerequisite now satisfied in the model but not yet in an
+   adapter) and 1 declined (`lookup_product_price`, scraper). That would move
+   `ecommerce` from `1 / 0 / 0 / 43` to `1 / 1 / 27 / 15`. It is a scope decision,
+   so it is not taken here.
+2. **Which adapter first.** The WooCommerce adapter (migration source) or the
+   Laravel one (target)? The migrator needs both, but each is independently
+   testable and neither belongs in `lib/core`.
+
+#### Next
+
+1. Merchant-side adapters behind `ProductCatalogInterface`, one in the WordPress
+   adapter layer and one in the Laravel adapter, so the migrator has real ends.
+2. `OrderStoreInterface` and `CustomerStoreInterface`, same pattern, so the
+   remaining Woo-local tools have their whole substrate.
+3. Then the 27 become portable one at a time, each against the contract.
+
+Slice 1 for **parity** is unaffected and still next: Shopify is five tools over
+one credential model and needs none of this.
+
+---
+
+### §164.112 — the pre-existing PHPStan findings, triaged
+
+**Recorded.** `lib/core/phpstan.neon.dist` configures PHPStan **level 8** and
+stated that "levels 5-8 are now clean, so level 8 is enforced here". They were
+not. A run at the committed configuration reports **243 findings across 94
+files** — and no CI job runs it, so nothing has been preventing growth. (The only
+PHPStan job in CI is level 1 over `includes/` + `addons/`, with
+`continue-on-error`.)
+
+The config comment has been corrected rather than the number quietly left to rot.
+
+#### What was actually broken, and is fixed here
+
+| Finding | Where | What it was |
+|---|---|---|
+| `variable.undefined` ×4 | `GTmetrix/GtmetrixFixEngine` | `$src` and `$handle` inside **double-quoted** block strings, so PHP interpolated them: the generated snippet became `function ( , ) {` and generating it raised warnings nothing caught |
+| `binaryOp.invalid` | `PaperStoreExportTool` | `$criteria['offset'] + $count` where the offset may be a string — a `TypeError` waiting for a non-numeric value |
+| `throws.notThrowable` ×8 | `ControlledDocumentInterface`, `DocsCorpusInterface` | `@throws NotFoundException` resolved against `Domain\Contract`, where no such class exists; both files now import `Domain\Error\NotFoundException` |
+| `class.notFound` ×2 | `ChatOrchestrator` | Docblock named `Application\Chat\ToolInterface`, which does not exist |
+| `parameter.defaultValue` | `ControlledDocumentInterface::sign()` | Default `array()` for a parameter whose shape makes `meaning` required — an advertised omission the implementation must refuse. The default is gone and the type now says what the docblock says |
+| `classConstant.phpDocType` | `GTmetrixScoreEngine` | `@var ...float` over integer literal thresholds |
+| `return.unusedType` | `Classroom/ExportEcaDataTool` | Return type included an `array{error: mixed}` variant the method never returns |
+| `classConstant.unused` | `Crm/ArchiveStaleContactsTool` | `CONTACT_TYPES` was documentation while the code repeated the mapping; the loop now reads the constant |
+| `offsetAccess.notFound` ×6 | `Fnb/FnbMetrics` | `stockUsed()` returned a bare `array`, so every caller's `['value']` was unchecked; a shaped `@return` cleared the callers too |
+| docblock | `GTmetrixFixEngine::generateSnippet()` | Claimed a block-less fix "contributes a comment only"; the code skips it. The code is right — the snippet is code, the advice is in the report — so the docblock was corrected |
+
+A regression test (`GtmetrixFixEngineTest`) now asserts the emitted snippet
+contains literal `$src` / `$handle`; the old code failed it through the
+interpolation warning alone.
+
+#### What was left alone on purpose
+
+Deliberate dead code, not defects: `ManageEcaWaitlistTool`'s post-`match`
+guard (commented "unreachable"), `SendWhatsAppInteractiveTool`'s empty-list
+guard, `QmsGetAuditTrailTool`'s defensive catch, and
+`AnalyzeFileSuitabilityLocalTool`'s `>= 0` on an already-non-negative integer.
+Deleting a cheap guard to satisfy a linter is the wrong trade.
+
+#### What remains, and the recommendation
+
+**216 findings**, of which **91 are `missingType.iterableValue`** and 62 are
+`argument.type` — annotation debt, not defects. Hand-editing 216 docblocks in a
+cleanup pass is the wrong move: it is unreviewable, it touches execution paths for
+zero behaviour change, and without a gate it re-rots.
+
+Recommended, and not done here because it changes repository infrastructure:
+
+1. `phpstan --generate-baseline` against the current state, committed.
+2. A CI job running `composer run lint` in `lib/core`, failing on **new** findings.
+3. Ratchet the baseline down file by file as each file is next touched — the same
+   discipline the WPCS ratchet already uses.
+
+#### Measurements
+
+| Gate | Before | After |
+|---|---:|---:|
+| PHPStan level 8, `lib/core` | 243 findings / 94 files | **216 / 86** |
+| `lib/core` unit suite | 3,603 | **3,608, 0 failures** |
+| phpcs (`phpcs-laravel.xml.dist`) | — | 0 errors on the 10 touched files |
+
+#### Decision required
+
+Adopt the baseline + CI gate (above), or leave PHPStan advisory. The findings are
+now documented either way, and the config no longer claims a cleanliness it does
+not have.

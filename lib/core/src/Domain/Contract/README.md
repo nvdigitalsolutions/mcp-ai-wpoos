@@ -19,6 +19,7 @@ Holds every interface the oOS core engine exports — pure contracts with zero i
 |---|---|---|
 | `ErrorFactoryInterface` | `ErrorFactoryInterface.php` | Every tool, provider, and service — canonical error envelope |
 | `ContentStoreInterface` | `ContentStoreInterface.php` | Read/write tools (`GetPostTool`, `CreatePostTool`, etc.) |
+| `ProductCatalogInterface` | `ProductCatalogInterface.php` | Commerce tools and the catalogue migrator; implemented by a WooCommerce, Laravel or Shopify adapter |
 | `AuthProviderInterface` | `AuthProviderInterface.php` | `GetUserInfoTool`, agentic loop auth context |
 | `TeamServiceInterface` | `TeamServiceInterface.php` | Team console pages (`TeamController`), org tools |
 | `ProfessionRepositoryInterface` | `ProfessionRepositoryInterface.php` | Profession console pages, `list_professions` / `get_profession` |

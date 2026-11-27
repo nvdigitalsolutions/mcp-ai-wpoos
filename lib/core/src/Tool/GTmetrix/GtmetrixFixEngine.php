@@ -239,7 +239,9 @@ final class GtmetrixFixEngine
      * Emit a WPCode-ready PHP snippet for the matched fixes.
      *
      * A fix with no `block` is advice without code (deactivate a plugin, keep
-     * one analytics path) and contributes a comment only.
+     * one analytics path). It is **not** represented in the snippet: this file is
+     * code, and the report the tool returns already states the symptom and the
+     * action in words.
      *
      * @param list<array<string, mixed>> $fixes  Matched fix records.
      * @param string                     $reportId Report id the snippet came from.
@@ -356,9 +358,9 @@ final class GtmetrixFixEngine
                 return array(
                     '// Dequeue a plugin stylesheet everywhere except its own pages.',
                     '// Verify the handle and the URL patterns against view-source first.',
-                    "add_filter( 'style_loader_src', function ( $src, $handle ) {",
-                    "\tif ( 'REPLACE_WITH_HANDLE' !== $handle || is_page( 'REPLACE_WITH_SLUG' ) ) {",
-                    "\t\treturn $src;",
+                    "add_filter( 'style_loader_src', function ( \$src, \$handle ) {",
+                    "\tif ( 'REPLACE_WITH_HANDLE' !== \$handle || is_page( 'REPLACE_WITH_SLUG' ) ) {",
+                    "\t\treturn \$src;",
                     "\t}",
                     "\treturn false;",
                     '}, 10, 2 );',

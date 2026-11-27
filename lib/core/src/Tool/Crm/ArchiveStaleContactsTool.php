@@ -135,12 +135,10 @@ class ArchiveStaleContactsTool extends CrmTool
 
         $types = array();
 
-        if ('all' === $contactType || 'lead' === $contactType) {
-            $types[] = self::LEAD_TYPE;
-        }
-
-        if ('all' === $contactType || 'customer' === $contactType) {
-            $types[] = self::CUSTOMER_TYPE;
+        foreach (self::CONTACT_TYPES as $alias => $type) {
+            if ('all' === $contactType || $alias === $contactType) {
+                $types[] = $type;
+            }
         }
 
         $archived = array();

@@ -187,7 +187,7 @@ class PaperStoreExportTool extends AbstractTool implements ToolCapabilityFlagsIn
         $records = $page['records'];
         $count = \count($records);
         $total = (int) $page['total'];
-        $next = $criteria['offset'] + $count;
+        $next = (int) $criteria['offset'] + $count;
 
         $message = $next < $total
             ? \sprintf('Exported %d of %d record(s) from "%s". Pass offset %d for the rest.', $count, $total, $collection, $next)
