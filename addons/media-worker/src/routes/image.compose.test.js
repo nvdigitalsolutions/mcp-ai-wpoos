@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Proprietary
 /**
- * Tests for POST /api/image/compose (Proposal 164, slice P2).
+ * @fileoverview Tests for POST /api/image/compose (Proposal 164, slice P2).
  *
  * Compose is the one image operation `/edit` cannot express: `/edit` sends a
  * single image and its operations are a closed set, while composition is a

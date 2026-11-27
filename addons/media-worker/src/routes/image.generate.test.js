@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Proprietary
 /**
- * Tests for `provider: 'auto'` on POST /api/image/generate.
+ * @fileoverview Tests for `provider: 'auto'` on POST /api/image/generate.
  *
  * The route previously required either an explicit provider or a `model` that
  * mapped to one, so the tool-level `provider: auto` — which the WordPress tool
