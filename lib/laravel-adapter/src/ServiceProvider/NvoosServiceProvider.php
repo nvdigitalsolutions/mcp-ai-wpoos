@@ -97,6 +97,7 @@ use Nvoos\Core\Domain\Contract\TabularReaderInterface;
 use Nvoos\Core\Domain\Contract\TenantResolverInterface;
 use Nvoos\Core\Domain\Contract\TokenUsageInterface;
 use Nvoos\Core\Domain\Contract\ToolInvokerInterface;
+use Nvoos\Core\Domain\Contract\ToolResolverInterface;
 use Nvoos\Core\Domain\Contract\VideoCompositionInterface;
 use Nvoos\Core\Domain\Contract\VideoFrameExtractionInterface;
 use Nvoos\Core\Domain\Contract\VideoProcessingInterface;
@@ -575,6 +576,16 @@ class NvoosServiceProvider extends ServiceProvider {
 			$app->make( EventDispatcherInterface::class ),
 			$app->make( ErrorFactoryInterface::class ),
 		) );
+
+		// The resolver is the registry: one singleton, so a tool that delegates at
+		// execute time sees every tool the boot-time registrar added after it was
+		// constructed. `unified_channel_broadcast` is the tool that needs this.
+		// `bindIf`, not `bind`: a host that narrows the fan-out by binding
+		// ToolScope keeps its choice instead of being overwritten at boot.
+		$this->app->bindIf(
+			ToolResolverInterface::class,
+			static fn ( $app ) => $app->make( ToolRegistry::class ),
+		);
 
 		// Readiness decisions — the manifest is the registration policy.
 		$this->app->singleton( ToolReadiness::class, static fn (): ToolReadiness => new ToolReadiness() );

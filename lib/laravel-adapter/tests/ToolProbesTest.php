@@ -507,6 +507,10 @@ Probe Club,club
 			array( 'list_icloud_drive_files', array( 'gateway_url' => 'https://icloud.example.com/v1/drive' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'get_icloud_drive_file', array( 'gateway_url' => 'https://icloud.example.com/v1/drive', 'file_id' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'upload_icloud_drive_file', array( 'gateway_url' => 'https://icloud.example.com/v1/drive', 'file_name' => 'probe.txt', 'content' => 'cHJvYmU=' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.109 — the fan-out. An empty credential map is refused before
+			// anything is resolved or sent, so the probe makes no network call.
+			array( 'unified_channel_broadcast', array( 'message' => 'probe', 'channels' => array( 'telegram' ), 'credentials' => array() ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
