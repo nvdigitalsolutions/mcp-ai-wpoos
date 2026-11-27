@@ -9039,3 +9039,86 @@ tools over the Meta Cloud API, whose nested `error.code` and
 `error_data.details` need their own classifier and whose `phone_number_id`
 joins the `access_token` as a credential argument. Media is a `link` or an
 `id` in the JSON body, not an upload, so no multipart body is needed.
+
+### §164.103 — Slice 4: WhatsApp, four portable and one impossible
+
+**Recorded.** Eighteen of fifty ported; `chat-channels` is now **18 ported,
+0 declined, 3 deferred, 32 remaining**. Slice 4 was planned as five tools; one
+of them cannot work, and the same standard as slice 2 applies.
+
+| slug | payload | kind |
+|---|---|---|
+| `send_whatsapp_message` | `type: text` with `preview_url` | write |
+| `send_whatsapp_template` | `type: template` with name, language, components | write |
+| `send_whatsapp_interactive` | `type: interactive`, reply buttons or a list | write |
+| `send_whatsapp_media` | `type: image\|video\|audio\|document\|sticker`, by link or id | write |
+
+#### The finding: `get_whatsapp_messages` cannot work
+
+It issues a **GET** on `/{phone_number_id}/messages`. Meta documents exactly
+one method on that route: **POST**, for sending. A GET answers
+`100 Unsupported get request`, so the WordPress tool never returned a message.
+WhatsApp does not expose conversation history over the Graph API at all —
+inbound messages arrive only as webhooks, and the message log belongs to the
+WhatsApp Business app, not to the API.
+
+So it is **deferred**, with the prerequisite named in the register: an
+inbound-message receiver (a webhook endpoint plus a message store the tool can
+read), which is a host concern the core has no contract for today. That makes
+the toolkit's final shape **47 ported, 3 deferred, 0 declined**: the SMS
+scheduler, the Discord voice-state reader and this one.
+
+#### Corrections
+
+1. **`preview_url` is parsed, not cast.** WordPress's `(bool)` turned the
+   string `"false"` into true, so a caller that refused a link preview got one.
+2. **Exactly one of `media_url` and `media_id` is accepted.** WordPress
+   preferred the id and silently ignored a URL given alongside it.
+3. **The media link must be absolute https.** `esc_url_raw()` accepts `http://`,
+   while the schema promised https and Meta requires a public https URL.
+4. **An unsupported caption or filename is refused.** WordPress dropped a
+   caption for audio and sticker, and a filename on anything but a document.
+5. **An over-long value is refused, not truncated.** Button titles (20), row
+   titles (24), descriptions (72), section titles (24), footers and header text
+   (60) and captions (1024) were all cut with byte-based `substr()`, which both
+   rewrites the request and can split a multi-byte character.
+6. **A malformed button or row is refused, not skipped.** WordPress `continue`d
+   past an entry without an id or title, so the message carried fewer options
+   than the caller wrote.
+7. **The list row cap is total.** Meta allows ten rows across every section;
+   WordPress allowed ten per section and up to ten sections.
+8. **An unknown header type is refused.** WordPress copied `type` through and
+   only attached a payload for text, image, video and document.
+9. **An empty `language_code` falls back to `en_US`** rather than being sent as
+   an empty string.
+
+#### Adaptations
+
+- Two credentials stay arguments: `access_token` in the bearer header and
+  `phone_number_id` in the path (digits only, so it is validated rather than
+  just encoded).
+- The recipient is normalised once, in the base: a phone number keeps a leading
+  `+` and loses every other non-digit; a group JID keeps the characters a JID
+  uses.
+- The Graph API version is pinned to `v19.0`, the version the WordPress tool
+  used. An unversioned call silently takes whatever the account defaults to.
+- WordPress's `sanitize_textarea_field()` and `sanitize_file_name()` passes are
+  dropped: WhatsApp renders plain text and the filename is only a display label.
+
+#### Measurements
+
+| gate | before | after |
+|---|---|---|
+| `lib/core` PHPUnit | 4,033 / 23,630 | 4,060 / 23,718 |
+| adapter `ToolProbesTest` | 256 / 1,694 | 260 / 1,710 |
+| tool readiness audit | 476 / 476, servable 457 | 480 / 480, servable 461 |
+| toolkit parity | 255 of 854 | 259 of 854 |
+| `chat-channels` | 14 / 0 / 2 / 36 | 18 / 0 / 3 / 32 |
+| phpcs | clean | clean |
+
+#### Next
+
+Slice 5, Microsoft Graph: Teams three, Outlook two, OneDrive three. One bearer
+family over `graph.microsoft.com/v1.0`, with `@odata.nextLink` pagination — the
+first tools in the family that page by URL rather than by cursor, so the
+host-restricted link check lands there.

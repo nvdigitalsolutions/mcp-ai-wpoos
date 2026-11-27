@@ -85,6 +85,10 @@
             "decision": "deferred",
             "reason": "It lists images that have no watermark, which needs a recorded relationship between a source and its watermarked rendition. FileDerivativeStoreInterface::ROLES currently offers only poster, caption and frame, so there is no watermark role to query and a port today could only answer with an empty list, which reads as a finding rather than as a missing model. Prerequisite: a watermark role on the derivative store, the same way the video inventories waited for their roles."
         },
+        "get_whatsapp_messages": {
+            "decision": "deferred",
+            "reason": "It calls GET on the phone number messages route, and Meta documents exactly one method there: POST, for sending. A GET answers 100 Unsupported get request, so the WordPress tool never returned a message. WhatsApp does not expose conversation history over the Graph API at all: inbound messages arrive only as webhooks, and the message log belongs to the WhatsApp Business app, not to the API. Porting it would ship a tool that always fails. Prerequisite: an inbound-message receiver (webhook endpoint plus a message store the tool can read), which is a host concern the core has no contract for today."
+        },
         "gtmetrix_install_wpcode_fix": {
             "decision": "deferred",
             "reason": "It installs the generated snippet into WPCode and activates it, then reports the snippet id. The generation half ships as gtmetrix_generate_wpcode_snippet; only the install is blocked. Nothing in this runtime stores code snippets: there is no snippet record contract, no activation seam and no store to read back from, and writing one would put a WPCode-shaped table in the core. Prerequisite: a code-snippet store contract (create, activate, read back) that both WPCode and any other snippet host could implement as an adapter."

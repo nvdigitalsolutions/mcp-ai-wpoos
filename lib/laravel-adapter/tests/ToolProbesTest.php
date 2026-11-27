@@ -456,6 +456,13 @@ Probe Club,club
 			array( 'add_telegram_message_reaction', array( 'chat_id' => '1', 'message_id' => 2, 'emoji' => '👍' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'manage_telegram_commands', array( 'action' => 'get' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'manage_telegram_webhook', array( 'action' => 'delete' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.103 — the four portable WhatsApp tools. No access token is
+			// passed, so each answers the credential refusal by name.
+			array( 'send_whatsapp_message', array( 'phone_number_id' => '1', 'to' => '+1', 'text' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'send_whatsapp_template', array( 'phone_number_id' => '1', 'to' => '+1', 'template_name' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'send_whatsapp_interactive', array( 'phone_number_id' => '1', 'to' => '+1', 'type' => 'button', 'body' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'send_whatsapp_media', array( 'phone_number_id' => '1', 'to' => '+1', 'type' => 'image', 'media_id' => '1' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
