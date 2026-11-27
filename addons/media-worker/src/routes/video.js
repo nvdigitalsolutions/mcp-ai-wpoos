@@ -6,6 +6,7 @@ import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs';
 import axios from 'axios';
+import sharp from 'sharp';
 import { detectCapabilities } from '../utils/capabilities.js';
 import { getCredential } from '../utils/provider-keys.js';
 import { siteUploadDir, siteDirFor } from '../utils/site-paths.js';
@@ -761,6 +762,13 @@ const REPLICATE_MODELS = {
   'stable-video-diffusion-xt': 'stability-ai/stable-video-diffusion:3f0457e4619daac51203dedb4728abc123',
 };
 
+// Models whose input is a frame, not a prompt. Their schema shares nothing with
+// the text-to-video family: they take `input_image`, `video_length`,
+// `sizing_strategy` and `frames_per_second`, and have no `prompt`, `num_frames`,
+// `width` or `height`. The route's default model is in this set, which is why it
+// is built separately rather than by adding optional fields to one object.
+const IMAGE_CONDITIONED = new Set([ 'stable-video-diffusion', 'stable-video-diffusion-xt' ]);
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ── AI Video Generation ─────────────────────────────────
@@ -772,9 +780,12 @@ router.post('/generate', async (req, res) => {
       // which is what an asynchronous caller needs. The default stays blocking
       // so the existing media-studio caller is untouched.
       wait = true,
+      // Image-conditioned models take this instead of a prompt: a data: URI of
+      // the frame to animate. It is bounded below before it reaches the provider.
+      reference_image,
       model = 'stable-video-diffusion',
       duration = 5,
-      fps = 24,
+      fps: fpsInput,
       negative_prompt,
       seed,
       width = 1024,
@@ -783,8 +794,8 @@ router.post('/generate', async (req, res) => {
 
     const waitForResult = !( false === wait || 0 === wait || 'false' === wait || '0' === wait );
 
-    if (!prompt) {
-      return res.status(400).json({ error: 'Prompt is required' });
+    if (!prompt && !reference_image) {
+      return res.status(400).json({ error: 'Prompt or reference_image is required' });
     }
 
     const modelVersion = REPLICATE_MODELS[model];
@@ -794,6 +805,28 @@ router.post('/generate', async (req, res) => {
         available: Object.keys(REPLICATE_MODELS),
       });
     }
+
+    const imageConditioned = IMAGE_CONDITIONED.has(model);
+
+    if (imageConditioned && !reference_image) {
+      return res.status(400).json({
+        error: `${model} is image-to-video and needs reference_image.`,
+        tip: 'Send reference_image as a data:image/...;base64,… URI, or choose a text-to-video model such as zeroscope-v2.',
+      });
+    }
+
+    if (!imageConditioned && reference_image) {
+      return res.status(400).json({
+        error: `${model} is text-to-video and does not accept a reference image.`,
+        tip: 'Use stable-video-diffusion or stable-video-diffusion-xt for image-to-video.',
+      });
+    }
+
+    // SVD's own default is 6 fps; a 14-frame clip at 24 fps is under a second.
+    const fallbackFps = imageConditioned ? 6 : 24;
+    const requestedFps = undefined === fpsInput ? fallbackFps : Number(fpsInput);
+    const fps = Number.isFinite(requestedFps) ? Math.max(1, Math.min(30, requestedFps)) : fallbackFps;
+    const seconds = Number.isFinite(Number(duration)) ? Math.max(1, Number(duration)) : 5;
 
     if (!getCredential(req.site, 'REPLICATE_API_KEY')) {
       return res.status(503).json({
@@ -815,17 +848,36 @@ router.post('/generate', async (req, res) => {
     // the default site, not the only source.
     const apiKey = getCredential(req.site, 'REPLICATE_API_KEY');
 
-    console.log(`[Video Gen] Starting: ${model} — "${prompt.substring(0, 80)}..."`);
+    console.log(`[Video Gen] Starting: ${model} — "${String(prompt || '(reference frame)').substring(0, 80)}..."`);
 
-    // Create prediction on Replicate
-    const input = {
-      prompt,
-      num_frames: duration * fps,
-      fps,
-      width,
-      height,
-    };
-    if (negative_prompt) input.negative_prompt = negative_prompt;
+    // The two families do not share a schema, so the input is built per family
+    // rather than as one object with optional fields — the shape that sent
+    // `prompt` to a model that cannot read it.
+    let input;
+
+    if (imageConditioned) {
+      input = {
+        input_image: await referenceDataUri(reference_image),
+        // 14 frames is the base model's only option; the XT version also takes 25.
+        video_length: 'stable-video-diffusion-xt' === model && seconds > 3
+          ? '25_frames_with_svd_xt'
+          : '14_frames_with_svd',
+        sizing_strategy: 'maintain_aspect_ratio',
+        frames_per_second: fps,
+        motion_bucket_id: 127,
+      };
+    } else {
+      input = {
+        prompt,
+        num_frames: Math.max(1, Math.round(seconds * fps)),
+        fps,
+        width,
+        height,
+      };
+
+      if (negative_prompt) input.negative_prompt = negative_prompt;
+    }
+
     if (seed) input.seed = seed;
 
     const createResp = await axios.post(
@@ -920,12 +972,67 @@ router.post('/generate', async (req, res) => {
     });
   } catch (err) {
     console.error('[Video Generate]', err.response?.data || err.message);
-    res.status(500).json({
+
+    // A refusal the route raised (a malformed reference frame, for instance)
+    // carries its own status and message; a provider failure keeps the generic
+    // envelope with the provider's detail, as it always has.
+    if (Number.isFinite(err.status) && !err.response) {
+      return res.status(err.status).json({ error: err.message });
+    }
+
+    const status = err.response?.status || err.status || 500;
+    res.status(status).json({
       error: 'Video generation error',
       detail: err.response?.data || err.message,
     });
   }
 });
+
+/**
+ * Validate a reference frame and bound it for the provider.
+ *
+ * Replicate accepts file inputs as `data:` URIs, so no public URL is needed.
+ * The frame is re-encoded as a bounded JPEG because the source is a composed
+ * still that can be several megabytes, and SVD renders 1024×576 — sending the
+ * full-size PNG buys nothing and inflates the request.
+ *
+ * @param {string} encoded Data URI of a PNG, JPEG or WebP image.
+ * @return {Promise<string>} Data URI of the bounded JPEG.
+ */
+async function referenceDataUri( encoded ) {
+	const value = String( encoded || '' ).trim();
+	const match = /^data:(image\/(?:png|jpe?g|webp));base64,([A-Za-z0-9+/=\s]+)$/.exec( value );
+
+	if ( ! match ) {
+		const error = new Error( 'reference_image must be a data: URI of a PNG, JPEG or WebP image.' );
+		error.status = 400;
+		throw error;
+	}
+
+	const bytes = Buffer.from( match[ 2 ].replace( /\s+/g, '' ), 'base64' );
+
+	if ( 0 === bytes.length ) {
+		const error = new Error( 'reference_image decoded to no bytes.' );
+		error.status = 400;
+		throw error;
+	}
+
+	let bounded;
+
+	try {
+		bounded = await sharp( bytes, { limitInputPixels: 40000000 } )
+			.rotate()
+			.resize( { width: 1024, height: 1024, fit: 'inside', withoutEnlargement: true } )
+			.jpeg( { quality: 82 } )
+			.toBuffer();
+	} catch ( err ) {
+		const error = new Error( `reference_image could not be decoded as an image: ${ err.message }` );
+		error.status = 400;
+		throw error;
+	}
+
+	return `data:image/jpeg;base64,${ bounded.toString( 'base64' ) }`;
+}
 
 // ── Check prediction status ──────────────────────────────
 router.get('/prediction/:id', async (req, res) => {

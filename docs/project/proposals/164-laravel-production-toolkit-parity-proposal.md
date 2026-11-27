@@ -11953,26 +11953,37 @@ measurement makes that shape wrong in four ways:
 
 #### What landed in this change
 
-Only the parts that are additive and needed under every shape:
+**Asynchronous submit (`wait: false`).** `POST /api/video/generate` answers
+`{prediction_id, status, video_url: null, tip}` as soon as Replicate has the
+prediction. The default stays blocking, so `media-studio` keeps its shape. It
+accepts `false`, `0` and their string forms, because a JSON caller and a
+form-ish caller send different types.
 
-- **`wait: false`** on `POST /api/video/generate` answers
-  `{prediction_id, status, video_url: null, tip}` as soon as Replicate has the
-  prediction. The default stays blocking, so `media-studio` is untouched. It
-  accepts `false`, `0` and their string forms, because a JSON caller and a
-  form-ish caller send different types.
-- **The refusal tells the truth.** `product_actualization`'s `mode: video`
-  error now names image-to-video plus the unbound contract, instead of an
-  artifact TTL that does not exist.
+**Reference frames, and a schema per family.** `reference_image` is a
+`data:image/…;base64,…` URI — Replicate accepts data URIs, so no public URL is
+needed. The route bounds the frame to 1024 px and re-encodes it as JPEG before
+sending. Inputs are built per family: SVD gets `input_image`, `video_length`,
+`sizing_strategy` and `frames_per_second`; the text family keeps `prompt`,
+`num_frames`, `width` and `height`. The families refuse each other's inputs by
+name rather than dropping them, and a malformed frame is a 400 with a reason —
+the catch used to flatten every failure to a 500.
+
+**A measured compatibility note.** `media-studio` sends
+`model: 'stable-video-diffusion'` with a prompt and no reference frame. That call
+could never have worked: the model requires `input_image`, which the route never
+sent, so it failed at the provider. It now fails at the route with a 400 and the
+reason, before a paid prediction is created. Its text-to-video siblings are
+unaffected.
+
+**The refusal tells the truth.** `product_actualization`'s `mode: video` error
+now names image-to-video plus the unbound contract, instead of an artifact TTL
+that does not exist.
 
 #### Recommended re-scope
 
-1. **Worker:** pass a reference image through and build inputs per model family —
-   SVD takes `input_image`, `video_length`, `sizing_strategy` and
-   `frames_per_second`; the text-to-video family keeps
-   `prompt`/`num_frames`/`width`/`height`. One question must be verified first:
-   how the bytes reach Replicate from a worker that may not be publicly
-   reachable — a data URI in `input_image`, or Replicate's Files API. Both are
-   plausible and only one is documented; guessing is how a route ships dead.
+1. ~~Worker reference frames~~ — **landed above.** The data-URI question was
+   answered from two published input maps, so the Files API is not needed for a
+   frame bounded to 1024 px.
 2. **Core:** `VideoGenerationInterface::submit()` and `status()`, plus
    `supports('video_generation')`. `status()` returns the provider state and the
    URL; it stores nothing, so the "registry is durable, worker storage is
@@ -11982,13 +11993,12 @@ Only the parts that are additive and needed under every shape:
    the file registry and completes with the media entry. The caller reads the
    result through `QueueClientInterface::getStatus()`, which already exists.
 4. **Tool:** `product_actualization` `mode: video` answers
-   `{status: 'queued', job_id}` once 1–3 exist. That response shape varies by
-   mode, which the owner approved in principle; it is gated on the worker work,
-   not on another decision.
+   `{status: 'queued', job_id}` once 2–3 exist. That response shape varies by
+   mode, which the owner approved in principle.
 
 #### Gates
 
 | Gate | Result |
 |---|---|
-| Media worker | 253 tests, 0 failures |
+| Media worker | 258 tests, 0 failures |
 | `node --check` | clean on both edited files |
