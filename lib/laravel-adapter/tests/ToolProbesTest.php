@@ -474,6 +474,20 @@ Probe Club,club
 			array( 'get_onedrive_file', array( 'item_id' => '01PROBE' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'list_onedrive_files', array(), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'upload_onedrive_file', array( 'file_path' => 'probe.txt', 'content' => 'cHJvYmU=' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.105 — Messenger and Google Chat. No credential is passed, so
+			// each answers the credential refusal by name. The webhook sender has
+			// no credential of its own, so the probe uses a URL the guard refuses:
+			// no network call either way.
+			array( 'send_messenger_message', array( 'recipient_id' => '1', 'message' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_messenger_conversations', array(), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'send_google_chat_message', array( 'webhook_url' => 'https://localhost/hook', 'text' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_google_chat_spaces', array(), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'create_google_chat_space', array( 'display_name' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_google_chat_messages', array( 'space' => 'spaces/AAAA' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'list_google_chat_space_members', array( 'space' => 'spaces/AAAA' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'add_google_chat_space_member', array( 'space' => 'spaces/AAAA', 'member_name' => 'users/1' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'remove_google_chat_space_member', array( 'membership' => 'spaces/AAAA/members/MMMM' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 

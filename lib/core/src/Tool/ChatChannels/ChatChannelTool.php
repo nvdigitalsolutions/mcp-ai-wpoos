@@ -23,6 +23,10 @@
  * throws when no response arrives, and a caller should not have to tell a DNS
  * failure from a provider refusal to build the same envelope.
  *
+ * A **caller-supplied URL** is normalised here as well. Three providers accept
+ * an endpoint from the caller (Google Chat, Apple, iCloud), which makes the
+ * tool an SSRF surface; `publicUrl()` is the one guard they share.
+ *
  * @package Nvoos\Core
  * @since   3.0.0
  * @license MIT
@@ -109,6 +113,76 @@ abstract class ChatChannelTool extends AbstractTool implements ToolCapabilityFla
                 'chat_channel_request_failed'
             );
         }
+    }
+
+    /**
+     * A caller-supplied URL, restricted to public https.
+     *
+     * The request carries a credential — a webhook key in the URL, or a bearer
+     * header — so an unchecked endpoint is an SSRF surface *and* a way to hand
+     * the credential to whatever host the caller named. The guard rejects a
+     * non-https scheme, userinfo, a literal private, loopback, link-local or
+     * reserved address, and a local hostname.
+     *
+     * A public hostname that resolves to a private address (DNS rebinding) is
+     * not caught here; the HTTP seam does not expose the resolved address, so
+     * that defence belongs to the host. The documented limit is deliberate.
+     *
+     * @param array<string, mixed> $arguments Tool arguments.
+     * @param string               $key       Argument name.
+     * @param string               $label     Human-readable name, e.g. `webhook URL`.
+     *
+     * @return string|mixed The URL, or the validation error.
+     */
+    protected function publicUrl(array $arguments, string $key, string $label): mixed
+    {
+        $value = $this->textArg($arguments, $key);
+        $parts = '' !== $value ? parse_url($value) : false;
+
+        if (! is_array($parts)) {
+            return $this->urlRefused($key, $label);
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host   = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
+        $user   = (string) ($parts['user'] ?? '');
+
+        if ('https' !== $scheme || '' === $host || '' !== $user) {
+            return $this->urlRefused($key, $label);
+        }
+
+        if (false !== filter_var($host, FILTER_VALIDATE_IP)) {
+            $public = filter_var(
+                $host,
+                FILTER_VALIDATE_IP,
+                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+            );
+
+            if (false === $public) {
+                return $this->urlRefused($key, $label);
+            }
+        }
+
+        foreach (array('.localhost', '.local', '.internal', '.localdomain') as $suffix) {
+            if ('localhost' === $host || str_ends_with($host, $suffix)) {
+                return $this->urlRefused($key, $label);
+            }
+        }
+
+        return $value;
+    }
+
+    /**
+     * The canonical refusal for a publicUrl() failure.
+     *
+     * @return mixed
+     */
+    private function urlRefused(string $key, string $label): mixed
+    {
+        return $this->errors->validationFailed(
+            sprintf('A %s must be an absolute public https URL.', $label),
+            array($key => array('Not a public https URL.'))
+        );
     }
 
     /**
