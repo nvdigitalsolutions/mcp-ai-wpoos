@@ -11015,3 +11015,101 @@ Nothing in this section changes the tree, so every gate stays where §164.119
 left it: **294 ported, 9 declined, 78 deferred, 551 remaining**, `ready` 455,
 servable 496. `ecommerce` remains `44 \| 8 \| 1 \| 28 \| 35` until the first
 port lands.
+
+### §164.121 — Slice 3a: `shopify_catalog`, and a projection that was reading the wrong API
+
+**Recorded.** `shopify_catalog` is served: four actions (`search`, `lookup`,
+`lookup_by_variant`, `get_product`) across two keyless modes (`global`,
+`storefront`). It needs no new contract — `HttpClientInterface`, already bound on
+both sides — which is why §164.120 put it first.
+
+#### The REST mode is gone and its filters are not
+
+§164.120 recommended dropping the deprecated `catalog_api` mode, because it needs
+`shpss_` credentials and Shopify has superseded it. The risk in that
+recommendation was collateral: **every** filter the WordPress schema carried was
+documented "REST Catalog API mode only", so dropping the mode would have
+orphaned six parameters that a UCP caller might reasonably expect.
+
+The port re-targets each one onto the `filters` object the endpoint actually
+accepts, rather than deleting them:
+
+| WordPress parameter | Was | Now |
+|---|---|---|
+| `min_price`, `max_price` | REST only, no unit stated | `filters.price.min`, `.max` in **minor units** |
+| `categories` | REST only, comma string | `filters.categories`, array or comma string, OR logic |
+| `shop_ids` | REST only, numeric or GID | `filters.shops`, normalised to shop GIDs |
+| `country_code` | REST only | `filters.ships_to.country` |
+| `ships_from` | REST only | `filters.ships_from[0].country` |
+
+`min_price` and `max_price` are the one place the meaning changed: the WordPress
+tool documented no unit and only used the pair in the removed mode, the wire
+format is minor units, and guessing a currency exponent is how a filter silently
+filters on a different number than the caller typed. So the schema states minor
+units and the projection converts through `Money`, which keeps a zero-decimal
+currency from being divided by a hundred.
+
+#### The normaliser was reading REST and running on UCP
+
+This is the finding worth keeping. The WordPress tool's `normalize_catalog_product`
+reads `pricerange.minvariantprice.amount`, `availableforsale`, `displayname`,
+`vendor`, `producttype` and `upid`. Those are the **REST Catalog API's**
+lower-case field names. The response the UCP endpoint actually returns — measured
+in §164.120 — is `price_range.min.amount`, `availability.available`, `title`,
+`media[]`, `variants[]`, `options[]`.
+
+The normaliser was therefore run against a shape it did not know, and three
+consequences followed on every UCP call:
+
+| Field | The WordPress result | Why |
+|---|---|---|
+| `price_range` | **empty** | It looked for `pricerange`; UCP sends `price_range` |
+| `variants` | **empty** | The initialiser hard-set `array()` |
+| `availableforsale` | **`true`** | It defaulted to `true` whenever `availableforsale` was absent, which against UCP was always |
+
+A price and a variant list silently missing, and an availability silently
+invented, is worse than a refusal: the caller cannot tell a product with no
+listed price from one whose price was dropped. This port projects the UCP shape
+and reports `available` as `null` when the provider omits it, never `true`.
+
+#### Four more corrections
+
+| Correction | The WordPress behaviour |
+|---|---|
+| **`limit` is not clamped to 10** | `max(1, min(10, absint($limit)))`, so a caller asking for 40 was served 10 with no note. Bound here is 50 and the schema says so |
+| **The envelope is not rebuilt** | `ucp`, `products`, `pagination` and `messages` are siblings under `structuredContent`; the port keeps them siblings instead of folding them into a `data` key |
+| **`description.plain` is stripped** | The field is named `plain` and carries `<p>` and `<ul>`. Tags become a **space**, not nothing, because `strip_tags()` joins block elements and turns `A shoe` + `Leather` into `A shoeLeather` — a bug the first test run caught in this port |
+| **Nothing is cached** | UCP prohibits caching catalog results, and the port declares no `cacheable` flag rather than adding one for symmetry with its Admin-API siblings |
+
+#### What is reused rather than reinvented
+
+`lookup_by_variant` is kept as an action although the endpoint has no variant
+tool: `lookup_catalog` accepts variant GIDs in `ids`, which is what the WordPress
+client did with it. Collapsing it into `lookup` would have been tidier and would
+have broken every caller that names it.
+
+Progressive relaxation is `ShopifySmartSearch` — the helper §164.113 already
+ported for the Admin-API product search — so the catalogue search and the admin
+search decompose a query the same way instead of growing two algorithms that
+drift apart.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `EcommerceShopifyCatalogToolTest` | **41 tests, 104 assertions**, 0 failures |
+| `lib/core` unit suite | 3,706 → **3,747 tests, 21,810 assertions**, 0 failures |
+| Readiness manifest | `ready` 455 → **456**; servable 496 → **497**; no violations |
+| Toolkit parity | 294 → **295 ported**, 551 → **550 remaining**; `ecommerce` `44 \| 8 \| 1 \| 28 \| 35` → `44 \| 9 \| 1 \| 28 \| 34`; baseline rewritten |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on the three touched files |
+| PHPStan level 8, `lib/core` | no errors against the baseline |
+| `lib/laravel-adapter` suite | 661 tests; the one error is the local `finfo` environment gap, pre-existing and green in CI |
+
+#### Next
+
+`ecommerce` stands at 9 ported of 44, 28 deferred, one declined, 34 remaining.
+The remaining six undecided tools are the ones §164.120 mapped onto seams this
+runtime does not have yet. The cheapest next step remains the Laravel
+`VisionInference` adapter, which unlocks the two image validators and
+`rfdetr_catalog_search`; `product_actualization` still needs a generation
+contract, and the QuickBooks pair still needs a credential store and a host.

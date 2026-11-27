@@ -3985,7 +3985,16 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/EcaWriterToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
-		'shopify_customers' => array(
+		        'shopify_catalog' => array(
+		            'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\ShopifyCatalogTool',
+		            'readiness' => 'ready',
+		            'parity' => 'port',
+		            'probe' => 'call',
+		            'reason' => 'Ports the WordPress catalog search (Proposal 164 section 164.121) over the keyless Universal Commerce Protocol. The endpoint was probed rather than read on 2026-11-27: tools/list and tools/call both answer 200 with no credential, and the transport is a single stateless POST, so HttpClientInterface is sufficient and no MCP client is needed. The deprecated REST catalog_api mode is dropped; the six filters it owned were re-targeted onto the UCP filters object instead of deleted (min_price and max_price as minor units, categories, shop_ids as shop GIDs, country_code as ships_to, ships_from). Five corrections: limit is no longer silently clamped to 10, price_range and variants survive the projection (the WordPress normaliser read the REST keys pricerange and minvariantprice and so emptied both against UCP), availability is the provider value rather than a fabricated true, the provider envelope is not reshaped, and description.plain is stripped of the HTML it actually carries. Nothing is cached, because UCP prohibits it.',
+		            'evidence' => 'lib/core/tests/Unit/Tool/EcommerceShopifyCatalogToolTest.php',
+		            'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => true ),
+		        ),
+		        'shopify_customers' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\ShopifyCustomersTool',
 			'readiness' => 'ready',
 			'parity' => 'port',
