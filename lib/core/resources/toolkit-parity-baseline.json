@@ -39,9 +39,14 @@
             "capture_webpage_screenshot"
         ],
         "chat-channels": [
+            "add_discord_message_reaction",
+            "create_discord_channel",
             "create_slack_channel",
+            "get_discord_channels",
+            "get_discord_messages",
             "get_slack_channels",
             "get_slack_messages",
+            "send_discord_message",
             "send_slack_message"
         ],
         "cloudways": [

@@ -440,6 +440,14 @@ Probe Club,club
 			array( 'get_slack_messages', array( 'channel' => 'C1' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'send_slack_message', array( 'channel' => 'C1', 'text' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'create_slack_channel', array( 'name' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.101 — the five portable Discord tools. No token is passed, so
+			// each answers the credential refusal by name without a network call.
+			array( 'send_discord_message', array( 'channel_id' => '1', 'content' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_discord_channels', array( 'guild_id' => '1' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_discord_messages', array( 'channel_id' => '1' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'create_discord_channel', array( 'guild_id' => '1', 'name' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'add_discord_message_reaction', array( 'channel_id' => '1', 'message_id' => '2', 'emoji' => '👍' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
