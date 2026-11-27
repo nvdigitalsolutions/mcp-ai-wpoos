@@ -185,7 +185,11 @@
             "withdraw_student_eca"
         ],
         "ecommerce": [
-            "generate_invoice_pdf"
+            "generate_invoice_pdf",
+            "shopify_customers",
+            "shopify_inventory",
+            "shopify_orders",
+            "shopify_products"
         ],
         "email-marketing": [],
         "erp-ezuite": [],
