@@ -67,13 +67,13 @@ final class VideoGenerationPollHandler
         $status = $this->videos->status($prediction);
 
         if (! $status['terminal']) {
-            throw new VideoGenerationPendingException('Video generation is still '.$status['status'].'.');
+            throw new VideoGenerationPendingException('Video generation is still ' . $status['status'] . '.');
         }
 
         if ('succeeded' !== $status['status'] || null === $status['video_url']) {
             throw new NonRetryableJobException(
-                'Video generation ended as '.$status['status']
-                .(null !== $status['error'] ? ': '.$status['error'] : '.')
+                'Video generation ended as ' . $status['status']
+                . (null !== $status['error'] ? ': ' . $status['error'] : '.')
             );
         }
 
@@ -97,7 +97,7 @@ final class VideoGenerationPollHandler
 
         if (null === $outcome['media']) {
             throw new \RuntimeException(
-                'The video was rendered but could not be stored: '.($outcome['error'] ?? 'unknown')
+                'The video was rendered but could not be stored: ' . ($outcome['error'] ?? 'unknown')
             );
         }
 
@@ -127,7 +127,7 @@ final class VideoGenerationPollHandler
         $response = $this->http->send('GET', $url);
 
         if ($response->statusCode < 200 || $response->statusCode >= 300 || '' === $response->body) {
-            throw new \RuntimeException('The rendered video URL answered HTTP '.$response->statusCode.'.');
+            throw new \RuntimeException('The rendered video URL answered HTTP ' . $response->statusCode . '.');
         }
 
         if (\strlen($response->body) > self::MAX_VIDEO_BYTES) {
