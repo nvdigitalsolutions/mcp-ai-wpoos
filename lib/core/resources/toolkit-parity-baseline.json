@@ -82,6 +82,7 @@
             "send_whatsapp_media",
             "send_whatsapp_message",
             "send_whatsapp_template",
+            "unified_channel_broadcast",
             "upload_icloud_drive_file",
             "upload_onedrive_file"
         ],

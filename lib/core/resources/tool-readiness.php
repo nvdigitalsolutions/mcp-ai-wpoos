@@ -4127,6 +4127,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/OrchestrationScheduleToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'unified_channel_broadcast' => array(
+			'class' => 'Nvoos\Core\Tool\ChatChannels\UnifiedChannelBroadcastTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the fan-out (Proposal 164 section 164.109), the last tool in the toolkit. It sends nothing itself: it resolves each channel sender through ToolResolverInterface and delegates, where WordPress reached into the concrete WP_MCP_AI_Tool_Registry singleton. That seam keeps the provider failure detail, which ToolInvokerInterface would collapse to null, and lets a host bind ToolScope to narrow the fan-out. Correction of substance: WordPress returned success as an array of channel results, so every caller reading the canonical success true saw a working broadcast as a failure; the port returns the canonical envelope with the report in data. A broadcast that reached nobody is an error, a partial delivery is a success with the failures listed. Also corrected: an unknown channel name refuses the call before anything is sent, where WordPress broadcast to the valid channels and hid the typo in a per-channel failure; a repeated channel is sent to once; a JSON-encoded credential object is decoded at both levels; and message length limits stay with the senders that own them. Gated on manage_options.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ChatChannelBroadcastToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
 		'update_project' => array(
 			'class' => 'Nvoos\\Core\\Tool\\UpdateProjectTool',
 			'readiness' => 'ready',

@@ -9557,3 +9557,142 @@ Slice 9, `unified_channel_broadcast`: one tool that fans a message out to the
 providers the caller names, by delegating to the tools already ported. It needs a
 session-state or per-call target contract, and it is the last tool in the
 toolkit — after it, the toolkit closes at 46 ported, 4 deferred, 0 declined.
+
+### §164.109 — Slice 9: the unified broadcaster, and the toolkit closed
+
+**Recorded.** `chat-channels` closes at **46 ported, 0 declined, 4 deferred,
+4 remaining**. All four remaining are the deferrals named in §164.102–164.105,
+so the toolkit has no unported tool left that could work.
+
+| slug | behaviour | kind |
+|---|---|---|
+| `unified_channel_broadcast` | resolves seven senders and delegates | write |
+
+#### The seam: `ToolResolverInterface`, not the registry
+
+WordPress called
+`WP_MCP_AI_Tool_Registry::get_instance()->get_tool( $slug )` — the concrete
+singleton — and then `execute()` on the result. That is why the WordPress version
+could not run against any other host, and it is the wrong layer for a core tool:
+`ToolRegistry` lives in `Application`, and a tool may depend only on `Domain`.
+
+The port depends on **`ToolResolverInterface`**, which `ToolRegistry` and
+`ToolScope` both implement, and calls `execute()` on the resolved tool. Two
+things follow:
+
+- **The failure detail survives.** `ToolInvokerInterface::invoke()` collapses an
+  unregistered tool, a thrown exception and a provider error envelope to `null`.
+  That is right for the retrieval harness, which skips a source and moves on, and
+  useless for a broadcast report: "telegram: failed" with no reason is the same
+  quality as no report. Resolving and executing keeps the envelope, which is
+  reported per channel.
+- **A host can narrow the fan-out.** Binding `ToolScope` instead of the full
+  registry means the broadcaster can only reach the tools the host allows. That
+  policy belongs to the host, and this seam is where it fits.
+
+The adapter binds the interface to the existing registry singleton, so a tool
+constructed at boot still resolves senders registered after it.
+
+#### The correction of substance: `success` was an array
+
+WordPress returned
+`array( 'success' => array( …per-channel… ), 'failures' => array( … ), 'summary' => … )`.
+`success` there is a list of channel results, not the boolean every other tool in
+this family returns, so a caller checking `$result['success'] === true` saw a
+working broadcast as a failure. The port returns the canonical envelope and puts
+the per-channel report in `data`.
+
+#### Three outcomes, not two
+
+A fan-out is not a single send, so "did it work" has three answers:
+
+| outcome | envelope |
+|---|---|
+| every channel sent | success |
+| some sent | success, with the failures listed |
+| none sent | error `channel_broadcast_failed` |
+
+Partial delivery is a legitimate result of sending to independent services, and
+the caller needs the detail rather than a blanket error. A broadcast that
+reached nobody must not look like a success with a nested counter — that is the
+one outcome a caller should never have to infer.
+
+#### Other corrections
+
+1. **An unknown channel name refuses the call before anything is sent.**
+   WordPress reported it as one more per-channel failure, so a typo among six
+   valid channels still broadcast to the six and read as a partial success.
+2. **A repeated channel is sent to once.** WordPress iterated the list as given,
+   so `["telegram","telegram"]` sent twice and reported one result.
+3. **A channel with no credential entry fails alone**, as in WordPress, because a
+   caller may list a channel it has not configured and still want the rest
+   delivered.
+4. **A JSON-encoded credential string is decoded at both levels.** WordPress did
+   this for the outer map because the Schedule Manager stored them that way; the
+   per-channel value is decoded too, and a string that is not a JSON object is
+   refused rather than cast.
+5. **Message length limits stay with the senders that own them.** Telegram,
+   Discord, Slack and WhatsApp cap text differently; duplicating those numbers
+   here would drift from the tools that enforce them, so an over-long message
+   fails only on the channels that reject it.
+
+#### Deliberately not ported: the chat-client restriction
+
+WordPress marked the tool as restricted from the public chat client, because an
+assistant invoked from a public surface must not fan out on the site owner's
+behalf. That is a host policy, and this runtime has no chat-client context to
+check. The description says the tool sends outward to every channel named; a
+host that exposes it to untrusted callers should gate it at the assistant or
+surface level.
+
+#### A note on the errors this slice cost
+
+Every failure in this slice was the same mistake, and it is the one §164.100
+warned about: **an error envelope is itself an array**, so `is_array()` cannot
+discriminate a `string|array|error` return. Across slices 7 to 9 it was written
+at nine guards — two in the Twitter tools, five in the Apple and iCloud tools,
+and two here. Two were caught by a failing test (a credential-set guard that
+treated the refusal as credentials, and a channel-list guard that iterated the
+envelope and passed `false` to a `string` parameter); the other seven were found
+by auditing every `is_array()` in the family before committing.
+
+`ErrorFactoryInterface::isError()` is the only correct discriminator, and it is
+now used at every such guard in the toolkit. The audit rule is simple: a helper
+that returns "a value or the canonical error" must be discriminated by
+`isError()`, never by the value's own type.
+
+#### Measurements
+
+| gate | before | after |
+|---|---|---|
+| `lib/core` PHPUnit | 4,182 / 24,180 | 4,197 / 24,233 |
+| adapter `ToolProbesTest` | 287 / 1,818 | 288 / 1,822 |
+| tool readiness audit | 507 / 507, servable 488 | 508 / 508, servable 489 |
+| toolkit parity | 286 of 854 | 287 of 854 |
+| `chat-channels` | 45 / 0 / 4 / 5 | 46 / 0 / 4 / 4 |
+| phpcs | clean | clean |
+
+#### The toolkit, closed
+
+| slice | tools | state |
+|---|---:|---|
+| 1 Slack | 4 | ported |
+| 2 Discord | 5 | ported (1 deferred: no REST voice-state route) |
+| 3 Telegram | 5 | ported |
+| 4 WhatsApp | 4 | ported (1 deferred: no GET message history) |
+| 5 Microsoft Graph | 8 | ported |
+| 6 Messenger and Google Chat | 9 | ported (1 deferred: no broadcast creative step) |
+| 7 Twitter/X | 3 | ported |
+| 8 Apple and iCloud | 7 | ported |
+| 9 Unified broadcaster | 1 | ported |
+| — | 4 | deferred with the prerequisite named |
+
+**46 ported, 4 deferred, 0 declined.** The four deferrals share a shape: each
+needs something the runtime does not have — a gateway connection, an inbound
+message store, a two-step creative API with an approval gate, or a scheduled-send
+listener with a secret reference. None is a tool that could be ported now.
+
+#### Next
+
+The `chat-channels` toolkit is complete. The next pass is the next toolkit in
+the 164 register.
