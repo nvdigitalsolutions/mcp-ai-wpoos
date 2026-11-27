@@ -11113,3 +11113,91 @@ runtime does not have yet. The cheapest next step remains the Laravel
 `VisionInference` adapter, which unlocks the two image validators and
 `rfdetr_catalog_search`; `product_actualization` still needs a generation
 contract, and the QuickBooks pair still needs a credential store and a host.
+
+### §164.122 — Slice 3b: binding `VisionInferenceInterface`, a seam with no wire
+
+**Recorded.** `lib/laravel-adapter` now binds `VisionInferenceInterface` to
+`OpenAiVision`. No tool is registered against it yet, so every gate number is
+unchanged; this section records the **adapter**, and the tool ports that follow
+are the ones that move parity.
+
+#### The seam was declared and unwired
+
+§164.120 found the asymmetry that decided slice 3: `VisionInferenceInterface`
+existed in core with exactly the right shape — `infer($imagePath, $prompt,
+$options)` — and was bound **only** in `lib/wordpress-adapter`. `grep` found no
+Laravel adapter and **no core tool consuming it**. A validator ported against it
+would have shipped a tool whose only possible answer is a refusal, which is the
+failure mode the register already cites for `get_discord_voice_channel_members`.
+
+Binding it is therefore a prerequisite rather than a nicety, and it unlocks
+three tools rather than one.
+
+#### The contract had no docblock, so the adapter records what it implements
+
+`VisionInferenceInterface` declares an array return and no exception, and its
+only prior implementation is an 18-line WordPress shim over a Hugging Face
+service. That shim answers `['success' => true, ...]` and, on failure,
+`['success' => false, 'error' => string]`. A second implementation that **threw**
+where the first returned would make the interface useless to any caller that
+checks `success`, so `OpenAiVision` returns the same shape:
+
+| Outcome | Return |
+|---|---|
+| Succeeded | `{success: true, text, model, usage}` |
+| Provider or transport failure | `{success: false, error}` |
+| Bad input (missing, oversized, unsupported) | throws `InvalidArgumentException` |
+
+The split is deliberate and mirrors `OpenAiTranscription`: a bad path or an
+unsupported type is a caller bug and belongs in an exception, while a missing
+key, a refused request or a dropped connection is a runtime condition a caller
+may want to fall back from.
+
+#### Nothing about the provider is hardcoded
+
+Provider, model, key, base URL and timeout all come from `SettingsStoreInterface`
+— `getDefaultProvider`, `getDefaultModel`, `getApiKey`, `getApiBaseUrl`. Two
+consequences are worth stating:
+
+- **No model name is invented.** The WordPress validators pin `gpt-6.1-sol`. A
+  model is a host decision, not a port's, so the adapter uses the host's
+  configured default and `getAvailableModels()` answers with that one model
+  rather than a catalogue it cannot verify.
+- **One adapter serves more than OpenAI.** Because the base URL is a host
+  setting, an OpenAI-compatible endpoint (the local Ollama default among them)
+  is served by the same binding, and a test pins a `localhost` base URL.
+
+#### The image is inlined rather than linked
+
+The WordPress tool sends the provider a public image **URL**, and performs its
+own `wp_remote_head` on it first to check the content type and length. This
+adapter base64-inlines the bytes, as `OpenAiTranscription` does with audio. That
+removes two things rather than one: the requirement that the provider be able to
+reach the caller's URL, and the caller-supplied fetch that the HEAD check
+represents.
+
+MIME comes from the file extension rather than `finfo`, because `finfo` is not
+guaranteed to be enabled on every host this package ships to — the same reason
+`AudioInput::mimeFor()` exists for audio.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `OpenAiVisionTest` | **18 tests, 37 assertions**, 0 failures |
+| `lib/laravel-adapter` suite | 661 → **679 tests, 3,612 assertions**; the one error is the local `finfo` environment gap, pre-existing and green in CI |
+| `lib/core` unit suite | **3,747 tests, 21,810 assertions**, unchanged and green |
+| Readiness manifest | `ready` 456, servable 497; no violations — unchanged, because no tool is registered against the seam yet |
+| Toolkit parity | **295 ported, 9 declined, 78 deferred, 550 remaining**, unchanged |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on the three touched files |
+
+#### Next
+
+The two validators, `validate_image_for_product` and
+`validate_image_for_vehicle`, can now be ported onto `infer()`. Both need the
+same three adaptations: accept a local path instead of a URL and an attachment
+id, pass `response_format: json_object` through `options` because both parse a
+JSON object, and keep the per-product-type prompts, which are the actual domain
+knowledge in those tools. `rfdetr_catalog_search` follows them and additionally
+needs a Roboflow key and a chosen checkpoint, because a fine-tuned detector is
+not interchangeable with a chat model.
