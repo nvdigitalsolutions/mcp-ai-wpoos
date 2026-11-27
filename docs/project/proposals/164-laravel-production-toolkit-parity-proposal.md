@@ -9211,3 +9211,99 @@ page token and a different recipient shape; Google Chat is the first tool in
 the family whose endpoint is **caller-supplied** (a webhook URL), so the URL
 guard promised in §164.99 finally has its consumer, and the service-account JWT
 tools need a token cache.
+
+### §164.105 — Slice 6: Messenger and Google Chat
+
+**Recorded.** Thirty-five of fifty ported; `chat-channels` is now **35 ported,
+0 declined, 4 deferred, 15 remaining**.
+
+| slug | call | kind |
+|---|---|---|
+| `send_messenger_message` | `POST /me/messages` | write |
+| `get_messenger_conversations` | `GET /me/conversations?platform=messenger` | read |
+| `send_google_chat_message` | `POST` a caller-supplied webhook URL | write |
+| `get_google_chat_spaces` | `GET /v1/spaces` | read |
+| `create_google_chat_space` | `POST /v1/spaces` | write |
+| `get_google_chat_messages` | `GET /v1/{space}/messages` | read |
+| `list_google_chat_space_members` | `GET /v1/{space}/members` | read |
+| `add_google_chat_space_member` | `POST /v1/{space}/members` | write |
+| `remove_google_chat_space_member` | `DELETE /v1/{membership}` | write |
+
+#### The URL guard
+
+`send_google_chat_message` takes an endpoint from the caller, and the
+credential is **inside it**: a Google Chat webhook URL carries its own key.
+WordPress checked `esc_url_raw()` and `FILTER_VALIDATE_URL` only, which accept
+`http://` and `http://169.254.169.254/…`. `ChatChannelTool::publicUrl()` is
+now the family guard: https only, no userinfo, no literal private, loopback,
+link-local or reserved address (`FILTER_FLAG_NO_PRIV_RANGE |
+FILTER_FLAG_NO_RES_RANGE`), no `localhost` or `.local`/`.internal` hostname.
+The reply never echoes the URL, because the URL is the secret.
+
+A public hostname that **resolves** to a private address (DNS rebinding) is not
+caught: the HTTP seam does not expose the resolved address. That limit is
+documented in the guard and is a host responsibility.
+
+#### The finding: `create_messenger_broadcast` cannot work as written
+
+It posts `{message: {text}}` to `/me/broadcast_messages`. Meta does not accept
+that body: a broadcast takes a `message_creative_id` created first by
+`POST /me/message_creatives`, and the broadcast is delivered by a separate
+`POST /me/broadcast_messages/{id}/send`. The WordPress tool therefore never
+created a broadcast.
+
+Making it work needs the creative step **and** the send step, and the send
+delivers to the entire labelled audience — an outward, approval-gated operation
+that no tool in this family has a confirmation gate for. It is **deferred**,
+with the two steps and the gate named as the prerequisite. That makes the
+toolkit's final shape **46 ported, 4 deferred, 0 declined**.
+
+#### Corrections
+
+1. **Google Chat resource names are validated.** `spaces/{id}` and
+   `spaces/{id}/members/{id}` are matched to the characters Google uses and
+   interpolated unchanged; WordPress put `sanitize_text_field()` output into
+   the route.
+2. **An unsupported space type or membership role is refused.** WordPress
+   replaced an unknown type with `SPACE` and an unknown role with
+   `ROLE_MEMBER`, so a typo created the wrong thing silently.
+3. **A Messenger PSID must be numeric.** WordPress passed any scalar through
+   and let Meta reject it.
+4. **`paging.next` is not returned for Messenger conversations.** Meta builds
+   it with the access token inside; the reply carries the cursor from
+   `paging.cursors.after` instead.
+5. **`page_size` uses the numeric clamp** in the four Google Chat paging tools,
+   rather than `absint()` and then one.
+6. **Rows are projected** in all nine tools.
+
+#### Adaptations
+
+- **The Google service-account exchange is the host's job.** WordPress accepted
+  `service_account_key` and minted a token with an RS256 JWT through
+  `WP_MCP_AI_Pro_Google_Service_Account`. The port takes `access_token`; the
+  seven tools then share one bearer family. A host that holds a service-account
+  key mints the token before it calls the tool. This is a real narrowing of the
+  schema and is recorded as such: a follow-up could add a token-minting service
+  behind the same tools without changing any of them.
+- Google Chat paginates by `pageToken`, not by URL: there is no absolute link to
+  guard, unlike Graph.
+- The Chat error object carries both a numeric `code` and a word `status`; the
+  word is the provider code.
+
+#### Measurements
+
+| gate | before | after |
+|---|---|---|
+| `lib/core` PHPUnit | 4,090 / 23,828 | 4,118 / 23,938 |
+| adapter `ToolProbesTest` | 268 / 1,742 | 277 / 1,778 |
+| tool readiness audit | 488 / 488, servable 469 | 497 / 497, servable 478 |
+| toolkit parity | 267 of 854 | 276 of 854 |
+| `chat-channels` | 26 / 0 / 3 / 24 | 35 / 0 / 4 / 15 |
+| phpcs | clean | clean |
+
+#### Next
+
+Slice 7, Twitter: send a DM, list DMs and manage the webhook. Three tools over
+OAuth 1.0a — a signed request rather than a bearer, so the family gets its
+first request signer, and the webhook tool registers a caller-supplied URL under
+the guard added here.

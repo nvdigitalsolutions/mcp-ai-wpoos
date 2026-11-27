@@ -29,6 +29,10 @@
             "decision": "deferred",
             "reason": "It is the same substrate as configure_eca_notifications: a rule with a trigger and an action, evaluated on ECA events that nothing currently emits. Prerequisite: an event-to-action rule store plus emitters for ECA enrollment and attendance changes."
         },
+        "create_messenger_broadcast": {
+            "decision": "deferred",
+            "reason": "It posts {message:{text}} to /me/broadcast_messages, and Meta does not accept that body: a broadcast takes a message_creative_id created first by POST /me/message_creatives, and the broadcast is then delivered by POST /me/broadcast_messages/{id}/send. The WordPress tool therefore never created a broadcast. Making it work needs the creative step and the send step, and the send step delivers to the entire labelled audience — an outward, approval-gated operation that no tool in this family has a confirmation gate for. Prerequisite: a two-step client plus a confirmation gate (or an explicit dry_run that stops after the creative), and a decision about the messaging_type and tag policy the page must comply with."
+        },
         "create_remotion_video": {
             "decision": "deferred",
             "reason": "Renders React/Remotion compositions by running node against a pre-built addons/pro/bin/remotion-render.bundle.js shipped with the Pro plugin. Neither that bundle nor a Node subprocess path exists on this runtime; the media worker is Node but exposes no Remotion endpoint. Standing one up is a service and a product decision, not a tool to port. Prerequisite: a Remotion render route on the media worker."
