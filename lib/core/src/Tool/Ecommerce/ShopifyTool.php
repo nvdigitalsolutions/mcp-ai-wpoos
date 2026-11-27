@@ -17,7 +17,7 @@
  * forward* to the oldest accessible stable version, so the tool appeared to work
  * while running against a schema nobody had read. The default here is
  * **2026-10**, the latest stable at the time of writing (served until
- * 2026-10-16 2027), and it is overridable per call for an operator who needs to
+ * 2027-10-16), and it is overridable per call for an operator who needs to
  * pin. The response's `X-Shopify-API-Version` header is surfaced when it differs
  * from the requested version, so a silent fall-forward is visible rather than
  * invisible.

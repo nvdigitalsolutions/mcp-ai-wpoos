@@ -4303,7 +4303,16 @@ return array(
 			'replaced_by' => 'validate_reasoning_chain',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
-		'validate_tool_schema' => array(
+		        'validate_image_for_product' => array(
+		            'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\ValidateImageForProductTool',
+		            'readiness' => 'ready',
+		            'parity' => 'port',
+		            'probe' => 'call',
+		            'reason' => 'Ports the WordPress try-on image validator (Proposal 164 section 164.123) onto the completion path core already uses for analyze_image, not onto VisionInferenceInterface, which has no consumer. Two passes: a local technical check (format, size, dimensions) that refuses a bad image before any token is spent, then a vision call whose answer maps onto named checks. All nine product types keep their required and optional body parts, required parts stay critical, strict_mode still fails on warnings, and the weighted 0-100 rating with A-F grades uses the same ten weights and five thresholds. Five corrections: a remote URL input is not ported because ImageInput refuses caller-supplied hosts, response_format is unavailable on this path so the prompt asks for JSON and the parser tolerates fences and prose, unreadable dimensions are info rather than a silent pass, the emoji are gone from a summary that also feeds a machine-readable payload, and the response reports the mime type and byte count instead of echoing an image URL.',
+		            'evidence' => 'lib/core/tests/Unit/Tool/ValidateImageForProductToolTest.php',
+		            'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => false, 'openWorldHint' => true ),
+		        ),
+		        'validate_tool_schema' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ValidateToolSchemaTool',
 			'readiness' => 'ready',
 			'probe' => 'call',
