@@ -145,6 +145,10 @@
             "decision": "declined",
             "reason": "It is a provider prompt preset: it composes a research prompt and calls the model client, and returns the text. deep_research and web_search already serve that capability, and the WordPress tool's own usage guidance points at both of them. A third name for \"research this topic\" would add a slug without adding a capability, so it is declined rather than deferred: no prerequisite would make the duplicate worth a slot."
         },
+        "schedule_notify_sms": {
+            "decision": "deferred",
+            "reason": "It schedules a Notify.lk SMS through two WordPress-only mechanisms at once: the `notifylk/notify-php` package (its own `is_available()` says the tool is disabled without it) and a WP-cron single event whose callback performs the send. The core has a schedule store but it stores a hook name and args and leaves dispatch to the host, so a port that only scheduled the hook would report success while nothing sent the message; porting the send inline would put the provider API key at rest in a schedule row. Prerequisite: an SMS provider client (or the package) plus an app-level scheduled-send listener, or a secret-reference field on the schedule payload so a credential is never stored with the message."
+        },
         "sync_classroom_courses_to_ecas": {
             "decision": "deferred",
             "reason": "It links existing ECAs by stored course id and optionally creates the rest, so it reads both the course list and the link the keystone would write. Prerequisite: a Google Classroom client plus the course-to-ECA link store (link_classroom_course_to_eca)."
