@@ -10870,3 +10870,148 @@ The remaining 8 are the composite and vision tools §164.110 measured one at a
 time. The `shopify_catalog` question is still open and still needs an owner:
 whether this runtime ships an MCP client for the keyless UCP catalogs, which
 forbid caching results.
+
+### §164.120 — Slice 3 measurement: the seven undecided `ecommerce` tools
+
+**Recorded.** §164.119 closed slice 2 with `ecommerce` at 8 ported, 28 deferred,
+one declined, 35 remaining. It also said "the remaining 8" were the composite
+and vision tools; the tree says **seven**. The eighth was `get_import_duty`,
+which §164.119 itself deferred, and §164.119's own arithmetic already proved it:
+`44 − 8 − 1 − 28 = 7`. The count is seven and this section measures them.
+
+#### The seven, and what each one does
+
+| Slug | Surface | Transport |
+|---|---|---|
+| `shopify_catalog` | Live product search, lookup and detail across Shopify catalogs | JSON-RPC 2.0 `tools/call` over HTTP |
+| `validate_image_for_product` | Checks a product photo against a per-category checklist | `WP_MCP_AI_OpenAI_Client::create_chat_completion` |
+| `validate_image_for_vehicle` | The same check for cleaning and repair estimates, multi-image | `WP_MCP_AI_OpenAI_Client::create_chat_completion` |
+| `rfdetr_catalog_search` | Fine-tuned RF-DETR object detection over catalog images | `WP_MCP_AI_Roboflow_Inference_Service` |
+| `product_actualization` | Places a product photo into a generated scene, image or video | Gemini, OpenAI and Google Veo |
+| `quickbooks_report` | QuickBooks **Online** report pull | `quickbooks.api.intuit.com/v3` over OAuth2 |
+| `quickbooks_desktop_sync` | QuickBooks **Desktop** entity query and write | A QODBC relay on the QuickBooks host |
+
+Four of the seven (`quickbooks_report`, `quickbooks_desktop_sync`,
+`shopify_catalog`, and the deprecated REST mode inside it) read a Remote Sites
+`connection_id` plus per-assistant enablement — the substrate Printful's fourth
+correction removed. For `shopify_catalog` that is a rename, because the UCP
+endpoints it actually calls are keyless and the ported `ShopifyProductsTool`
+already takes `store_url` and `access_token` as arguments. For the QuickBooks
+pair it is the whole credential path.
+
+#### The seam each one needs
+
+A port is bounded by the contract it can call. Reading the seven against
+`lib/core/src/Domain/Contract/` and `lib/laravel-adapter/src/Adapter/`:
+
+| Seam | Needed by | Declared in core | Bound in the Laravel adapter |
+|---|---|---|---|
+| `HttpClientInterface` | `shopify_catalog` | yes | yes (`HttpClient`) |
+| `VisionInferenceInterface` | both validators, `rfdetr_catalog_search` | **yes** | **no** |
+| Image and video generation | `product_actualization` | **no** — `ImageProductionInterface` is processing only (`optimize`, `enhance`, `upscale`, `edit`), and the only generation contract is `MusicGenerationInterface` | no |
+| OAuth2 token store with a realm | `quickbooks_report` | no | no |
+| A relay client | `quickbooks_desktop_sync` | no | no |
+
+Two rows decide the slice. `shopify_catalog` needs nothing that is not already
+bound on both sides, so it is portable today. `VisionInferenceInterface` is the
+uncomfortable one: it is declared in core as `infer($imagePath, $prompt,
+$options)`, which is exactly the shape all three vision tools want, and it is
+bound **only** in `lib/wordpress-adapter/src/Adapter/VisionInference.php`.
+`grep` finds no Laravel adapter and **no core tool that consumes it**, so the
+interface is declared and unwired. Porting a validator against it today ships a
+tool that can only refuse — the failure mode the register already cites for
+`get_discord_voice_channel_members`.
+
+That makes the Laravel vision adapter a small, high-leverage piece of work: it
+mirrors the existing `OpenAiTranscription` adapter, which already speaks to
+OpenAI from this side, and it unlocks three tools at once. It is still a new
+adapter, which is a different kind of change from a tool port, so it is not
+folded into this slice silently.
+
+#### The UCP endpoint, measured live
+
+`shopify_catalog` is the one whose contract was genuinely uncertain, so it was
+probed rather than read. Against `https://catalog.shopify.com/api/ucp/mcp` on
+2026-11-27, with no credential of any kind:
+
+| Request | Result |
+|---|---|
+| `tools/list` | `200`; exactly three tools — `search_catalog`, `get_product`, `lookup_catalog`, each requiring `meta` and `catalog` |
+| `tools/call` `search_catalog`, `{catalog:{query:"shoes"}}` | `200`, `10` products |
+| The same with `signals` (`dev.ucp.user_agent`) | `200`, `10` products — so `signals` is **optional** |
+| The same with `catalog.pagination.limit: 2` | `200`, `2` products, `has_next_page: true`, `total_count: 789`, opaque `cursor` |
+
+The transport is a **single stateless POST**: `Content-Type` and `Accept` of
+`application/json`, a JSON-RPC 2.0 envelope, and no `initialize` handshake, no
+session id and no UCP-specific header. `HttpClientInterface` is sufficient; no
+MCP client is required, which answers the question §164.119 left with an owner.
+
+The response envelope, which a port must map rather than reshape:
+
+```
+result.structuredContent = {
+  ucp:        { version, capabilities, status },   // discovery, a sibling — not a wrapper
+  products:   [ ... ],
+  pagination: { has_next_page, total_count, cursor },
+  messages:   [ ... ]                              // provider warnings, empty on success
+}
+```
+
+| Field | Shape | Port note |
+|---|---|---|
+| `price_range.min` / `.max` | `{amount: 11499, currency: "USD"}` | Minor units, so `Money::fromMinorUnits` |
+| `media[]` | `{type, url, alt_text, preview:{url,width,height}, width, height}` | Real CDN URLs and real alt text |
+| `variants[].id` | `gid://shopify/ProductVariant/...` | A GID, not an integer |
+| `description.plain` | **HTML** — `<p>` and `<ul>` | The field is named `plain` and is not plain; a port must strip it or say it is markup |
+| `metadata` | `{unique_selling_points[], top_features[], ...}` | Marketing copy the catalogue adapters do not carry |
+
+#### A probe that was wrong, and the rule it repeats
+
+On the first three probe rounds this measurement reported "`status: success`
+with no products". The endpoint was fine; **the probe was wrong** — it read
+`structuredContent.ucp.products`, while `products` is a sibling of `ucp`. Three
+rounds of "the provider returned nothing" were three rounds of looking in the
+wrong object. This is the same failure the box-packer and Printful slices hit:
+the fixture, not the code, is wrong more often. The lesson to carry forward is
+to print the **top-level keys** of a response before filtering it, and to be
+suspicious of a null result that agrees with a hypothesis.
+
+#### Provisional decisions
+
+Six of the seven are recorded here as **deferred**, each on a named
+prerequisite, and none is written into the register yet — a deferral that names
+a prerequisite the next slice might build should not be frozen before that slice
+is scoped:
+
+| Slug | Prerequisite |
+|---|---|
+| `validate_image_for_product`, `validate_image_for_vehicle` | A `VisionInferenceInterface` binding in `lib/laravel-adapter`. The WordPress original hardcodes `WP_MCP_AI_OpenAI_Client` rather than the provider router, so the port also has to choose a model per call instead of inheriting a global one |
+| `rfdetr_catalog_search` | The same binding, plus a Roboflow key and a `va_roboflow_catalog_model` checkpoint, because a fine-tuned detection model is not interchangeable with an LLM |
+| `product_actualization` | An image **and video** generation contract. Neither exists; `ImageProductionInterface` is processing only |
+| `quickbooks_report` | An OAuth2 credential store with a realm id, plus a replacement for `get_connection()` and `is_connection_enabled_for_assistant()`. QuickBooks Online is not the Desktop product the `qb-desktop` MCP covers |
+| `quickbooks_desktop_sync` | A host running QuickBooks Desktop and the QODBC driver, reached through a relay. That is a Windows application on someone's machine, not a service this runtime can stand up |
+
+`quickbooks_desktop_sync` deserves one extra note for whoever picks it up: its
+arguments include a free-form `where` clause and a `record_data` object relayed
+to QODBC, so it is a SQL surface in tool clothing. A port would need the `where`
+clause constrained rather than passed through.
+
+#### Order
+
+1. **`shopify_catalog`** — no new contract, no adapter, and the endpoint has
+   been measured live. Drop the deprecated `catalog_api` REST mode (it needs
+   `shpss_` credentials and Shopify has superseded it), keep the two keyless UCP
+   modes, and collapse `lookup_by_variant` onto `lookup_catalog`, which is what
+   the endpoint exposes.
+2. **The Laravel `VisionInference` adapter**, then the two validators, then
+   `rfdetr_catalog_search` once a detection model is chosen.
+3. **`product_actualization`** only after a generation contract exists.
+4. **The QuickBooks pair** last, and separately from each other: Online needs a
+   credential store, Desktop needs a host.
+
+#### Measurements
+
+Nothing in this section changes the tree, so every gate stays where §164.119
+left it: **294 ported, 9 declined, 78 deferred, 551 remaining**, `ready` 455,
+servable 496. `ecommerce` remains `44 \| 8 \| 1 \| 28 \| 35` until the first
+port lands.
