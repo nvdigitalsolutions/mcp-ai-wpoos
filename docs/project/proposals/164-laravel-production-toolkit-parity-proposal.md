@@ -8547,3 +8547,65 @@ reservation release on a refused retest.
 Next: slice 7, monitoring and alerts — `gtmetrix_set_monitoring`,
 `gtmetrix_get_alert_conditions`, `gtmetrix_set_alert_conditions` and
 `gtmetrix_get_alert_events`.
+
+## 164.97 `gtmetrix`, slice 7 — monitoring and alerts, and an alert that was dropped
+
+`gtmetrix_set_monitoring`, `gtmetrix_get_alert_conditions`,
+`gtmetrix_set_alert_conditions` and `gtmetrix_get_alert_events`. The toolkit
+moves from 17 to **21 of 23**; only `manage_page_tags` and the deferred install
+remain.
+
+### Corrections
+
+1. **A malformed alert condition refuses the whole replace.** The endpoint is a
+   full replace, and WordPress `continue`d past a non-array entry while the
+   ten-condition check still counted it. A caller that sent ten conditions and
+   one typo got nine alerts and a success. Every entry is validated by index
+   (`conditions[2].metric`) and the call is refused when one is wrong —
+   all-or-nothing is what "replace" means.
+2. **A threshold must be a number.** WordPress cast with `(float)`, so
+   `"fast"` became `0` and passed the non-negative check. An alert on
+   `ttfb > 0` fires on every report.
+3. **The condition count is what was stored.** WordPress counted the list it
+   sent; the port counts the set the API returned, which is the set that will
+   fire.
+4. **`send_to` is offered.** The API accepts recipients for Team organizations
+   and WordPress never sent the field, so a Team account could not set
+   recipients through the toolkit at all. It is validated (a valid address and
+   the only documented channel) and sent only when supplied, because omitting
+   it leaves the existing recipients untouched.
+5. **The monitoring frequency is case-folded and reported twice.** `Daily` now
+   behaves like `daily` (`sanitize_key()` used to lowercase it silently, which
+   the port makes explicit), and the reply carries the requested `frequency`
+   beside the stored `monitored` — `none` is stored as `no`, and a plan can
+   refuse `hourly`.
+6. **The event limit is a page size.** WordPress fetched the default page and
+   sliced it, so `limit: 100` returned at most the default page. The port sends
+   `page[size]` and bounds it to 1–100.
+7. **Alert and recipient rows are projected to scalars.** WordPress forwarded
+   nested values into fields the schema describes as a metric and a threshold.
+
+### Transport
+
+`E40303` is classified as `gtmetrix_plan_denied`. The docs use it for both a
+monitoring restriction (plan, location, browser) and a tag ceiling; the shared
+meaning is a plan limit, and `gtmetrix_invalid_request` — the unmapped `E4xx`
+fallback — would tell an agent to fix a request that no change can fix.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,947 / 23,300** (18 tests and 71 assertions added) |
+| adapter `ToolProbesTest` | **241 / 1,634**, 2 skipped, 0 failures — four new probes |
+| tool readiness audit | **461 / 461**, servable **442** (+4), no violations |
+| toolkit parity | **240 of 854**; `gtmetrix` **21 ported**, 0 declined, 1 deferred, **2 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The whole-replace refusal, the numeric-threshold refusal, the stored-set count,
+the recipient validation, the stored monitoring state and the event page size
+are pinned in `lib/core`. The test fake gained method-keyed responses because
+`GET` and `POST` share the alert-conditions path.
+
+Next: slice 8, the last portable tool — `gtmetrix_manage_page_tags` — and the
+toolkit closes at 22 ported, 1 deferred.

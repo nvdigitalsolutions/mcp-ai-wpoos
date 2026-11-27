@@ -179,6 +179,8 @@
             "gtmetrix_analyze_report",
             "gtmetrix_compare_reports",
             "gtmetrix_generate_wpcode_snippet",
+            "gtmetrix_get_alert_conditions",
+            "gtmetrix_get_alert_events",
             "gtmetrix_get_lighthouse_audits",
             "gtmetrix_get_page",
             "gtmetrix_get_report",
@@ -191,6 +193,8 @@
             "gtmetrix_list_simulated_devices",
             "gtmetrix_list_tests",
             "gtmetrix_retest_page",
+            "gtmetrix_set_alert_conditions",
+            "gtmetrix_set_monitoring",
             "gtmetrix_start_test"
         ],
         "healthcare": [],

@@ -31,6 +31,8 @@ final class FakeGtmetrixClient implements GtmetrixClientInterface
     /**
      * Responses keyed by the exact path, then by the path before any query.
      *
+     * A row may be keyed as `"GET pages/X"` to distinguish a method that shares
+     * a path with another (`GET` and `POST` on the alert-conditions endpoint).
      * A row may carry `status`, `data`, `meta`, `links`, `location`,
      * `rate_limit` and `document`; the last is the raw body a report-resource
      * request answers with.
@@ -42,7 +44,8 @@ final class FakeGtmetrixClient implements GtmetrixClientInterface
     public ?GtmetrixApiException $fail = null;
 
     /**
-     * Per-path failures, keyed by the path before any query.
+     * Per-path failures, keyed by the path before any query, or by
+     * `"METHOD path"` when only one method should fail.
      *
      * @var array<string, GtmetrixApiException>
      */
@@ -63,11 +66,19 @@ final class FakeGtmetrixClient implements GtmetrixClientInterface
 
         $base = explode('?', $path, 2)[0];
 
+        if (isset($this->failOn[ $method . ' ' . $base ])) {
+            throw $this->failOn[ $method . ' ' . $base ];
+        }
+
         if (isset($this->failOn[ $base ])) {
             throw $this->failOn[ $base ];
         }
 
-        $row  = $this->responses[ $path ] ?? $this->responses[ $base ] ?? array();
+        $row = $this->responses[ $method . ' ' . $path ]
+            ?? $this->responses[ $method . ' ' . $base ]
+            ?? $this->responses[ $path ]
+            ?? $this->responses[ $base ]
+            ?? array();
 
         return array(
             'status'     => (int) ( $row['status'] ?? 200 ),
