@@ -495,6 +495,18 @@ Probe Club,club
 			array( 'send_twitter_dm', array( 'recipient_id' => '2244994945', 'text' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'get_twitter_dms', array(), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'manage_twitter_webhook', array( 'action' => 'register', 'env_name' => 'production', 'url' => 'https://127.0.0.1/probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.108 — the seven gateway tools. No credential is passed, so each
+			// answers the credential refusal by name with no network call. The
+			// endpoints are public https so the URL guard passes and the refusal
+			// under test is the credential one.
+			array( 'send_apple_message', array( 'msp_api_url' => 'https://msp.example.com/v1/apple', 'business_id' => 'probe', 'conversation_id' => 'conv', 'message' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'send_apple_message_group', array( 'msp_api_url' => 'https://msp.example.com/v1/apple', 'business_id' => 'probe', 'participants' => array( 'p-1' ), 'message' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'send_apple_message_interactive', array( 'msp_api_url' => 'https://msp.example.com/v1/apple', 'business_id' => 'probe', 'conversation_id' => 'conv', 'interactive_type' => 'authenticate', 'body_text' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_apple_messages', array( 'msp_api_url' => 'https://msp.example.com/v1/apple', 'business_id' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'list_icloud_drive_files', array( 'gateway_url' => 'https://icloud.example.com/v1/drive' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_icloud_drive_file', array( 'gateway_url' => 'https://icloud.example.com/v1/drive', 'file_id' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'upload_icloud_drive_file', array( 'gateway_url' => 'https://icloud.example.com/v1/drive', 'file_name' => 'probe.txt', 'content' => 'cHJvYmU=' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
