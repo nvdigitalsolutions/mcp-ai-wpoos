@@ -10696,13 +10696,13 @@ prerequisites, which closes slice 2.
 
 ### §164.118 — Slice 2c: `printful`, and a recommendation reversed
 
-**Recorded.** `printful` is served with 24 actions. Two of §164.115's
+**Recorded.** `printful` is served with 25 actions. Two of §164.115's
 recommendations were **not** followed, and this section is where that is argued
 rather than quietly done.
 
 #### One tool, not four
 
-§164.115 recommended splitting the 24 actions into four tools by object. That is
+§164.115 recommended splitting the 25 actions into four tools by object. That is
 the better shape for a reader, and it is not what shipped, for a bookkeeping
 reason that outranks it:
 
@@ -10717,14 +10717,14 @@ The four unguarded `$arguments[...]` reads the measurement found are gone: every
 identifier goes through one accessor, so a missing one is a named validation
 failure instead of a warning and a lookup of id `0`.
 
-#### V1, because V2 cannot do a third of the job
+#### V1, because V2 cannot do a fifth of the job
 
 §164.115 recorded that Printful's v2 is beta. The documentation fetched on
 2026-11-27 makes the consequence concrete:
 
 | Fact | Effect |
 |---|---|
-| *"Product management, with sync products or product templates, is not available in version 2 of the API yet."* | Seven of the 24 actions are sync-product or template operations. A v2 port would **drop them silently** |
+| *"Product management, with sync products or product templates, is not available in version 2 of the API yet."* | Five of the 25 actions are sync-product operations (list, get, create, update, delete). Neither enum contains a template action, so that half of the limitation does not bite — but a v2 port would still **drop those five silently** |
 | The `/files` list endpoint is **removed** in v2 — a call answers `410 Gone` | The file-library reads cannot move either |
 | V2's RFC 9457 error format is *"not yet supported by all endpoints"*, and the exceptions are **Catalog, Orders and Webhook** | Exactly the endpoints this tool uses; the v1 error envelope is what has to be parsed |
 
@@ -10771,9 +10771,102 @@ before the request is sent.
 Slice 2 closes with one register entry: `get_import_duty` deferred, with the two
 prerequisites §164.115 named — a live `api.trade.gov/v1/tariff_rates/search` call
 showing the real parameters, and a decision on direction, because the tool
-estimates imports while the API publishes export rates. That entry, plus
-`estimate_order_rates`, finishes what §164.115 re-planned.
+estimates imports while the API publishes export rates. §164.119 records that
+entry, and records that `estimate_order_rates` needed no entry of its own: it is
+an action inside the ported `shipping_rate_estimator`, not a corpus slug.
 
-After that, `ecommerce` stands at 8 ported of 44 with 27 deferred and one
+After that, `ecommerce` stands at 8 ported of 44 with 28 deferred and one
 declined. The remaining 8 are the composite and vision tools §164.110 measured
 one at a time.
+
+### §164.119 — Slice 2 closes: one register entry, and three counts corrected
+
+**Recorded.** Slice 2 ends with a register entry smaller than §164.118 predicted,
+and with two numbers in that section corrected against the tree.
+
+#### The entry, and the entry that was not needed
+
+`get_import_duty` is registered `deferred`. The reason names the two
+prerequisites §164.115 measured:
+
+| Prerequisite | Why the port cannot proceed without it |
+|---|---|
+| A live call to `api.trade.gov/v1/tariff_rates/search` | The request was refused rather than answered, so every field the normaliser reads on a best-effort basis — `duty_rate`, `applied_rate`, `simple_average`, `tariff_link` — is unconfirmed |
+| A direction decision | The tool sends `reporter` as the **import destination**, while the FTA Tariff Rates API publishes the reporter's **export** rates and takes `sources` for the counterparty, which the WordPress tool never sends. Ported as written it would answer the opposite question with a plausible number |
+
+§164.118 closed by saying the entry *plus `estimate_order_rates`* would finish
+the re-plan. The second half of that sentence was wrong: `estimate_order_rates`
+is **not** a corpus slug. It is one of three actions on the
+`shipping_rate_estimator` enum, and that slug is served. Writing it into the
+register would have failed `--check`, which rejects a slug no toolkit declares —
+the gate caught the error before the entry shipped. The deferral itself is real
+and lives where it can be enforced: in the action's schema description and in
+the tool's readiness reason, both of which say it is blocked on the order model.
+
+#### Two counts in §164.118 were wrong
+
+§164.118 said the tool serves **24 actions** and that **seven** of them are
+sync-product or template operations. The first is a stale WordPress count; the
+second was never true. Diffing the two enums:
+
+| Change | Count |
+|---|---|
+| WordPress corpus enum | 24 |
+| Dropped — `list_connections`, because this runtime has no Remote Sites store | −1 |
+| Added — `get_product_size_guide`, over `/products/{id}/sizes` | +1 |
+| Added — `get_category`, because the corpus only had the list | +1 |
+| **Served** | **25** |
+
+The sync-product set is five actions — list, get, create, update, delete — and
+neither enum contains a template action at all. The v2 argument survives: a v2
+port would still silently drop those five, and v2 still cannot express product
+templates. But it is a fifth of the surface, not a third, so the section
+heading, the class docblock and the readiness reason all say a fifth now. An
+inflated number supporting a correct conclusion is still the kind of claim that
+gets quoted later without the argument attached, so it was corrected rather
+than left standing.
+
+#### The unauthenticated-token claim, settled by probe
+
+§164.118's pitfall list carried an unverified assumption: that Printful serves
+`list_countries` without a token. Probed against `api.printful.com` on
+2026-11-27 with **no `Authorization` header sent**:
+
+| Action | Path | Result |
+|---|---|---|
+| `list_countries` | `/countries` | `200` |
+| `list_catalog_products` | `/products` | `200` |
+| `get_catalog_product` | `/products/{id}` | `200` |
+| `get_catalog_variant` | `/products/variant/{id}` | `200` |
+| `get_product_size_guide` | `/products/{id}/sizes` | `200` |
+| `list_categories` | `/categories` | `200` |
+| `get_category` | `/categories/{id}` | `200` |
+
+So the code was right about `list_countries` and the **description** was wrong
+about the rest: it said the token was required for every action except
+`list_countries`, which reads as a statement about the provider. It now says
+the token is *this tool's* requirement and names the catalog reads the provider
+serves anonymously. Enforcement was deliberately left alone — one credential
+path is the simpler contract, and relaxing it would mean a per-action rule
+built on seven probes rather than a documented provider policy. A caller that
+needs anonymous catalog browsing is a small change to the validation gate, and
+this paragraph is the note to whoever makes it.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `toolkit-parity.php --check` | no regression: **294 ported, 9 declined, 78 deferred, 551 remaining** |
+| `ecommerce` row | `44 \| 8 \| 1 \| 27 \| 35` → `44 \| 8 \| 1 \| 28 \| 35` — remaining unchanged, because a deferral stays in it |
+| Readiness manifest | `ready` **455**, servable 496; no violations |
+| `EcommercePrintfulToolTest` | **22 tests, 113 assertions**, 0 failures |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on the two touched files |
+| PHPStan level 8, `lib/core` | no errors against the baseline |
+
+#### Next
+
+`ecommerce` stands at 8 ported of 44, 28 deferred, one declined, 35 remaining.
+The remaining 8 are the composite and vision tools §164.110 measured one at a
+time. The `shopify_catalog` question is still open and still needs an owner:
+whether this runtime ships an MCP client for the keyless UCP catalogs, which
+forbid caching results.
