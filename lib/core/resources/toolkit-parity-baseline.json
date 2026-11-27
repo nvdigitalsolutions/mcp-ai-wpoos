@@ -38,7 +38,12 @@
         "capture": [
             "capture_webpage_screenshot"
         ],
-        "chat-channels": [],
+        "chat-channels": [
+            "create_slack_channel",
+            "get_slack_channels",
+            "get_slack_messages",
+            "send_slack_message"
+        ],
         "cloudways": [
             "cloudways_get_app",
             "cloudways_get_operation_status",

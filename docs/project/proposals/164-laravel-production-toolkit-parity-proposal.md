@@ -8808,3 +8808,78 @@ failure; and that the one-request-per-tool shape ports without a second copy of
 the family's HTTP plumbing. If those hold, the remaining eight slices are
 mechanical. If they do not, what changes is the shape of the base class, not
 fifty tools.
+
+### §164.100 — Slice 1: the Slack four
+
+**Recorded.** Four of fifty. `chat-channels` is now **4 ported, 0 declined,
+1 deferred, 46 remaining**.
+
+| slug | call | kind |
+|---|---|---|
+| `send_slack_message` | `chat.postMessage`; returns the message `ts` that a threaded reply or a permalink needs | write |
+| `get_slack_channels` | one `conversations.list` page: id, name, privacy and archive flags, member count, cursor | read |
+| `get_slack_messages` | one `conversations.history` page: ts, type, subtype, user, bot_id, text, thread parent, reply count | read |
+| `create_slack_channel` | one `conversations.create`; id, name, privacy, creation time | write |
+
+All four require `manage_options`, because that is what all fifty WordPress
+tools enforced behind their per-slug filter even though forty-nine declared
+`edit_posts`. The shared ground is `ChatChannelTool` (credential argument, one
+error envelope, one transport normalisation) plus `SlackTool` (the `ok:false`
+classifier, the friendly-code map, the cursor and channel projection).
+
+#### Corrections
+
+1. **The limit ceiling is 999, not 1000.** Both Slack list methods document
+   "under 1000". WordPress accepted 1–1000 and, for anything outside that
+   range, appended nothing, so `limit: 1000` was silently replaced by Slack's
+   default of 100 and `limit: 0` likewise. The port clamps to 1–999 and always
+   sends the effective value, so the request and the reply agree.
+2. **`is_private` is parsed, not cast.** WordPress used `(bool)`, which turns
+   the string `"false"` into `true`; a caller sending form-encoded booleans
+   would create a private channel believing it asked for a public one.
+   `boolParam()` reads `"false"`, `"0"` and `"off"` as false.
+3. **A successful answer must carry the thing that was made.** WordPress
+   returned the provider document as-is, so an `ok: true` body without a `ts`
+   (or without a channel on a create) read as an empty success. Both are
+   reported as `slack_invalid_response`.
+4. **`num_members` is null when Slack omits it.** A direct message has no
+   member count and `conversations.create` does not return one; reporting zero
+   would fabricate a fact.
+5. **`types` is sent only when given.** WordPress documented a
+   `public_channel` default and never sent it; Slack's own default is the same,
+   so behaviour is unchanged and the reply no longer claims a filter the
+   request did not carry.
+
+#### Adaptations
+
+- Credentials stay arguments, but their schema properties are `writeOnly`, and
+  every failure test serialises the envelope and asserts the token is absent.
+- Payloads are projected: ids, statuses and the fields the tool's contract
+  names, never the provider document.
+- The per-slug capability and timeout filters, `WP_MCP_AI_Logger` events and
+  the multisite membership check are dropped (§164.99).
+- The caller-supplied-endpoint guard is **not** in this slice: Slack's endpoint
+  is a constant. It lands with the first tool that accepts a URL (slice 6),
+  where it has a consumer and a test rather than a hypothetical.
+
+#### Measurements
+
+| gate | before | after |
+|---|---|---|
+| `lib/core` PHPUnit | 3,960 / 23,348 | 3,982 / 23,430 |
+| adapter `ToolProbesTest` | 242 / 1,638 | 246 / 1,654 |
+| tool readiness audit | 462 / 462, servable 443 | 466 / 466, servable 447 |
+| toolkit parity | 241 of 854 | 245 of 854 |
+| `chat-channels` | 0 ported / 0 declined / 1 deferred / 50 remaining | 4 / 0 / 1 / 46 |
+| phpcs | clean | clean |
+
+The four adapter probes pass no token, so each proves the wiring and the
+credential refusal without a network call.
+
+#### Next
+
+Slice 2, Discord: send, list channels, read messages, list voice members,
+create channel, add reaction. Six tools over a bot-token REST API. Discord
+reports errors with real HTTP status codes and a `{code, message}` body, so
+`DiscordTool` gets its own classifier while the transport normalisation and
+the credential shape stay in `ChatChannelTool`.

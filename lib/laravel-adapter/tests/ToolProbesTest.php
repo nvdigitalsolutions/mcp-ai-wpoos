@@ -433,6 +433,13 @@ Probe Club,club
 
 			// §164.98 — tags. The action is valid so the refusal is the guard.
 			array( 'gtmetrix_manage_page_tags', array( 'action' => 'list' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.100 — the Slack four. No token is passed, so each answers the
+			// credential refusal by name without a network call.
+			array( 'get_slack_channels', array(), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_slack_messages', array( 'channel' => 'C1' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'send_slack_message', array( 'channel' => 'C1', 'text' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'create_slack_channel', array( 'name' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
