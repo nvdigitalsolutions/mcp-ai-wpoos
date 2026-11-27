@@ -11565,3 +11565,113 @@ The generation contract, which is the last of the three prerequisites and the on
 remaining one that unblocks a tool by existing — `product_actualization` needs an
 image **and** video generation seam, and `ImageProductionInterface` is processing
 only.
+
+### §164.128 — Plan for the media generation slice, after checking what already exists
+
+**Status: plan, not a record.** No code yet. The last paragraph of §164.127 said
+the generation contract had to be *built*. Reading the worker before designing it
+showed that is wrong: most of it **already exists**, and the job is to expose it
+rather than to write a provider client.
+
+#### What is already there
+
+The media worker lives in this repository, at `addons/media-worker`, and its
+image and video routers already carry generation:
+
+| Route | Purpose | State |
+|---|---|---|
+| `POST /api/image/generate` | prompt → image; reads `prompt`, `model`, `provider`, `size`, `style`, `count`, `negative_prompt` | **exists**, dependencies `openai` and `@google/generative-ai` are installed |
+| `POST /api/image/edit` | image + operation → image; `colorize` and `style_transfer` | **exists**, but its operation set is closed |
+| `GET /api/image/providers` | which image providers are configured | **exists** |
+| `POST /api/video/generate` | prompt → video | **exists** |
+| `GET /api/video/prediction/:id` | poll one generation | **exists** |
+| `GET /api/video/models` | which video models are configured | **exists** |
+
+The Laravel side is half-wired: `MediaWorkerClient` already has `postJson`,
+`uploadFile` and `download`; `MediaWorkerImageProduction::edit()` already posts
+to `/api/image/edit` and persists the answer through `MediaWorkerOutput::persist($b64, …)`;
+and `MediaWorkerCapabilityProbe` already reports which capabilities a worker has.
+
+#### So the gap is contract surface, not capability
+
+| Missing piece | Why it is missing |
+|---|---|
+| A generation method on a core contract | `ImageProductionInterface` is documented and implemented as **processing**: `optimize`, `enhance`, `upscale`, `resizeSmart`, `batch`, `edit`, `supports`. There is no way to ask for a new image |
+| A video generation contract | None exists. `VideoProcessingInterface`, `VideoCompositionInterface` and `VideoFrameExtractionInterface` all take an existing video |
+| Product **integration** | The worker's `/api/image/edit` accepts `colorize` and `style_transfer` only. "Place this product into this scene" is a reference-image edit, which is a different operation |
+
+#### What the industry does, and how it maps here
+
+Vercel's AI SDK is the closest large-scale precedent, and its shape is
+instructive:
+
+| Their decision | This plan |
+|---|---|
+| **One primitive per media type** — `generateImage`, `generateSpeech`, `experimental_generateVideo` — never one union `generate` | Separate contracts, because their signatures genuinely differ: an image call returns bytes, an edit call takes an image, a video call returns a job |
+| Video is still **`experimental_`** | `VideoGenerationInterface` ships marked experimental, and no tool is registered against it until a second consumer exists |
+| Providers hand over a **hosted URL or inline bytes**, and the SDK downloads so the caller sees one shape | Already solved here: `MediaWorkerOutput::persist()` turns `b64` into a file in the registry, and `MediaWorkerClient::download()` handles the URL case. The adapter is the normalisation point |
+| Long-running video is handled with **timeouts and polling** | The worker already models it as `POST /api/video/generate` plus `GET /api/video/prediction/:id`, which is exactly submit-and-poll |
+
+#### The proposed contracts
+
+Three, each with a consumer, and each returning the same file shape
+`ImageProductionInterface` already returns so output lands in the registry the
+same way:
+
+```
+ImageGenerationInterface
+    generate(string $prompt, array $options): array
+        → { path, width, height, mime_type, bytes, model, provider, revised_prompt? }
+
+ImageIntegrationInterface
+    integrate(string $sourcePath, string $instruction, array $options): array
+        → the same shape, plus { operation, provider, model }
+
+VideoGenerationInterface   (marked experimental)
+    submit(string $prompt, array $options): array   → { operation_id, state }
+    status(string $operation_id): array             → { state, progress?, error? }
+    fetch(string $operation_id): array              → the same file shape, plus { duration_seconds }
+```
+
+The three-part video split is deliberate: a Veo call is a long-running operation
+(`:predictLongRunning` → poll `GET /{operation}` → download URI), and a single
+blocking `generate()` would either time out or hold a PHP request open for
+minutes. `QueueClientInterface` and `JobStatusStore` already exist, so a job
+handler can own the polling; the contract does not need to know about the queue.
+
+#### Phases, each with a consumer
+
+| Phase | Work | Consumer |
+|---|---|---|
+| **P1** | Read `/api/image/generate` and `/api/image/edit` in full — they are large routes and the shape of everything below depends on exactly what they accept and return, particularly whether the edit route can take a reference image | none; this is measurement, and it must come first |
+| **P2** | `ImageGenerationInterface` + `MediaWorkerImageProduction::generate()` + contract tests | `product_actualization` **image mode**, once P1 says whether integration is a worker change or a second call |
+| **P3** | `VideoGenerationInterface` + adapter + a queue job that polls | `product_actualization` **video mode** |
+| **P4** | `ImageIntegrationInterface`, if P1 shows the edit route cannot already do it | the same tool's `integration_mode: ai` |
+
+P1 is not padding. `product_actualization`'s two modes and its `integration_mode`
+switch map onto three different worker operations, and guessing which ones exist
+is how a port ships a mode that silently never works.
+
+#### Decisions this plan cannot make
+
+1. **Does generation belong in the worker or in a Laravel adapter?** The worker
+already holds the provider keys and the `openai` and `@google/generative-ai`
+clients, so calling it keeps keys off the PHP host. Doing it in PHP would mean a
+second provider client and duplicated key handling.
+2. **`product_actualization`'s composite mode.** It composites locally, which
+needs GD or Imagick; the worker has `sharp`. Whether a local composite is in scope
+or whether the worker's transform route should do it is a decision about where
+image math lives.
+3. **Video retention.** A generated video is large. Who deletes it, and after how
+long, is a policy rather than a contract.
+4. **Cost visibility.** Generation is the most expensive thing this runtime can
+do. Whether a tool call should require an approval ticket before a video job is
+queued is a product decision, and `ApprovalTicketInterface` already exists if the
+answer is yes.
+
+#### Acceptance test
+
+`product_actualization` is served in both modes, parity moves 12 → 13, and the
+readiness manifest gains one row. If P1 shows that integration needs a worker
+route that does not exist, the tool ships with `integration_mode: composite`
+only, and the refusal names the missing route rather than pretending.
