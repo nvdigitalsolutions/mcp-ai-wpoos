@@ -20,6 +20,18 @@
 class Test_Memory_Tool_Identity_Scope extends WP_UnitTestCase {
 
 	/**
+	 * The caller's own agent id, and another agent's id.
+	 *
+	 * Arbitrary but fixed. They must differ: the scope gate allows an operation
+	 * only when the resolved id equals the caller's own, so a pair that
+	 * collided lets a cross-agent call through and the denial assertions fail
+	 * for a reason that has nothing to do with the gate. These used to be two
+	 * independent wp_rand() calls, which make no promise of being different.
+	 */
+	const OWN_AGENT_ID   = 3000001;
+	const OTHER_AGENT_ID = 3000002;
+
+	/**
 	 * Create a real user with the given role and set it as the current user.
 	 *
 	 * @param string $role WordPress role slug.
@@ -110,8 +122,8 @@ class Test_Memory_Tool_Identity_Scope extends WP_UnitTestCase {
 	 */
 	public function test_recall_cross_agent_denied_without_manage_options() {
 		$subscriber = $this->create_user( 'subscriber' );
-		$own        = wp_rand( 3000000, 9000000 );
-		$other      = wp_rand( 3000000, 9000000 );
+		$own        = self::OWN_AGENT_ID;
+		$other      = self::OTHER_AGENT_ID;
 
 		$tool   = new WP_MCP_AI_Tool_Recall_Memory();
 		$result = $tool->execute(
@@ -177,8 +189,8 @@ class Test_Memory_Tool_Identity_Scope extends WP_UnitTestCase {
 	 */
 	public function test_wake_up_cross_agent_denied_without_manage_options() {
 		$subscriber = $this->create_user( 'subscriber' );
-		$own        = wp_rand( 3000000, 9000000 );
-		$other      = wp_rand( 3000000, 9000000 );
+		$own        = self::OWN_AGENT_ID;
+		$other      = self::OTHER_AGENT_ID;
 
 		$tool   = new WP_MCP_AI_Tool_Wake_Up_Context();
 		$result = $tool->execute(
@@ -200,8 +212,8 @@ class Test_Memory_Tool_Identity_Scope extends WP_UnitTestCase {
 	 */
 	public function test_semantic_cross_agent_denied_without_manage_options() {
 		$subscriber = $this->create_user( 'subscriber' );
-		$own        = wp_rand( 3000000, 9000000 );
-		$other      = wp_rand( 3000000, 9000000 );
+		$own        = self::OWN_AGENT_ID;
+		$other      = self::OTHER_AGENT_ID;
 
 		$tool   = new WP_MCP_AI_Tool_Semantic_Context_Search();
 		$result = $tool->execute(
@@ -272,8 +284,8 @@ class Test_Memory_Tool_Identity_Scope extends WP_UnitTestCase {
 	 */
 	public function test_mine_cross_agent_denied_without_manage_options() {
 		$subscriber = $this->create_user( 'subscriber' );
-		$own        = wp_rand( 3000000, 9000000 );
-		$other      = wp_rand( 3000000, 9000000 );
+		$own        = self::OWN_AGENT_ID;
+		$other      = self::OTHER_AGENT_ID;
 
 		$tool   = new WP_MCP_AI_Tool_Mine_Agent_Memory();
 		$result = $tool->execute(
@@ -303,8 +315,8 @@ class Test_Memory_Tool_Identity_Scope extends WP_UnitTestCase {
 	 */
 	public function test_lifecycle_scope_gates() {
 		$subscriber = $this->create_user( 'subscriber' );
-		$own        = wp_rand( 3000000, 9000000 );
-		$other      = wp_rand( 3000000, 9000000 );
+		$own        = self::OWN_AGENT_ID;
+		$other      = self::OTHER_AGENT_ID;
 
 		$tool   = new WP_MCP_AI_Tool_Manage_Context_Lifecycle();
 		$result = $tool->execute(
@@ -335,8 +347,8 @@ class Test_Memory_Tool_Identity_Scope extends WP_UnitTestCase {
 	 */
 	public function test_batch_scope_gates() {
 		$subscriber = $this->create_user( 'subscriber' );
-		$own        = wp_rand( 3000000, 9000000 );
-		$other      = wp_rand( 3000000, 9000000 );
+		$own        = self::OWN_AGENT_ID;
+		$other      = self::OTHER_AGENT_ID;
 
 		$tool   = new WP_MCP_AI_Tool_Batch_Manage_Memory();
 		$result = $tool->execute(
