@@ -9696,3 +9696,141 @@ listener with a secret reference. None is a tool that could be ported now.
 
 The `chat-channels` toolkit is complete. The next pass is the next toolkit in
 the 164 register.
+
+### §164.110 — `ecommerce` measurement
+
+**Recorded.** Forty-four tools, one already ported (`generate_invoice_pdf` →
+`GenerateInvoicePdfTool`), so **43 remain**. This is the measurement that
+precedes the first slice, and it changes what the loop can do here.
+
+#### The finding: there is no commerce substrate in the runtime
+
+`chat-channels` was portable because `lib/core` already owns
+`HttpClientInterface`. `crm` was portable because it owns
+`ContentStoreInterface`. This toolkit has neither an equivalent nor an obvious
+mapping, and establishing that before planning slices is the point of the pass.
+
+Three facts, each checked rather than assumed:
+
+1. **`lib/core` has no commerce contract.** Nothing in `Domain/Contract` covers
+   a product, catalog, cart, order or customer. The `cms_*` tools the console
+   exposes are served by a plugin, not by the core.
+2. **The commerce model that does exist is `addons/nvoos-astro-bridge`** — the
+   `nvoos-commerce/v1` REST surface. Its object model is **products,
+   categories, brands, colours, media, promotions and promocodes**
+   (`includes/REST/`). There is **no orders controller and no customers
+   controller**; the full REST set is Products, Promocodes, Promotions,
+   ShopGlobals, Statuses, Terms, ThemePolicy, WooLogin, Cart, Checkout and the
+   content controllers.
+3. **Variants are read-only.** `Sources/WooProductSource::transform_variants()`
+   emits `{ id, sku, price, oldPrice, stock, attributes[{ name, value }], image }`
+   for a `WC_Product_Variable` (Proposal 106 §1.1).
+   `Transformers/ProductTransformer` — the native source — emits none, and
+   `REST/ProductsController` has no variants handling on write.
+
+So the runtime can **serve** a variant list from Woo and cannot **store** or
+**create** one.
+
+#### What that does to the 44
+
+| population | tools | substrate | verdict |
+|---|---:|---|---|
+| Remote provider clients | 10 | `HttpClientInterface` + caller credentials | **port now** |
+| Pure algorithm | 1 | none needed | **port now** |
+| Composite / AI | 5 | other tools, or the media worker | per case |
+| WooCommerce-local store operations | 27 | **none** | blocked on a contract |
+
+**Remote provider clients (10).** `shopify_products`, `shopify_orders`,
+`shopify_customers`, `shopify_inventory`, `shopify_catalog` (Admin GraphQL, and
+Storefront for the catalog search), `printful` (`api.printful.com`),
+`quickbooks_report` (`quickbooks.api.intuit.com`), `quickbooks_desktop_sync`
+(a host-run QBBRIDGE, like the Apple/iCloud gateways),
+`get_import_duty` (`api.trade.gov/v1/tariff_rates/search`), and
+`shipping_rate_estimator` (carrier APIs, configured endpoints). Each takes a
+credential and an endpoint the way the chat-channel providers do, so the
+`ChatChannelTool` disciplines apply directly: credential as an argument, one
+canonical envelope, `publicUrl()` for any caller-supplied endpoint, and the
+provider's own error vocabulary preserved.
+
+**Pure algorithm (1).** `shipping_box_packer` is a 3D bin-packing routine; it
+needs no store, only a normalised list of item dimensions.
+
+**Composite / AI (5).** `lookup_product_price` orchestrates
+`run_crawl4ai_job` plus vision identification; `rfdetr_catalog_search` needs the
+catalog-detection model; `product_actualization` needs a scene generator;
+`validate_image_for_product` and `validate_image_for_vehicle` are vision checks.
+Each depends on something that may already exist elsewhere in the runtime, which
+is why they are measured per case rather than grouped.
+
+**WooCommerce-local (27).** Product writes (`create_product_advanced`,
+`bulk_update_products`, `update_woo_product_price`, `update_woo_product_qty`,
+`import_products_csv`, `export_products_report`, `sync_product_inventory`),
+orders (`process_order_workflow`, `bulk_order_status_update`,
+`refund_order_advanced`, `get_order_analytics`), customers (`segment_customers`,
+`customer_lifetime_value`, `export_customer_data`), inventory
+(`track_inventory_movement`, `low_stock_alert_automation`,
+`inventory_forecast`), marketing (`create_discount_campaign`,
+`abandoned_cart_recovery`, `get_abandoned_carts`, `send_cart_recovery_email`,
+`upsell_recommendations`, `sales_performance_dashboard`) and the four CRUD
+bundles (`woo_products`, `woo_orders`, `woo_customers`, `woo_coupons`). Every one
+of them reads or writes a WooCommerce object — `wc_get_orders()`,
+`WC_Order`, `$wpdb` over `wc_order_stats` and `woocommerce_sessions` — and the
+runtime has no counterpart for any of it. `sales_performance_dashboard` is
+the extreme case at 33 direct `$wpdb` reads.
+
+This is not a port problem; it is a missing model. Porting any of the 27 would
+mean either a WordPress dependency in a framework-agnostic core or a tool that
+fabricates an empty answer — the failure mode §164.102 rejected for the Discord
+voice tool.
+
+#### The variant model, and what the measurement settles
+
+The one design question worth resolving now, because it decides whether the
+product-write tools ever move: the runtime's variant **read** shape is already
+the right one, and the smallest model that round-trips Woo variations, Shopify
+variants and the bridge is the same shape with a write side:
+
+- a product has 1..n variants;
+- a variant carries `sku`, `price`, `oldPrice`, `stock` and a set of
+  `{ name, value }` options;
+- the option names are defined per product, the values per variant.
+
+That is `transform_variants()`'s emitted array, and it is also the classic
+`product → sku` + `attribute ↔ sku` pivot with the value on the pivot — the
+model set out in Shaun Thornburgh's "Managing Product Variants in an E-Commerce
+Store with Laravel" (2023), where `attribute_sku.value` holds the per-variant
+value and `attributes` are scoped to the product. The two agree, so the read
+side already constrains the write side: adding variants to
+`ProductsController` and to `ProductTransformer` is a schema addition, not a
+redesign.
+
+#### Decline candidate
+
+`lookup_product_price` is documented as "like Google Lens", but its mechanism
+is scraping retail search result pages (`amazon.com/s`, `ebay.com/sch`,
+`target.com/s`) through `run_crawl4ai_job` and then guessing which result is the
+product. Retailer search HTML is neither stable nor a licensed interface, and a
+core tool that ships that mechanism will break quietly and repeatedly.
+Recommended decision: **decline**, and keep the crawl and vision primitives
+available to a caller who wants to compose its own lookup.
+
+#### Proposed slices
+
+| slice | tools | shape |
+|---|---:|---|
+| 1 | 5 | Shopify: Admin GraphQL, plus Storefront for the catalog search |
+| 2 | 3 | Printful, trade.gov tariff rates, carrier rate shop |
+| 3 | 2 | QuickBooks Online, QuickBooks Desktop bridge |
+| 4 | 1 | 3D bin packer |
+| 5+ | 5 | the composite and vision tools, measured one at a time |
+| deferred | 27 | WooCommerce-local, prerequisite: a commerce contract with products (including variant write), orders and customers |
+
+Slice 1 first: Shopify is five tools over one credential model, which is the
+same shape as slice 3 of `chat-channels` (Telegram) and the cheapest way to
+establish the family's conventions before the more varied slices.
+
+#### Next
+
+Slice 1, Shopify. Each tool is read line by line before it is ported, as
+§164.100 requires: the Admin GraphQL document, the pagination shape, the error
+vocabulary, and whether the tool's own behaviour matches the documented API.
