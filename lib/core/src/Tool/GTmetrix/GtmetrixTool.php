@@ -98,6 +98,35 @@ abstract class GtmetrixTool extends AbstractTool implements ToolCapabilityFlagsI
     }
 
     /**
+     * The canonical daily-budget refusal, shared by the credit-spending tools.
+     */
+    protected function budgetExhausted(int $budgetCents, int $usedCents, int $costCents): mixed
+    {
+        return $this->errors->create(
+            'gtmetrix_budget_exhausted',
+            sprintf(
+                'This call needs %s credits and the site daily budget is %s; %s is already spent today.',
+                $this->credits($costCents / 100),
+                $this->credits($budgetCents / 100),
+                $this->credits($usedCents / 100)
+            ),
+            array(
+                'required' => round($costCents / 100, 2),
+                'limit'    => round($budgetCents / 100, 2),
+                'used'     => round($usedCents / 100, 2),
+            )
+        );
+    }
+
+    /**
+     * A credit figure without a trailing `.0`.
+     */
+    protected function credits(float $value): string
+    {
+        return rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
+    }
+
+    /**
      * A JSON:API resource list, with non-resource entries dropped.
      *
      * @return list<array<string, mixed>>
@@ -168,6 +197,28 @@ abstract class GtmetrixTool extends AbstractTool implements ToolCapabilityFlagsI
             : '';
 
         return 1 === preg_match('/^[A-Za-z0-9_-]+$/', $value) ? $value : '';
+    }
+
+    /**
+     * A validated http(s) URL from the arguments, or null.
+     *
+     * @param array<string, mixed> $arguments Tool arguments.
+     */
+    protected function urlArg(array $arguments, string $key = 'url'): ?string
+    {
+        if (! array_key_exists($key, $arguments) || ! is_scalar($arguments[$key])) {
+            return null;
+        }
+
+        $url = trim((string) $arguments[$key]);
+
+        if (false === filter_var($url, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+
+        return in_array($scheme, array('http', 'https'), true) ? $url : null;
     }
 
     /**

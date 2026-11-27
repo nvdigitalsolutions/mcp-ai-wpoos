@@ -2352,6 +2352,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/GtmetrixReportToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
+		'gtmetrix_get_page' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixGetPageTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the page reader (Proposal 164 section 164.96). One credit-free GET /pages/{id} returning the URL, browser and location options, the latest report, the report count, the monitoring frequency and the attached tag ids. Corrections: a datum without an id reports the requested id rather than an empty string, and page_tags is filtered to strings so a malformed element cannot put an array where a tag id belongs. Gated on read.',
+			'evidence' => 'lib/core/tests/Unit/Tool/GtmetrixPagesToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
 		'gtmetrix_get_report' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixGetReportTool',
 			'readiness' => 'ready',
@@ -2397,6 +2406,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/GtmetrixReadToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
+		'gtmetrix_list_pages' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixListPagesTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the page list (Proposal 164 section 164.96), the account URL registry with each page latest report, monitoring state, report count and tags. Corrections: the limit is sent as page[size] and bounded to 1-500, where WordPress fetched the default page of ten and then sliced, so limit 100 still returned ten; an unknown monitoring value is refused instead of matching nothing and reading as no monitored pages; and the URL fragment is rawurlencoded so an ampersand or bracket in it cannot add a query parameter. Gated on read.',
+			'evidence' => 'lib/core/tests/Unit/Tool/GtmetrixPagesToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
 		'gtmetrix_list_report_resources' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixListReportResourcesTool',
 			'readiness' => 'ready',
@@ -2423,6 +2441,15 @@ return array(
 			'reason' => 'Ports the recent-test reader (Proposal 164 section 164.91). One credit-free GET /tests with the state filter and a 1-100 limit sent as page[size]: WordPress applied absint and sliced after fetching, so the limit described a page size it never asked for. The description and the message state the 24-hour test retention, because a report id listed here may already be gone. Costs no credits.',
 			'evidence' => 'lib/core/tests/Unit/Tool/GtmetrixReadToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
+		'gtmetrix_retest_page' => array(
+			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixRetestPageTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the page retest (Proposal 164 section 164.96): POST /pages/{id}/retest reuses the saved analysis options and spends one credit. Corrections: the daily budget is reserved before the call and released when the API refuses or the reply carries no test id, the same reservation start_test uses; and a url resolves through filter[url] with an exact, case-insensitive match, where WordPress read a local snapshot map the core does not have. No match is gtmetrix_page_not_found with the candidates, several matches is gtmetrix_page_ambiguous rather than a guess. The host allowlist still applies to a supplied URL. Gated on manage_options, which is what WordPress enforced.',
+			'evidence' => 'lib/core/tests/Unit/Tool/GtmetrixPagesToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
 		'gtmetrix_start_test' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixStartTestTool',

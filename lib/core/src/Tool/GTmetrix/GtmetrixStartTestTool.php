@@ -47,9 +47,6 @@ use Nvoos\Core\Support\Text;
 
 class GtmetrixStartTestTool extends GtmetrixTool
 {
-    /** The credit counter TTL: two days, so yesterday's key expires on its own. */
-    public const COUNTER_TTL = 172800;
-
     public function __construct(
         ErrorFactoryInterface $e,
         GtmetrixClientInterface $client,
@@ -158,7 +155,7 @@ class GtmetrixStartTestTool extends GtmetrixTool
             return $guard;
         }
 
-        $url = $this->targetUrl($arguments);
+        $url = $this->urlArg($arguments);
 
         if (null === $url) {
             return $this->errors->validationFailed(
@@ -262,22 +259,18 @@ class GtmetrixStartTestTool extends GtmetrixTool
             );
         }
 
-        $budgetCents = (int) round(GtmetrixConfig::budget($this->settings) * 100);
-        $costCents   = (int) round($cost * 100);
-        $counterKey  = 'gtmetrix:credits_cents:' . gmdate('Ymd');
-        $usedCents   = (int) $this->cache->getValue($counterKey, 0);
+        $reservation = GtmetrixBudget::reserve($this->cache, $this->settings, $cost);
 
-        if ($usedCents + $costCents > $budgetCents) {
-            return $this->budgetExhausted($budgetCents, $usedCents, $costCents);
+        if (! $reservation['ok']) {
+            return $this->budgetExhausted(
+                $reservation['budget_cents'],
+                $reservation['used_cents'],
+                $reservation['cost_cents']
+            );
         }
 
-        $reserved = (int) $this->cache->increment($counterKey, $costCents, self::COUNTER_TTL);
-
-        if ($reserved > $budgetCents) {
-            $this->cache->setValue($counterKey, $usedCents, self::COUNTER_TTL);
-
-            return $this->budgetExhausted($budgetCents, $usedCents, $costCents);
-        }
+        $counterKey = $reservation['key'];
+        $usedCents  = $reservation['used_cents'];
 
         try {
             $response = $this->client->request(
@@ -287,7 +280,7 @@ class GtmetrixStartTestTool extends GtmetrixTool
             );
         } catch (GtmetrixApiException $error) {
             // The test was not started, so the reservation is returned.
-            $this->cache->setValue($counterKey, $usedCents, self::COUNTER_TTL);
+            GtmetrixBudget::release($this->cache, $counterKey, $usedCents);
 
             return $this->failure($error);
         }
@@ -297,7 +290,7 @@ class GtmetrixStartTestTool extends GtmetrixTool
         $resourceAttrs = $this->attrs($resource);
 
         if ('' === $testId) {
-            $this->cache->setValue($counterKey, $usedCents, self::COUNTER_TTL);
+            GtmetrixBudget::release($this->cache, $counterKey, $usedCents);
 
             return $this->errors->create(
                 'gtmetrix_invalid_response',
@@ -318,55 +311,12 @@ class GtmetrixStartTestTool extends GtmetrixTool
                 'credits_used'     => is_numeric($meta['credits_used'] ?? null) ? (float) $meta['credits_used'] : $cost,
                 'credits_left'     => is_numeric($meta['credits_left'] ?? null) ? (float) $meta['credits_left'] : null,
                 'daily_budget'     => array(
-                    'limit' => round($budgetCents / 100, 2),
-                    'used'  => round(((int) $this->cache->getValue($counterKey, 0)) / 100, 2),
+                    'limit' => round($reservation['budget_cents'] / 100, 2),
+                    'used'  => round(GtmetrixBudget::usedCents($this->cache, $counterKey) / 100, 2),
                 ),
                 'next'             => 'Poll gtmetrix_get_test_status with this test_id; a completed test answers with its report_id.',
             )
         );
-    }
-
-    /**
-     * The canonical budget refusal.
-     */
-    private function budgetExhausted(int $budgetCents, int $usedCents, int $costCents): mixed
-    {
-        return $this->errors->create(
-            'gtmetrix_budget_exhausted',
-            sprintf(
-                'This test needs %s credits and the site daily budget is %s; %s is already spent today.',
-                $this->credits($costCents / 100),
-                $this->credits($budgetCents / 100),
-                $this->credits($usedCents / 100)
-            ),
-            array(
-                'required' => round($costCents / 100, 2),
-                'limit'    => round($budgetCents / 100, 2),
-                'used'     => round($usedCents / 100, 2),
-            )
-        );
-    }
-
-    /**
-     * A sanitised http(s) URL, or null.
-     *
-     * @param array<string, mixed> $arguments Tool arguments.
-     */
-    private function targetUrl(array $arguments): ?string
-    {
-        if (! array_key_exists('url', $arguments) || ! is_scalar($arguments['url'])) {
-            return null;
-        }
-
-        $url = trim((string) $arguments['url']);
-
-        if (false === filter_var($url, FILTER_VALIDATE_URL)) {
-            return null;
-        }
-
-        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
-
-        return in_array($scheme, array('http', 'https'), true) ? $url : null;
     }
 
     /**
@@ -424,13 +374,5 @@ class GtmetrixStartTestTool extends GtmetrixTool
         $value = trim((string) $arguments['throttle']);
 
         return 1 === preg_match('/^\d+\/\d+\/\d+$/', $value) ? $value : null;
-    }
-
-    /**
-     * A credit figure without a trailing `.0`.
-     */
-    private function credits(float $value): string
-    {
-        return rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
     }
 }

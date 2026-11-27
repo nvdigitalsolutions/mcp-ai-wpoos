@@ -8473,3 +8473,77 @@ high-risk block, and a configuration-only fix that adds no code — is pinned in
 
 Next: slice 6, the pages — `gtmetrix_get_page`, `gtmetrix_list_pages` and
 `gtmetrix_retest_page`.
+
+## 164.96 `gtmetrix`, slice 6 — the pages, and a URL map that is not needed
+
+`gtmetrix_get_page`, `gtmetrix_list_pages` and `gtmetrix_retest_page`. A page
+is GTmetrix's URL registry entry — one URL plus one analysis-options
+combination — so these three are the lookup and the regression primitive that
+monitoring and alerts will build on. The toolkit moves from 14 to **17 of
+23**.
+
+### Two helpers moved onto shared ground
+
+Two things were about to be written twice, so they moved instead:
+
+- `GtmetrixBudget` owns the counter key, the two-day TTL and the
+  reserve-then-release cycle. `start_test` and `retest_page` both spend
+  credits, and a money path with two copies is a money path that will disagree
+  with itself. The reservation compares in hundredths and restores the previous
+  value on an overshoot, a refused call or a reply without a test id.
+- `GtmetrixTool::urlArg()`, `budgetExhausted()` and `credits()` are shared
+  rather than repeated per tool. The refusal message is now "this call needs N
+  credits", which is true for both callers.
+
+### Corrections
+
+1. **The page-list limit is a page size.** WordPress fetched the default page
+   (ten pages), applied `absint()` and sliced the result, so `limit: 100` still
+   returned at most ten. The port sends `page[size]` and bounds it to 1–500, the
+   documented maximum.
+2. **An unknown monitoring filter is refused.** WordPress `sanitize_key`d the
+   value; anything that matched nothing read as "no monitored pages". The filter
+   is validated against the documented set.
+3. **The URL filter is encoded.** It is a URL fragment, and it is
+   `rawurlencode`d into the query string so an `&` or `]` in it cannot add a
+   parameter.
+4. **A page without a datum id still has an id.** `get_page` reports the
+   requested id when the datum omits one, and filters `page_tags` to strings.
+5. **The retest budget is reserved before the call.** The WordPress retest
+   checked, started and recorded in that order — the same defect `start_test`
+   had — and two concurrent retests both passed. It now shares the reservation
+   and releases it on a refusal.
+6. **A URL resolves through the API.** WordPress read the page id out of its
+   snapshot map. `GET /pages?filter[url]=` is the authoritative lookup: the port
+   requires an exact, case-insensitive URL match, answers
+   `gtmetrix_page_not_found` with the candidates when there is none, and
+   `gtmetrix_page_ambiguous` when several match, because retesting the wrong URL
+   is worse than a refusal. The host allowlist still applies to a supplied URL.
+
+### Adaptations
+
+- `retest_page` keeps the WordPress `manage_options` gate and the
+  state-changing flag set; the two reads keep `read`.
+- No WP-Cron poll is scheduled (section 164.92); the reply names `test_id` and
+  the next call.
+- The retest cost is the flat Lighthouse price (1.0 credits), which is what the
+  API charges for a retest and what the WordPress scheduler assumed.
+
+### Measurements
+
+| gate | value |
+|---|---|
+| `lib/core` PHPUnit | **3,929 / 23,229** (16 tests and 61 assertions added) |
+| adapter `ToolProbesTest` | **237 / 1,618**, 2 skipped, 0 failures — three new probes |
+| tool readiness audit | **457 / 457**, servable **438** (+3), no violations |
+| toolkit parity | **236 of 854**; `gtmetrix` **17 ported**, 0 declined, 1 deferred, **6 remaining** |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+The probes answer the not-configured guard on the keyless host. The query the
+list tool builds (`filter[url]`, `filter[monitored]`, `page[size]`) is pinned
+exactly, as are the URL-resolution outcomes, the budget refusal and the
+reservation release on a refused retest.
+
+Next: slice 7, monitoring and alerts — `gtmetrix_set_monitoring`,
+`gtmetrix_get_alert_conditions`, `gtmetrix_set_alert_conditions` and
+`gtmetrix_get_alert_events`.
