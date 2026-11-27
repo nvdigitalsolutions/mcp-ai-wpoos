@@ -11675,3 +11675,90 @@ answer is yes.
 readiness manifest gains one row. If P1 shows that integration needs a worker
 route that does not exist, the tool ships with `integration_mode: composite`
 only, and the refusal names the missing route rather than pretending.
+
+### §164.129 — P1 measured: the two worker routes, and the one that is missing
+
+**Recorded.** §164.128 made its first phase measurement rather than code, because
+`product_actualization`'s modes map onto three different worker operations and
+guessing is how a port ships a mode that silently never works. Both image routes
+have now been read in full. Two of the three operations exist, one does not, and
+one field in the edit response describes the wrong image.
+
+#### `POST /api/image/generate` — usable as-is
+
+A JSON route, 86 lines of handler over a provider switch.
+
+| Input | Notes |
+|---|---|
+| `prompt` | required; a 400 if absent |
+| `model` | default `dall-e-3`; the provider is inferred from the model name when `provider` is omitted |
+| `provider` | optional; an unknown one is a 400 that lists the valid `available_models` |
+| `size`, `style`, `count` | defaults `1024x1024`, `natural`, `1` |
+| `negative_prompt`, `aspect_ratio`, `seed`, `steps`, `cfg_scale` | passed through, provider-dependent |
+
+The 200 body is `{ success, provider, model, images, prompt }`, where each entry
+in `images` is **inline base64**: `{ b64_json, mime, width, height }`. That is the
+shape `MediaWorkerOutput::persist()` already turns into a registry file for
+`edit()`, so the adapter needs no new persistence path.
+
+#### The credential model needs no adapter change
+
+The route resolves a provider key through `getCredential(req.site, cfg.key)` — the
+site's own key first, then the shared pool, then a 503. `req.site` is set by the
+auth middleware from the `X-Site-Token` header, which `MediaWorkerClient` already
+sends from `oos.media_worker.token`, mapping to a site slug in multi-tenant mode
+and to `default` otherwise.
+
+So generation works through the adapter **as it stands**. The 503 is also
+well-shaped for a refusal: it carries `capability`, `provider`, `env_var`, `site`
+and `tip`, which is more than a bare error string and should be surfaced rather
+than flattened.
+
+#### `POST /api/image/edit` — and the operation that is not there
+
+A multipart route, one uploaded file.
+
+| Input | Notes |
+|---|---|
+| `operation` | **closed set**: `colorize`, `style_transfer`. Anything else is a 400 listing the two |
+| `style` | a preset key, validated against `STYLE_PROMPTS` |
+| `prompt` | optional; a default per operation otherwise |
+| `provider` | `auto`, `gemini`, `openai`, `replicate` |
+
+The 200 body carries `{ success, provider, model, operation, style, original_size,
+optimized_size, savings_*, format, width, height, b64 }`.
+
+**Two findings.** First, and decisively for §164.128's P4: **this route cannot
+integrate a product into a scene.** Its operations are a closed two-element set,
+and it sends exactly one image to the provider. "Place this product in this
+scene" needs the provider to see *both* images, which the route has no way to
+do. That is not a PHP-side gap; it is a worker gap.
+
+Second, `format`, `width` and `height` are read from
+`sharp(req.file.buffer).metadata()` — the **uploaded source** — while
+`optimized_size` is the output's byte count. The response therefore describes two
+different images in adjacent fields. The adapter must not treat those three as
+output metadata, and a port that did would report the source's dimensions as the
+result's.
+
+#### What each phase can now do
+
+| Phase | Verdict after measurement |
+|---|---|
+| **P2** image generation | **Unblocked.** The route exists, the credential path needs no change, and the `b64` shape matches the persistence helper already in use |
+| **P3** video generation | **Unblocked in principle.** `/api/video/generate` plus `GET /api/video/prediction/:id` is the submit-and-poll shape §164.128 proposed. The one open item is still factual: the worker's artifact TTL, which decides the `video_artifact_expired` message |
+| **P4** product integration | **Blocked on one worker route.** The right shape is a two-file call — scene plus product — to a provider that accepts multiple inline images, which Gemini does and is already a dependency. `POST /api/image/compose` is the natural name |
+
+`composite` stays out, per §164.128: GD is verifiably absent on a clean host, the
+worker has `sharp`, and the honest fallback is returning both artifacts rather
+than pretending to blend them.
+
+#### What this changes
+
+§164.128 expected P1 to confirm or refute a phasing. It did both: it confirmed
+that P2 and P3 are buildable with the contracts as sketched, and it **refuted
+P4's premise** — the tool's `integration_mode: ai` cannot be served by the
+existing edit route, so either a worker route is added or the tool ships with
+that mode refused and a named reason. That is a scope decision for the owner, not
+a porting detail, because it moves work into a second language and a second
+deploy pipeline.
