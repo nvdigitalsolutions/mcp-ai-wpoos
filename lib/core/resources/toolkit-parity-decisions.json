@@ -209,10 +209,6 @@
             "decision": "deferred",
             "reason": "Relays QODBC queries and record writes to a PHP endpoint on the Windows machine that runs QuickBooks Desktop and the QODBC driver. Prerequisite: that host, which is a desktop application plus a database driver on someone's PC rather than a service this runtime can stand up, and a relay client to reach it. One further caution for whoever ports it: the arguments include a free-form `where` clause and a `record_data` object passed to QODBC, so it is a SQL surface in tool clothing and the clause needs constraining rather than passing through."
         },
-        "quickbooks_report": {
-            "decision": "deferred",
-            "reason": "Pulls a QuickBooks Online report from https://quickbooks.api.intuit.com/v3/company/{realm}/reports/{report}. Prerequisite: an OAuth2 credential store holding a realm id and a refresh token, plus a replacement for WP_MCP_AI_Pro_Remote_Site_Manager::get_connection() and is_connection_enabled_for_assistant(), which the WordPress tool reads and this runtime does not have. QuickBooks Online is a different product from the Desktop company file the qb-desktop MCP covers, so one tool cannot serve both without lying about which it read."
-        },
         "refund_order_advanced": {
             "decision": "deferred",
             "reason": "Issues a full or partial refund with line-level quantities. Prerequisite: OrderStoreInterface with refund support. It is also a payments concern rather than CRUD: the original calls the gateway, and a contract for that is a separate decision."

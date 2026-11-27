@@ -187,6 +187,7 @@
         "ecommerce": [
             "generate_invoice_pdf",
             "printful",
+            "quickbooks_report",
             "shipping_box_packer",
             "shipping_rate_estimator",
             "shopify_catalog",

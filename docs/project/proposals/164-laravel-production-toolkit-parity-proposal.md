@@ -11492,3 +11492,76 @@ No code changed. The seam that needed work was the one in the documentation.
 | Toolkit parity | **297 ported, 9 declined, 82 deferred, 548 remaining** — unchanged |
 | phpcs (`phpcs-laravel.xml.dist`) | 0 errors on the touched file |
 | PHPStan level 8, `lib/core` | no errors against the baseline |
+
+### §164.127 — Slice 3e: `quickbooks_report`, and why it does not refresh
+
+**Recorded.** `quickbooks_report` is served and `ecommerce` moves to **12 of 44**.
+It is the first of the four §164.125 deferred tools to ship, and it ships without
+the credential store that deferral named — deliberately, and this is where that
+is argued.
+
+#### The token and the realm are arguments, and there is no refresh
+
+The WordPress original walks a credential ladder built on Remote Sites: a token
+pasted on a connection, then an auto-refreshing OAuth grant, then a legacy
+site-wide bearer token. This port has no ladder because it has no connection
+registry, so `access_token` and `realm_id` are arguments — which is how every
+other credentialed tool here already takes its credentials.
+
+The consequence is stated in the description and in the 401 refusal rather than
+hidden: **this tool does not mint or refresh tokens.** The facts behind that
+decision, verified at Intuit rather than assumed:
+
+| Fact | Source | Why it blocks a naive refresh |
+|---|---|---|
+| An access token lasts **3,600 seconds** | Intuit's OAuth FAQ | An hourly refresh is a scheduled job, not a tool call |
+| A refresh token has a **rolling 100-day expiry** and Intuit **rotates** it | Intuit's OAuth setup page | A store that keeps the old value dies silently within 100 days |
+| RFC 9700 requires public-client refresh tokens to be sender-constrained **or rotated on every use**, and a replayed rotated token must revoke the family | RFC 9700 §2.2.2, §4.14 | Persisting the rotated value is not an optimisation, it is the requirement |
+
+So automatic refresh needs a store that persists the rotated refresh token, and
+building that store before any tool consumes it would repeat exactly the mistake
+§164.126 documents. The tool therefore takes a token, refuses a 401 with the fix
+named, and the store remains a named prerequisite for unattended use.
+
+#### Four corrections
+
+| Correction | The WordPress behaviour |
+|---|---|
+| **The report is not rewritten** | Ran `sanitize_text_field()` over every string **and every key** of the decoded report. On structured financial data that strips anything looking like markup or a percent-encoded octet, so a label containing `<` or `%20` came back altered and the caller could not tell. This runtime escapes at the boundary instead, and a test feeds a value the sanitiser would have changed |
+| **One payload** | Returned `raw_response` holding the sanitised copy of the whole body *and* the top-level fields beside it. The body is returned once, under `report_data`, behind a size ceiling |
+| **`requires-credentials` is declared** | Declared `read-only`, `external-api` and `network-dependent` but not `requires-credentials`, although it cannot run without a token |
+| **The 401 retry-with-refresh is gone** | Force-refreshed an OAuth grant and retried once. There is nothing here to refresh from, so the refusal names the fix instead of pretending |
+
+#### Two things the gates caught
+
+**A `Fault` was being read as an HTTP error.** Intuit sends `{"Fault":{...}}`
+with a 4xx, and the first version classified the status before reading the body,
+so a `Report name not found` detail came back as "HTTP 400". The test asserting
+the detail failed, and the ordering changed: decode, read `Fault`, then classify
+the status. A structured provider error outranks its status code, because it is
+the only part that says what is wrong.
+
+**The parity gate refused a register that lied.** §164.125 had just registered
+`quickbooks_report` as `deferred`. Porting it in the same loop left the register
+claiming a served tool was not ported, and `toolkit-parity.php --check` failed
+with *"A register that lies is worse than none"* rather than accepting a
+convenient inconsistency. The entry was removed, and the deferred count fell from
+82 to 81 on its own.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `QuickBooksReportToolTest` | **18 tests, 39 assertions**, 0 failures |
+| `lib/core` unit suite | 3,783 → **3,801 tests, 21,945 assertions**, 0 failures |
+| Readiness manifest | `ready` 458 → **459**; servable 499 → **500**; no violations |
+| Toolkit parity | 297 → **298 ported**, 82 → **81 deferred**, 548 → **547 remaining**; `ecommerce` `44 \| 11 \| 1 \| 32 \| 32` → `44 \| 12 \| 1 \| 31 \| 31`; baseline rewritten |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on the three touched files |
+| PHPStan level 8, `lib/core` | no errors against the baseline |
+
+#### Next
+
+The generation contract, which is the last of the three prerequisites and the only
+remaining one that unblocks a tool by existing — `product_actualization` needs an
+image **and** video generation seam, and `ImageProductionInterface` is processing
+only.

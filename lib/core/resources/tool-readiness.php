@@ -3476,6 +3476,15 @@ return array(
 			'evidence' => 'lib/laravel-adapter/tests/FilesystemControlledDocumentsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
+		'quickbooks_report' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\QuickBooksReportTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress QuickBooks Online report reader (Proposal 164 section 164.127). The access token and realm id are arguments, which is how every credentialed tool here takes its credentials, and it does not refresh: Intuit issues an access token for 3,600 seconds and rotates the refresh token on a rolling 100-day window, so automatic refresh needs a store that persists the rotated value and that store is registered separately rather than invented. Four corrections: the report is returned as the provider sent it rather than passed through sanitize_text_field field by field and key by key, which could alter financial values and labels; one payload rather than a sanitised duplicate; requires-credentials is declared, which the original omitted although it cannot run without a token; and the 401 retry-with-refresh is gone, with the refusal naming the fix. A Fault is read before the status is classified, because Intuit sends it with a 4xx and its detail is what makes the refusal useful.',
+			'evidence' => 'lib/core/tests/Unit/Tool/QuickBooksReportToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
 		'recall_memory' => array(
 			'class' => 'Nvoos\\Core\\Tool\\RecallMemoryTool',
 			'readiness' => 'ready',
