@@ -11795,7 +11795,7 @@ ambiguous. Unlike `/edit`, which reads `format`/`width`/`height` from the
 uploaded source, its response describes the **output** — the bug that made the
 `/edit` measurement interesting is not repeated.
 
-#### Six findings that changed the implementation
+#### Seven findings that changed the implementation
 
 1. **`/generate` answers URLs for OpenAI, not base64.** The P1 measurement
    described the inline shape, which is what Gemini returns. OpenAI's branch
@@ -11837,6 +11837,15 @@ uploaded source, its response describes the **output** — the bug that made the
    generation test failed 401 against the real API instead of the stub. Fixed
    at the call site.
 
+7. **The model default was chosen before the provider was known.** `model`
+   defaulted to `dall-e-3` at destructure time, so an explicit
+   `provider: 'gemini'` with no model reached the Gemini branch as `dall-e-3`,
+   silently fell back to `gemini-2.5-flash-image`, and the response echoed the
+   model that never ran. The default is now applied *after* resolution, per
+   provider. The adapter always names a model for an explicit provider and
+   omits it for `auto`, so no ported caller was bitten — a direct HTTP caller
+   was.
+
 #### What is refused, and what the refusal says
 
 | Input | Answer | Next step in the message |
@@ -11857,7 +11866,7 @@ address that carries an ownership check.
 |---|---|
 | `lib/core` unit suite | 3,808 tests / 21,981 assertions |
 | `lib/laravel-adapter` suite | 688 tests / 3,663 assertions; 1 error = the known local `finfo` gap, green in CI |
-| Media worker | 247 tests, 0 failures |
+| Media worker | 248 tests, 0 failures |
 | Readiness | 520 manifest rows / 520 classes; servable 501; ready 460 |
 | Parity | 299 ported / 9 declined / 80 deferred / 546 remaining; `ecommerce` 44 \| 13 \| 1 \| 30 \| 30 |
 | PHPStan (core) | clean |

@@ -56,12 +56,21 @@ const MODELS_BY_PROVIDER = {
 };
 
 // ── POST /api/image/generate ──────────────────────────────
+// The model to use when the caller named a provider but no model. Picking the
+// default at destructure time (OpenAI's) meant an explicit `provider: gemini`
+// reached the Gemini branch as `dall-e-3` and the response echoed a model that
+// never ran.
+const DEFAULT_GENERATE_MODELS = {
+  openai: 'dall-e-3',
+  gemini: 'gemini-2.5-flash-image',
+};
+
 router.post('/generate', async (req, res) => {
   let activeProvider = null;
   try {
     const {
       prompt,
-      model = 'dall-e-3',
+      model: modelInput,
       provider,
       size = '1024x1024',
       style = 'natural',
@@ -76,6 +85,9 @@ router.post('/generate', async (req, res) => {
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
+
+    const explicitModel = 'string' === typeof modelInput && '' !== modelInput.trim();
+    let model = explicitModel ? modelInput.trim() : 'dall-e-3';
 
     // Auto-detect provider from model name if not specified
     let providerId = provider;
@@ -119,6 +131,11 @@ router.post('/generate', async (req, res) => {
     if (!providerCfg) {
       return res.status(400).json({ error: `Unknown provider: ${providerId}` });
     }
+
+    if (!explicitModel) {
+      model = DEFAULT_GENERATE_MODELS[providerId] || model;
+    }
+
     activeProvider = providerId;
 
     // Per-site credential resolution (Phase 2): site key -> shared pool ->

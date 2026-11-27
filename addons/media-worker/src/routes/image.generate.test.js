@@ -176,6 +176,54 @@ test( 'generate resolves provider auto to OpenAI when only an OpenAI key exists'
 	} );
 } );
 
+test( 'generate uses the provider own default model when none is named', async () => {
+	await withKeys( { GEMINI_API_KEY: 'gsk-test' }, async () => {
+		const imageB64 = Buffer.from( 'canned-image' ).toString( 'base64' );
+		let capturedUrl = null;
+
+		const { server, url } = await startServer();
+		try {
+			await withFetchStub( async ( target ) => {
+				capturedUrl = String( target );
+				return new Response( JSON.stringify( {
+					candidates: [
+						{
+							content: {
+								parts: [
+									{ inlineData: { mimeType: 'image/png', data: imageB64 } },
+								],
+							},
+						},
+					],
+				} ), {
+					status: 200,
+					headers: { 'content-type': 'application/json' },
+				} );
+			}, async () => {
+				const res = await fetch( `${ url }/generate`, {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					// No model: the route must pick the named provider's own default
+					// rather than leave OpenAI's at the front of the request.
+					body: JSON.stringify( { prompt: 'A marble table', provider: 'gemini' } ),
+				} );
+
+				assert.equal( res.status, 200 );
+				const body = await res.json();
+				assert.equal( body.model, 'gemini-2.5-flash-image' );
+			} );
+		} finally {
+			server.close();
+		}
+
+		assert.match(
+			capturedUrl,
+			/gemini-2\.5-flash-image/,
+			'the model that ran is the one the provider was called with'
+		);
+	} );
+} );
+
 test( 'generate answers 503 capability_unavailable when auto has no keys', async () => {
 	await withKeys( {}, async () => {
 		const { server, url } = await startServer();
