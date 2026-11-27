@@ -9435,3 +9435,125 @@ Slice 8, Apple Messages (4) and iCloud Drive (3). Both families take a
 caller-supplied `msp_api_url` / `gateway_url`, so `publicUrl()` is the guard for
 all seven, and both are bridge protocols rather than first-party APIs — the
 provider is a host-run gateway, which makes the description the contract.
+
+### §164.108 — Slice 8: Apple Messages and iCloud Drive
+
+**Recorded.** Forty-five of fifty ported; `chat-channels` is now **45 ported,
+0 declined, 4 deferred, 5 remaining**. One tool is left to port: the unified
+broadcaster.
+
+| slug | call | kind |
+|---|---|---|
+| `send_apple_message` | `POST {msp_api_url}` (`type: text`) | write |
+| `send_apple_message_group` | `POST {msp_api_url}` (`type: group`) | write |
+| `send_apple_message_interactive` | `POST {msp_api_url}` (`type: interactive`) | write |
+| `get_apple_messages` | `GET {msp_api_url}?businessId&limit&status…` | read |
+| `list_icloud_drive_files` | `GET {gateway_url}?limit&folderId&offset` | read |
+| `get_icloud_drive_file` | `GET {gateway_url}?fileId` | read |
+| `upload_icloud_drive_file` | `POST {gateway_url}` | write |
+
+#### The finding: neither family has an API a business can call
+
+Apple Messages for Business is reached only through an approved **Messaging
+Service Provider**. Apple publishes the MSP REST API that providers *implement*;
+the business calls its provider's endpoint, and the provider owns the path, the
+auth and the envelope. iCloud Drive is further away still: Apple exposes
+CloudKit to app developers, not a drive API to a server, so reaching a user's
+iCloud Drive needs a bridge the host runs.
+
+Both families are therefore the same shape as `send_google_chat_message` —
+caller-supplied endpoint plus credential — and both are SSRF-sensitive for the
+same reason: the bearer token travels to whatever host the caller names.
+`publicUrl()` is the guard for all seven, and no reply echoes the endpoint,
+because a gateway URL may carry a key in its query string.
+
+**Honesty point.** The Apple envelope these tools build — `businessId`, `type`,
+`body.text`, `locale`, `conversationId`, `recipientId`, `intent`, and
+`interactiveType` plus `interactive` — follows Apple's conceptual model and the
+WordPress plugin's own convention. It is **not** Apple's MSP wire format, which
+nests the payload under `interactiveData.data.<camelCaseType>` and refers to
+images by a separately uploaded identifier. A gateway that speaks the native
+format must translate. The tool's contract is "POST this JSON to this URL",
+which it honours; the description says so rather than implying native semantics.
+
+#### Why the reply is not projected
+
+Everywhere else in this family a success returns a named projection, because the
+provider's schema is published and the fields worth keeping are knowable. Here
+the response schema belongs to the caller's gateway, and the tool cannot know
+which field a caller needs. Projecting to a guessed field set would silently drop
+fields the gateway defines. The reply carries the decoded document under
+`response`, the conventional collection under `items` when one is present, and
+the inputs the tool normalised.
+
+#### Corrections: the silent-loss class
+
+The four Apple tools had a habit of **skipping or truncating** what they could
+not accept. Each is a refusal now, because a widget that quietly loses content is
+worse than an error the caller can act on:
+
+1. **An over-long body is refused.** WordPress sliced at 2,000 characters with
+   `mb_substr()` and sent the shortened text.
+2. **An over-full list picker is refused.** WordPress `array_slice()`d each
+   section to ten items and dropped the rest.
+3. **A malformed section, item, participant or time slot is refused.** WordPress
+   `continue`d past it, so a picker arrived with fewer choices and a group was
+   addressed to fewer people.
+4. **A time slot's `startTime` must be an ISO 8601 instant.** WordPress accepted
+   any string, so the customer could be shown a slot that does not exist.
+5. **Coordinates are range-checked** (±90 / ±180) and a duration must be
+   positive.
+6. **A `data:` image must be a base64 image.** WordPress forwarded any string
+   beginning `data:image/`.
+7. **A message must name a conversation or a recipient.** WordPress required
+   neither, although both of its own property descriptions said one was needed,
+   so a request no gateway can route was sent and failed remotely.
+8. **The participant cap applies after sanitisation.** WordPress checked the raw
+   array length, so 40 entries of which 30 were blank passed, and 32 valid
+   entries plus one blank was refused.
+9. **`multipleSelection` is a real boolean.** The WordPress `(bool)` cast turns
+   the string `"false"` into true — the one setting a caller is most likely to
+   send as a string.
+
+#### Corrections: the input class
+
+10. **A caller-supplied endpoint must be public https.** WordPress checked
+    `FILTER_VALIDATE_URL` and an `https://` prefix, which accepts
+    `https://127.0.0.1/` and `https://user:pass@host/` — with the bearer token
+    attached.
+11. **The locale is a BCP 47 tag**, validated rather than passed through, and
+    `en-US` when absent.
+12. **`status` defaults to `open`**, as the schema declares. WordPress omitted
+    the parameter entirely when the caller passed nothing, so the provider
+    chose.
+13. **A file name cannot be a path.** WordPress forwarded `../../secrets` and
+    `a/b` for the gateway to interpret.
+14. **Base64 is normalised before the strict decode.** `base64_decode($x, true)`
+    fails on the line-wrapped form most encoders produce; whitespace is stripped
+    first and the payload is still strictly decoded.
+15. **The content type must be a MIME type.**
+16. **Ids and cursors are bounded** instead of forwarding unbounded
+    `sanitize_text_field()` output.
+17. **`limit` uses the numeric clamp.** WordPress `absint()` turned `-50` into
+    fifty items.
+
+No upload size ceiling is invented: the gateway owns that limit, and a local
+number would refuse uploads the caller's provider accepts.
+
+#### Measurements
+
+| gate | before | after |
+|---|---|---|
+| `lib/core` PHPUnit | 4,146 / 24,038 | 4,182 / 24,180 |
+| adapter `ToolProbesTest` | 280 / 1,790 | 287 / 1,818 |
+| tool readiness audit | 500 / 500, servable 481 | 507 / 507, servable 488 |
+| toolkit parity | 279 of 854 | 286 of 854 |
+| `chat-channels` | 38 / 0 / 4 / 12 | 45 / 0 / 4 / 5 |
+| phpcs | clean | clean |
+
+#### Next
+
+Slice 9, `unified_channel_broadcast`: one tool that fans a message out to the
+providers the caller names, by delegating to the tools already ported. It needs a
+session-state or per-call target contract, and it is the last tool in the
+toolkit — after it, the toolkit closes at 46 ported, 4 deferred, 0 declined.
