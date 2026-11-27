@@ -90,6 +90,10 @@ return array(
 		// A generation may download a provider-hosted image after the model
 		// answers (OpenAI returns a URL), so the budget covers both hops.
 		'generate_timeout' => (int) env( 'NVOOS_MEDIA_WORKER_GENERATE_TIMEOUT', 180 ),
+		// Video is two operations: submission is one quick HTTP call because the
+		// adapter sends wait false, and each poll is another.
+		'video_submit_timeout' => (int) env( 'NVOOS_MEDIA_WORKER_VIDEO_SUBMIT_TIMEOUT', 120 ),
+		'video_status_timeout' => (int) env( 'NVOOS_MEDIA_WORKER_VIDEO_STATUS_TIMEOUT', 30 ),
 		// Cron expression for the nightly sweep; empty disables it. The
 		// schedule is registered in `bootstrap/app.php` only when this is a
 		// valid expression, so an empty value schedules nothing.

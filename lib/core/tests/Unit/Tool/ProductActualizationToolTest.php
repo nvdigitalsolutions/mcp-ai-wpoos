@@ -24,10 +24,14 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tests\Unit\Tool;
 
+use Nvoos\Core\Application\Media\VideoGenerationPollHandler;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
 use Nvoos\Core\Domain\Contract\ImageProductionInterface;
+use Nvoos\Core\Domain\Contract\QueueClientInterface;
+use Nvoos\Core\Domain\Contract\VideoGenerationInterface;
+use Nvoos\Core\Domain\Entity\JobStatus;
 use Nvoos\Core\Domain\Entity\StoredFile;
 use Nvoos\Core\Tool\Ecommerce\ProductActualizationTool;
 use PHPUnit\Framework\TestCase;
@@ -130,6 +134,78 @@ final class ProductActualizationToolTest extends TestCase
         $this->assertSame(701, $data['media'][0]['attachment_id']);
         $this->assertFileDoesNotExist($this->scenePath, 'The intermediate scene is cleaned up.');
         $this->assertFileExists($this->composedPath, 'The composition is the artifact.');
+    }
+
+    public function test_video_mode_composes_and_enqueues_the_poll_job(): void
+    {
+        $calls = array();
+        $submitted = array();
+        $enqueued = array();
+        $store = $this->store();
+
+        $tool = new ProductActualizationTool(
+            $this->errors(),
+            $this->production($calls),
+            $this->registry(),
+            $store,
+            $this->video($submitted),
+            $this->queue($enqueued),
+        );
+
+        $result = $tool->execute(
+            array(
+                'file_id' => 7,
+                'scene_prompt' => 'bright kitchen counter, morning light',
+                'mode' => 'video',
+            ),
+            array('user_id' => 1)
+        );
+
+        $this->assertTrue($result['success'] ?? false, \print_r($result, true));
+        $this->assertSame('queued', $result['data']['status']);
+        $this->assertSame('job-1', $result['data']['job_id']);
+        $this->assertSame('pred-1', $result['data']['prediction_id']);
+
+        // The composed still is the frame the model animates.
+        $this->assertSame($this->composedPath, $submitted['options']['reference_path']);
+        $this->assertSame('stable-video-diffusion', $submitted['options']['model']);
+        $this->assertStringContainsString('Smooth camera motion', $submitted['prompt']);
+
+        $this->assertSame(VideoGenerationPollHandler::class, $enqueued['handler']);
+        $this->assertSame('pred-1', $enqueued['payload']['prediction_id']);
+        $this->assertSame(1, $enqueued['payload']['user_id']);
+        $this->assertSame(60, $enqueued['options']['tries'], 'a render is polled for minutes, not seconds');
+        $this->assertSame(array(15), $enqueued['options']['backoff']);
+
+        // Both scratch images are gone; the job stores the video, not this tool.
+        $this->assertFileDoesNotExist($this->scenePath);
+        $this->assertFileDoesNotExist($this->composedPath);
+        $this->assertCount(0, $store->writes);
+    }
+
+    public function test_video_mode_refuses_before_composing_when_the_worker_cannot_animate(): void
+    {
+        $calls = array();
+        $submitted = array();
+        $enqueued = array();
+
+        $tool = new ProductActualizationTool(
+            $this->errors(),
+            $this->production($calls),
+            $this->registry(),
+            $this->store(),
+            $this->video($submitted, false),
+            $this->queue($enqueued)
+        );
+
+        $result = $tool->execute(
+            array('file_id' => 7, 'scene_prompt' => 'a kitchen', 'mode' => 'video'),
+            array('user_id' => 1)
+        );
+
+        $this->assertSame('no_video_generation_provider', $result['error']['code']);
+        $this->assertSame(array(), $calls, 'A paid still must not be composed for a render that cannot happen.');
+        $this->assertSame(array(), $submitted);
     }
 
     public function test_video_mode_is_refused_with_a_next_step(): void
@@ -431,6 +507,104 @@ final class ProductActualizationToolTest extends TestCase
             public function supportsVisibility(string $visibility): bool
             {
                 return true;
+            }
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $submitted
+     */
+    private function video(array &$submitted, bool $supported = true): VideoGenerationInterface
+    {
+        return new class ($submitted, $supported) implements VideoGenerationInterface {
+            /** @var array<string, mixed> */
+            private $submitted;
+
+            public function __construct(array &$submitted, private readonly bool $supported)
+            {
+                $this->submitted = &$submitted;
+            }
+
+            public function submit(string $prompt, array $options = array()): array
+            {
+                $this->submitted = array('prompt' => $prompt, 'options' => $options);
+
+                return array(
+                    'prediction_id' => 'pred-1',
+                    'provider' => 'replicate',
+                    'model' => 'stable-video-diffusion',
+                    'status' => 'starting',
+                    'prompt' => $prompt,
+                    'duration_seconds' => 2,
+                    'fps' => 6,
+                );
+            }
+
+            public function status(string $predictionId): array
+            {
+                throw new \LogicException('not used');
+            }
+
+            public function supports(string $operation): bool
+            {
+                return $this->supported && 'generate' === $operation;
+            }
+
+            public function isAvailable(): bool
+            {
+                return true;
+            }
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $enqueued
+     */
+    private function queue(array &$enqueued): QueueClientInterface
+    {
+        return new class ($enqueued) implements QueueClientInterface {
+            /** @var array<string, mixed> */
+            private $enqueued;
+
+            public function __construct(array &$enqueued)
+            {
+                $this->enqueued = &$enqueued;
+            }
+
+            public function enqueue(string $handler, array $payload, array $options = array()): string
+            {
+                $this->enqueued = array(
+                    'handler' => $handler,
+                    'payload' => $payload,
+                    'options' => $options,
+                );
+
+                return 'job-1';
+            }
+
+            public function getStatus(string $jobId): JobStatus
+            {
+                throw new \LogicException('not used');
+            }
+
+            public function cancel(string $jobId): bool
+            {
+                throw new \LogicException('not used');
+            }
+
+            public function schedule(string $handler, array $payload, string $cronExpression): string
+            {
+                throw new \LogicException('not used');
+            }
+
+            public function unschedule(string $scheduleId): void
+            {
+                throw new \LogicException('not used');
+            }
+
+            public function listJobs(array $filters = array(), int $limit = 50): array
+            {
+                throw new \LogicException('not used');
             }
         };
     }
