@@ -10315,3 +10315,190 @@ Slice 2 — Printful, trade.gov tariff rates and the carrier rate shop — or
 an MCP client inside `lib/core`. On the catalog side the next useful increment is
 `CommerceMigrator` running against this adapter, because that is what proves the
 contract against a real WooCommerce export rather than against fixtures.
+
+---
+
+### §164.115 — `ecommerce` slice 2 measured: one ports, one splits, one defers
+
+**Recorded.** Slice 2 is `printful`, `get_import_duty` and
+`shipping_rate_estimator`. All three were read line by line before any porting:
+**3,250 lines** — 401 + 545 + 1,401 in the tool files, plus the 903-line Printful
+client the dispatcher is a shell around.
+
+The plan said "three remote provider clients over `HttpClientInterface`". That is
+only true of one of them, and the measurement reorders the slices.
+
+| Tool | Lines | Verdict |
+|---|---:|---|
+| `printful` | 545 + 903 | **Port**, split into focused tools |
+| `shipping_rate_estimator` | 1,401 | **Split**: rate-shopping ports, order rates defer |
+| `get_import_duty` | 401 | **Defer** — the request does not match the published API |
+
+#### `printful`: the transport is right, the edges are not
+
+Unlike Shopify, the endpoints are **correct and current**. `api.printful.com`,
+`Authorization: Bearer`, and the `X-PF-Store-Id` header are what the v1 docs
+specify. **v2 exists but is published as beta** (`2.0.0-beta`); Printful says v1
+support "may be phased out in the future" and recommends migrating, which is a
+tracked migration rather than a blocker. The version therefore belongs in one
+constant, not scattered through 43 methods.
+
+Four defects, each of which would have shipped:
+
+1. **The GET cache key is `md5(url)` — the token and the store id are not in it.**
+   Two connections pointed at two stores share a cache entry for 30 seconds, so
+   one store can be served the other's products. The header that distinguishes
+   them (`X-PF-Store-Id`) never reaches the key.
+2. **The rate limiter is keyed per *user*, on the wrong dimension.** It allows
+   30 requests/minute per user; Printful's limit is 120/minute per **account**.
+   Five users can therefore make 150 requests a minute without any one of them
+   tripping the local guard, and the provider rejects the last thirty.
+3. **An unreachable `elseif` that would be a `TypeError` if it ever ran.**
+   `if ( is_array( $result ) ) { … } elseif ( is_array( $result ) || is_object( $result ) ) { $result['_paging'] = … }`
+   — the `is_array` half can never be true there, and the array write on what is
+   left cannot work. It also means a single-object `result` is relabelled
+   `{items: {...}, paging: …}`, so the shape depends on whether the endpoint
+   happened to paginate.
+4. **Two unguarded argument reads in the dispatcher.**
+   `absint( $arguments['product_id'] )` and `absint( $arguments['variant_id'] )`
+   read keys the schema does not mark required, so `get_catalog_product` without a
+   `product_id` warns and looks up id `0`. The mockup action is guarded
+   (`?? 0`), which is what makes the other two look like an oversight rather than
+   a deliberate leniency.
+
+Two structural consequences for the port:
+
+- **`list_connections`, `connection_id` and per-assistant enablement are
+  WordPress-local.** They read a Remote Sites store that does not exist in the
+  runtime. The port takes the credential as an argument, as `chat-channels` does,
+  and drops the discovery action.
+- **24 actions over 43 client methods is one tool too many.** Splitting by object
+  (catalog, sync products, orders, reports/mockups) matches how `crm` and
+  `calendar-booking` were sliced, and keeps each tool's schema honest. The client
+  methods the tool never exposes — size guide, sync variants, files, templates,
+  webhooks — are the natural second tranche.
+
+The 6-month cap on `get_statistics` is *described* in the schema and never
+enforced; a port should refuse the range rather than pass it upstream.
+
+#### `shipping_rate_estimator`: the endpoints are current, the aggregation is not
+
+Both endpoints were verified against the vendor's own API overview (fetched
+2026-11-27), because ShipEngine has been **rebranded as the ShipStation API** and
+there are now three similarly-named products:
+
+| Product | Base URL | Status |
+|---|---|---|
+| ShipStation API (formerly ShipEngine) | `https://api.shipengine.com/v1` | Standalone; what the tool calls `shipengine` |
+| ShipStation API V1 | `https://ssapi.shipstation.com/` | **Legacy**, "still supported and maintained" |
+| ShipStation API V2 | `https://api.shipstation.com/v2` | Early release; Standard/Premium plans only |
+
+The tool's endpoints and its own labels are right. The **enum is not**: a caller
+who reads `carrier: "shipengine"` cannot tell that this is now "ShipStation API",
+and `carrier: "shipstation"` means the *legacy* API, not the current one. Rename
+in the port (`shipstation_standalone`, `shipstation_v1`) and keep the labels.
+
+Five defects:
+
+1. **A run with no credentials reports success.** `handle_estimate_rates()` sets
+   `'success' => true` before rating anything; when every package fails it returns
+   `total_rate_amount: 0.0` plus a `warnings` array. That is exactly the
+   "fabricates an empty answer" failure §164.102 rejected for the Discord voice
+   tool — a caller reads a zero and believes it.
+2. **`total_rate_amount` sums across currencies.** Each package overwrites
+   `$result['currency']` with its own, so a mixed-currency result adds EUR and USD
+   and labels the total with whichever package came last.
+3. **The PirateShip rows are hardcoded to `carrier: USPS`, `service: Priority Mail`**
+   regardless of the rate actually returned. A UPS Ground rate exports as a USPS
+   Priority Mail row.
+4. **It reads another plugin's option** — `get_option( 'fk_usps_optimizer_settings' )`,
+   the `nv-boxpacker` settings, for both the carrier and the API keys. That is a
+   coupling to a plugin the runtime does not have, holding an unencrypted key
+   while the adjacent code path decrypts one.
+5. **It takes the first enabled connection of a type, with no id.**
+   `resolve_remote_connection_credentials()` loops and `break`s on the first
+   match, so a second ShipStation account is silently ignored — the wrong-account
+   hazard that `printful`'s explicit `connection_id` avoids.
+
+Smaller ones: the nested packer call passes `get_current_user_id()` instead of the
+resolved `$context['user_id']`, so under cron the inner call loses its caller;
+`request_with_retry()` `sleep()`s up to 2 × 10 s inline; and the User-Agent string
+is `WordPress/<version>`.
+
+**Two structural findings change the slice order.**
+
+First, `handle_estimate_rates()` does `new WP_MCP_AI_Tool_Shipping_Box_Packer()`
+and calls it — the estimator is a **composite** over the bin packer, which §164.110
+placed in **slice 4**. Slice 2 cannot be behaviour-faithful without it. Either the
+packer moves to slice 2, or the estimator takes pre-packed `packages[]` and the
+packer stays a separate tool. (Its `boxes` argument is read but never appears in
+the schema, so the current shape is undiscoverable anyway.)
+
+Second, `is_available()` requires `class_exists( 'WooCommerce' )`, the capability
+is `manage_woocommerce`, and `estimate_order_rates` calls `wc_get_order()`. So:
+
+- **`estimate_rates` + `test_connection` port now** — items plus two addresses in,
+  rates out, credentials as an argument.
+- **`estimate_order_rates` defers with the order model.** It is one of the 27, not
+  a provider client, and §164.111 already has the prerequisite named.
+
+#### `get_import_duty`: the request shape does not match the published API
+
+This is the one that should not be ported, at least not yet. The endpoint is
+ITA's **FTA Tariff Rates API**, and its published description is:
+
+- *"Returns tariff rates based on the ISO alpha-2 country codes of the **source**
+  country"*, with the example `?api_key={key}&sources={source countries}`;
+- framed as "tariff rates and import requirements for **U.S. exports** across
+global markets".
+
+The tool sends `reporter=United States` — a country **name**, not an alpha-2 code,
+and not the documented `sources` parameter — plus `hs6`, `hs_full`, `search_text`
+and `q`, and **never sends `sources` at all**. Its enum is import *destinations*
+(United States, Jamaica, Sri Lanka), which is the opposite direction from the
+API's subject.
+
+Three more signals that the author was probing an unknown contract:
+`normalize_result()` tries **eight candidate field names per output** (`hs_full`,
+`hs_code`, `htsno`, `hs10`, `hs8`, `hs6` for one value alone); there is a special
+case for a `301` that redirects to `developer.trade.gov`; and `format_rate()`
+appends `%` to *any* numeric value, so a specific duty (`$0.05/kg`) or a `Free`
+entry is mislabelled in one case and passed through in the other.
+
+**Not verified:** whether the endpoint is still live. I could not reach it from
+this environment (no key, and the requests were refused rather than answered), so
+the measurement records the mismatch and stops short of asserting retirement.
+
+Recommended: **defer**, with prerequisites naming the two things that would
+unblock it — (a) a live `api.trade.gov/v1/tariff_rates/search` call showing the
+real parameters and response, and (b) a decision on direction, because an
+*import-into-Jamaica* estimator is not what this API publishes.
+
+#### Revised slice order
+
+| slice | tools | why the change |
+|---|---|---|
+| 2a | `shipping_box_packer` | moved up from slice 4: the estimator composes it |
+| 2b | `shipping_rate_estimator` (`estimate_rates`, `test_connection`) | needs 2a; order rates defer with the order model |
+| 2c | `printful` (catalog, sync, orders, reports) | independent; can run in parallel with 2a/2b |
+| deferred | `get_import_duty` | request does not match the published API |
+| 3 | QuickBooks Online + Desktop bridge | unchanged |
+| 5+ | the composite and vision tools | unchanged |
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| Lines read | **3,250** (401 + 545 + 1,401 tool, 903 client) |
+| Tools measured | 3 of 3 in slice 2 |
+| Verdicts changed by the measurement | 2 of 3 (`get_import_duty` → defer; estimator → split) |
+| Provider contracts verified | 2 of 3 (Printful v1/v2 status; all three ShipStation products and base URLs) |
+| Provider contracts unverified | 1 (trade.gov liveness) |
+| Code changed | none — measurement only |
+
+#### Next
+
+`shipping_box_packer` first, so the rate estimator has something to compose. Then
+the estimator's two provider-independent actions, then Printful by object. The
+trade.gov deferral should go into the decisions register with its two
+prerequisites when 2a lands.
