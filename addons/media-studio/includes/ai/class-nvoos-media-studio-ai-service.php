@@ -601,10 +601,13 @@ class NV_oOS_Media_Studio_AI_Service {
 	/**
 	 * Execute the sidecar-only video transform (Phase 5).
 	 *
-	 * The media-worker `/api/video/generate` route is synchronous text-to-video
-	 * (Replicate-backed, internal polling); the approved still drives the prompt
-	 * via a garment-continuity description. Results are NOT sideloaded into the
-	 * Media Library in v1 — the envelope carries the remote video URL.
+	 * The media-worker `/api/video/generate` route animates a reference frame with
+	 * `stable-video-diffusion` (Replicate-backed, internal polling). The approved
+	 * still is that frame, so the garment in the clip is the garment in the still;
+	 * the prompt is continuity guidance beside it, not a description of a scene the
+	 * model has to invent. The model exposes frame counts rather than seconds, so
+	 * the clip is short — see the duration clamp below. Results are NOT sideloaded
+	 * into the Media Library in v1 — the envelope carries the remote video URL.
 	 *
 	 * @param int   $attachment_id Source attachment ID (drives the prompt).
 	 * @param array $args          Transform arguments (duration, description, seed, confirmed).
@@ -638,7 +641,10 @@ class NV_oOS_Media_Studio_AI_Service {
 			}
 		}
 
-		$duration = isset( $args['duration'] ) ? min( 15, max( 5, absint( $args['duration'] ) ) ) : 5;
+		// `stable-video-diffusion` renders 14 frames at 6 fps, about 2.3 seconds.
+		// The 5–15 second range this used to accept could never be produced, and a
+		// caller was told a length the model cannot deliver.
+		$duration = isset( $args['duration'] ) ? min( 4, max( 1, absint( $args['duration'] ) ) ) : 2;
 		$seed     = isset( $args['seed'] ) ? absint( $args['seed'] ) : 0;
 		$title    = get_the_title( $attachment_id );
 		$prompt   = 'Fashion video of the garment shown in the source image (' . sanitize_text_field( $title ) . '). Keep the garment, colors, and fabric identical across frames; smooth camera motion.';
@@ -661,7 +667,7 @@ class NV_oOS_Media_Studio_AI_Service {
 		$result = apply_filters( 'nvoos_media_studio_video_generate', null, $prompt, $args, $context );
 
 		if ( null === $result ) {
-			$result = self::request_sidecar_video( $prompt, $duration, $seed );
+			$result = self::request_sidecar_video( $prompt, $duration, $seed, $attachment_id );
 		}
 
 		if ( is_wp_error( $result ) ) {
@@ -706,20 +712,28 @@ class NV_oOS_Media_Studio_AI_Service {
 	/**
 	 * Call the media-worker sidecar video route.
 	 *
-	 * @param string $prompt   Video prompt.
-	 * @param int    $duration Clip length in seconds (5–15).
-	 * @param int    $seed     Optional seed.
+	 * @param string $prompt       Continuity guidance beside the frame.
+	 * @param int    $duration     Requested clip length (1–4; the model renders ~2 s).
+	 * @param int    $seed         Optional seed.
+	 * @param int    $attachment_id Source still, sent as the reference frame.
 	 * @return array|WP_Error
 	 */
-	protected static function request_sidecar_video( $prompt, $duration, $seed = 0 ) {
+	protected static function request_sidecar_video( $prompt, $duration, $seed, $attachment_id ) {
 		if ( ! self::is_sidecar_available() ) {
 			return new WP_Error( 'nvoos_ms_sidecar_unavailable', __( 'The media-worker sidecar is not configured.', 'nvoos-media-studio' ), array( 'status' => 503 ) );
 		}
 
+		$reference = self::reference_image_data_uri( $attachment_id );
+
+		if ( is_wp_error( $reference ) ) {
+			return $reference;
+		}
+
 		$body = array(
-			'prompt'   => $prompt,
-			'duration' => $duration,
-			'model'    => 'stable-video-diffusion',
+			'prompt'          => $prompt,
+			'duration'        => $duration,
+			'model'           => 'stable-video-diffusion',
+			'reference_image' => $reference,
 		);
 		if ( $seed > 0 ) {
 			$body['seed'] = $seed;
@@ -751,6 +765,47 @@ class NV_oOS_Media_Studio_AI_Service {
 			'prediction_id' => isset( $data['prediction_id'] ) ? sanitize_text_field( $data['prediction_id'] ) : '',
 			'model'         => isset( $data['model'] ) ? sanitize_text_field( $data['model'] ) : '',
 		);
+	}
+
+	/**
+	 * Read the source still as a data URI for the image-to-video model.
+	 *
+	 * Replicate accepts file inputs as `data:` URIs, so the worker never needs a
+	 * public URL for the frame. The worker bounds and re-encodes it; this end only
+	 * refuses what the route's JSON body cannot carry.
+	 *
+	 * @param int $attachment_id Source attachment ID.
+	 * @return string|WP_Error Data URI, or the refusal.
+	 */
+	protected static function reference_image_data_uri( $attachment_id ) {
+		$path = get_attached_file( absint( $attachment_id ) );
+
+		if ( ! is_string( $path ) || '' === $path || ! file_exists( $path ) ) {
+			return new WP_Error( 'nvoos_ms_video_source_missing', __( 'The source image for the video could not be found.', 'nvoos-media-studio' ), array( 'status' => 404 ) );
+		}
+
+		$filetype = wp_check_filetype( $path );
+		$mime     = isset( $filetype['type'] ) ? (string) $filetype['type'] : '';
+
+		if ( ! in_array( $mime, array( 'image/png', 'image/jpeg', 'image/webp' ), true ) ) {
+			return new WP_Error( 'nvoos_ms_video_source_type', __( 'Video generation needs a PNG, JPEG or WebP source image.', 'nvoos-media-studio' ), array( 'status' => 400 ) );
+		}
+
+		$size = filesize( $path );
+
+		// The route's JSON body is capped at 10 MB, and base64 adds a third.
+		if ( false === $size || $size > 6 * MB_IN_BYTES ) {
+			return new WP_Error( 'nvoos_ms_video_source_size', __( 'The source image is larger than 6 MB; resize it before generating video.', 'nvoos-media-studio' ), array( 'status' => 400 ) );
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local attachment path, never a remote URL.
+		$bytes = file_get_contents( $path );
+
+		if ( ! is_string( $bytes ) || '' === $bytes ) {
+			return new WP_Error( 'nvoos_ms_video_source_read', __( 'The source image could not be read.', 'nvoos-media-studio' ), array( 'status' => 500 ) );
+		}
+
+		return 'data:' . $mime . ';base64,' . base64_encode( $bytes );
 	}
 
 	/**

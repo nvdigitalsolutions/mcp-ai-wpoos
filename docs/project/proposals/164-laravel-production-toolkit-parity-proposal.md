@@ -11968,12 +11968,16 @@ sending. Inputs are built per family: SVD gets `input_image`, `video_length`,
 name rather than dropping them, and a malformed frame is a 400 with a reason —
 the catch used to flatten every failure to a 500.
 
-**A measured compatibility note.** `media-studio` sends
-`model: 'stable-video-diffusion'` with a prompt and no reference frame. That call
-could never have worked: the model requires `input_image`, which the route never
-sent, so it failed at the provider. It now fails at the route with a 400 and the
-reason, before a paid prediction is created. Its text-to-video siblings are
-unaffected.
+**The one consumer, fixed rather than left refusing.** `media-studio` pinned
+`model: 'stable-video-diffusion'` with a prompt and no frame, so the call could
+never have worked. Its own prompt already says "the garment shown in the source
+image" and its method already receives the attachment, so the intent was
+image-to-video all along and only the frame was missing. It now reads the
+attachment, refuses a file that is not a PNG/JPEG/WebP or is over 6 MB (the
+route's JSON body is 10 MB and base64 adds a third), and sends
+`reference_image`. Its duration clamp drops from 5–15 s to 1–4 s: the model
+renders 14 frames at 6 fps, about 2.3 seconds, and the old range promised a
+length no model in the catalog delivers.
 
 **The refusal tells the truth.** `product_actualization`'s `mode: video` error
 now names image-to-video plus the unbound contract, instead of an artifact TTL
