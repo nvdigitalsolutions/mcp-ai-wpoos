@@ -1,0 +1,65 @@
+name: PHPStan (core)
+
+# `lib/core` is a separately installable package and configures PHPStan level 8,
+# but nothing ran that configuration until now — the only PHPStan job in CI is
+# level 1 over includes/ and addons/, warning-only. So the package's claimed
+# level drifted to 216 findings unnoticed (Proposal 164 section 164.112).
+#
+# This job enforces the committed baseline. It does not make the package clean;
+# it makes the number unable to grow. Shrink `lib/core/phpstan-baseline.neon` as
+# each file is next touched, and regenerate it deliberately when a change of
+# substance requires it.
+on:
+  push:
+    branches: [ main, alpha-working ]
+    paths:
+      - 'lib/core/**'
+      - '.github/workflows/phpstan-core.yml'
+  pull_request:
+    paths:
+      - 'lib/core/**'
+      - '.github/workflows/phpstan-core.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phpstan-core-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyse:
+    name: PHPStan level 8 (lib/core)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: lib/core
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer:v2
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-phpstan-core-${{ hashFiles('lib/core/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-phpstan-core-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Analyse
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G

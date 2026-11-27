@@ -79,6 +79,7 @@ use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
 use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
 use Nvoos\Core\Domain\Contract\OkfBundleLocatorInterface;
 use Nvoos\Core\Domain\Contract\PaperStoreInterface;
+use Nvoos\Core\Domain\Contract\ProductCatalogInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\ProfessionOverlayInterface;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
@@ -172,6 +173,7 @@ use Nvoos\Laravel\Adapter\MediaWorkerVideoFrames;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\OpenAiTranscription;
 use Nvoos\Laravel\Adapter\PlatformFlush;
+use Nvoos\Laravel\Adapter\ProductCatalog;
 use Nvoos\Laravel\Adapter\ProEntitlementFactory;
 use Nvoos\Laravel\Adapter\ProfessionRepository;
 use Nvoos\Laravel\Profession\JsonProfessionOverlay;
@@ -414,6 +416,13 @@ class NvoosServiceProvider extends ServiceProvider {
 		$this->app->bind( QueueClientInterface::class, QueueClient::class );
 		$this->app->bind( AuthProviderInterface::class, AuthProvider::class );
 		$this->app->bind( ContentStoreInterface::class, ContentStore::class );
+
+		// The catalog is the destination of record for a WooCommerce → Laravel
+		// migration (Proposal 164 section 164.114). Bound unconditionally because
+		// the product tools declare the capability rather than probing for it: a
+		// missing binding must fail at construction, not midway through a run.
+		$this->app->bind( ProductCatalogInterface::class, ProductCatalog::class );
+
 		$this->app->bind( SchemaStoreInterface::class, SchemaStore::class );
 		// The profession catalogue's tenant tier (Proposal 149 §170). The base is
 		// code-owned reference data; this is the half `save_profession` writes.

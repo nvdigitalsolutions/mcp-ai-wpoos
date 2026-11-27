@@ -1,6 +1,10 @@
 {
     "$comment": "Declared-and-not-ported decisions for the Pro toolkits (Proposal 164 section 164.6). Read by bin/toolkit-parity.php. declined = not ported and not intended, subtracted from remaining. deferred = not ported, blocked on a named prerequisite, stays in remaining. The rationale, and the boundary against the readiness manifest's parity:declined, live in Nvoos\\Core\\Application\\Tool\\ToolkitParityDecisions.",
     "decisions": {
+        "abandoned_cart_recovery": {
+            "decision": "deferred",
+            "reason": "Finds abandoned carts and sends a recovery message. Prerequisite: a cart/session store plus the mail seam. Neither exists, and Proposal 148 defers cart to its own phase because it is a payments-adjacent surface."
+        },
         "apply_watermark_batch": {
             "decision": "declined",
             "reason": "A watermark is a per-image `edit` operation, and a batch over it is a loop a caller writes in one line; offering it as a primitive would add a slug without adding a capability. The video counterpart, apply_watermark_to_video, is already served, so nothing in the portfolio changes shape. Declined rather than deferred because no prerequisite would make it more than a loop."
@@ -8,6 +12,14 @@
         "batch_process_images": {
             "decision": "declined",
             "reason": "It would be a chain of convert, resize and compress, and ImageProcessingInterface::resize/crop/rotate/convert each take a source path and return a persisted path, so a chain is one worker round trip and one intermediate file per step. A real batch needs a multi-operation `/transform` call, which is a worker contract change rather than a tool. The three served tools (optimise_images_batch, generate_responsive_images, compress_image) already cover the jobs this slug names, so there is nothing left to build behind the name."
+        },
+        "bulk_order_status_update": {
+            "decision": "deferred",
+            "reason": "Changes status across many orders. Prerequisite: OrderStoreInterface plus a per-order status transition rule, because a bulk update that skips the rule is how an order jumps from refunded to processing."
+        },
+        "bulk_update_products": {
+            "decision": "deferred",
+            "reason": "Applies one field change across many products, optionally filtered. Prerequisite: a catalog adapter plus a filtered batch query; the loop is the ProductCatalogInterface save path once an adapter exists."
         },
         "classroom_course_analytics": {
             "decision": "deferred",
@@ -25,6 +37,10 @@
             "decision": "deferred",
             "reason": "It creates coursework on a Classroom course, which requires both the client and the course id the keystone link would store. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
         },
+        "create_discount_campaign": {
+            "decision": "deferred",
+            "reason": "Creates coupons and promotions from a campaign brief, with WooCommerce coupon meta attached. Prerequisite: a promotion and coupon store. No such contract exists; the storefront's promotions collection (Proposal 148) is the closest model to align with."
+        },
         "create_eca_workflow_rule": {
             "decision": "deferred",
             "reason": "It is the same substrate as configure_eca_notifications: a rule with a trigger and an action, evaluated on ECA events that nothing currently emits. Prerequisite: an event-to-action rule store plus emitters for ECA enrollment and attendance changes."
@@ -33,9 +49,25 @@
             "decision": "deferred",
             "reason": "It posts {message:{text}} to /me/broadcast_messages, and Meta does not accept that body: a broadcast takes a message_creative_id created first by POST /me/message_creatives, and the broadcast is then delivered by POST /me/broadcast_messages/{id}/send. The WordPress tool therefore never created a broadcast. Making it work needs the creative step and the send step, and the send step delivers to the entire labelled audience — an outward, approval-gated operation that no tool in this family has a confirmation gate for. Prerequisite: a two-step client plus a confirmation gate (or an explicit dry_run that stops after the creative), and a decision about the messaging_type and tag policy the page must comply with."
         },
+        "create_product_advanced": {
+            "decision": "deferred",
+            "reason": "Creates a variable product with its options, variants, categories and images in one call. Prerequisite: a ProductCatalogInterface adapter that can write options and variants together. The contract exists (Proposal 164 section 164.111) and no adapter ships yet, so the tool would write to nothing."
+        },
         "create_remotion_video": {
             "decision": "deferred",
             "reason": "Renders React/Remotion compositions by running node against a pre-built addons/pro/bin/remotion-render.bundle.js shipped with the Pro plugin. Neither that bundle nor a Node subprocess path exists on this runtime; the media worker is Node but exposes no Remotion endpoint. Standing one up is a service and a product decision, not a tool to port. Prerequisite: a Remotion render route on the media worker."
+        },
+        "customer_lifetime_value": {
+            "decision": "deferred",
+            "reason": "Computes lifetime value per customer. Prerequisite: CustomerStoreInterface with order aggregates; the arithmetic is trivial and the missing part is the data."
+        },
+        "export_customer_data": {
+            "decision": "deferred",
+            "reason": "Exports customer rows under an optional PII scope. Prerequisite: CustomerStoreInterface, and the scope/redaction rule belongs in the contract rather than in a tool, because an export that leaks one field is the failure mode."
+        },
+        "export_products_report": {
+            "decision": "deferred",
+            "reason": "Builds a product report with selectable columns and totals. Prerequisite: a catalog adapter; the report shape is core work, but there are no rows to shape without one."
         },
         "extract_video_metadata": {
             "decision": "declined",
@@ -57,6 +89,10 @@
             "decision": "declined",
             "reason": "Superseded by create_image_variation, which is served. The two are separate WordPress slugs for one capability, so a port would give an agent two names for one call and no way to choose between them."
         },
+        "get_abandoned_carts": {
+            "decision": "deferred",
+            "reason": "Lists abandoned carts with value and age. Prerequisite: a cart/session store; WooCommerce reads these from its sessions table, which the runtime has no counterpart for."
+        },
         "get_discord_voice_channel_members": {
             "decision": "deferred",
             "reason": "It reads voice_states from GET /channels/{id}, and Discord's REST channel object does not carry that field: voice states are gateway events (VOICE_STATE_UPDATE), and Discord has no REST endpoint that lists the members of a voice channel. The WordPress tool therefore passes its channel-type check and then always returns member_count 0, so porting it would ship a tool whose contract is a lie. Prerequisite: a gateway connection, or a host-maintained voice-state cache fed by VOICE_STATE_UPDATE, exposed through a port the tool can read."
@@ -76,6 +112,10 @@
         "get_jetbooking_units": {
             "decision": "deferred",
             "reason": "Units are the rentable inventory rows in JetBooking's tables and have no local representation. Inventing a content type for them before the JetBooking client exists would be a schema guess. Prerequisite: the JetBooking client, and a unit model that check_availability and get_available_slots can read, so a unit is actually bookable rather than merely stored."
+        },
+        "get_order_analytics": {
+            "decision": "deferred",
+            "reason": "Aggregates orders into revenue, average order value and period comparisons. Prerequisite: OrderStoreInterface. The original reads WooCommerce's order-stats table directly, which is the dependency the contract exists to remove."
         },
         "get_queued_videos": {
             "decision": "deferred",
@@ -101,6 +141,14 @@
             "decision": "deferred",
             "reason": "Inpainting needs a mask-capable engine. The media worker's `/edit` route takes an `operation` and a `prompt` and no mask channel, and neither bound provider offers one, so there is nothing to send the masked region to. Prerequisite: a mask argument on the worker edit route plus a provider that accepts it."
         },
+        "import_products_csv": {
+            "decision": "deferred",
+            "reason": "Reads a CSV and creates or updates products. Prerequisite: a catalog adapter with variant write. The CSV parsing half is already served separately, so what is missing is the writer."
+        },
+        "inventory_forecast": {
+            "decision": "deferred",
+            "reason": "Projects days of stock cover from sales history. Prerequisite: a movement or order ledger — the same prerequisite as track_inventory_movement — because the projection needs history that no current contract holds."
+        },
         "isams_query": {
             "decision": "deferred",
             "reason": "It reads pupils, employees, departments and terms from iSAMS through institution-specific credentials this runtime has no store for. Prerequisite: an iSAMS client with a credential store; the `_eca_isams_sync_id` field proves the schema anticipated the sync, not the transport."
@@ -121,6 +169,14 @@
             "decision": "deferred",
             "reason": "Submission state only exists for a coursework item created through Classroom, and neither the item nor the course exists here. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
         },
+        "lookup_product_price": {
+            "decision": "declined",
+            "reason": "Its mechanism is scraping retailer search result pages (amazon.com/s, ebay.com/sch, target.com/s) through run_crawl4ai_job and then guessing which result is the product. Retailer search HTML is neither stable nor a licensed interface, so a tool that ships this breaks quietly and repeatedly. Declined rather than deferred because no prerequisite would make the mechanism sound; the crawl and vision primitives stay available to a caller that wants to compose its own lookup."
+        },
+        "low_stock_alert_automation": {
+            "decision": "deferred",
+            "reason": "Scans for products under a threshold and notifies. Prerequisite: a catalog adapter to read stock plus the notification seam. The threshold rule is core work; what is missing is the reader."
+        },
         "manage_classroom_push_watch": {
             "decision": "deferred",
             "reason": "It registers, renews and removes Classroom push-notification watches, which needs the client *and* a publicly reachable callback URL that this deployment model does not provide. Prerequisite: a Google Classroom client plus a public webhook endpoint the worker or app can serve."
@@ -136,6 +192,14 @@
         "prepare_file_for_vector_store": {
             "decision": "deferred",
             "reason": "It converts CSV, XLSX and PPTX into PDF or structured text, OCRs scanned PDFs and repairs encoding before ingest. The runtime has the OCR half (OcrServiceInterface, PdfOcrInterface, PdfTextExtractorInterface) and PDF mutation, but nothing reads a spreadsheet or a slide deck: the media worker generates office documents, it does not parse them. Prerequisite: an office-document reader that exposes rows and sheets as text."
+        },
+        "process_order_workflow": {
+            "decision": "deferred",
+            "reason": "Runs a multi-step order workflow: status, note, customer email and stock movement. Prerequisite: OrderStoreInterface, which does not exist yet — section 164.111 covers the catalog only — plus the store's mail and stock seams."
+        },
+        "refund_order_advanced": {
+            "decision": "deferred",
+            "reason": "Issues a full or partial refund with line-level quantities. Prerequisite: OrderStoreInterface with refund support. It is also a payments concern rather than CRUD: the original calls the gateway, and a contract for that is a separate decision."
         },
         "remote_shopify_connection": {
             "decision": "deferred",
@@ -157,9 +221,21 @@
             "decision": "declined",
             "reason": "It is a provider prompt preset: it composes a research prompt and calls the model client, and returns the text. deep_research and web_search already serve that capability, and the WordPress tool's own usage guidance points at both of them. A third name for \"research this topic\" would add a slug without adding a capability, so it is declined rather than deferred: no prerequisite would make the duplicate worth a slot."
         },
+        "sales_performance_dashboard": {
+            "decision": "deferred",
+            "reason": "Builds the revenue dashboard. Prerequisite: OrderStoreInterface. The original is 33 direct database reads over WooCommerce's order-stats table, which is precisely the coupling the contract removes."
+        },
         "schedule_notify_sms": {
             "decision": "deferred",
             "reason": "It schedules a Notify.lk SMS through two WordPress-only mechanisms at once: the `notifylk/notify-php` package (its own `is_available()` says the tool is disabled without it) and a WP-cron single event whose callback performs the send. The core has a schedule store but it stores a hook name and args and leaves dispatch to the host, so a port that only scheduled the hook would report success while nothing sent the message; porting the send inline would put the provider API key at rest in a schedule row. Prerequisite: an SMS provider client (or the package) plus an app-level scheduled-send listener, or a secret-reference field on the schedule payload so a credential is never stored with the message."
+        },
+        "segment_customers": {
+            "decision": "deferred",
+            "reason": "Builds a customer audience from spend, order count, dates and tags. Prerequisite: CustomerStoreInterface, which does not exist yet, plus the order aggregates the filters need."
+        },
+        "send_cart_recovery_email": {
+            "decision": "deferred",
+            "reason": "Sends a recovery message for one cart. Prerequisite: a cart/session store plus the mail seam. The mail half is already served; the cart half is not."
         },
         "sync_classroom_courses_to_ecas": {
             "decision": "deferred",
@@ -201,6 +277,10 @@
             "decision": "deferred",
             "reason": "The Microsoft Graph delta query returns an @odata.deltaLink to replay changes from, and answers 410 with syncStateNotFound or syncStateInvalid when that state expires, at which point the client restarts with a full sync. Prerequisite: the same OAuth credential store and sync-state store as the Google sync, plus a delta-link cursor per calendar and the tombstones a resync needs."
         },
+        "sync_product_inventory": {
+            "decision": "deferred",
+            "reason": "Reconciles stock between the store and an external system. Prerequisite: a catalog adapter plus that system's own client; without both ends it would reconcile nothing."
+        },
         "sync_students_from_isams": {
             "decision": "deferred",
             "reason": "It imports student records from iSAMS, so it needs the iSAMS client and a stable match key before it can create or update anyone. Prerequisite: an iSAMS client with per-institution credentials."
@@ -213,13 +293,29 @@
             "decision": "declined",
             "reason": "Every image generation tool here already hands free-text to a model that interprets it, so a separate optimiser is a second paid call that rewrites the caller's words without showing what changed. It also has no consumer in the tool portfolio: nothing calls it. Declined rather than deferred because there is no prerequisite that would make a hidden rewrite worth a slot."
         },
+        "track_inventory_movement": {
+            "decision": "deferred",
+            "reason": "Records an inventory movement with its reason in a ledger. Prerequisite: a catalog adapter plus a movement ledger. ProductVariant holds one current quantity and no history, so there is nowhere to record a movement yet."
+        },
         "update_classroom_course": {
             "decision": "deferred",
             "reason": "It renames or re-states an existing Classroom course, so it needs the same client plus a stored course id to address. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
         },
+        "update_woo_product_price": {
+            "decision": "deferred",
+            "reason": "Updates a product or variation price and its sale window. Prerequisite: a catalog adapter; price and compare-at price are already fields on ProductVariant."
+        },
+        "update_woo_product_qty": {
+            "decision": "deferred",
+            "reason": "Sets stock for a product or variation and writes WooCommerce's stock-status string. Prerequisite: a catalog adapter; the quantity is on ProductVariant, and the status vocabulary is the adapter's mapping rather than the contract's."
+        },
         "upload_video_batch": {
             "decision": "deferred",
             "reason": "Uploads a batch to YouTube or Vimeo, and platform must be one of those two. No video-platform uploader is bound here: the media worker composes and publishes to the social channels, not to video platforms. Its dry_run mode only previews the queue that get_queued_videos reads, so the pair lands together or not at all. Prerequisite: a YouTube/Vimeo uploader plus the job model above."
+        },
+        "upsell_recommendations": {
+            "decision": "deferred",
+            "reason": "Suggests add-ons from basket contents and category co-occurrence. Prerequisite: order history behind a contract, then a recommendation rule. Without order data the pairing would be invented."
         },
         "vault_access": {
             "decision": "deferred",
@@ -232,6 +328,22 @@
         "web_browser": {
             "decision": "deferred",
             "reason": "Six of its seven actions are a stateful sequence: `click`, `type` and `submit` act on one page after a `navigate`, and `extract` reads the result of that sequence. The worker's browser route is a one-shot render (URL or HTML in, one file out) with no session and no step list, so there is nothing to hold the page between calls. Prerequisite: a session-capable browser route, or a scripted step list the worker executes inside one request. The same delivery gap as `capture_webpage_screenshot` applies to its screenshot and PDF actions."
+        },
+        "woo_coupons": {
+            "decision": "deferred",
+            "reason": "Generic coupon CRUD over WooCommerce. Prerequisite: a promotion and coupon store; the same missing model as create_discount_campaign."
+        },
+        "woo_customers": {
+            "decision": "deferred",
+            "reason": "Generic customer CRUD over WooCommerce. Prerequisite: CustomerStoreInterface, then an adapter."
+        },
+        "woo_orders": {
+            "decision": "deferred",
+            "reason": "Generic order CRUD over WooCommerce. Prerequisite: OrderStoreInterface, then an adapter; porting it earlier would mean inventing the contract from a single caller."
+        },
+        "woo_products": {
+            "decision": "deferred",
+            "reason": "Generic product CRUD over WooCommerce. Prerequisite: a catalog adapter; once one exists this is a thin wrapper on ProductCatalogInterface and should be ported alongside the adapter that tests it, not before."
         }
     }
 }

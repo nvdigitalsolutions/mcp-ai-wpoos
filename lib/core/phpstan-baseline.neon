@@ -1,0 +1,946 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Application\\\\Chat\\\\ChatOrchestrator\\:\\:buildAllowedTools\\(\\) has parameter \\$profile with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Application/Chat/ChatOrchestrator.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Application\\\\Chat\\\\ChatOrchestrator\\:\\:resolveOutputGuard\\(\\) has parameter \\$profile with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Application/Chat/ChatOrchestrator.php
+
+		-
+			message: "#^Parameter \\#3 \\$sessionId of method Nvoos\\\\Core\\\\Application\\\\Chat\\\\ChatOrchestrator\\:\\:recordSessionEvent\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: src/Application/Chat/ChatOrchestrator.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 6
+			path: src/Application/Media/ImageInput.php
+
+		-
+			message: "#^Cannot call method render\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\PdfPageRendererInterface\\|null\\.$#"
+			count: 1
+			path: src/Application/Media/VisionPdfOcr.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Application\\\\Security\\\\OutputGuard\\:\\:fromProfile\\(\\) has parameter \\$profile with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Application/Security/OutputGuard.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Application\\\\Tool\\\\NecessityGuard\\:\\:__construct\\(\\) has parameter \\$preApproved with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Application/Tool/NecessityGuard.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Application\\\\Workflow\\\\WorkflowExecutor\\:\\:execute\\(\\) should return array\\{success\\: bool, status\\: string, nodes\\: array\\<string, array\\<string, mixed\\>\\>, tool_calls\\: int, error\\: string\\|null, message\\: string\\} but returns array\\<string, mixed\\>\\.$#"
+			count: 3
+			path: src/Application/Workflow/WorkflowExecutor.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\TraceStoreInterface\\:\\:append\\(\\) has parameter \\$record with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Contract/TraceStoreInterface.php
+
+		-
+			message: "#^Parameter \\#1 \\$haystack of function str_ends_with expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Domain/Okf/OkfWriter.php
+
+		-
+			message: "#^Parameter \\#1 \\$haystack of function str_starts_with expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Domain/Okf/OkfWriter.php
+
+		-
+			message: "#^Parameter \\#1 \\$name of method Nvoos\\\\Core\\\\Domain\\\\Okf\\\\OkfWriter\\:\\:label\\(\\) expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Domain/Okf/OkfWriter.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function rawurlencode expects string, string\\|false given\\.$#"
+			count: 2
+			path: src/Domain/Okf/OkfWriter.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function substr expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Domain/Okf/OkfWriter.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\GuardrailPolicy\\:\\:decide\\(\\) has parameter \\$analysis with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/GuardrailPolicy.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\GuardrailPolicy\\:\\:messageKey\\(\\) has parameter \\$analysis with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/GuardrailPolicy.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\GuardrailPrompt\\:\\:apply\\(\\) has parameter \\$profile with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/GuardrailPrompt.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\GuardrailPrompt\\:\\:build\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/GuardrailPrompt.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\NullTraceStore\\:\\:append\\(\\) has parameter \\$record with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/NullTraceStore.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\OutputGuardrail\\:\\:evaluate\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/OutputGuardrail.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\OutputGuardrail\\:\\:normaliseConfig\\(\\) has parameter \\$config with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/OutputGuardrail.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\OutputGuardrail\\:\\:result\\(\\) has parameter \\$findings with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/OutputGuardrail.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function strlen expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/PromptInjectionDetector.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\RetrievalHarness\\:\\:looksLikeList\\(\\) has parameter \\$arr with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/RetrievalHarness.php
+
+		-
+			message: "#^Parameter \\#2 \\$arguments of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ToolInvokerInterface\\:\\:invoke\\(\\) expects array\\<string, mixed\\>, array\\<string, mixed\\>\\|null given\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/RetrievalHarness.php
+
+		-
+			message: "#^Call to an undefined method object\\:\\:get_error_message\\(\\)\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/SelfRefineLoop.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\SelfRefineLoop\\:\\:run\\(\\) has parameter \\$opts with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/SelfRefineLoop.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\SelfRefineLoop\\:\\:sanitizeVerdict\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/SelfRefineLoop.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\ToolPresetCatalogue\\:\\:toolsFor\\(\\) should return array\\<int, string\\> but returns array\\<int, string\\>\\|string\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/ToolPresetCatalogue.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\ToolRouterHarness\\:\\:rank\\(\\) has parameter \\$tools with no value type specified in iterable type iterable\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/ToolRouterHarness.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\ToolRouterHarness\\:\\:resolveAssistantInputs\\(\\) has parameter \\$profile with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/ToolRouterHarness.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\ToolRouterHarness\\:\\:score\\(\\) has parameter \\$assistantPrefs with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/ToolRouterHarness.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\ToolRouterHarness\\:\\:score\\(\\) has parameter \\$presetWeights with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/ToolRouterHarness.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\TracePolicy\\:\\:isEnabled\\(\\) has parameter \\$profile with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/TracePolicy.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Harness\\\\TracePolicy\\:\\:retentionRuns\\(\\) has parameter \\$profile with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Harness/TracePolicy.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Safety\\\\NecessityGate\\:\\:classifyNecessity\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Safety/NecessityGate.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Domain\\\\Service\\\\Safety\\\\NecessityGate\\:\\:decide\\(\\) has parameter \\$preApproved with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Domain/Service/Safety/NecessityGate.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Infrastructure\\\\Cloudways\\\\CloudwaysClient\\:\\:send\\(\\) has parameter \\$headers with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Infrastructure/Cloudways/CloudwaysClient.php
+
+		-
+			message: "#^Cannot call method getRegisteredSlugs\\(\\) on Nvoos\\\\Core\\\\Application\\\\Provider\\\\ProviderRouter\\|null\\.$#"
+			count: 1
+			path: src/Tool/AbstractCompletionTool.php
+
+		-
+			message: "#^Cannot call method resolveForChat\\(\\) on Nvoos\\\\Core\\\\Application\\\\Provider\\\\ProviderRouter\\|null\\.$#"
+			count: 1
+			path: src/Tool/AbstractCompletionTool.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 1
+			path: src/Tool/AbstractCompletionTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\AbstractTool\\:\\:dryRunPlan\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/AbstractTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\AbstractTool\\:\\:isDryRun\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/AbstractTool.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 3
+			path: src/Tool/AbstractVideoCompletionTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\AbstractVideoTool\\:\\:sourceFileId\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/AbstractVideoTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\AbstractVideoTool\\:\\:store\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/AbstractVideoTool.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 1
+			path: src/Tool/AnalyzeCodeSequenceCompletionTool.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 2
+			path: src/Tool/AnalyzeCommentContentCompletionTool.php
+
+		-
+			message: "#^Comparison operation \"\\>\\=\" between int\\<0, max\\> and 0 is always true\\.$#"
+			count: 1
+			path: src/Tool/AnalyzeFileSuitabilityLocalTool.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 2
+			path: src/Tool/AnalyzeFileSuitabilityLocalTool.php
+
+		-
+			message: "#^Offset 'model' does not exist on array\\{path\\: string, width\\: int, height\\: int, format\\: string, mime_type\\: string, bytes\\: int, operation\\: string, provider\\: string\\}\\.$#"
+			count: 1
+			path: src/Tool/ApplyArtisticStyleTool.php
+
+		-
+			message: "#^Cannot call method getTaxonomyTerms\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ContentStoreInterface\\|null\\.$#"
+			count: 1
+			path: src/Tool/AutoCategorizeContentCompletionTool.php
+
+		-
+			message: "#^Cannot call method listTaxonomyTerms\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ContentStoreInterface\\|null\\.$#"
+			count: 1
+			path: src/Tool/AutoCategorizeContentCompletionTool.php
+
+		-
+			message: "#^Cannot call method update\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ContentStoreInterface\\|null\\.$#"
+			count: 1
+			path: src/Tool/AutoCategorizeContentCompletionTool.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 2
+			path: src/Tool/AutoCategorizeContentCompletionTool.php
+
+		-
+			message: "#^Cannot call method find\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ContentStoreInterface\\|null\\.$#"
+			count: 1
+			path: src/Tool/BatchEmbedContentIndexTool.php
+
+		-
+			message: "#^Cannot call method getApiBaseUrl\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\SettingsStoreInterface\\|null\\.$#"
+			count: 1
+			path: src/Tool/BatchEmbedContentIndexTool.php
+
+		-
+			message: "#^Cannot call method getApiKey\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\SettingsStoreInterface\\|null\\.$#"
+			count: 1
+			path: src/Tool/BatchEmbedContentIndexTool.php
+
+		-
+			message: "#^Cannot call method getMeta\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ContentStoreInterface\\|null\\.$#"
+			count: 1
+			path: src/Tool/BatchEmbedContentIndexTool.php
+
+		-
+			message: "#^Cannot call method query\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ContentStoreInterface\\|null\\.$#"
+			count: 1
+			path: src/Tool/BatchEmbedContentIndexTool.php
+
+		-
+			message: "#^Cannot call method send\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\HttpClientInterface\\|null\\.$#"
+			count: 1
+			path: src/Tool/BatchEmbedContentIndexTool.php
+
+		-
+			message: "#^Cannot call method update\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ContentStoreInterface\\|null\\.$#"
+			count: 1
+			path: src/Tool/BatchEmbedContentIndexTool.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 1
+			path: src/Tool/BatchEmbedContentIndexTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Calendar\\\\AvailabilityDefinition\\:\\:slotRule\\(\\) should return array\\{enabled\\: bool, start_time\\: string, end_time\\: string, slot_duration\\: int, buffer_time\\: int\\}\\|null but returns array\\<string, mixed\\>\\.$#"
+			count: 1
+			path: src/Tool/Calendar/AvailabilityDefinition.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Calendar\\\\CreateEventTool\\:\\:clockArg\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Calendar/CreateEventTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Calendar\\\\CreateEventTool\\:\\:dateArg\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Calendar/CreateEventTool.php
+
+		-
+			message: "#^Parameter \\#1 \\$entries of static method Nvoos\\\\Core\\\\Tool\\\\Calendar\\\\IcsWriter\\:\\:calendar\\(\\) expects array\\<int, array\\{uid\\: string, title\\: string, description\\?\\: string, location\\?\\: string, start\\: string, end\\?\\: string, all_day\\?\\: bool, default_minutes\\?\\: int, \\.\\.\\.\\}\\>, non\\-empty\\-array\\<int\\<0, max\\>, array\\<string, mixed\\>\\> given\\.$#"
+			count: 1
+			path: src/Tool/Calendar/ExportCalendarIcsTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Calendar\\\\ImportServicesTool\\:\\:csv\\(\\) should return array\\{rows\\: array\\<int, array\\<string, string\\>\\>, ignored_headers\\?\\: array\\<int, string\\>, error\\?\\: string\\} but returns array\\{error\\: 'Could not read the…'\\}\\.$#"
+			count: 1
+			path: src/Tool/Calendar/ImportServicesTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Calendar\\\\ImportServicesTool\\:\\:csv\\(\\) should return array\\{rows\\: array\\<int, array\\<string, string\\>\\>, ignored_headers\\?\\: array\\<int, string\\>, error\\?\\: string\\} but returns array\\{error\\: 'The CSV has no…'\\}\\.$#"
+			count: 1
+			path: src/Tool/Calendar/ImportServicesTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Calendar\\\\ImportServicesTool\\:\\:csv\\(\\) should return array\\{rows\\: array\\<int, array\\<string, string\\>\\>, ignored_headers\\?\\: array\\<int, string\\>, error\\?\\: string\\} but returns array\\{error\\: 'The CSV header row…'\\}\\.$#"
+			count: 1
+			path: src/Tool/Calendar/ImportServicesTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Calendar\\\\ImportServicesTool\\:\\:csv\\(\\) should return array\\{rows\\: array\\<int, array\\<string, string\\>\\>, ignored_headers\\?\\: array\\<int, string\\>, error\\?\\: string\\} but returns array\\{error\\: 'The CSV is UTF\\-16…'\\}\\.$#"
+			count: 1
+			path: src/Tool/Calendar/ImportServicesTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Calendar\\\\ImportServicesTool\\:\\:parse\\(\\) should return array\\{rows\\: array\\<int, mixed\\>, ignored_headers\\?\\: array\\<int, string\\>, error\\?\\: string\\} but returns array\\{error\\: 'The JSON must be an…'\\}\\.$#"
+			count: 1
+			path: src/Tool/Calendar/ImportServicesTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Calendar\\\\ImportServicesTool\\:\\:parse\\(\\) should return array\\{rows\\: array\\<int, mixed\\>, ignored_headers\\?\\: array\\<int, string\\>, error\\?\\: string\\} but returns array\\{error\\: 'Unknown source; use…'\\}\\.$#"
+			count: 1
+			path: src/Tool/Calendar/ImportServicesTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Calendar\\\\ImportServicesTool\\:\\:parse\\(\\) should return array\\{rows\\: array\\<int, mixed\\>, ignored_headers\\?\\: array\\<int, string\\>, error\\?\\: string\\} but returns array\\{error\\: 'csv_string is…'\\}\\.$#"
+			count: 1
+			path: src/Tool/Calendar/ImportServicesTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Calendar\\\\ImportServicesTool\\:\\:parse\\(\\) should return array\\{rows\\: array\\<int, mixed\\>, ignored_headers\\?\\: array\\<int, string\\>, error\\?\\: string\\} but returns array\\{error\\: 'data must be an…'\\}\\.$#"
+			count: 1
+			path: src/Tool/Calendar/ImportServicesTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Calendar\\\\ImportServicesTool\\:\\:parse\\(\\) should return array\\{rows\\: array\\<int, mixed\\>, ignored_headers\\?\\: array\\<int, string\\>, error\\?\\: string\\} but returns array\\{error\\: 'json_string is…'\\}\\.$#"
+			count: 1
+			path: src/Tool/Calendar/ImportServicesTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Calendar\\\\ImportServicesTool\\:\\:parse\\(\\) should return array\\{rows\\: array\\<int, mixed\\>, ignored_headers\\?\\: array\\<int, string\\>, error\\?\\: string\\} but returns array\\{error\\: non\\-falsy\\-string\\}\\.$#"
+			count: 1
+			path: src/Tool/Calendar/ImportServicesTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ChatChannels\\\\ManageTwitterWebhookTool\\:\\:delete\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ChatChannels/ManageTwitterWebhookTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ChatChannels\\\\ManageTwitterWebhookTool\\:\\:register\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ChatChannels/ManageTwitterWebhookTool.php
+
+		-
+			message: "#^Parameter \\#3 \\$credentials of method Nvoos\\\\Core\\\\Tool\\\\ChatChannels\\\\ManageTwitterWebhookTool\\:\\:listWebhooks\\(\\) expects array\\{api_key\\: string, api_secret\\: string, access_token\\: string, access_token_secret\\: string\\}, array given\\.$#"
+			count: 1
+			path: src/Tool/ChatChannels/ManageTwitterWebhookTool.php
+
+		-
+			message: "#^Parameter \\#3 \\$credentials of method Nvoos\\\\Core\\\\Tool\\\\ChatChannels\\\\ManageTwitterWebhookTool\\:\\:subscribe\\(\\) expects array\\{api_key\\: string, api_secret\\: string, access_token\\: string, access_token_secret\\: string\\}, array given\\.$#"
+			count: 1
+			path: src/Tool/ChatChannels/ManageTwitterWebhookTool.php
+
+		-
+			message: "#^Parameter \\#4 \\$credentials of method Nvoos\\\\Core\\\\Tool\\\\ChatChannels\\\\ManageTwitterWebhookTool\\:\\:delete\\(\\) expects array\\{api_key\\: string, api_secret\\: string, access_token\\: string, access_token_secret\\: string\\}, array given\\.$#"
+			count: 1
+			path: src/Tool/ChatChannels/ManageTwitterWebhookTool.php
+
+		-
+			message: "#^Parameter \\#4 \\$credentials of method Nvoos\\\\Core\\\\Tool\\\\ChatChannels\\\\ManageTwitterWebhookTool\\:\\:register\\(\\) expects array\\{api_key\\: string, api_secret\\: string, access_token\\: string, access_token_secret\\: string\\}, array given\\.$#"
+			count: 1
+			path: src/Tool/ChatChannels/ManageTwitterWebhookTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ChatChannels\\\\SendAppleMessageInteractiveTool\\:\\:coordinate\\(\\) has parameter \\$source with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ChatChannels/SendAppleMessageInteractiveTool.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$arguments$#"
+			count: 1
+			path: src/Tool/ChatChannels/SendAppleMessageInteractiveTool.php
+
+		-
+			message: "#^Parameter \\#3 \\$credentials of method Nvoos\\\\Core\\\\Tool\\\\ChatChannels\\\\TwitterTool\\:\\:signed\\(\\) expects array\\{api_key\\: string, api_secret\\: string, access_token\\: string, access_token_secret\\: string\\}, array given\\.$#"
+			count: 1
+			path: src/Tool/ChatChannels/SendTwitterDmTool.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between array\\{\\} and non\\-empty\\-array\\<int\\<0, max\\>, array\\{rows\\: non\\-empty\\-array\\<int\\<0, max\\>, array\\{id\\: non\\-empty\\-string, title\\: non\\-empty\\-string, description\\?\\: non\\-empty\\-string\\}\\>, title\\?\\: non\\-empty\\-string\\}\\> will always evaluate to false\\.$#"
+			count: 1
+			path: src/Tool/ChatChannels/SendWhatsAppInteractiveTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ChatChannels\\\\TwitterTool\\:\\:paginationToken\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ChatChannels/TwitterTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\AttendanceLog\\:\\:forStudent\\(\\) should return array\\{records\\: int, present\\: int, absent\\: int, late\\: int, excused\\: int, attendance_rate\\: float\\} but returns array\\{records\\: int\\<0, max\\>, present\\: float\\|int\\<0, max\\>, absent\\: float\\|int\\<0, max\\>, late\\: float\\|int\\<0, max\\>, excused\\: float\\|int\\<0, max\\>, attendance_rate\\: float\\}\\.$#"
+			count: 1
+			path: src/Tool/Classroom/AttendanceLog.php
+
+		-
+			message: "#^Parameter \\#1 \\$present of static method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\AttendanceLog\\:\\:rate\\(\\) expects int, float\\|int\\<0, max\\> given\\.$#"
+			count: 1
+			path: src/Tool/Classroom/AttendanceLog.php
+
+		-
+			message: "#^Parameter \\#2 \\$late of static method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\AttendanceLog\\:\\:rate\\(\\) expects int, float\\|int\\<0, max\\> given\\.$#"
+			count: 1
+			path: src/Tool/Classroom/AttendanceLog.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\CreateEcaTool\\:\\:rawString\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Classroom/CreateEcaTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\CreateEcaTool\\:\\:stringList\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Classroom/CreateEcaTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\GenerateEcaParticipationReportTool\\:\\:build\\(\\) should return array\\{error\\: mixed\\}\\|array\\{title\\: string, columns\\: array\\<int, array\\{key\\: string, label\\: string\\}\\>, rows\\: array\\<int, array\\<string, mixed\\>\\>, average_rate\\: float\\} but returns array\\<string, mixed\\>\\.$#"
+			count: 3
+			path: src/Tool/Classroom/GenerateEcaParticipationReportTool.php
+
+		-
+			message: "#^Offset 'average_rate' does not exist on array\\{error\\: mixed\\}\\|array\\{title\\: string, columns\\: array\\<int, array\\{key\\: string, label\\: string\\}\\>, rows\\: array\\<int, array\\<string, mixed\\>\\>, average_rate\\: float\\}\\.$#"
+			count: 1
+			path: src/Tool/Classroom/GenerateEcaParticipationReportTool.php
+
+		-
+			message: "#^Offset 'columns' does not exist on array\\{error\\: mixed\\}\\|array\\{title\\: string, columns\\: array\\<int, array\\{key\\: string, label\\: string\\}\\>, rows\\: array\\<int, array\\<string, mixed\\>\\>, average_rate\\: float\\}\\.$#"
+			count: 2
+			path: src/Tool/Classroom/GenerateEcaParticipationReportTool.php
+
+		-
+			message: "#^Offset 'rows' does not exist on array\\{error\\: mixed\\}\\|array\\{title\\: string, columns\\: array\\<int, array\\{key\\: string, label\\: string\\}\\>, rows\\: array\\<int, array\\<string, mixed\\>\\>, average_rate\\: float\\}\\.$#"
+			count: 3
+			path: src/Tool/Classroom/GenerateEcaParticipationReportTool.php
+
+		-
+			message: "#^Offset 'title' does not exist on array\\{error\\: mixed\\}\\|array\\{title\\: string, columns\\: array\\<int, array\\{key\\: string, label\\: string\\}\\>, rows\\: array\\<int, array\\<string, mixed\\>\\>, average_rate\\: float\\}\\.$#"
+			count: 3
+			path: src/Tool/Classroom/GenerateEcaParticipationReportTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\ImportEcasCsvTool\\:\\:mapping\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Classroom/ImportEcasCsvTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\ImportEcasCsvTool\\:\\:parse\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Classroom/ImportEcasCsvTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\ImportEcasCsvTool\\:\\:readStored\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Classroom/ImportEcasCsvTool.php
+
+		-
+			message: "#^Offset 'rows' does not exist on array\\{error\\: mixed\\}\\|array\\{mapping\\: array\\<string, int\\>, rows\\: array\\<int, array\\{number\\: int, cells\\: array\\<int, string\\>\\}\\>, truncated\\: bool\\}\\.$#"
+			count: 1
+			path: src/Tool/Classroom/ImportEcasCsvTool.php
+
+		-
+			message: "#^Offset 'truncated' does not exist on array\\{error\\: mixed\\}\\|array\\{mapping\\: array\\<string, int\\>, rows\\: array\\<int, array\\{number\\: int, cells\\: array\\<int, string\\>\\}\\>, truncated\\: bool\\}\\.$#"
+			count: 1
+			path: src/Tool/Classroom/ImportEcasCsvTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\ManageEcaTermTool\\:\\:close\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Classroom/ManageEcaTermTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\ManageEcaTermTool\\:\\:create\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Classroom/ManageEcaTermTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\ManageEcaTermTool\\:\\:getTerm\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Classroom/ManageEcaTermTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\ManageEcaTermTool\\:\\:transition\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Classroom/ManageEcaTermTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\ManageEcaWaitlistTool\\:\\:actionList\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Classroom/ManageEcaWaitlistTool.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: src/Tool/Classroom/ManageEcaWaitlistTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\SendEcaNotificationTool\\:\\:resolve\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Classroom/SendEcaNotificationTool.php
+
+		-
+			message: "#^Offset 'ids' does not exist on array\\{error\\: mixed\\}\\|array\\{ids\\: array\\<int, int\\>\\}\\.$#"
+			count: 1
+			path: src/Tool/Classroom/SendEcaNotificationTool.php
+
+		-
+			message: "#^Offset 'venue' does not exist on array\\{day\\: string, start_at\\: int\\|null, end_at\\: int\\|null\\}\\.$#"
+			count: 2
+			path: src/Tool/Classroom/SetEcaScheduleTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Classroom\\\\UpdateEcaTool\\:\\:rawString\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Classroom/UpdateEcaTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Cloudways\\\\CloudwaysTool\\:\\:appId\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Cloudways/CloudwaysTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Cloudways\\\\CloudwaysTool\\:\\:serverId\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Cloudways/CloudwaysTool.php
+
+		-
+			message: "#^Offset 'model' does not exist on array\\{path\\: string, width\\: int, height\\: int, format\\: string, mime_type\\: string, bytes\\: int, operation\\: string, provider\\: string\\}\\.$#"
+			count: 1
+			path: src/Tool/ColorizeImageTool.php
+
+		-
+			message: "#^Cannot call method query\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ContentStoreInterface\\|null\\.$#"
+			count: 2
+			path: src/Tool/ContentRecommendationEngineRankingTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ContentRecommendationEngineRankingTool\\:\\:candidates\\(\\) has parameter \\$exclude with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ContentRecommendationEngineRankingTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ContentRecommendationEngineRankingTool\\:\\:candidates\\(\\) has parameter \\$postTypes with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ContentRecommendationEngineRankingTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ContentRecommendationEngineRankingTool\\:\\:empty\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ContentRecommendationEngineRankingTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ContentRecommendationEngineRankingTool\\:\\:format\\(\\) has parameter \\$signals with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ContentRecommendationEngineRankingTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ContentRecommendationEngineRankingTool\\:\\:rank\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ContentRecommendationEngineRankingTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ContentRecommendationEngineRankingTool\\:\\:trending\\(\\) has parameter \\$exclude with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ContentRecommendationEngineRankingTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ContentRecommendationEngineRankingTool\\:\\:trending\\(\\) has parameter \\$postTypes with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ContentRecommendationEngineRankingTool.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 2
+			path: src/Tool/ContentRecommendationEngineRankingTool.php
+
+		-
+			message: "#^Parameter \\#1 \\$files of class Nvoos\\\\Core\\\\Application\\\\Media\\\\GeneratedMediaPersister constructor expects Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface, Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface\\|null given\\.$#"
+			count: 1
+			path: src/Tool/ConvertImageFormatTool.php
+
+		-
+			message: "#^Parameter \\#1 \\$files of class Nvoos\\\\Core\\\\Application\\\\Media\\\\GeneratedMediaPersister constructor expects Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface, Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface\\|null given\\.$#"
+			count: 1
+			path: src/Tool/CreateImageVariationTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Crm\\\\CrmTool\\:\\:companyRow\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Crm/CrmTool.php
+
+		-
+			message: "#^Parameter \\#1 \\$files of class Nvoos\\\\Core\\\\Application\\\\Media\\\\GeneratedMediaPersister constructor expects Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface, Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface\\|null given\\.$#"
+			count: 1
+			path: src/Tool/CropImageTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\DocgenCaptureStyleMemoryTool\\:\\:attachmentList\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/DocgenCaptureStyleMemoryTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\DocgenCaptureStyleMemoryTool\\:\\:bodyParam\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/DocgenCaptureStyleMemoryTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\DocgenCaptureStyleMemoryTool\\:\\:importance\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/DocgenCaptureStyleMemoryTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\DocgenCaptureStyleMemoryTool\\:\\:provenance\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/DocgenCaptureStyleMemoryTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\DocgenCaptureStyleMemoryTool\\:\\:refs\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/DocgenCaptureStyleMemoryTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\DocgenCaptureStyleMemoryTool\\:\\:tags\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/DocgenCaptureStyleMemoryTool.php
+
+		-
+			message: "#^Parameter \\#3 \\$meta of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\DocsCorpusInterface\\:\\:write\\(\\) expects array\\{title\\?\\: string, slug\\?\\: string, order\\?\\: int\\}, array\\<'order'\\|'slug'\\|'title', int\\|string\\> given\\.$#"
+			count: 1
+			path: src/Tool/DocsHubWriteDocTool.php
+
+		-
+			message: "#^Parameter \\#1 \\$files of class Nvoos\\\\Core\\\\Application\\\\Media\\\\GeneratedMediaPersister constructor expects Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface, Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface\\|null given\\.$#"
+			count: 1
+			path: src/Tool/EditGeminiImageTool.php
+
+		-
+			message: "#^Parameter \\#1 \\$files of class Nvoos\\\\Core\\\\Application\\\\Media\\\\GeneratedMediaPersister constructor expects Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface, Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface\\|null given\\.$#"
+			count: 1
+			path: src/Tool/EditOpenAIImageTool.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 2
+			path: src/Tool/ExportAssistantTool.php
+
+		-
+			message: "#^Negated boolean expression is always false\\.$#"
+			count: 1
+			path: src/Tool/ExtractAudioTool.php
+
+		-
+			message: "#^Cannot call method entries\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\SystemLogInterface\\|null\\.$#"
+			count: 1
+			path: src/Tool/Fnb/FnbAuditLogTool.php
+
+		-
+			message: "#^Parameter \\#1 \\$files of class Nvoos\\\\Core\\\\Application\\\\Media\\\\GeneratedMediaPersister constructor expects Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface, Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface\\|null given\\.$#"
+			count: 1
+			path: src/Tool/GenerateCloudflareAIImageTool.php
+
+		-
+			message: "#^Parameter \\#1 \\$files of class Nvoos\\\\Core\\\\Application\\\\Media\\\\GeneratedMediaPersister constructor expects Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface, Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface\\|null given\\.$#"
+			count: 1
+			path: src/Tool/GenerateGeminiImageTool.php
+
+		-
+			message: "#^Parameter \\#1 \\$files of class Nvoos\\\\Core\\\\Application\\\\Media\\\\GeneratedMediaPersister constructor expects Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface, Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface\\|null given\\.$#"
+			count: 1
+			path: src/Tool/GenerateOpenAIImageTool.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 1
+			path: src/Tool/GeneratePostExcerptCompletionTool.php
+
+		-
+			message: "#^Parameter \\#1 \\$files of class Nvoos\\\\Core\\\\Application\\\\Media\\\\GeneratedMediaPersister constructor expects Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface, Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface\\|null given\\.$#"
+			count: 1
+			path: src/Tool/GenerateResponsiveImagesTool.php
+
+		-
+			message: "#^Offset 'text' on array\\{start\\: float, end\\: float, text\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Tool/GenerateVideoCaptionsTool.php
+
+		-
+			message: "#^Parameter \\#1 \\$files of class Nvoos\\\\Core\\\\Application\\\\Media\\\\GeneratedMediaPersister constructor expects Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface, Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface\\|null given\\.$#"
+			count: 1
+			path: src/Tool/GenerateVideoCaptionsTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\GetSystemLogsTool\\:\\:emptyHost\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/GetSystemLogsTool.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 3
+			path: src/Tool/ImportAssistantTool.php
+
+		-
+			message: "#^Parameter \\#1 \\$files of class Nvoos\\\\Core\\\\Application\\\\Media\\\\GeneratedMediaPersister constructor expects Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface, Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface\\|null given\\.$#"
+			count: 1
+			path: src/Tool/OptimiseImagesBatchTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Orchestration\\\\CalculateOrchestrationCapacityTool\\:\\:analyzeCurrent\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Orchestration/CalculateOrchestrationCapacityTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Orchestration\\\\CalculateOrchestrationCapacityTool\\:\\:predictWaitTime\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Orchestration/CalculateOrchestrationCapacityTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Orchestration\\\\ConfigureCircuitBreakerTool\\:\\:reset\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Orchestration/ConfigureCircuitBreakerTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Orchestration\\\\ConfigureCircuitBreakerTool\\:\\:view\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Orchestration/ConfigureCircuitBreakerTool.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$meta$#"
+			count: 1
+			path: src/Tool/Orchestration/CreateExecutionPromptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Orchestration\\\\ExportAssistantBlueprintTool\\:\\:save\\(\\) has parameter \\$blueprint with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Orchestration/ExportAssistantBlueprintTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Orchestration\\\\ScheduleDefinition\\:\\:nextRun\\(\\) has parameter \\$schedule with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Orchestration/ScheduleDefinition.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\Orchestration\\\\ScheduleDefinition\\:\\:nextRuns\\(\\) has parameter \\$schedule with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/Orchestration/ScheduleDefinition.php
+
+		-
+			message: "#^Offset 1 on array\\{array\\<int, string\\>, array\\<int, non\\-empty\\-string\\>\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: src/Tool/Orchestration/TaskPlanMarkdown.php
+
+		-
+			message: "#^Dead catch \\- Nvoos\\\\Core\\\\Domain\\\\Error\\\\NotFoundException is never thrown in the try block\\.$#"
+			count: 1
+			path: src/Tool/QmsGetAuditTrailTool.php
+
+		-
+			message: "#^Parameter \\#1 \\$files of class Nvoos\\\\Core\\\\Application\\\\Media\\\\GeneratedMediaPersister constructor expects Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface, Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface\\|null given\\.$#"
+			count: 1
+			path: src/Tool/ResizeImageTool.php
+
+		-
+			message: "#^Parameter \\#1 \\$files of class Nvoos\\\\Core\\\\Application\\\\Media\\\\GeneratedMediaPersister constructor expects Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface, Nvoos\\\\Core\\\\Domain\\\\Contract\\\\FileVisibilityStoreInterface\\|null given\\.$#"
+			count: 1
+			path: src/Tool/RotateImageTool.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 2
+			path: src/Tool/SeoMetaOptimizerCompletionTool.php
+
+		-
+			message: "#^Cannot call method query\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ContentStoreInterface\\|null\\.$#"
+			count: 1
+			path: src/Tool/SuggestInternalLinksCompletionTool.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 1
+			path: src/Tool/SuggestInternalLinksCompletionTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:bulkCreate\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:bulkCreate\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:createItem\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:createItem\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:deleteItem\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:deleteItem\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:fieldsParam\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:findItem\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:getItem\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:getItem\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:getSchema\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:listItems\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:listItems\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:metaClauses\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:orderField\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:resolveType\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:updateItem\\(\\) has parameter \\$arguments with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:updateItem\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:userId\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Method Nvoos\\\\Core\\\\Tool\\\\ToolkitCptTool\\:\\:userIdOrNull\\(\\) has parameter \\$context with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Tool/ToolkitCptTool.php
+
+		-
+			message: "#^Cannot call method transcribe\\(\\) on Nvoos\\\\Core\\\\Domain\\\\Contract\\\\AudioTranscriptionInterface\\|null\\.$#"
+			count: 1
+			path: src/Tool/TranscribeVideoTool.php
+
+		-
+			message: "#^Parameter \\#2 \\$errors of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\ErrorFactoryInterface\\:\\:validationFailed\\(\\) expects array\\<string, array\\<string\\>\\>, array\\<string, string\\> given\\.$#"
+			count: 1
+			path: src/Tool/ValidateReasoningChainCompletionTool.php
+
+		-
+			message: "#^Parameter \\#3 \\$headers of method Nvoos\\\\Core\\\\Domain\\\\Contract\\\\HttpClientInterface\\:\\:send\\(\\) expects array\\<string, string\\>, array\\<int, string\\> given\\.$#"
+			count: 1
+			path: src/Tool/VisionObjectLocalizationDetectTool.php
