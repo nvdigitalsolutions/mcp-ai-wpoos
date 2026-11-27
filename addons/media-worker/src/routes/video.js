@@ -768,6 +768,10 @@ router.post('/generate', async (req, res) => {
   try {
     const {
       prompt,
+      // `wait: false` returns as soon as Replicate has created the prediction,
+      // which is what an asynchronous caller needs. The default stays blocking
+      // so the existing media-studio caller is untouched.
+      wait = true,
       model = 'stable-video-diffusion',
       duration = 5,
       fps = 24,
@@ -776,6 +780,8 @@ router.post('/generate', async (req, res) => {
       width = 1024,
       height = 576,
     } = req.body;
+
+    const waitForResult = !( false === wait || 0 === wait || 'false' === wait || '0' === wait );
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
@@ -839,6 +845,20 @@ router.post('/generate', async (req, res) => {
 
     const predictionId = createResp.data.id;
     let prediction = createResp.data;
+
+    if (!waitForResult) {
+      return res.json({
+        success: true,
+        status: prediction.status,
+        model,
+        prompt,
+        prediction_id: predictionId,
+        duration,
+        fps,
+        video_url: null,
+        tip: `Poll GET /api/video/prediction/${predictionId} for status and the video URL.`,
+      });
+    }
 
     // Poll until complete
     const maxAttempts = 120; // 10 minutes at 5s intervals

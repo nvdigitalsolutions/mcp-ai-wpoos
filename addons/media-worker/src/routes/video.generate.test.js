@@ -199,3 +199,41 @@ test( 'prediction reports a missing output as null while the job runs', async ( 
 		}
 	} );
 } );
+
+test( 'wait false returns a prediction id without polling, in both representations', async ( t ) => {
+	await withEnv( { REPLICATE_API_KEY: 'r8_test' }, async () => {
+		let posts = 0;
+
+		t.mock.method( axios, 'post', async () => {
+			posts++;
+			return { data: { id: `pred-${ posts }`, status: 'starting' } };
+		} );
+
+		t.mock.method( axios, 'get', async () => {
+			throw new Error( 'a submit-only call must not poll' );
+		} );
+
+		const { server, url } = await startServer();
+		try {
+			// A JSON caller sends `false`; a form-ish caller may send the string.
+			for ( const wait of [ false, 'false' ] ) {
+				const res = await fetch( `${ url }/generate`, {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify( { prompt: 'waves at dusk', wait } ),
+				} );
+
+				assert.equal( res.status, 200 );
+				const body = await res.json();
+				assert.equal( body.status, 'starting', 'the create response is passed through' );
+				assert.equal( body.video_url, null, 'nothing is claimed before the render finishes' );
+				assert.match( body.prediction_id, /^pred-/ );
+				assert.match( body.tip, /\/api\/video\/prediction\// );
+			}
+		} finally {
+			server.close();
+		}
+
+		assert.equal( posts, 2, 'one create call each, no polling' );
+	} );
+} );
