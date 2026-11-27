@@ -10065,3 +10065,98 @@ Recommended, and not done here because it changes repository infrastructure:
 Adopt the baseline + CI gate (above), or leave PHPStan advisory. The findings are
 now documented either way, and the config no longer claims a cleanliness it does
 not have.
+
+---
+
+### §164.113 — Slice 1: the four Shopify Admin tools
+
+**Recorded.** Four of the five tools §164.110 placed in slice 1 shipped:
+`shopify_products`, `shopify_orders`, `shopify_customers`, `shopify_inventory`.
+The fifth, `shopify_catalog`, is deliberately not here; the reason is at the end.
+
+The WordPress originals are 3,306 lines across five files plus a 2,020-line
+client. The port is one base class, one pure helper and four tools, and it is
+behaviour-faithful where the behaviour was right.
+
+#### The provider had moved, and the originals had not
+
+Five findings, each verified against the 2026-10 schema rather than assumed. Each
+one broke the WordPress tool, and each one changed the port:
+
+| Finding | What it did to the original |
+|---|---|
+| **2026-10 is the latest stable**; `2025-01` and `2025-04` have been unsupported since 2026-04-16 | The client pinned `2025-01`. Shopify does not error on a retired version — it **falls forward** to the oldest accessible stable one, so the tool worked against a schema nobody had read |
+| **`InventoryChangeInput.changeFromQuantity` is mandatory** — "you must explicitly pass in a value, even if that value is `null`" | The client sent only item, location and delta, so `inventoryAdjustQuantities` was rejected |
+| **`Customer.phone` is removed**; `email`, `emailMarketingConsent` and `addresses` are deprecated | Selecting `phone` fails the **whole** query, not one field |
+| **`productCreate`'s `input:` argument is deprecated and `ProductInput` has no `variants` field**; `productCreate` creates only the initial variant | The create path passed `variants` inside the input, so it could not create variants at all |
+| **`productUpdate` takes `product: ProductUpdateInput!`** with the id inside | The client passed `input:` |
+
+#### What the port does instead
+
+One base class (`ShopifyTool`) carries what all four share:
+
+- **The API version** defaults to `2026-10` and is overridable. When Shopify
+  serves a different version than the one requested, the difference is surfaced
+  as `api_version: {requested, served}` in the result — a fall-forward is made
+  visible instead of silent.
+- **`errors[]` is classified once.** Shopify reports a bad query, a throttle and
+  an unknown field as HTTP 200; the WordPress client never looked, and each tool
+  re-checked differently (nine checks in one file, four in another). Now it is
+  `shopify_graphql_error` in one place, with the provider's message and extension
+  code.
+- **`userErrors` is a refusal.** A mutation that "succeeds" with `userErrors` wrote
+  nothing; it becomes `shopify_user_error` with the offending field.
+- **Money is the provider's decimal string**, never a float.
+- **The store URL and token are arguments**, as in `chat-channels`, and the URL is
+  refused unless it is public https with no path — the request carries an Admin
+  token, so an unchecked host is a way to hand it away.
+
+Per tool:
+
+- **`shopify_products`** — list/search/get/create/update, Admin API only.
+  `create` is two calls: `productCreate(product:)` with `productOptions`, then
+  `productVariantsBulkCreate` with `optionValues: [{optionName, name}]` when
+  variants were supplied. `update` sends `productUpdate(product:)` and refuses an
+  empty payload. Smart-search relaxation is preserved, extracted as a pure class
+  (`ShopifySmartSearch`) so the algorithm is testable on its own.
+- **`shopify_orders`** — read-only. `fulfillments`, `transactions` and `refunds`
+  are lists, not connections, and are projected as such.
+- **`shopify_customers`** — read-only. The query uses `defaultEmailAddress`,
+  `defaultPhoneNumber` and `addressesV2`; the **result** still projects `email`
+  and `phone`, so a caller's shape does not change while the query stays on
+  fields that will exist next release. SMS consent is not projected: on
+  `CustomerPhoneNumber` it is itself deprecated in this version.
+- **`shopify_inventory`** — every adjustment sends `changeFromQuantity`, null by
+  default, or the caller's `expected_quantity` for Shopify's compare-and-swap
+  guard. A zero delta is refused before the call, and `reason` is validated
+  against the documented list (the schema types it `String!`, so a typo would
+  otherwise cost a round trip). `get_shop_info` omits `Shop.plan`, which has moved
+  between releases.
+
+#### What is not in this slice
+
+**`shopify_catalog`** (1,012 lines) is entirely catalog/UCP: the deprecated REST
+Catalog API plus the two keyless UCP MCP catalogs. That is a different transport
+(an MCP client over HTTP, not GraphQL), a different auth model (keyless), and a
+different policy (UCP usage guidelines forbid caching results). Bolting it into a
+GraphQL family would bury three separate decisions in one file. Product search on
+the admin transport is already covered by `shopify_products`; the live cross-store
+catalog is its own slice, and it needs a decision about shipping an MCP client in
+`lib/core` before it is ported at all.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| Shopify tool tests | **41 tests, 153 assertions**, 0 failures |
+| `lib/core` unit suite | **3,649 tests, 21,342 assertions**, 0 failures |
+| Readiness manifest | 512 classes / 512 rows, **493 servable** (+4) |
+| Toolkit parity | 287 → **291 ported**; `ecommerce` now `44 \| 5 \| 0 \| 0 \| 39` |
+| Adapter probes | **292** (4 new), 2 pre-existing skips |
+| phpcs / PHPStan | 0 errors; no new static findings |
+
+#### Next
+
+Slice 2 — Printful, trade.gov tariff rates and the carrier rate shop — or
+`shopify_catalog` as its own slice, whichever the owner prefers. The three
+decisions from §164.111 and §164.112 are still open and still cheap to take now.

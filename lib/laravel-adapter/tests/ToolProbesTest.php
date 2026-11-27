@@ -511,6 +511,14 @@ Probe Club,club
 			// §164.109 — the fan-out. An empty credential map is refused before
 			// anything is resolved or sent, so the probe makes no network call.
 			array( 'unified_channel_broadcast', array( 'message' => 'probe', 'channels' => array( 'telegram' ), 'credentials' => array() ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.113 — the four Shopify Admin tools. A public store URL is passed
+			// and no access token, so each answers the credential refusal by name
+			// with no network call.
+			array( 'shopify_products', array( 'store_url' => 'https://probe.myshopify.com', 'action' => 'list' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'shopify_orders', array( 'store_url' => 'https://probe.myshopify.com', 'action' => 'list' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'shopify_customers', array( 'store_url' => 'https://probe.myshopify.com', 'action' => 'list' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'shopify_inventory', array( 'store_url' => 'https://probe.myshopify.com', 'action' => 'get_shop_info' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 
