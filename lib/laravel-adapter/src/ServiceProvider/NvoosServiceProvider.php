@@ -102,6 +102,7 @@ use Nvoos\Core\Domain\Contract\ToolResolverInterface;
 use Nvoos\Core\Domain\Contract\VideoCompositionInterface;
 use Nvoos\Core\Domain\Contract\VideoFrameExtractionInterface;
 use Nvoos\Core\Domain\Contract\VideoProcessingInterface;
+use Nvoos\Core\Domain\Contract\VisionInferenceInterface;
 use Nvoos\Core\Domain\Contract\TraceStoreInterface;
 use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
@@ -172,6 +173,7 @@ use Nvoos\Laravel\Adapter\MediaWorkerVideoComposition;
 use Nvoos\Laravel\Adapter\MediaWorkerVideoFrames;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\OpenAiTranscription;
+use Nvoos\Laravel\Adapter\OpenAiVision;
 use Nvoos\Laravel\Adapter\PlatformFlush;
 use Nvoos\Laravel\Adapter\ProductCatalog;
 use Nvoos\Laravel\Adapter\ProEntitlementFactory;
@@ -282,6 +284,19 @@ class NvoosServiceProvider extends ServiceProvider {
 		// has no ffmpeg.
 		$this->app->bind( AudioTranscriptionInterface::class, function ( $app ) {
 			return new OpenAiTranscription( $app->make( SettingsStoreInterface::class ) );
+		} );
+
+		// Image understanding (Proposal 164 §164.122). `VisionInferenceInterface`
+		// was declared in core with no binding on this side and no consumer, which
+		// is why §164.120 deferred the image validators rather than porting them
+		// onto a seam that could only refuse. The adapter reads the provider,
+		// model, key and base URL from settings, so it serves OpenAI and any
+		// OpenAI-compatible endpoint the host has configured, and invents no model.
+		$this->app->bind( VisionInferenceInterface::class, function ( $app ) {
+			return new OpenAiVision(
+				$app->make( SettingsStoreInterface::class ),
+				$app->make( HttpClientInterface::class ),
+			);
 		} );
 
 		// Documents follow the same ladder (Proposal 164 §164.4.2): the worker
