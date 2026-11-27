@@ -164,9 +164,7 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 
 		// Scope gate: searching another agent's memory requires manage_options.
 		$user_id     = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
-		$scope_error = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
-			? WP_MCP_AI_Agent_Identity_Resolver::check_scope( $identity['agent_id'], $context, $user_id )
-			: null;
+		$scope_error = WP_MCP_AI_Agent_Identity_Resolver::check_scope( $identity['agent_id'], $context, $user_id );
 		if ( is_wp_error( $scope_error ) ) {
 			return $scope_error;
 		}

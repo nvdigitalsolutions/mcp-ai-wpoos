@@ -255,9 +255,7 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 		$agent_id = $agent_resolution['agent_id'];
 
 		// Scope gate: writing another agent's store requires manage_options.
-		$scope_error = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
-			? WP_MCP_AI_Agent_Identity_Resolver::check_scope( $agent_id, $context, $user_id )
-			: null;
+		$scope_error = WP_MCP_AI_Agent_Identity_Resolver::check_scope( $agent_id, $context, $user_id );
 		if ( is_wp_error( $scope_error ) ) {
 			return $scope_error;
 		}
