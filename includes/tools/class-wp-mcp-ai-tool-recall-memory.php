@@ -168,9 +168,7 @@ class WP_MCP_AI_Tool_Recall_Memory implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Scope gate: recalling another agent's wings requires manage_options.
-		$scope_error = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
-			? WP_MCP_AI_Agent_Identity_Resolver::check_scope( $identity['agent_id'], $context, $user_id )
-			: null;
+		$scope_error = WP_MCP_AI_Agent_Identity_Resolver::check_scope( $identity['agent_id'], $context, $user_id );
 		if ( is_wp_error( $scope_error ) ) {
 			return $scope_error;
 		}

@@ -195,9 +195,7 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 		// Scope gate: lifecycle operations on another agent's memory require
 		// manage_options.
 		$user_id     = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
-		$scope_error = class_exists( 'WP_MCP_AI_Agent_Identity_Resolver' )
-			? WP_MCP_AI_Agent_Identity_Resolver::check_scope( $identity['agent_id'], $context, $user_id )
-			: null;
+		$scope_error = WP_MCP_AI_Agent_Identity_Resolver::check_scope( $identity['agent_id'], $context, $user_id );
 		if ( is_wp_error( $scope_error ) ) {
 			return $scope_error;
 		}

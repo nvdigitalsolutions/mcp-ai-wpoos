@@ -110,6 +110,21 @@ class WP_MCP_AI_Agent_Identity_Resolver {
 		}
 
 		if ( $canonical ) {
+			/*
+			 * Recorded on purpose: a virtual key is a site-wide name, and the first
+			 * caller to use it with a known assistant defines it, so a later
+			 * context-free lookup (the chat-memory drawer) lands on the same store.
+			 * tests/test-agent-identity-resolver.php pins that behaviour.
+			 *
+			 * The constraint worth knowing: because the table is keyed by the alias
+			 * alone, a caller that can reach a memory tool can define a key it does
+			 * not own. Reads and writes are still gated by check_scope() whenever the
+			 * run context identifies the calling assistant, and the mapping is
+			 * capped, so the blast radius is a key nobody else had claimed. Scoping
+			 * the keyspace per assistant is the change that would remove the
+			 * constraint; it needs a decision about the drawer, which resolves
+			 * without an assistant id to scope by.
+			 */
 			self::register_alias( $agent_id, $canonical );
 
 			return array(
@@ -197,6 +212,14 @@ class WP_MCP_AI_Agent_Identity_Resolver {
 	 * When the runtime identity is unknown (direct callers such as the
 	 * chat-memory REST drawer that carry no `assistant_id`), the check is a
 	 * no-op and the pre-existing capability gates apply unchanged.
+	 *
+	 * **Do not guard a call with `class_exists()`.** The memory tools used to do
+	 * that and fall back to `null`, so a missing checker became an open gate.
+	 * An authorization decision that cannot be made must deny, not allow (OWASP
+	 * Authorization Decisions: "fail closed"). The class is loaded by the plugin
+	 * bootstrap before any tool file, so an absent class means this subsystem
+	 * cannot authorize anything and the call should fail loudly rather than
+	 * proceed — which is what an unguarded call does.
 	 *
 	 * @param int|string $resolved_agent_id Effective (canonicalised) agent id.
 	 * @param array      $context           Tool execution context.

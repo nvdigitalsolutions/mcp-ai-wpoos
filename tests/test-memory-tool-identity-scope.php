@@ -372,4 +372,29 @@ class Test_Memory_Tool_Identity_Scope extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertSame( 'mcp_ai_memory_no_agent', $result->get_error_code() );
 	}
+
+	/**
+	 * A mapping registered explicitly resolves, and the run context still wins
+	 * when it knows the calling assistant.
+	 *
+	 * The context-first order is what keeps a recorded key from pulling another
+	 * assistant's bucket into a call whose scope is already known.
+	 */
+	public function test_the_run_context_wins_over_a_recorded_alias() {
+		$key = 'virtual-' . wp_generate_password( 12, false );
+
+		$this->assertTrue( WP_MCP_AI_Agent_Identity_Resolver::register_alias( $key, (string) self::OTHER_AGENT_ID ) );
+
+		$resolved = WP_MCP_AI_Agent_Identity_Resolver::resolve( $key );
+
+		$this->assertSame( self::OTHER_AGENT_ID, $resolved['agent_id'] );
+		$this->assertTrue( $resolved['resolved'] );
+
+		$context_wins = WP_MCP_AI_Agent_Identity_Resolver::resolve(
+			$key,
+			array( 'assistant_id' => self::OWN_AGENT_ID )
+		);
+
+		$this->assertSame( self::OWN_AGENT_ID, $context_wins['agent_id'] );
+	}
 }
