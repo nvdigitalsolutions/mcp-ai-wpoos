@@ -488,6 +488,13 @@ Probe Club,club
 			array( 'list_google_chat_space_members', array( 'space' => 'spaces/AAAA' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'add_google_chat_space_member', array( 'space' => 'spaces/AAAA', 'member_name' => 'users/1' ), 'error', array(), array( 'user_id' => 1 ) ),
 			array( 'remove_google_chat_space_member', array( 'membership' => 'spaces/AAAA/members/MMMM' ), 'error', array(), array( 'user_id' => 1 ) ),
+
+			// §164.107 — the three Twitter/X tools. No credential is passed, so
+			// each answers the credential refusal by name. The webhook URL is a
+			// loopback host, which the guard refuses before any credential check.
+			array( 'send_twitter_dm', array( 'recipient_id' => '2244994945', 'text' => 'probe' ), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'get_twitter_dms', array(), 'error', array(), array( 'user_id' => 1 ) ),
+			array( 'manage_twitter_webhook', array( 'action' => 'register', 'env_name' => 'production', 'url' => 'https://127.0.0.1/probe' ), 'error', array(), array( 'user_id' => 1 ) ),
 		);
 	}
 

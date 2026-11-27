@@ -2407,6 +2407,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/ChatChannelTelegramToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
+		'get_twitter_dms' => array(
+			'class' => 'Nvoos\Core\Tool\ChatChannels\GetTwitterDmsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the DM reader (Proposal 164 section 164.107). Two v2 routes, the account-wide event feed and one conversation, both documented: GET /2/dm_events and GET /2/dm_conversations/{dm_conversation_id}/dm_events, with max_results clamped to 1-100 and event_types fixed to MessageCreate. Corrections: the conversation id is validated to the characters a conversation id uses and encoded once, where WordPress interpolated sanitize_text_field output into the path; the pagination token is checked against its documented floor of 16 base32hex characters, which catches an event id passed where a token belongs; each event is projected to id, type, text, timestamp, sender and conversation, where WordPress returned the provider document verbatim; and the page cursor is named next_token. The credential is an OAuth 2.0 user token with dm.read, not the app-only bearer token, and the description says so because an app-only token answers 403. Gated on manage_options.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ChatChannelTwitterToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
 		'get_unconfirmed_bookings' => array(
 			'class' => 'Nvoos\Core\Tool\Calendar\GetUnconfirmedBookingsTool',
 			'readiness' => 'ready',
@@ -3047,6 +3056,15 @@ return array(
 			'reason' => 'Ports the webhook manager (Proposal 164 section 164.102): setWebhook and deleteWebhook, with the WordPress allowed_updates list kept because a webhook without it does not receive chat_member updates. Corrections: the secret token is validated by the documented pattern in the tool rather than through a WordPress remote-site class, and nothing is stored; and the URL must be an absolute https URL with a host, where WordPress esc_url_raw with the https scheme accepts shapes without one. The automatic setMyCommands fan-out is dropped: it registered a WordPress controller default command list that has no core counterpart, and manage_telegram_commands covers it. Gated on manage_options.',
 			'evidence' => 'lib/core/tests/Unit/Tool/ChatChannelTelegramToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
+		'manage_twitter_webhook' => array(
+			'class' => 'Nvoos\Core\Tool\ChatChannels\ManageTwitterWebhookTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the Account Activity webhook manager (Proposal 164 section 164.107): register, delete, subscribe and list. Correction of substance: WordPress chose its endpoint from env_name and fell back to /2/webhooks when it was empty, which is its documented default; that route does not exist, because webhook management is the v1.1 Account Activity API scoped per environment (webhooks.json, webhooks/{id}.json, subscriptions.json), so every default WordPress call 404ed. The port requires env_name and validates it as a path segment. Two further corrections: subscribe no longer requires a webhook id it did not use, because the Premium route subscribes the token holder; and the webhook URL must be a public https URL, where esc_url_raw accepted a loopback host and a URL carrying userinfo, which X would then be asked to call with a CRC challenge. The list action flattens the environments wrapper into one webhooks list. Signing is RFC 5849 HMAC-SHA1. Gated on manage_options.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ChatChannelTwitterToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
 		'manage_vector_store_files' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ManageVectorStoreFilesTool',
@@ -3816,6 +3834,15 @@ return array(
 			'probe' => 'call',
 			'reason' => 'Ports the message sender (Proposal 164 section 164.102), including the WordPress chunker: paragraph boundaries first, then lines, then a hard split at the last space near the limit, with a hard-split part sent without parse_mode because the split can cut a markup entity in half. Corrections: an unsupported parse_mode is refused, where WordPress silently dropped it and sent unformatted text; a partial send names the ids already delivered, where WordPress error named only the failed chunk, so a retry could duplicate; and a success without a message id is reported as malformed. The kses pass is dropped because parse_mode HTML is a supported input and the core has no sanitiser for a provider markup dialect. The token is a path segment, encoded once and never echoed. Gated on manage_options.',
 			'evidence' => 'lib/core/tests/Unit/Tool/ChatChannelTelegramToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
+		'send_twitter_dm' => array(
+			'class' => 'Nvoos\Core\Tool\ChatChannels\SendTwitterDmTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the one-to-one DM sender (Proposal 164 section 164.107): POST /2/dm_conversations/with/{recipient_id}/messages, signed with OAuth 1.0a HMAC-SHA1. Corrections: recipient_id is validated as the documented numeric user id and encoded once, where WordPress interpolated sanitize_text_field output into the path, so a slash or a dot sequence addressed a different route; the documented 10,000-character ceiling is enforced locally, where WordPress declared it in the schema and then sent whatever it was given and let the API refuse it after the round trip; and text that cannot be JSON-encoded is refused, where WordPress returned an encoding error after building the request. The signer derives the base URI per RFC 5849, lower-cased with no query and no default port, where WordPress signed rawurlencode of the full URL and was correct only because all four of its signed endpoints happened to have no query string; it is checked against the worked example in the provider documentation. Gated on manage_options.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ChatChannelTwitterToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
 		'send_whatsapp_interactive' => array(
