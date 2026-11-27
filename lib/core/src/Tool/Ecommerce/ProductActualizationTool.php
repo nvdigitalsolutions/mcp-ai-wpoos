@@ -208,7 +208,7 @@ class ProductActualizationTool extends AbstractTool
         if ('video' === $mode) {
             return $this->errors->create(
                 'video_generation_unavailable',
-                'Video mode needs a video-generation contract this runtime has not bound yet: the worker can submit and poll a job, but the artifact lifetime is unresolved. Use mode "image"; the still can serve as the first frame.'
+                'Video mode needs two things this runtime does not have: an image-to-video route (the worker generation route takes a prompt, not a reference frame, and its default model requires an input image the route never sends) and a bound video-generation contract. Use mode "image"; the composed still is the reference frame a later pass needs.'
             );
         }
 

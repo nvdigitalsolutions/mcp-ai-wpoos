@@ -11877,7 +11877,9 @@ address that carries an ownership check.
 - **P3 video.** The route shape was measured in §164.131 and it is **not**
   submit-and-poll: `/api/video/generate` blocks internally and returns a
   provider URL, and there is no worker artifact, so the TTL premise was wrong.
-  P3 now waits on an async-response decision, not on a fact.
+  P3 now waits on image-to-video support in the worker (§164.131 found the
+  default model needs an `input_image` the route never sends); the async half
+  (`wait: false`) has landed.
 - **A key on the worker.** `image_generation` and `image_composition` need
   Gemini or OpenAI. A Replicate-only host can edit and cannot compose, which is
   now visible in the capability matrix before a caller spends a request.
@@ -11902,7 +11904,7 @@ generated video; it hands back the provider's URL. `video_artifact_expired`
 would name an event that cannot happen. What does expire is Replicate's URL,
 whose lifetime Replicate owns — a different fact with a different owner.
 
-#### Three defects found while measuring
+#### Five defects found while measuring
 
 1. **Per-site keys were ignored.** `/generate`, `/prediction/:id` and `/models`
    read `process.env.REPLICATE_API_KEY` directly, so a multi-tenant worker could
@@ -11920,39 +11922,73 @@ whose lifetime Replicate owns — a different fact with a different owner.
    `$timeout = 300` and `retryUntil()` five minutes, while the route may block
    for ten. This is not a bug in isolation — it is the reason P3 cannot be a
    single synchronous call.
+4. **The default model's schema is not the one the route sends.** Replicate's
+   `stability-ai/stable-video-diffusion` is image-to-video: its inputs are
+   `input_image` (required), `video_length` (`14_frames_with_svd` or
+   `25_frames_with_svd_xt` on the XT version), `sizing_strategy`,
+   `frames_per_second` and `motion_bucket_id`. It has no `prompt`, `num_frames`,
+   `width` or `height`. The route sends exactly those four, and that model is the
+   route's **default**, so the default call cannot succeed; only the
+   text-to-video entries (zeroscope, cogvideox) match the input builder.
+   Verified against two published input maps rather than inferred from names.
+5. **The tool's video mode is image-to-video.** `product_actualization` must
+   actualize *this* product, so a text-to-video clip is the wrong feature: it
+   would return a scene with no product in it and look like success. The
+   WordPress original built the composed scene and passed it to Veo as a
+   reference frame; the worker's generation route has no reference-frame input
+   at all.
 
 #### Why P3 cannot be built as planned
 
 §164.128 planned "`VideoGenerationInterface` + a queue job that polls". The
-measurement makes that shape wrong in three ways:
+measurement makes that shape wrong in four ways:
 
 - the worker already polls internally and returns only when finished, so a poll
   **job** would poll a call that is itself polling — the second loop adds
   nothing;
 - a synchronous tool call would occupy a chat turn for up to ten minutes;
-- the adapter's job would be killed at 300 s, before the route's own ceiling.
+- the adapter's job would be killed at 300 s, before the route's own ceiling;
+- the route cannot take the composed still, so wiring `mode: video` would ship a
+  video without the product.
+
+#### What landed in this change
+
+Only the parts that are additive and needed under every shape:
+
+- **`wait: false`** on `POST /api/video/generate` answers
+  `{prediction_id, status, video_url: null, tip}` as soon as Replicate has the
+  prediction. The default stays blocking, so `media-studio` is untouched. It
+  accepts `false`, `0` and their string forms, because a JSON caller and a
+  form-ish caller send different types.
+- **The refusal tells the truth.** `product_actualization`'s `mode: video`
+  error now names image-to-video plus the unbound contract, instead of an
+  artifact TTL that does not exist.
 
 #### Recommended re-scope
 
-1. **Worker, additive:** `POST /api/video/generate` accepts `wait: false` and
-   returns `{prediction_id, status}` immediately. The default stays blocking, so
-   the existing `media-studio` caller is untouched.
+1. **Worker:** pass a reference image through and build inputs per model family —
+   SVD takes `input_image`, `video_length`, `sizing_strategy` and
+   `frames_per_second`; the text-to-video family keeps
+   `prompt`/`num_frames`/`width`/`height`. One question must be verified first:
+   how the bytes reach Replicate from a worker that may not be publicly
+   reachable — a data URI in `input_image`, or Replicate's Files API. Both are
+   plausible and only one is documented; guessing is how a route ships dead.
 2. **Core:** `VideoGenerationInterface::submit()` and `status()`, plus
    `supports('video_generation')`. `status()` returns the provider state and the
    URL; it stores nothing, so the "registry is durable, worker storage is
    scratch" rule is not bent.
-3. **Adapter:** a job handler that submits, polls with backoff, downloads the
-   finished URL into the file registry and completes the job with the media
-   entry. The caller reads the result through `QueueClientInterface::getStatus()`,
-   which already exists.
-4. **Tool:** `product_actualization` `mode: video` would answer
-   `{status: 'queued', job_id}` instead of a finished asset. That is a response
-   shape that varies by mode, which is a decision for the owner — the reason this
-   section stops at measurement plus the two prerequisite fixes.
+3. **Adapter:** a job that submits, re-dispatches a delayed status check until
+   terminal (each run under the 300 s ceiling), downloads the finished URL into
+   the file registry and completes with the media entry. The caller reads the
+   result through `QueueClientInterface::getStatus()`, which already exists.
+4. **Tool:** `product_actualization` `mode: video` answers
+   `{status: 'queued', job_id}` once 1–3 exist. That response shape varies by
+   mode, which the owner approved in principle; it is gated on the worker work,
+   not on another decision.
 
 #### Gates
 
 | Gate | Result |
 |---|---|
-| Media worker | 252 tests, 0 failures (4 new) |
+| Media worker | 253 tests, 0 failures |
 | `node --check` | clean on both edited files |
