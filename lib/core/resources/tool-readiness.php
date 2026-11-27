@@ -4021,6 +4021,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/EcommerceShippingBoxPackerTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'shipping_rate_estimator' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\ShippingRateEstimatorTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress rate shopper (Proposal 164 section 164.116) over the ShipStation API (formerly ShipEngine) and the legacy ShipStation API V1, both verified current on 2026-11-27. Composes BoxPacker instead of instantiating another tool. Five corrections: a run that cannot quote is a refusal rather than success with a zero total, totals are kept per currency instead of being summed across them, V1 reports shipmentCost plus otherCost (the figure it sorted by), the invented USPS/Priority Mail export rows are gone and each package reports the carrier and service the provider returned, and credentials plus the origin address are arguments rather than a plugin option, a store address or the first enabled connection. estimate_order_rates is deferred with the order model because it reads WooCommerce orders.',
+			'evidence' => 'lib/core/tests/Unit/Tool/EcommerceShippingRateEstimatorTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
 		'store_agent_context' => array(
 			'class' => 'Nvoos\\Core\\Tool\\StoreAgentContextTool',
 			'readiness' => 'ready',

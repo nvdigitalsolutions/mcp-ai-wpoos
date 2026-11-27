@@ -187,6 +187,7 @@
         "ecommerce": [
             "generate_invoice_pdf",
             "shipping_box_packer",
+            "shipping_rate_estimator",
             "shopify_customers",
             "shopify_inventory",
             "shopify_orders",
