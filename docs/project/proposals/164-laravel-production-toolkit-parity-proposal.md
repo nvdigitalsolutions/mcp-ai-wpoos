@@ -8674,3 +8674,137 @@ Next: no gtmetrix work remains. The parity table's largest remaining toolkits
 are `regulatory-registration` (59), `cloudways` (52), `chat-channels` (50) and
 `financial-planning` (44); each starts with a measurement section like
 164.90 before any port.
+
+## 164.99 `chat-channels`, slice 0 — the measurement, before the first port
+
+Fifty declared tools across twelve platforms, 16,800 lines: minimum 220
+(`send_google_chat_message`), median 296, maximum 727
+(`send_whatsapp_interactive`). Twelve platforms is ten APIs — Teams, Outlook
+and OneDrive are one Microsoft Graph surface — plus a unified broadcast and one
+scheduled SMS tool that belongs to no platform at all. Nothing is ported; this
+section decides what will be, what will not, and what the first slice has to
+prove.
+
+### The families
+
+| family | tools | endpoint | auth |
+|---|---:|---|---|
+| Slack | 4 | `slack.com/api/*` | bot/user token argument |
+| Discord | 6 | `discord.com/api/v10` | bot token argument |
+| Telegram | 5 | `api.telegram.org/bot{token}/*` | token in the path |
+| WhatsApp | 5 | `graph.facebook.com/v*/{phone_id}/messages` | bearer plus phone id |
+| Messenger | 3 | `graph.facebook.com/v*/me/messages` | page access token |
+| Microsoft Graph (Teams 3, Outlook 2, OneDrive 3) | 8 | `graph.microsoft.com/v1.0` | bearer |
+| Google Chat | 7 | `chat.googleapis.com` plus the OAuth host | webhook URL, or service-account JSON / OAuth token |
+| Twitter/X | 3 | `api.twitter.com` | OAuth 1.0a (two), bearer (one) |
+| Apple Messages for Business | 4 | caller-supplied MSP URL | bearer MSP key |
+| iCloud Drive | 3 | caller-supplied gateway URL | bearer |
+| Unified broadcast | 1 | delegates to the send tools | per-channel credentials |
+| Scheduled SMS (Notify.lk) | 1 | the `notifylk` package | user id and API key |
+
+### The seams the ports need
+
+- **`HttpClientInterface` exists and is enough.** Almost every execute makes one
+  request; the three `manage_*` webhook/command tools branch across two or three
+  endpoints, and the SMS tool schedules instead of sending. This is the same
+  seam the GTmetrix client uses.
+- **Credentials are arguments, not settings.** All 50 take `token`, `api_key`
+  or `access_token` in the schema; there is no option, transient or credential
+  store in the family (one `get_option( 'timezone_string' )` in the SMS tool).
+  The port keeps the argument shape because a host that passes credentials per
+  call must keep working, and marks each credential property `writeOnly: true`
+  so a UI, a transcript or a logger can redact it.
+- **`ToolInvokerInterface` exists and fits the broadcast.**
+  `unified_channel_broadcast` already resolves the sibling send tools through
+  the registry and calls `execute()`; the core contract is the same shape, so
+  the port injects the invoker and delegates rather than copying seven send
+  paths.
+- **`CacheStoreInterface` covers the service account.** The Google Chat helper
+  signs a JWT and caches the access token under
+  `wp_mcp_ai_gc_sa_token_*`; the core cache is the same idea, so the helper
+  ports as a small class with an injected cache and HTTP client.
+- **No file seam is needed.** WhatsApp media takes `media_url` or `media_id`,
+  and the Graph/iCloud uploads take a path plus a content string. No tool reads
+  a local file.
+
+### Findings that change the plan
+
+1. **Every tool declares `edit_posts` and enforces `manage_options`.** The
+   registry and the schema consumers see `edit_posts`; every `execute()` then
+   computes `$default_capability = 'manage_options'` behind a per-slug filter.
+   Fifty tools, fifty mismatches. The port declares what it enforces, and the
+   first slice's base class owns the decision so no later slice re-litigates
+   it.
+2. **No Graph tool follows `@odata.nextLink`.** Teams channels and messages,
+   Outlook messages and OneDrive listings return the first page and drop the
+   continuation. The port returns `next_link` when the API sent one and accepts
+   it back on the list tools (restricted to the Graph host). Silently stopping
+   at 25 is what an agent misreads as "that is all there is".
+3. **Provider payloads are returned verbatim.** Most sends `return $decoded` or
+   a raw array. The core envelope has a stable shape, so each tool projects the
+   identifiers and statuses it promises (message id, timestamp, channel,
+   counts) instead of echoing the provider document.
+4. **Error classification is per provider, not per family.** Slack answers
+   HTTP 200 with `ok: false`; Graph nests `error.message`; Meta and Telegram
+   use their own keys. The first slice establishes one `ChatChannelTool` base
+   with a per-provider error map, as the GTmetrix client did, rather than fifty
+   ad-hoc message reads.
+5. **Caller-supplied endpoints are an SSRF surface.** The Google Chat webhook,
+   the Apple MSP URL and the iCloud gateway URL all arrive as arguments, and
+   the core's `HttpClientInterface` has no URL policy. The port adds one shared
+   guard — https only, no loopback, private or link-local hosts, optional host
+   allowlist from settings — and the two webhook-registration tools validate
+   the URL they register the same way.
+6. **110 `apply_filters` calls have no equivalent.** The core's hooks live at
+   the host boundary, not inside a tool. The port keeps the defaults and drops
+   the filters: the capability is the declared one, the timeout is a constant.
+7. **`WP_MCP_AI_Logger` and `is_multisite()` appear in all 50.** Logging is the
+   host's concern (the tool returns a classified error), and the multisite
+   membership check is tenancy, which the adapter's authorization seam owns.
+8. **`schedule_notify_sms` is not portable as it stands.** It requires the
+   `notifylk/notify-php` package (its own `is_available()` refuses without it)
+   and a WP-cron single event whose callback performs the send. The core's
+   schedule store records a hook and args and leaves dispatch to the host, so
+   scheduling alone would report success while nothing sent, and sending inline
+   would store the provider key in a schedule row. **Deferred**, with both
+   prerequisites named in the register.
+
+### Classification
+
+**49 portable, 1 deferred** (`schedule_notify_sms`), **0 declined**. Nothing in
+the family is a duplicate or a loop over another tool; the broadcast is the
+closest, and it already delegates.
+
+### Slices
+
+| slice | tools | count | what it proves |
+|---|---|---:|---|
+| 1 | shared ground + Slack: `send_slack_message`, `get_slack_channels`, `get_slack_messages`, `create_slack_channel` | 4 | the `ChatChannelTool` base, the credential-as-argument schema, HTTP-200-with-`ok:false` classification |
+| 2 | Discord: send, channels, messages, voice members, create channel, add reaction | 6 | bot-token REST and reactions |
+| 3 | Telegram: send, updates, reaction, commands, webhook | 5 | token-in-path, long-poll bounds, webhook registration |
+| 4 | WhatsApp: message, template, interactive, media, get messages | 5 | Cloud API payload builders |
+| 5 | Graph: Teams 3, Outlook 2, OneDrive 3 | 8 | one bearer family, `next_link` |
+| 6 | Messenger 3 + Google Chat 7 | 10 | Meta Graph, the webhook URL guard, service-account JWT |
+| 7 | Twitter: DM, DMs, webhook | 3 | OAuth 1.0a signing |
+| 8 | Apple 4 + iCloud 3 | 7 | caller-supplied endpoints under the URL guard |
+| 9 | `unified_channel_broadcast`; the SMS register entry | 1 | delegation through `ToolInvokerInterface` |
+
+The toolkit closes at **49 ported, 1 deferred, 0 declined**.
+
+### The baseline
+
+| gate | before |
+|---|---|
+| `lib/core` PHPUnit | 3,960 / 23,348 |
+| adapter `ToolProbesTest` | 242 / 1,638 |
+| tool readiness audit | 462 / 462, servable 443 |
+| toolkit parity | 241 of 854; `chat-channels` 0 ported, 0 declined, 1 deferred, 50 remaining |
+| phpcs | clean under `phpcs-laravel.xml.dist`, tree-wide |
+
+Slice 1 must prove three things before any other tool is read line by line:
+that a credential argument can be accepted without being echoed in a reply;
+that a provider which answers 200 with an error body is classified as a
+failure; and that the one-request-per-tool shape ports without a second copy of
+the family's HTTP plumbing. If those hold, the remaining eight slices are
+mechanical. If they do not, what changes is the shape of the base class, not
+fifty tools.
