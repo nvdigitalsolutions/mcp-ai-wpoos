@@ -243,17 +243,17 @@ class Test_DTCG_Importer extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Non-string $value (e.g. an ADS fontFamily array) should be an error.
+	 * A DTCG `fontFamily` array is valid input (spec allows a family list).
 	 *
 	 * @return void
 	 */
-	public function test_non_string_value_is_an_error() {
+	public function test_font_family_array_value_is_accepted() {
 		$json = '{"typography":{"font_family":{"$type":"fontFamily","$value":["Arial","sans-serif"]}}}';
 
 		$report = NV_oOS_Design_System_DTCG_Importer::prepare( $json, $this->registry );
 
-		$this->assertNotEmpty( $report['errors'] );
-		$this->assertStringContainsString( '$value must be a string', $report['errors'][0] );
+		$this->assertSame( array(), $report['errors'], implode( ' | ', $report['errors'] ) );
+		$this->assertContains( 'font_family', $report['imported'] );
 	}
 
 	/**
@@ -299,5 +299,59 @@ class Test_DTCG_Importer extends WP_UnitTestCase {
 
 		$this->assertNotEmpty( $report['errors'] );
 		$this->assertStringContainsString( 'object of token groups', $report['errors'][0] );
+	}
+
+	/**
+	 * A document with no recognisable tokens warns and changes nothing.
+	 *
+	 * @return void
+	 */
+	public function test_document_without_tokens_warns() {
+		$importer = new NV_oOS_Design_System_DTCG_Importer( $this->registry );
+		$report   = $importer->import( '{}' );
+
+		$this->assertFalse( $report['applied'] );
+		$this->assertSame( array(), $report['errors'] );
+		$this->assertNotEmpty( $report['warnings'] );
+		$this->assertStringContainsString( 'No recognised tokens', $report['warnings'][0] );
+	}
+
+	/**
+	 * Imported extension metadata is sanitised, depth-bounded and length-capped.
+	 *
+	 * @return void
+	 */
+	public function test_extension_metadata_is_sanitised() {
+		$payload = array(
+			'colors' => array(
+				'color_accent' => array(
+					'$type'       => 'color',
+					'$value'      => array(
+						'colorSpace' => 'srgb',
+						'components' => array( 1, 0, 0 ),
+						'hex'        => '#ff0000',
+					),
+					'$extensions' => array(
+						NV_oOS_Design_System_DTCG_Codec::EXTENSION_KEY => array(
+							'note' => '<script>alert(1)</script>',
+							'deep' => array( 'a' => array( 'b' => array( 'c' => array( 'd' => 'e' ) ) ) ),
+							'big'  => str_repeat( 'x', 900 ),
+						),
+					),
+				),
+			),
+		);
+
+		$importer = new NV_oOS_Design_System_DTCG_Importer( $this->registry );
+		$report   = $importer->import( (string) wp_json_encode( $payload ) );
+
+		$this->assertTrue( $report['applied'], implode( ' | ', $report['errors'] ) );
+
+		$meta    = $this->registry->get_meta( 'color_accent' );
+		$encoded = (string) wp_json_encode( $meta );
+
+		$this->assertStringNotContainsString( '<script', $encoded, 'Extension values must never persist as markup.' );
+		$this->assertLessThanOrEqual( 500, strlen( (string) $meta['big'] ), 'Long values are capped.' );
+		$this->assertArrayNotHasKey( 'd', $meta['deep']['a']['b']['c'] ?? array(), 'Depth beyond three levels is dropped.' );
 	}
 }

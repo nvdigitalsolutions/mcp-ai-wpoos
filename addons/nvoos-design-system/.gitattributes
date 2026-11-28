@@ -1,0 +1,30 @@
+# Normalise line endings for shipped PHP/JS/CSS.
+* text=auto eol=lf
+
+*.php text
+*.js text
+*.css text
+*.html text
+*.txt text
+*.md text
+*.json text
+*.pot text
+
+# Binary listing assets.
+*.png binary
+
+# Never export development-only paths via `git archive`.
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/.distignore export-ignore
+/.github export-ignore
+/.wordpress-org export-ignore
+/bin export-ignore
+/tests export-ignore
+/node_modules export-ignore
+/vendor export-ignore
+/composer.json export-ignore
+/composer.lock export-ignore
+/phpcs.xml export-ignore
+/phpcs.xml.dist export-ignore
+/phpunit.xml.dist export-ignore

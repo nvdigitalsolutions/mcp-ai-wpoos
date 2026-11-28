@@ -1,0 +1,76 @@
+name: Audit plugin bug classes
+
+# Advisory only. This scanner flags the runtime-only defect classes that
+# Plugin Check, PHPCS, `php -l` and a green unit suite cannot see — KSES
+# stripping CPT markup, notices lost across admin-post redirects, numeric
+# casts on untrusted JSON, inline <style>/<script>, unescaped echo, and so
+# on. Every REVIEW line needs a human reading, so the job NEVER fails the
+# build; it writes a report to the step summary instead.
+#
+# See .agents/skills/mcp-ai-wpoos-wporg-submission/reference/
+# recurring-bug-classes.md for the sweep checklist and the false-positive
+# notes (email builders legitimately print <style>, etc.).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'addons/docs-hub/**'
+      - 'addons/nvoos-design-system/**'
+      - 'plugins/nvoos-content-graph/**'
+      - 'plugins/nvoos-forge-bridge/**'
+      - 'bin/audit-plugin-bug-classes.py'
+      - '.github/workflows/audit-plugin-bug-classes.yml'
+  pull_request:
+    branches: [main, alpha-working]
+    paths:
+      - 'addons/docs-hub/**'
+      - 'addons/nvoos-design-system/**'
+      - 'plugins/nvoos-content-graph/**'
+      - 'plugins/nvoos-forge-bridge/**'
+      - 'bin/audit-plugin-bug-classes.py'
+      - '.github/workflows/audit-plugin-bug-classes.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: audit-plugin-bug-classes-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Static signal scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # The scanner is pure standard library, so the runner's python3 is
+      # enough — no setup-python step and no extra supply-chain surface.
+      - name: Run scanner
+        run: |
+          set +e
+          report="$(python3 bin/audit-plugin-bug-classes.py \
+            addons/docs-hub \
+            addons/nvoos-design-system \
+            plugins/nvoos-content-graph \
+            plugins/nvoos-forge-bridge 2>&1)"
+          status=$?
+          set -e
+
+          {
+            echo '## Plugin bug-class audit'
+            echo
+            echo 'Advisory signal scan. A `REVIEW` line is a prompt to look, not a'
+            echo 'verdict — confirm each one against the false-positive notes in'
+            echo '`.agents/skills/mcp-ai-wpoos-wporg-submission/reference/recurring-bug-classes.md`.'
+            echo
+            echo '```'
+            echo "$report"
+            echo '```'
+            echo
+            echo "Scanner exit code: \`$status\` — findings never fail this job."
+          } >> "$GITHUB_STEP_SUMMARY"

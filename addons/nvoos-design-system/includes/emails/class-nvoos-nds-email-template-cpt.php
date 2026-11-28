@@ -27,21 +27,21 @@ class NV_oOS_Design_System_Email_Template_CPT {
 	 *
 	 * @var string
 	 */
-	const POST_TYPE = 'nds_email_template';
+	const POST_TYPE = 'nvoos_nds_email';
 
 	/**
 	 * Meta key for the template source ('builtin' | 'ai' | 'custom').
 	 *
 	 * @var string
 	 */
-	const META_SOURCE = '_nds_template_source';
+	const META_SOURCE = '_nvoos_nds_template_source';
 
 	/**
 	 * Meta key for the template scope ('full' | 'body').
 	 *
 	 * @var string
 	 */
-	const META_SCOPE = '_nds_template_scope';
+	const META_SCOPE = '_nvoos_nds_template_scope';
 
 	/**
 	 * Meta key for per-template settings (logo_url, sub_brand, confidential,
@@ -49,7 +49,7 @@ class NV_oOS_Design_System_Email_Template_CPT {
 	 *
 	 * @var string
 	 */
-	const META_SETTINGS = '_nds_template_settings';
+	const META_SETTINGS = '_nvoos_nds_template_settings';
 
 	/**
 	 * Whether the post type has been registered.
@@ -90,6 +90,51 @@ class NV_oOS_Design_System_Email_Template_CPT {
 	}
 
 	/**
+	 * Migrate templates stored under the pre-1.0 `nds_email_template` type.
+	 *
+	 * Runs once per site on `init`. The old type and its `_nds_template_*`
+	 * meta keys are renamed to the prefixed `nvoos_nds_*` names.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public static function migrate_legacy() {
+		if ( get_option( 'nvoos_nds_cpt_migrated' ) ) {
+			return;
+		}
+
+		$legacy = get_posts(
+			array(
+				'post_type'      => 'nds_email_template',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+			)
+		);
+
+		$meta_map = array(
+			'_nds_template_source'   => self::META_SOURCE,
+			'_nds_template_scope'    => self::META_SCOPE,
+			'_nds_template_settings' => self::META_SETTINGS,
+		);
+
+		foreach ( $legacy as $post_id ) {
+			set_post_type( (int) $post_id, self::POST_TYPE );
+
+			foreach ( $meta_map as $old_key => $new_key ) {
+				$value = get_post_meta( $post_id, $old_key, true );
+				if ( ! metadata_exists( 'post', $post_id, $new_key ) && '' !== $value && null !== $value ) {
+					update_post_meta( $post_id, $new_key, $value );
+				}
+				delete_post_meta( $post_id, $old_key );
+			}
+		}
+
+		update_option( 'nvoos_nds_cpt_migrated', 1, false );
+	}
+
+	/**
 	 * Create (or reset) a template post.
 	 *
 	 * @param string $slug      Template slug (post_name).
@@ -102,6 +147,11 @@ class NV_oOS_Design_System_Email_Template_CPT {
 	 * @return int|\WP_Error Post ID on success.
 	 */
 	public static function upsert( $slug, $title, $html, $source = 'custom', $scope = 'full', $settings = array(), $status = 'publish' ) {
+		$safe = NV_oOS_Design_System_Email_Sanitizer::validate( $html );
+		if ( is_wp_error( $safe ) ) {
+			return $safe;
+		}
+
 		$existing = self::get_by_slug( $slug );
 
 		$postarr = array(
@@ -112,6 +162,18 @@ class NV_oOS_Design_System_Email_Template_CPT {
 			'post_type'    => self::POST_TYPE,
 		);
 
+		// Email templates legitimately contain <style>, VML and conditional
+		// comments. Core's KSES filter strips those unless the current user has
+		// `unfiltered_html` — which is false on front-end requests (where the
+		// seeder runs), in cron and in WP-CLI. The content has already passed
+		// the active-content validator above, so lift KSES for this one write
+		// and restore it immediately.
+		$kses_lifted = false;
+		if ( ! current_user_can( 'unfiltered_html' ) ) {
+			kses_remove_filters();
+			$kses_lifted = true;
+		}
+
 		if ( $existing instanceof WP_Post ) {
 			$postarr['ID'] = $existing->ID;
 			$post_id       = wp_update_post( wp_slash( $postarr ), true );
@@ -119,8 +181,12 @@ class NV_oOS_Design_System_Email_Template_CPT {
 			$post_id = wp_insert_post( wp_slash( $postarr ), true );
 		}
 
+		if ( $kses_lifted ) {
+			kses_init_filters();
+		}
+
 		if ( is_wp_error( $post_id ) || 0 === $post_id ) {
-			return is_wp_error( $post_id ) ? $post_id : new WP_Error( 'nds_email_template_insert_failed', __( 'Could not save the email template.', 'nvoos-design-system' ) );
+			return is_wp_error( $post_id ) ? $post_id : new WP_Error( 'nvoos_nds_email_template_insert_failed', __( 'Could not save the email template.', 'nvoos-design-system' ) );
 		}
 
 		update_post_meta( $post_id, self::META_SOURCE, sanitize_key( $source ) );

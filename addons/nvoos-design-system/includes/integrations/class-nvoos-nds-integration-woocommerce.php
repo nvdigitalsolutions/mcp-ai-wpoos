@@ -10,7 +10,7 @@
  *   - woocommerce_email_get_option  → sync colour options from email tokens
  *
  * Opt-in via the "WooCommerce Rebrand" toggle on the Emails tab
- * (nvoos_nds_wc_rebrand option, default off). The nds_email_wc_rebrand
+ * (nvoos_nds_wc_rebrand option, default off). The nvoos_nds_email_wc_rebrand
  * filter allows per-email overrides.
  *
  * WC emails are complete HTML documents, so the global wp_mail wrapper's
@@ -100,13 +100,13 @@ class NV_oOS_Design_System_Integration_WooCommerce {
 		 * @param bool          $enabled Whether rebranding applies (default true).
 		 * @param WC_Email|null $email   The WC email instance, or null.
 		 */
-		return (bool) apply_filters( 'nds_email_wc_rebrand', true, $email );
+		return (bool) apply_filters( 'nvoos_nds_email_wc_rebrand', true, $email );
 	}
 
 	/**
 	 * Inject token-resolved palette CSS into WC's email styles.
 	 *
-	 * @param string       $css   WC-generated CSS.
+	 * @param string        $css   WC-generated CSS.
 	 * @param WC_Email|bool $email WC email instance.
 	 * @return string
 	 */
@@ -232,11 +232,11 @@ class NV_oOS_Design_System_Integration_WooCommerce {
 		$values   = $registry->get_group_values( 'emails' );
 
 		$map = array(
-			'base_color'           => 'email_header_bg',
-			'bg_color'             => 'email_card_bg',
+			'base_color'            => 'email_header_bg',
+			'bg_color'              => 'email_card_bg',
 			'body_background_color' => 'email_page_bg',
-			'body_text_color'      => 'email_body_text',
-			'footer_text_color'    => 'email_muted',
+			'body_text_color'       => 'email_body_text',
+			'footer_text_color'     => 'email_muted',
 		);
 
 		if ( isset( $map[ $key ], $values[ $map[ $key ] ] ) && '' !== $values[ $map[ $key ] ] ) {

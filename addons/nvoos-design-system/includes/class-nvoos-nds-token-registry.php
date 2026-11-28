@@ -22,6 +22,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class NV_oOS_Design_System_Token_Registry {
 
 	/**
+	 * Option key for DTCG round-trip metadata (aliases, extensions).
+	 *
+	 * @var string
+	 */
+	const META_KEY = 'nvoos_nds_token_meta';
+
+	/**
 	 * All registered tokens, keyed by token ID.
 	 *
 	 * @var array<string, NV_oOS_Design_System_Data_Token>
@@ -41,6 +48,7 @@ class NV_oOS_Design_System_Token_Registry {
 	public function __construct() {
 		$this->seed_defaults();
 		$this->apply_saved_values();
+		$this->apply_saved_meta();
 	}
 
 	// -----------------------------------------------------------------------
@@ -121,7 +129,13 @@ class NV_oOS_Design_System_Token_Registry {
 		if ( ! isset( $this->tokens[ $id ] ) ) {
 			return false;
 		}
-		$this->tokens[ $id ]->value = $this->sanitize_value( $this->tokens[ $id ], $value );
+
+		$sanitized = $this->sanitize_value( $this->tokens[ $id ], $value );
+		if ( '' === $sanitized && '' !== trim( (string) $value ) ) {
+			return false;
+		}
+
+		$this->tokens[ $id ]->value = $sanitized;
 		return true;
 	}
 
@@ -154,6 +168,58 @@ class NV_oOS_Design_System_Token_Registry {
 			$this->get_values_map(),
 			false
 		);
+	}
+
+	/**
+	 * Get a token's DTCG round-trip metadata.
+	 *
+	 * @param string $id Token id.
+	 * @return array<string, mixed>
+	 */
+	public function get_meta( $id ) {
+		return isset( $this->tokens[ $id ] ) ? $this->tokens[ $id ]->meta : array();
+	}
+
+	/**
+	 * Set a token's DTCG round-trip metadata.
+	 *
+	 * @param string               $id   Token id.
+	 * @param array<string, mixed> $meta Metadata.
+	 * @return bool True when the token exists.
+	 */
+	public function set_meta( $id, $meta ) {
+		if ( ! isset( $this->tokens[ $id ] ) ) {
+			return false;
+		}
+		$this->tokens[ $id ]->meta = $this->sanitize_meta( $meta );
+		return true;
+	}
+
+	/**
+	 * Persist all token metadata.
+	 *
+	 * @return bool
+	 */
+	public function save_meta() {
+		$meta = array();
+		foreach ( $this->tokens as $id => $token ) {
+			if ( ! empty( $token->meta ) ) {
+				$meta[ $id ] = $token->meta;
+			}
+		}
+		return update_option( self::META_KEY, $meta, false );
+	}
+
+	/**
+	 * Delete all token metadata.
+	 *
+	 * @return bool
+	 */
+	public function clear_meta() {
+		foreach ( $this->tokens as $token ) {
+			$token->meta = array();
+		}
+		return delete_option( self::META_KEY );
 	}
 
 	/**
@@ -235,7 +301,67 @@ class NV_oOS_Design_System_Token_Registry {
 
 		foreach ( $saved as $id => $value ) {
 			if ( isset( $this->tokens[ $id ] ) ) {
-				$this->tokens[ $id ]->value = $this->sanitize_value( $this->tokens[ $id ], $value );
+				$sanitized = $this->sanitize_value( $this->tokens[ $id ], $value );
+				if ( '' !== $sanitized || '' === trim( (string) $value ) ) {
+					$this->tokens[ $id ]->value = $sanitized;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Sanitize token metadata before it enters the registry.
+	 *
+	 * @param mixed $meta  Raw metadata.
+	 * @param int   $depth Current recursion depth.
+	 * @return array<string, mixed>
+	 */
+	private function sanitize_meta( $meta, $depth = 0 ) {
+		if ( ! is_array( $meta ) || $depth > 3 ) {
+			return array();
+		}
+
+		$clean = array();
+		$count = 0;
+
+		foreach ( $meta as $key => $value ) {
+			++$count;
+			if ( $count > 64 ) {
+				break;
+			}
+
+			$key = sanitize_text_field( (string) $key );
+			if ( '' === $key ) {
+				continue;
+			}
+
+			if ( is_array( $value ) ) {
+				$clean[ $key ] = $this->sanitize_meta( $value, $depth + 1 );
+			} elseif ( is_bool( $value ) || is_int( $value ) || is_float( $value ) ) {
+				$clean[ $key ] = $value;
+			} elseif ( is_scalar( $value ) ) {
+				$text          = sanitize_text_field( (string) $value );
+				$text          = function_exists( 'mb_substr' ) ? mb_substr( $text, 0, 500 ) : substr( $text, 0, 500 );
+				$clean[ $key ] = $text;
+			}
+		}
+
+		return $clean;
+	}
+
+	/**
+	 * Overlay saved DTCG metadata from the options table.
+	 *
+	 * @return void
+	 */
+	private function apply_saved_meta() {
+		$meta = get_option( self::META_KEY, array() );
+		if ( ! is_array( $meta ) ) {
+			return;
+		}
+		foreach ( $meta as $id => $data ) {
+			if ( isset( $this->tokens[ $id ] ) && is_array( $data ) ) {
+				$this->tokens[ $id ]->meta = $this->sanitize_meta( $data );
 			}
 		}
 	}
@@ -245,9 +371,11 @@ class NV_oOS_Design_System_Token_Registry {
 	 *
 	 * @param NV_oOS_Design_System_Data_Token $token Token definition.
 	 * @param string                          $value Raw value.
-	 * @return string Sanitized value.
+	 * @return string Sanitized value, or an empty string when rejected.
 	 */
 	private function sanitize_value( $token, $value ) {
+		$value = (string) $value;
+
 		switch ( $token->type ) {
 			case 'color':
 				return $this->sanitize_color( $value );
@@ -260,42 +388,44 @@ class NV_oOS_Design_System_Token_Registry {
 				return $this->sanitize_font( $value );
 
 			default:
-				return sanitize_text_field( $value );
+				return $this->sanitize_css_value( $value );
 		}
 	}
 
 	/**
-	 * Sanitize a CSS color value (hex, rgb(), var(), or named).
+	 * Sanitize a CSS colour value.
 	 *
-	 * @param string $value Raw color value.
+	 * Only a strict allowlist is accepted: hex, rgb(a), hsl(a), a single
+	 * `var(--token)` reference, or a CSS colour keyword. Everything else is
+	 * rejected so a token value can never break out of the `:root{}` block.
+	 *
+	 * @param string $value Raw colour value.
 	 * @return string
 	 */
 	private function sanitize_color( $value ) {
-		$value = trim( $value );
+		$value = trim( (string) $value );
 
-		// Allow CSS custom property references like var(--e-global-color-primary).
-		if ( 0 === strpos( $value, 'var(' ) ) {
+		if ( preg_match( '/^#[0-9a-fA-F]{3,8}$/', $value ) ) {
 			return $value;
 		}
 
-		// Allow rgba() / rgb().
-		if ( 0 === strpos( $value, 'rgb' ) ) {
+		if ( preg_match( '/^rgba?\(\s*-?[0-9.]+%?\s*,\s*-?[0-9.]+%?\s*,\s*-?[0-9.]+%?\s*(?:,\s*-?[0-9.]+%?\s*)?\)$/', $value ) ) {
 			return $value;
 		}
 
-		// Allow hsl().
-		if ( 0 === strpos( $value, 'hsl' ) ) {
+		if ( preg_match( '/^hsla?\(\s*-?[0-9.]+(?:deg)?\s*,\s*[0-9.]+%\s*,\s*[0-9.]+%\s*(?:,\s*-?[0-9.]+%?\s*)?\)$/', $value ) ) {
 			return $value;
 		}
 
-		// Allow hex colors.
-		if ( 0 === strpos( $value, '#' ) ) {
-			$sanitized = sanitize_hex_color( $value );
-			return $sanitized ? $sanitized : $value;
+		if ( preg_match( '/^var\(\s*--[a-zA-Z0-9_-]+\s*\)$/', $value ) ) {
+			return $value;
 		}
 
-		// Fallback: strip dangerous characters.
-		return wp_strip_all_tags( $value );
+		if ( preg_match( '/^[a-zA-Z]{3,20}$/', $value ) ) {
+			return $value;
+		}
+
+		return '';
 	}
 
 	/**
@@ -305,39 +435,61 @@ class NV_oOS_Design_System_Token_Registry {
 	 * @return string
 	 */
 	private function sanitize_size( $value ) {
-		$value = trim( $value );
+		$value = trim( (string) $value );
 
-		// Allow CSS custom property references.
-		if ( 0 === strpos( $value, 'var(' ) ) {
+		if ( preg_match( '/^-?\d+(?:\.\d+)?(px|em|rem|%|vh|vw|vmin|vmax|ch|ex|pt|pc|in|cm|mm)?$/', $value ) ) {
 			return $value;
 		}
 
-		// Allow numeric + unit (e.g. '16px', '1.5rem', '100%', '0', '1.8').
-		if ( preg_match( '/^-?\d+(\.\d+)?(px|em|rem|%|vh|vw|ch|ex|vmin|vmax|cm|mm|in|pt|pc)?$/', $value ) ) {
+		if ( preg_match( '/^var\(\s*--[a-zA-Z0-9_-]+\s*\)$/', $value ) ) {
 			return $value;
 		}
 
-		// Allow calc().
-		if ( 0 === strpos( $value, 'calc(' ) ) {
+		if ( preg_match( '/^calc\([0-9+\-*\/(). a-z%]+\)$/i', $value ) ) {
 			return $value;
 		}
 
-		// Fallback.
-		return sanitize_text_field( $value );
+		return '';
 	}
 
 	/**
 	 * Sanitize a font-related value.
 	 *
+	 * Font stacks legitimately contain quotes, commas and hyphens; braces,
+	 * semicolons and angle brackets are never valid.
+	 *
 	 * @param string $value Raw font value.
 	 * @return string
 	 */
 	private function sanitize_font( $value ) {
-		$value = trim( $value );
+		$value = trim( (string) $value );
 
-		// Font stacks often contain quotes and commas; allow them.
-		if ( 0 === strpos( $value, 'var(' ) ) {
+		if ( preg_match( '/^var\(\s*--[a-zA-Z0-9_-]+\s*\)$/', $value ) ) {
 			return $value;
+		}
+
+		if ( preg_match( '/^[A-Za-z0-9 _,\-,"\']+$/', $value ) ) {
+			return $value;
+		}
+
+		return '';
+	}
+
+	/**
+	 * Sanitize a generic CSS value (shadow, transition, unknown types).
+	 *
+	 * @param string $value Raw value.
+	 * @return string
+	 */
+	private function sanitize_css_value( $value ) {
+		$value = trim( (string) $value );
+
+		if ( '' === $value ) {
+			return '';
+		}
+
+		if ( preg_match( '/[{}<>;]/', $value ) || false !== stripos( $value, 'url(' ) || false !== stripos( $value, 'expression(' ) ) {
+			return '';
 		}
 
 		return sanitize_text_field( $value );

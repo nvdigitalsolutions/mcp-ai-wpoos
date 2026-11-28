@@ -46,7 +46,7 @@ class NV_oOS_Design_System_Tool_Audit_Email_Template implements WP_MCP_AI_Tool_I
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Audit an NV oOS Design System email template against the compliance checklist: structural and security BLOCK gates, WCAG 2.2 AA-relevant checks (alt text, contrast, headings, language), dark-mode support, and the 100 KB size budget. Returns a scorecard with per-check results. Use before activating a template.', 'nvoos-design-system' );
+		return __( 'Audit an NV oOS Design System email template against the compliance checklist: structural and security BLOCK gates, WCAG 2.2 AA-relevant checks (alt text, contrast, headings, language), dark-mode support, and the 100 KB size budget. Returns a scorecard with per-check results. When to use: before activating, after editing HTML, or when comparing drafts. When NOT to use: rendering a preview (use nds_preview_email_template) or listing templates (use nds_list_email_templates).', 'nvoos-design-system' );
 	}
 
 	/**
@@ -72,6 +72,9 @@ class NV_oOS_Design_System_Tool_Audit_Email_Template implements WP_MCP_AI_Tool_I
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$scope = 'full';

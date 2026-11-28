@@ -321,3 +321,6 @@ examples/nvoos-service-exchange/scripts/cloudways-*-probe.mjs
 # See docs/developer/phpcs-ratchet.md.
 .phpcs-ratchet.json
 build/phpcs.json
+
+# Local release artifacts (plugin ZIPs for manual wp.org uploads).
+/dist/

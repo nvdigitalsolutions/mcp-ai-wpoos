@@ -27,36 +27,36 @@ class NV_oOS_Design_System_Email_Template_Registry {
 	/**
 	 * Built-in template catalogue.
 	 *
-	 * slug => array( file, title, description, scope )
+	 * Slug => array( file, title, description, scope )
 	 *
 	 * @var array<string, array{file: string, title: string, description: string, scope: string}>
 	 */
 	private static $builtins = array(
-		'letterhead'         => array(
+		'letterhead'        => array(
 			'file'        => 'letterhead.html',
 			'title'       => 'Letterhead',
 			'description' => 'Brand letterhead with dark header band, gold rule, serif type, and a confidential footer. Ideal for general brand emails.',
 			'scope'       => 'full',
 		),
-		'minimal'            => array(
+		'minimal'           => array(
 			'file'        => 'minimal.html',
 			'title'       => 'Minimal',
 			'description' => 'Clean single-column layout. The safest choice across email clients.',
 			'scope'       => 'full',
 		),
-		'transactional'      => array(
+		'transactional'     => array(
 			'file'        => 'transactional.html',
 			'title'       => 'Transactional',
 			'description' => 'Compact, high-contrast layout for notifications, receipts, and alerts.',
 			'scope'       => 'full',
 		),
-		'newsletter'         => array(
+		'newsletter'        => array(
 			'file'        => 'newsletter.html',
 			'title'       => 'Newsletter',
 			'description' => 'Multi-section layout with a heading, dividers, and a call-to-action button for digests and campaigns.',
 			'scope'       => 'full',
 		),
-		'ecommerce-receipt'  => array(
+		'ecommerce-receipt' => array(
 			'file'        => 'ecommerce-receipt.html',
 			'title'       => 'Ecommerce Receipt',
 			'description' => 'Order-style layout with a totals table. WooCommerce-aware logo fallback.',
@@ -117,22 +117,21 @@ class NV_oOS_Design_System_Email_Template_Registry {
 	 * Get the active template HTML.
 	 *
 	 * Resolution order:
-	 *   1. nds_email_active_template filter
+	 *   1. nvoos_nds_email_active_template filter
 	 *   2. nvoos_nds_active_email_template option
-	 *   3. 'letterhead' fallback
 	 *
-	 * The stored slug resolves to a published CPT post first, then to the
-	 * built-in static file as a fallback (covers pre-seed and standalone
-	 * contexts).
+	 * The wrapper is off until an administrator explicitly chooses a
+	 * template. There is deliberately no default template in 1.0.0: a
+	 * design-tokens plugin must not silently rebrand every outgoing email.
 	 *
 	 * @return array{html: string, slug: string, settings: array}|null Template payload, or null when unresolvable.
 	 */
 	public static function get_active() {
-		$slug = (string) apply_filters( 'nds_email_active_template', get_option( NV_oOS_Design_System_Plugin::EMAIL_ACTIVE_TEMPLATE_KEY, 'letterhead' ) );
+		$slug = (string) apply_filters( 'nvoos_nds_email_active_template', get_option( NV_oOS_Design_System_Plugin::EMAIL_ACTIVE_TEMPLATE_KEY, '' ) );
 		$slug = sanitize_title( $slug );
 
 		if ( '' === $slug ) {
-			$slug = 'letterhead';
+			return null;
 		}
 
 		$post = NV_oOS_Design_System_Email_Template_CPT::get_by_slug( $slug );
@@ -196,7 +195,7 @@ class NV_oOS_Design_System_Email_Template_Registry {
 	 * @return string
 	 */
 	public static function get_active_slug() {
-		$slug = (string) apply_filters( 'nds_email_active_template', get_option( NV_oOS_Design_System_Plugin::EMAIL_ACTIVE_TEMPLATE_KEY, 'letterhead' ) );
-		return sanitize_title( $slug ) ? sanitize_title( $slug ) : 'letterhead';
+		$slug = (string) apply_filters( 'nvoos_nds_email_active_template', get_option( NV_oOS_Design_System_Plugin::EMAIL_ACTIVE_TEMPLATE_KEY, '' ) );
+		return sanitize_title( $slug );
 	}
 }

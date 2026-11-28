@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-wporg-submission
-description: "WordPress.org submission readiness for NV oOS standalone plugins (docs-hub, content-graph, design-system, forge-bridge): the 18 guidelines, the Plugin Check (PCP) CI/Docker gate, finding triage, reviewer replies (public-endpoint authz, forwarding-header trust, wp_send_json/die), readme.txt + listing assets, packaging tri-sync and git archive parity, and Complete checkout disclosures. Use when preparing a submission, fixing plugin-check, or triaging PCP findings."
+description: "WordPress.org submission readiness for NV oOS standalone plugins (docs-hub, content-graph, design-system, forge-bridge): the 18 guidelines, the Plugin Check (PCP) CI/Docker gate, finding triage, a ten-class recurring runtime-bug sweep (KSES content loss, redirected notices, untrusted-JSON coercion, container/control CSS collisions), reviewer replies (public-endpoint authz, forwarding-header trust, wp_send_json/die), readme.txt + listing assets, packaging tri-sync and git archive parity, and Complete checkout disclosures. Use when preparing a submission, fixing plugin-check, triaging PCP findings, or auditing a plugin that 'works on activation' but misbehaves later."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.11"
   plugin-version-tested: "1.2.11"
-  last-updated: "2026-11-10"
+  last-updated: "2026-11-28"
 ---
 
 # NV oOS WordPress.org Submission — Readiness Playbook
@@ -44,6 +44,46 @@ plugin should ship to wp.org" and "the reviewer approves it".
 - Triaging `wp plugin check` findings (ERROR vs WARNING, false positives)
 - Adding/fixing the packaging exclusions for a standalone ZIP
 - Reviewing readme.txt against wp.org standards
+- **A plugin "works on activation" but misbehaves later** — run the recurring
+  bug-class sweep below before blaming the theme or a companion plugin
+
+## Recurring bug classes — run this sweep before EVERY submission
+
+Ten defect classes have shipped in this repo while passing **Plugin Check,
+PHPCS, `php -l` and a green unit suite**. They only appear in a real
+WordPress request, so they must be hunted deliberately. Full write-ups,
+detection commands, fixes and regression-test recipes live in
+[`reference/recurring-bug-classes.md`](reference/recurring-bug-classes.md).
+
+| # | Class | Tell-tale | One-line fix |
+|---|---|---|---|
+| 1 | **KSES strips CPT markup** | seeded/imported HTML loses `<style>`, doctype, VML; audit scores drop | validate → `kses_remove_filters()` → write → `kses_init_filters()` |
+| 2 | **Redirect drops notices** | action ran, no message shown; user retries | user-scoped notice transient + `wp_admin_notice()` on next load |
+| 3 | **Arithmetic on untrusted JSON** | `TypeError: Unsupported operand types`; or a colour silently becomes `1.0` | `numeric_or_null()` before every cast |
+| 4 | **CSS class on container *and* control** | iframe/preview stuck at 300 px or double border | one class per role (`.x-frame` / `.x-iframe`) |
+| 5 | **Empty-state forms** | empty heading + orphan form on a fresh install | explicit `if ( ! $record ) { explain; return; }` |
+| 6 | **Silent no-ops** | "imported" but nothing changed | warn when nothing matched |
+| 7 | **Docs drift** | README documents a hook/script that no longer exists | hook diff + update in the same commit |
+| 8 | **Enqueue compliance** | raw `<style>`, inline `onsubmit=` | register handle + `wp_add_inline_style`; `data-*` + enqueued JS |
+| 9 | **Mutating feature default-on** | activation silently rewrites user email/content | ship off, require an explicit choice |
+| 10 | **Destructive QA ops** | `wp plugin uninstall` against a bind mount deletes the host tree | uninstall against a **copy**, never the mount |
+
+Fast triage of the code-level ones:
+
+```sh
+cd addons/<slug>
+grep -rn "wp_insert_post\|wp_update_post" includes/ --include="*.php"      # 1
+grep -rn "wp_safe_redirect" includes/ --include="*.php"                    # 2
+grep -rn "0 + \|(float) \|(int) " includes/ --include="*.php"            # 3
+grep -rn "on\(submit\|click\|change\)=" includes/ --include="*.php"      # 8
+grep -rn "<style\|<script" includes/ --include="*.php"                    # 8
+grep -rn "json_decode" includes/ --include="*.php"                        # 3
+```
+
+**Two of these are invisible to PCP *and* to a green suite** (1 and 2), and
+they are the two that broke a shipped feature. If a plugin stores HTML in a
+post type or shows success/error messages after `admin-post.php`, write the
+Docker test for those two **before** the first review upload — not after.
 
 ## The 18 official wp.org guidelines (with repo mapping)
 
@@ -164,6 +204,18 @@ Hard rules learned the expensive way:
    container before executing (the bind mount is read-only, so in-place
    `sed -i 's/\r$//'` on a Windows-host script fails with "Resource busy"),
    and counts blocking errors with grep instead of jq.
+11. **Finding field order is not stable.** A literal
+   `"type":"ERROR","code":"..."` grep assumes `type` precedes `code`; PCP
+   sometimes emits `code` first, so the gate can undercount (design-system
+   1.0.0 pass: the grep counted 2 ERRORs but not the two actually present).
+   Parse each record independently: `preg_match_all('/\{[^{}]*"type":"(ERROR|WARNING)"[^{}]*\}/', $json, $m)`
+   + `json_decode`, or jq `select(.type=="ERROR")`.
+12. **A `wordpress:cli` container needs the DB env even when it shares the
+   web container's volume.** `wp-config-docker.php` resolves
+   `WORDPRESS_DB_HOST` at runtime; without `-e WORDPRESS_DB_*`, WP-CLI falls
+   back to host `mysql` and dies with “Error establishing a database
+   connection” (hit while building a screenshot demo). Pass the same four
+   env vars to every CLI invocation on a Docker-created WP tree.
 
 For small plugin trees (docs-hub scale) a fully isolated variant avoids the
 QA volume entirely — build the stage tree on the host with the CI's exact
@@ -172,8 +224,10 @@ container, and `cp -r` the plugin in.
 
 **Preferred: `bin/run-docs-hub-plugin-check.sh`** (repo root) does the
 staging + scratch DB + one-off PCP run + grep-based gate in one shot,
-handling pitfalls 9 and 10. The raw commands below are the fallback when
-that script needs adapting:
+handling pitfalls 9 and 10. `bin/run-design-system-plugin-check.sh` is the
+same pattern for a no-build PHP addon (its exclude list mirrors that addon's
+`.distignore`). Copy whichever is closer for the next standalone plugin; the
+raw commands below are the fallback when a script needs adapting:
 
 ```bash
 # Host: stage the ZIP-shaped tree (mirrors build-spa-addons.yml EXCLUDES +
@@ -269,19 +323,46 @@ submission track, NOT something to allowlist. The docs-hub ZIP is clean
 | `no_plugin_readme` | Real or mount artifact | readme.txt must sit at the ZIP root. If it does and PCP still fires, suspect the bind-mount truncation (pitfall 5) |
 | CodeAnalysis — core function newer than the declared `Requires at least` | Real | PCP flags any WP function whose `@since` is newer than the plugin's minimum (e.g. `wp_generate_uuid4()` is WP 6.7+ under `Requires at least: 6.0`). Fix: a `function_exists()`-guarded polyfill (keeps the floor) or bump `Requires at least`. Add the same check for any WP API used by new standalone plugins |
 | **Typed return crossing a `WP_Error`-returning API — INVISIBLE to PCP, phpcs, and `php -l`** | Real runtime fatal (forge-bridge review, 2026-11-05) | `public static function send( string $type ): array { return wp_remote_post( … ); }` passes every static gate (syntax is valid, style is clean, PCP does no type inference) but fatals with a `TypeError` when the request fails. Only two things catch this class: a **failure-path test** (`pre_http_request` returning `WP_Error` — the forge-bridge suite's interceptor only returned success, so 30/30 tests passed with the bug shipped) or a **static analyzer** (Psalm/PHPStan with WP stubs — not currently in any gate). Pre-submission rule: every `wp_remote_*` call site gets a failure-path test, and the raw result never crosses a typed `: array` declaration (PHP 7.4 has no union types — drop the type, keep the `@return array|\WP_Error` docblock). Sweep item 8 in the related-issue checklist |
+| `mismatched_plugin_name` | Warning | The readme `=== Title ===` must equal the plugin header `Plugin Name` exactly. A marketing suffix (“— Brand Tokens & Emails”) triggers it; keep the short name in both |
+| `plugin_header_tested_up_to_not_allowed` | ERROR | Declare `Tested up to` **only in readme.txt**, never in the plugin header. PCP errors on the duplicate |
+| `upgrade_notice_limit` | Warning | Each version's `== Upgrade Notice ==` entry must be ≤300 characters. Long migration notes belong in the Changelog |
+| `DiscouragedFunctions.load_plugin_textdomainFound` | Warning | Omit `load_plugin_textdomain()` for wp.org-hosted plugins; WP auto-loads language packs. Keep it only for non-standard `Domain Path`s |
+| `hidden_files` | ERROR | No dotfiles in the ZIP. `languages/.gitkeep` is the classic offender — add it to `.distignore`, `.gitattributes` (`export-ignore`) and the staging tar excludes |
+| `WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound` | Warning | Hook names must derive from the plugin prefix/slug (`nvoos_nds_*`), not a short abbreviation (`nds_*`). Rename before the first wp.org release |
+| `PluginCheck.CodeAnalysis.AIProvider.DirectIntegration` | Advisory | **Cleanest fix: remove the direct provider path entirely** — generate via `wp_ai_client_prompt()` (WP 7.0+) and expose a `*_generation_provider` filter for sites that need another provider. No provider SDK, no API-key option, no hardcoded host ⇒ the finding disappears (nvoos-design-system 1.0.0, 2026-11-28). Keeping direct calls as a "documented fallback" leaves advisory rows that a reviewer will ask about |
 
-### Second plugin in the pipeline (nvoos-design-system, issue #6811)
+### Second plugin: nvoos-design-system — 1.0.0 pass (2026-11-28)
 
-The addon is functionally standalone (all base-plugin touchpoints gated:
-tools behind `wp_mcp_ai_register_tools` + `interface_exists`, Paper Store
-behind `class_exists`, AI keys behind `function_exists`, WooCommerce behind
-`class_exists`) but still needs the docs-hub packaging set before PCP:
-`readme.txt` (Stable tag == header Version), `LICENSE`, `CHANGELOG.md`,
-`.distignore` tri-synced with `bin/build-addon-zips.sh` (docs-hub ships only
-`readme.txt`, no `*.md`), `languages/<slug>.pot`, `.wordpress-org/` assets,
-the `wp_generate_uuid4()` polyfill above, and a `plugin-check` CI job — plus
-owner-side steps: standalone repo, subtree-sync workflow + deploy token
-(mirror `sync-nvoos-docs-hub.yml`), wp.org slug request, SVN submission.
+The addon reached 1.0.0 and cleared PCP with **0 blocking errors**. The pass confirmed the standalone-integration contract and surfaced readme/packaging checks that docs-hub never hit:
+
+- **Readme errors:** `mismatched_plugin_name` (readme title vs header), `plugin_header_tested_up_to_not_allowed` (remove `Tested up to` from the header), `upgrade_notice_limit` (>300 chars), `DiscouragedFunctions.load_plugin_textdomainFound` (drop the manual loader).
+- **Hidden file:** `languages/.gitkeep` triggered `hidden_files`. Fix in all three places: `.distignore`, `.gitattributes export-ignore`, staging tar exclude.
+- **Hook prefixes:** all `nds_*` filters were renamed to `nvoos_nds_*`, clearing 10 `NonPrefixedHooknameFound` warnings. Do this before 1.0, not after listeners exist; record it in the Upgrade Notice.
+- **AI provider:** the first pass kept a disclosed OpenAI/Gemini fallback and accepted 2 advisory rows. The final pass deleted it (below) — the lesson is not to ship the fallback: it adds an API-key surface and a reviewer question for no user benefit once `wp_ai_client_prompt()` exists.
+- **Standalone seam:** `nvoos_nds_email_generation_provider` (callable returning HTML) is the only integration seam — no key option, no `Requires Plugins` header, no admin nag.
+- **Validation (final):** 163 PHPUnit tests / 481 assertions across 16 files, PHPCS 0 errors and 12 warnings, PHP 8.1–8.4 clean, PCP 0 errors and 0 warnings, POT 390 msgids, 6 screenshots captured.
+- **Gate script:** `bin/run-design-system-plugin-check.sh` — same pattern as docs-hub for a no-build PHP addon (stages `.distignore` excludes, runs PCP in a one-off `wordpress:cli-php8.2` container, gates on ERROR minus the allowlist).
+
+#### 1.0.0 final pass — reviewer-report follow-up (2026-11-28, later the same day)
+
+A reviewer-style report (enqueue, sanitisation, escaping, prefixes, direct AI provider) was worked through to **0 PCP findings at all** (not just 0 errors). What actually closed each class:
+
+- **`wp_enqueue` compliance:** delete hand-rolled `<style id=…>` printers. Integrations used `wp_head` + `echo '<style>'`; they now hook `wp_enqueue_scripts` and call `wp_add_inline_style()` on a registered handle. The token CSS handle is `wp_register_style( 'nvoos-nds-tokens', false )` + inline. Also replace inline event handlers (`onsubmit="return confirm(…)"`) with a `data-*-confirm` attribute read by the already-enqueued admin JS — inline handlers are not flagged by PCP but a human reviewer will raise them.
+- **`AIProvider.DirectIntegration`:** the direct OpenAI/Gemini path, the `ai_provider` selector and the `*_ai_api_key` filter were **deleted**, not documented. `call_provider()` → filter → AI Client → actionable `WP_Error`. PCP then reported no AI rows.
+- **Output escaping:** the email-template preview must not `echo $preview`. Render it in `<iframe sandbox="" srcdoc="…esc_attr( $preview )…">`. The empty sandbox blocks scripts/forms/top-level navigation while keeping email CSS/VML fidelity, so a non-destructive HTML validator (below) is safe.
+- **Input sanitisation:** `json_decode()` is not sanitisation. Every imported `$extensions`/`$aliasOf`/`$deprecated` value goes through a depth-bounded (≤3), key-capped (≤64), scalar-only `sanitize_meta()` with a 500-char cap before storage.
+- **Prefixed storage:** a private CPT must be renamed before 1.0 (`nds_email_template` → `nvoos_nds_email`, meta `_nds_template_*` → `_nvoos_nds_template_*`) **with a one-shot migration** (`set_post_type()` + meta rename behind an option guard) so no reviewer-install ever orphans templates. Hook renames must land in the same release.
+
+**Two bugs that PCP, phpcs, `php -l` and PHPUnit all missed — only live Docker QA found them:**
+
+1. **KSES silently strips email markup on save.** `wp_insert_post()` runs `content_save_pre` → `wp_filter_post_kses` whenever the current user lacks `unfiltered_html` — i.e. every front-end request (where an `init`-hooked seeder runs), cron, and WP-CLI. Stored templates lost `<!DOCTYPE>`, `<html>`, `<style>` and VML, so the audited 94/100 built-ins rendered as broken fragments (82/100, gates failing). Fix: validate the HTML with the plugin's own active-content validator first, then `kses_remove_filters()` → single insert/update → `kses_init_filters()`. Cover it with a test that runs `upsert()` as user 0 and asserts `<style>` survives.
+2. **`add_settings_error()` notices die on `admin-post.php` redirects.** Core's `settings_errors()` only merges the `settings_errors` transient when the URL carries `settings-updated` (see `get_settings_errors()` in `wp-admin/includes/template.php`), so every activate/save/import/delete message vanished. Fix: store notices in a user-scoped transient (`nvoos_nds_admin_notices_{user_id}`) and render them with `wp_admin_notice()` on the next load.
+
+**Docker QA recipe (standalone, no companion plugins):** scratch DB + `wordpress:php8.2-apache` + named volume, bind-mount the addon into `wp-content/plugins`. Every `wordpress:cli-php8.2` call needs the DB env vars **and the plugin bind mount**. Drive `wp eval-file` scripts for token/CSS/DTCG/brand/email assertions, then Playwright for the admin flows (preset apply, DTCG export/import, hostile-template rejection, activate/delete with the JS confirm, preview iframe). Multisite: `wp core multisite-install`, `wp site create`, `wp plugin activate --network`, assert per-site seeding + per-site options + no `sitemeta` writes.
+
+> **DANGER — never `wp plugin uninstall` a bind-mounted plugin.** WordPress deletes `wp-content/plugins/<slug>` recursively; with a bind mount that is the **host source tree**. It removed this addon's working directory mid-session. Uninstall-test against a *copy* (e.g. `cp -r` into the volume), or run the uninstall assertions from a `wp eval-file` that calls the cleanup directly.
+
+- **Final validation:** 158 PHPUnit tests / 16 files, PHPCS 0 errors, PHP 8.1–8.4 clean, PCP 0 errors **and 0 warnings**, POT 390 entries, 6 screenshots + regenerable icons/banners (`bin/generate-wporg-assets.py`), reproducible ZIP (`bin/build-zip.py`, forward-slash entries, `.distignore`-aware).
 
 ### Third standalone plugin: nvoos-content-graph (live + re-submission loop)
 
@@ -895,6 +976,61 @@ esbuild/eslint/tsconfig/vitest configs, `docs/`, `.wordpress-org/`,
 `.gitignore`, `.distignore`, `.DS_Store`. Any new dev-only path must be added
 to all three.
 
+### Public source repo mirror + version discipline
+
+Every standalone plugin gets a public mirror built by **subtree split**, not a
+copy. One workflow per plugin, same shape (see
+`.github/workflows/sync-nvoos-docs-hub.yml`):
+
+```yaml
+on:
+  push:
+    branches: [main, alpha-working]
+    paths: ['addons/<slug>/**']
+steps:
+  - uses: actions/checkout@v4
+    with: { fetch-depth: 0 }
+  - run: git subtree split --prefix=addons/<slug> --branch=<slug>-split
+  - run: |
+      git config --local --unset-all http.https://github.com/.extraheader
+      git push https://x-access-token:${{ secrets.<SLUG>_REPO_TOKEN }}@github.com/nvdigitalsolutions/<slug>.git <slug>-split:main --force
+```
+
+Guard the token with a step output, not `if: secrets.X` (GitHub forbids
+secrets in `if:`), so a missing secret warns instead of red-X-ing every push
+— the pattern in `sync-nvoos-design-system.yml`.
+
+The mirror carries `tests/`, `bin/`, `.wordpress-org/` and `.distignore` on
+purpose: it is the **source** repo. The installable ZIP is still built from
+`.distignore` and never committed.
+
+**Version rules (decide once per plugin, before the first upload):**
+
+| Situation | Version |
+|---|---|
+| Nothing published yet (no wp.org approval, no public release/tag) | **Keep the current version** — re-upload the fixed ZIP under the same number. The first directory release should be the number in the changelog |
+| A public GitHub release/tag already exists for that version | **Bump** (1.0.0 → 1.0.1). Two different artifacts must never share one version |
+| wp.org already approved / SVN `tags/<v>` exists | **Bump** — SVN tags are immutable; a new ZIP needs a new tag and a new `Stable tag` |
+
+Before re-uploading, keep the artifact manifest honest: `Size`, `SHA-256` and
+the validation table in the submission pack must describe the **exact** ZIP
+being uploaded (`sha256sum dist/<slug>-<v>.zip`). A reviewer comparing bytes
+never happens — but a mismatched internal record does get quoted in the
+ticket and causes confusion later.
+
+### ZIP entry paths and artifact hygiene (Windows)
+
+Windows' `zip`/`Compress-Archive` can store `\` separators; wp.org expects
+`/`. Build with Python `zipfile` (`os.path.relpath(...).replace(os.sep, "/")`)
+or `git archive` (honours `.gitattributes export-ignore`). Delete stray `NUL`
+files (Windows device-name artifacts created by shell redirections) and any
+dotfiles before zipping; verify with `unzip -l archive.zip | grep '\\'`
+(no output = clean) and `unzip -l | grep -E '\.gitkeep|\.DS_Store|NUL'`.
+
+A `.gitattributes` `export-ignore` line is the only exclusion `git archive`
+honours — keep it in sync with `.distignore` for `.gitkeep`-style files that
+must stay in git but never ship.
+
 The same trap bit the content-graph workflow (`build-nvoos-content-graph.yml`)
 in PR #6662: its inline rsync list drifted from `.distignore`, a dev
 `blueprints/` folder shipped in the ZIP, and PCP failed on the leaked PHP
@@ -1026,6 +1162,47 @@ Templates in `bin/`: `capture-nvoos-content-graph-screenshots.js` (origin),
 4. Verify with a pixel-level QA pass (sub-agent can decode text/layout
    without vision) before committing.
 
+### Clean one-off capture environment (don't mutate the shared QA site)
+
+For a standalone plugin, spin up a throwaway WordPress instead of activating
+it on the QA site. Named volume + apache container, with WP-CLI driven from
+the same volume:
+
+```bash
+# 1. Scratch DB + named volume
+docker exec -i oos-wp-db sh -c "mysql -uroot -pwordpress" 2>/dev/null <<'SQL'
+CREATE DATABASE IF NOT EXISTS wordpress_demo CHARACTER SET utf8mb4;
+GRANT ALL PRIVILEGES ON wordpress_demo.* TO 'wordpress'@'%';
+FLUSH PRIVILEGES;
+SQL
+docker volume create demo-html
+
+# 2. Web container on a spare port
+docker run -d --name nds-demo --network oos-wp_default -p 8099:80 \
+  -e WORDPRESS_DB_HOST=oos-wp-db -e WORDPRESS_DB_NAME=wordpress_demo \
+  -e WORDPRESS_DB_USER=wordpress -e WORDPRESS_DB_PASSWORD=wordpress \
+  -v demo-html:/var/www/html wordpress:php8.2-apache
+
+# 3. Install + activate. Pass the DB env AGAIN — wp-config-docker.php
+#    resolves it at runtime (pitfall 12).
+MSYS_NO_PATHCONV=1 docker run --rm --network oos-wp_default \
+  -v demo-html:/var/www/html \
+  -e WORDPRESS_DB_HOST=oos-wp-db -e WORDPRESS_DB_NAME=wordpress_demo \
+  -e WORDPRESS_DB_USER=wordpress -e WORDPRESS_DB_PASSWORD=wordpress \
+  wordpress:cli-php8.2 wp core install --url=http://localhost:8099 \
+  --title=Demo --admin_user=admin --admin_password=admin \
+  --admin_email=admin@example.com --skip-email --path=/var/www/html
+docker cp addons/<slug> nds-demo:/var/www/html/wp-content/plugins/<slug>
+# then: wp plugin activate <slug> (same CLI invocation pattern)
+
+# 4. Teardown
+docker rm -f nds-demo; docker volume rm demo-html
+# drop the scratch DB
+```
+
+Login `admin`/`admin`; capture at ≥1440×1050. The volume resets cleanly, so
+default tokens/templates are deterministic and the QA site is untouched.
+
 Capture pitfalls (all hit in practice):
 
 - **fullPage texture limit** — Chromium fails `page.screenshot` on very tall
@@ -1130,6 +1307,19 @@ taller fullPage shot:
   versions"). A major.minor `7.1` against latest `7.1.x` is NOT stale (PCP
   compares major.minor). Validate the suite against the patch release anyway
   — declare major.minor, back it with the patch run.
+- The readme `=== Title ===` must equal the plugin header `Plugin Name`
+  exactly (`mismatched_plugin_name`). Do not add a tagline to the readme
+  title; put it in `Description`.
+- `Tested up to` belongs **only** in readme.txt. A duplicate in the plugin
+  header is a PCP ERROR (`plugin_header_tested_up_to_not_allowed`).
+- Keep each `== Upgrade Notice ==` entry at ≤300 characters
+  (`upgrade_notice_limit`); migration detail belongs in the Changelog.
+- Do not call `load_plugin_textdomain()` for a directory-hosted plugin
+  (`DiscouragedFunctions.load_plugin_textdomainFound`) — WP loads language
+  packs just-in-time. Keep it only for a non-standard `Domain Path`.
+- No dotfiles in the ZIP (`hidden_files`): `languages/.gitkeep`, `.DS_Store`,
+  editor backups. Exclude them in `.distignore`, `.gitattributes`
+  (`export-ignore`) and the staging tar list.
 - Trim tags to directory-standard tags (PCP flags exotic tags).
 - Text Domain header must equal the slug for the ZIP dir name on wp.org.
 

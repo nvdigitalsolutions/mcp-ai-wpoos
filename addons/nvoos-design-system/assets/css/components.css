@@ -3,9 +3,10 @@
    ==========================================================================
    Maps --nds-* design tokens to actual Crocoblock widget selectors.
 
-   Legacy note: the addon was previously released as the "Crocoblock Design
-   System" with --cds-* variables and .cds-* classes. Both selector sets are
-   shipped here for the transition release (removed in v1.0.0).
+   Compatibility note: the addon was previously released as the "Crocoblock
+   Design System" with --cds-* variables. Those variables were removed in
+   1.0.0; the .cds-form wrapper class remains as a markup compatibility alias
+   for forms that were already annotated before the rename.
 
    This file is additive — it layers on top of existing Crocoblock styles.
    It does NOT use !important unless absolutely necessary (form inputs only,

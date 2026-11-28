@@ -45,7 +45,7 @@ class NV_oOS_Design_System_Tool_Test_Send_Email implements WP_MCP_AI_Tool_Interf
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Send a test email wrapped in the active NV oOS Design System template. The default recipient is the current admin user. Use this to verify the wrapper renders correctly after changing templates or tokens.', 'nvoos-design-system' );
+		return __( 'Send a test email wrapped in the active NV oOS Design System template. The default recipient is the current admin user. When to use: verifying the wrapper renders correctly after changing templates or tokens. When NOT to use: sending real customer mail or testing a template that is not active.', 'nvoos-design-system' );
 	}
 
 	/**
@@ -77,6 +77,9 @@ class NV_oOS_Design_System_Tool_Test_Send_Email implements WP_MCP_AI_Tool_Interf
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user = wp_get_current_user();

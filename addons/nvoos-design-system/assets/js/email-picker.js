@@ -22,15 +22,11 @@
 	 * Confirm destructive actions submitted through inline forms.
 	 */
 	function initDeleteConfirmation() {
-		document.querySelectorAll( '.nvoos-nds-email-wrap form' ).forEach( function ( form ) {
+		document.querySelectorAll( '[data-nvoos-nds-confirm]' ).forEach( function ( form ) {
 			form.addEventListener( 'submit', function ( event ) {
-				var action = form.querySelector( 'input[name="nds_action"]' );
+				var message = form.getAttribute( 'data-nvoos-nds-confirm' );
 
-				if ( ! action || 'delete' !== action.value ) {
-					return;
-				}
-
-				if ( ! window.confirm( 'Delete this template? This cannot be undone.' ) ) {
+				if ( message && ! window.confirm( message ) ) {
 					event.preventDefault();
 				}
 			} );

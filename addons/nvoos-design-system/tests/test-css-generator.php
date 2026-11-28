@@ -72,31 +72,54 @@ class Test_CSS_Generator extends TestCase {
 	}
 
 	/**
-	 * Legacy aliases should be emitted only when enabled.
+	 * Legacy `--cds-*` aliases were removed in 1.0.0. The constructor still
+	 * accepts the flag for back-compat, but it must not emit the variables.
 	 *
 	 * @return void
 	 */
-	public function test_legacy_alias_toggle() {
-		$with_aliases    = new NV_oOS_Design_System_CSS_Generator( $this->registry, false, true );
-		$without_aliases = new NV_oOS_Design_System_CSS_Generator( $this->registry, false, false );
+	public function test_legacy_aliases_are_not_emitted() {
+		$with_flag    = new NV_oOS_Design_System_CSS_Generator( $this->registry, false, true );
+		$without_flag = new NV_oOS_Design_System_CSS_Generator( $this->registry, false, false );
 
-		$css_with    = $with_aliases->generate();
-		$css_without = $without_aliases->generate();
+		$css_with    = $with_flag->generate();
+		$css_without = $without_flag->generate();
 
-		$this->assertStringContainsString( '--cds-color-surface', $css_with );
-		$this->assertStringContainsString( 'var(--nds-color-surface)', $css_with, 'Legacy alias should reference the NDS variable.' );
+		$this->assertStringNotContainsString( '--cds-color-surface', $css_with, 'Legacy aliases were removed in 1.0.0 and must not be reintroduced.' );
 		$this->assertStringNotContainsString( '--cds-color-surface', $css_without );
+		$this->assertSame( $css_without, $css_with, 'The legacy flag must not change the output.' );
 	}
 
 	/**
-	 * Style tag output should wrap the CSS in a <style> element.
+	 * `generate()` emits raw CSS only — no `<style>` wrapper. Front-end output
+	 * goes through `wp_add_inline_style()` so the WordPress.org guidelines on
+	 * enqueued resources are respected.
 	 *
 	 * @return void
 	 */
-	public function test_generate_style_tag() {
-		$tag = $this->generator->generate_style_tag();
-		$this->assertStringStartsWith( '<style id="nds-tokens">', $tag );
-		$this->assertStringEndsWith( '</style>', $tag );
+	public function test_generate_returns_raw_css_without_style_tag() {
+		$css = $this->generator->generate();
+
+		$this->assertStringContainsString( ':root{', $css );
+		$this->assertStringNotContainsString( '<style', $css );
+		$this->assertStringNotContainsString( '</style>', $css );
+	}
+
+	/**
+	 * The front-end token CSS is attached to an enqueued handle.
+	 *
+	 * @return void
+	 */
+	public function test_frontend_tokens_are_enqueued_inline() {
+		wp_set_current_user( 0 );
+
+		NV_oOS_Design_System_Plugin::enqueue_frontend_styles();
+
+		ob_start();
+		wp_print_styles( 'nvoos-nds-tokens' );
+		$printed = ob_get_clean();
+
+		$this->assertStringContainsString( '--nds-color-accent', $printed, 'Token custom properties must be printed through the enqueued handle.' );
+		$this->assertStringNotContainsString( '<style id="nds-tokens">', $printed, 'The plugin must not print a hand-rolled style tag.' );
 	}
 
 	/**

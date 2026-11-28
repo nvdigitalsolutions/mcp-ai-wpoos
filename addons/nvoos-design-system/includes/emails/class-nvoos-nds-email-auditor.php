@@ -66,6 +66,7 @@ class NV_oOS_Design_System_Email_Auditor {
 		$this->check_accessibility( $html, $results );
 		$this->check_contrast( $token_pairs, $results );
 		$this->check_dark_mode( $html, $results );
+		$this->check_compatibility( $html, $results );
 		$this->check_size( $html, $results );
 
 		return $this->summarize( $results );
@@ -79,8 +80,8 @@ class NV_oOS_Design_System_Email_Auditor {
 	 * @return bool True when no BLOCK-gate failures were found.
 	 */
 	public function required_gates_pass( $html ) {
-		$audit   = $this->audit( $html );
-		$errors  = array_filter(
+		$audit  = $this->audit( $html );
+		$errors = array_filter(
 			$audit['results'],
 			function ( $result ) {
 				return 'error' === $result['severity'];
@@ -145,7 +146,11 @@ class NV_oOS_Design_System_Email_Auditor {
 				'message'  => __( 'Template is missing a <!DOCTYPE html> declaration.', 'nvoos-design-system' ),
 			);
 		} else {
-			$results[] = array( 'code' => 'structure_doctype', 'severity' => 'pass', 'message' => __( 'OK', 'nvoos-design-system' ) );
+			$results[] = array(
+				'code'     => 'structure_doctype',
+				'severity' => 'pass',
+				'message'  => __( 'OK', 'nvoos-design-system' ),
+			);
 		}
 
 		// Body.
@@ -156,7 +161,11 @@ class NV_oOS_Design_System_Email_Auditor {
 				'message'  => __( 'Template is missing a <body> element.', 'nvoos-design-system' ),
 			);
 		} else {
-			$results[] = array( 'code' => 'structure_body', 'severity' => 'pass', 'message' => __( 'OK', 'nvoos-design-system' ) );
+			$results[] = array(
+				'code'     => 'structure_body',
+				'severity' => 'pass',
+				'message'  => __( 'OK', 'nvoos-design-system' ),
+			);
 		}
 
 		// Sentinel.
@@ -167,7 +176,11 @@ class NV_oOS_Design_System_Email_Auditor {
 				'message'  => __( 'Template is missing the nds-email-wrapper sentinel (it is added at render time).', 'nvoos-design-system' ),
 			);
 		} else {
-			$results[] = array( 'code' => 'structure_sentinel', 'severity' => 'pass', 'message' => __( 'OK', 'nvoos-design-system' ) );
+			$results[] = array(
+				'code'     => 'structure_sentinel',
+				'severity' => 'pass',
+				'message'  => __( 'OK', 'nvoos-design-system' ),
+			);
 		}
 
 		// Table roles.
@@ -195,7 +208,11 @@ class NV_oOS_Design_System_Email_Auditor {
 					),
 				);
 			} else {
-				$results[] = array( 'code' => 'structure_table_roles', 'severity' => 'pass', 'message' => __( 'All tables declare a role.', 'nvoos-design-system' ) );
+				$results[] = array(
+					'code'     => 'structure_table_roles',
+					'severity' => 'pass',
+					'message'  => __( 'All tables declare a role.', 'nvoos-design-system' ),
+				);
 			}
 		}
 
@@ -215,7 +232,11 @@ class NV_oOS_Design_System_Email_Auditor {
 					'message'  => __( 'Template uses fixed widths above 600px, which will break on mobile clients.', 'nvoos-design-system' ),
 				);
 			} else {
-				$results[] = array( 'code' => 'structure_width', 'severity' => 'pass', 'message' => __( 'Widths are within the 600px budget.', 'nvoos-design-system' ) );
+				$results[] = array(
+					'code'     => 'structure_width',
+					'severity' => 'pass',
+					'message'  => __( 'Widths are within the 600px budget.', 'nvoos-design-system' ),
+				);
 			}
 		}
 	}
@@ -236,7 +257,11 @@ class NV_oOS_Design_System_Email_Auditor {
 				'message'  => __( 'Template does not declare a lang attribute (screen readers fall back to the client locale).', 'nvoos-design-system' ),
 			);
 		} else {
-			$results[] = array( 'code' => 'a11y_lang', 'severity' => 'pass', 'message' => __( 'OK', 'nvoos-design-system' ) );
+			$results[] = array(
+				'code'     => 'a11y_lang',
+				'severity' => 'pass',
+				'message'  => __( 'OK', 'nvoos-design-system' ),
+			);
 		}
 
 		// Image alt text.
@@ -264,7 +289,11 @@ class NV_oOS_Design_System_Email_Auditor {
 					),
 				);
 			} else {
-				$results[] = array( 'code' => 'a11y_images_alt', 'severity' => 'pass', 'message' => __( 'All images declare alt text.', 'nvoos-design-system' ) );
+				$results[] = array(
+					'code'     => 'a11y_images_alt',
+					'severity' => 'pass',
+					'message'  => __( 'All images declare alt text.', 'nvoos-design-system' ),
+				);
 			}
 		}
 
@@ -276,7 +305,11 @@ class NV_oOS_Design_System_Email_Auditor {
 				'message'  => __( 'Template has no h1–h3 headings; screen-reader users cannot skim the message structure.', 'nvoos-design-system' ),
 			);
 		} else {
-			$results[] = array( 'code' => 'a11y_headings', 'severity' => 'pass', 'message' => __( 'OK', 'nvoos-design-system' ) );
+			$results[] = array(
+				'code'     => 'a11y_headings',
+				'severity' => 'pass',
+				'message'  => __( 'OK', 'nvoos-design-system' ),
+			);
 		}
 
 		// Minimum font size (body text below 13px fails readability guidance).
@@ -295,7 +328,11 @@ class NV_oOS_Design_System_Email_Auditor {
 					'message'  => __( 'Template uses font sizes below 13px in at least one block; WCAG guidance recommends ≥16px for body text.', 'nvoos-design-system' ),
 				);
 			} else {
-				$results[] = array( 'code' => 'a11y_font_size', 'severity' => 'pass', 'message' => __( 'OK', 'nvoos-design-system' ) );
+				$results[] = array(
+					'code'     => 'a11y_font_size',
+					'severity' => 'pass',
+					'message'  => __( 'OK', 'nvoos-design-system' ),
+				);
 			}
 		}
 	}
@@ -346,7 +383,11 @@ class NV_oOS_Design_System_Email_Auditor {
 				),
 			);
 		} else {
-			$results[] = array( 'code' => 'a11y_contrast', 'severity' => 'pass', 'message' => __( 'All evaluated colour pairs meet 4.5:1.', 'nvoos-design-system' ) );
+			$results[] = array(
+				'code'     => 'a11y_contrast',
+				'severity' => 'pass',
+				'message'  => __( 'All evaluated colour pairs meet 4.5:1.', 'nvoos-design-system' ),
+			);
 		}
 	}
 
@@ -365,7 +406,80 @@ class NV_oOS_Design_System_Email_Auditor {
 				'message'  => __( 'Template has no prefers-color-scheme overrides; Gmail/Apple Mail dark-mode users will see the light palette.', 'nvoos-design-system' ),
 			);
 		} else {
-			$results[] = array( 'code' => 'dark_mode', 'severity' => 'pass', 'message' => __( 'OK', 'nvoos-design-system' ) );
+			$results[] = array(
+				'code'     => 'dark_mode',
+				'severity' => 'pass',
+				'message'  => __( 'OK', 'nvoos-design-system' ),
+			);
+		}
+	}
+
+	/**
+	 * Compatibility checks: client quirks that are not accessibility issues.
+	 *
+	 * @param string $html    Template HTML.
+	 * @param array  $results Results accumulator (by reference).
+	 * @return void
+	 */
+	private function check_compatibility( $html, &$results ) {
+		// color-scheme metadata.
+		if ( false === stripos( $html, 'color-scheme' ) ) {
+			$results[] = array(
+				'code'     => 'compat_color_scheme',
+				'severity' => 'warning',
+				'message'  => __( 'Template has no color-scheme metadata; declare light dark so dark-mode clients invert predictably.', 'nvoos-design-system' ),
+			);
+		} else {
+			$results[] = array(
+				'code'     => 'compat_color_scheme',
+				'severity' => 'pass',
+				'message'  => __( 'OK', 'nvoos-design-system' ),
+			);
+		}
+
+		// Preheader: a hidden first line improves the inbox preview.
+		if ( false === stripos( $html, 'preheader' ) && false === stripos( $html, 'display:none' ) ) {
+			$results[] = array(
+				'code'     => 'compat_preheader',
+				'severity' => 'warning',
+				'message'  => __( 'Template has no hidden preheader; clients will invent a preview from the first visible line.', 'nvoos-design-system' ),
+			);
+		} else {
+			$results[] = array(
+				'code'     => 'compat_preheader',
+				'severity' => 'pass',
+				'message'  => __( 'OK', 'nvoos-design-system' ),
+			);
+		}
+
+		// Outlook VML duplicate-button bug: more than one roundrect is suspicious.
+		if ( substr_count( strtolower( $html ), '<v:roundrect' ) > 1 ) {
+			$results[] = array(
+				'code'     => 'compat_vml_duplicate',
+				'severity' => 'warning',
+				'message'  => __( 'Template contains multiple VML roundrects; Classic Outlook can render duplicate buttons when VML and HTML CTAs are not isolated in one conditional block.', 'nvoos-design-system' ),
+			);
+		} else {
+			$results[] = array(
+				'code'     => 'compat_vml_duplicate',
+				'severity' => 'pass',
+				'message'  => __( 'OK', 'nvoos-design-system' ),
+			);
+		}
+
+		// Image-only CTAs disappear when images are blocked.
+		if ( preg_match_all( '/<a\b[^>]*>\s*(?:<[^>]+>\s*)*<img\b/i', $html, $image_links ) && ! empty( $image_links[0] ) ) {
+			$results[] = array(
+				'code'     => 'compat_image_cta',
+				'severity' => 'warning',
+				'message'  => __( 'At least one CTA is an image-only link; corporate clients block images by default. Add visible text or a background-coloured HTML button.', 'nvoos-design-system' ),
+			);
+		} else {
+			$results[] = array(
+				'code'     => 'compat_image_cta',
+				'severity' => 'pass',
+				'message'  => __( 'OK', 'nvoos-design-system' ),
+			);
 		}
 	}
 
@@ -402,7 +516,11 @@ class NV_oOS_Design_System_Email_Auditor {
 				),
 			);
 		} else {
-			$results[] = array( 'code' => 'size_budget', 'severity' => 'pass', 'message' => __( 'OK', 'nvoos-design-system' ) );
+			$results[] = array(
+				'code'     => 'size_budget',
+				'severity' => 'pass',
+				'message'  => __( 'OK', 'nvoos-design-system' ),
+			);
 		}
 	}
 
@@ -474,6 +592,10 @@ class NV_oOS_Design_System_Email_Auditor {
 	 * @return float|null Ratio (1–21), or null when either color is not a hex literal.
 	 */
 	public static function contrast_ratio( $color1, $color2 ) {
+		if ( class_exists( 'NV_oOS_Design_System_Contrast_Auditor' ) ) {
+			return NV_oOS_Design_System_Contrast_Auditor::ratio( $color1, $color2 );
+		}
+
 		$l1 = self::relative_luminance( $color1 );
 		$l2 = self::relative_luminance( $color2 );
 
@@ -506,7 +628,7 @@ class NV_oOS_Design_System_Email_Auditor {
 
 		$channels = array();
 		foreach ( str_split( $hex, 2 ) as $channel ) {
-			$value = hexdec( $channel ) / 255;
+			$value      = hexdec( $channel ) / 255;
 			$channels[] = $value <= 0.03928 ? $value / 12.92 : pow( ( $value + 0.055 ) / 1.055, 2.4 );
 		}
 

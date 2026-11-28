@@ -72,8 +72,8 @@ class NV_oOS_Design_System_Integration_JetEngine {
 			array( __CLASS__, 'register_templates' )
 		);
 
-		// Inline NDS token values for JetEngine's dynamic CSS.
-		add_action( 'wp_head', array( __CLASS__, 'output_listing_dynamic_styles' ), 99 );
+		// Enqueue NDS listing token bridge CSS through the stylesheet pipeline.
+		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_listing_styles' ), 26 );
 
 		// Ensure NDS component CSS is enqueued when JetEngine listings are present.
 		add_action( 'wp_enqueue_scripts', array( 'NV_oOS_Design_System_Assets', 'enqueue_components' ), 25 );
@@ -156,26 +156,24 @@ class NV_oOS_Design_System_Integration_JetEngine {
 	}
 
 	/**
-	 * Output inline styles that bridge NDS tokens to JetEngine's
-	 * dynamic listing grid CSS.
+	 * Enqueue inline styles that bridge NDS tokens to JetEngine's listing grid.
 	 *
 	 * @return void
 	 */
-	public static function output_listing_dynamic_styles() {
+	public static function enqueue_listing_styles() {
 		$registry = NV_oOS_Design_System_Plugin::token_registry();
 		$values   = $registry->get_values_map();
 
-		$css  = '<style id="nds-jetengine-styles">';
-		$css .= '.nds-grid{';
-		$css .= 'gap:' . esc_html( isset( $values['gap_grid'] ) ? $values['gap_grid'] : '20px' ) . ';';
+		$css  = '.nds-grid{';
+		$css .= 'gap:' . ( isset( $values['gap_grid'] ) ? $values['gap_grid'] : '20px' ) . ';';
 		$css .= '}';
 		$css .= '.nds-card .jet-listing-dynamic-image img{';
-		$css .= 'height:' . esc_html( isset( $values['card_image_height'] ) ? $values['card_image_height'] : '200px' ) . ';';
+		$css .= 'height:' . ( isset( $values['card_image_height'] ) ? $values['card_image_height'] : '200px' ) . ';';
 		$css .= 'object-fit:cover;';
 		$css .= '}';
-		$css .= '</style>';
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — CSS values are esc_html'd above.
-		echo $css;
+		NV_oOS_Design_System_Assets::register();
+		wp_enqueue_style( 'nvoos-nds-components' );
+		wp_add_inline_style( 'nvoos-nds-components', $css );
 	}
 }

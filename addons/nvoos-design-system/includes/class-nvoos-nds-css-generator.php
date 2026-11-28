@@ -11,11 +11,7 @@
  * Also generates accessibility media query blocks for:
  *   - prefers-color-scheme (dark mode)
  *   - prefers-reduced-motion
- *   - prefers-contrast (high contrast)
- *
- * When legacy aliases are enabled, `--cds-*` copies of every token are
- * emitted alongside `--nds-*` so existing Crocoblock builds keep working
- * after the rename (transition release feature, removed in v1.0.0).
+ * - prefers-contrast (high contrast)
  *
  * @package NV_oOS_Design_System
  * @since   0.2.0
@@ -52,6 +48,8 @@ class NV_oOS_Design_System_CSS_Generator {
 	/**
 	 * Whether to emit legacy `--cds-*` aliases.
 	 *
+	 * @deprecated 1.0.0 The transition aliases were removed; the property is
+	 *                   retained only so third-party constructors keep working.
 	 * @var bool
 	 */
 	private $include_legacy_aliases;
@@ -74,12 +72,12 @@ class NV_oOS_Design_System_CSS_Generator {
 	 *
 	 * @param NV_oOS_Design_System_Token_Registry $registry                Token registry.
 	 * @param bool                                $use_typed_properties    Whether to output @property blocks.
-	 * @param bool                                $include_legacy_aliases  Whether to output `--cds-*` aliases.
+	 * @param bool                                $include_legacy_aliases  Deprecated; ignored since 1.0.0.
 	 */
-	public function __construct( $registry, $use_typed_properties = false, $include_legacy_aliases = true ) {
-		$this->registry                = $registry;
-		$this->use_typed_properties    = $use_typed_properties;
-		$this->include_legacy_aliases  = $include_legacy_aliases;
+	public function __construct( $registry, $use_typed_properties = false, $include_legacy_aliases = false ) {
+		$this->registry               = $registry;
+		$this->use_typed_properties   = $use_typed_properties;
+		$this->include_legacy_aliases = false;
 	}
 
 	/**
@@ -104,32 +102,10 @@ class NV_oOS_Design_System_CSS_Generator {
 		// 2. Base :root block.
 		$css .= $this->build_root_block( $tokens );
 
-		// 3. Legacy `--cds-*` alias block (transition release).
-		if ( $this->include_legacy_aliases ) {
-			$css .= $this->build_legacy_alias_block( $tokens );
-		}
-
-		// 4. Accessibility media query blocks.
+		// 3. Accessibility media query blocks.
 		$css .= $this->generate_a11y_blocks();
 
 		return $css;
-	}
-
-	/**
-	 * Generate a <style> tag with the compiled CSS.
-	 *
-	 * @return string HTML <style> element.
-	 */
-	public function generate_style_tag() {
-		$css = $this->generate();
-		if ( '' === $css ) {
-			return '';
-		}
-
-		return sprintf(
-			'<style id="nds-tokens">%s</style>',
-			$css
-		);
 	}
 
 	// -----------------------------------------------------------------------
@@ -147,8 +123,8 @@ class NV_oOS_Design_System_CSS_Generator {
 
 		foreach ( $tokens as $token ) {
 			$syntax   = $this->get_property_syntax( $token->type );
-			$initial  = esc_html( $token->default );
-			$css_var  = esc_html( $token->css_var() );
+			$initial  = $this->sanitize_css_value( $token->default );
+			$css_var  = $token->css_var();
 			$inherits = 'true';
 
 			$blocks .= sprintf(
@@ -191,8 +167,8 @@ class NV_oOS_Design_System_CSS_Generator {
 		foreach ( $tokens as $token ) {
 			$lines[] = sprintf(
 				'%s:%s;',
-				esc_html( $token->css_var() ),
-				esc_html( $token->value )
+				$token->css_var(),
+				$this->sanitize_css_value( $token->value )
 			);
 		}
 
@@ -202,29 +178,20 @@ class NV_oOS_Design_System_CSS_Generator {
 	}
 
 	/**
-	 * Build a :root block of legacy `--cds-*` aliases.
+	 * Defence-in-depth: reject characters that could break out of a CSS rule.
 	 *
-	 * Aliases reference the `--nds-*` variables so there is a single source
-	 * of truth; changing a token cascades to both prefixes.
+	 * Token values are sanitised on entry; this second gate protects against
+	 * legacy options written before the strict validators existed.
 	 *
-	 * @param array<string, NV_oOS_Design_System_Data_Token> $tokens All tokens.
-	 * @return string CSS :root alias block.
+	 * @param string $value CSS value.
+	 * @return string
 	 */
-	private function build_legacy_alias_block( $tokens ) {
-		$lines = array( ':root{' );
-
-		foreach ( $tokens as $token ) {
-			$legacy_var = str_replace( '--nds-', '--cds-', $token->css_var() );
-			$lines[]    = sprintf(
-				'%s:var(%s);',
-				esc_html( $legacy_var ),
-				esc_html( $token->css_var() )
-			);
+	private function sanitize_css_value( $value ) {
+		$value = (string) $value;
+		if ( preg_match( '/[{}<>;]/', $value ) ) {
+			return '';
 		}
-
-		$lines[] = '}';
-
-		return implode( '', $lines );
+		return $value;
 	}
 
 	// -----------------------------------------------------------------------
@@ -263,10 +230,6 @@ class NV_oOS_Design_System_CSS_Generator {
 		$css .= ':root{';
 		$css .= '--nds-transition-fast:0ms;';
 		$css .= '--nds-transition-normal:0ms;';
-		if ( $this->include_legacy_aliases ) {
-			$css .= '--cds-transition-fast:0ms;';
-			$css .= '--cds-transition-normal:0ms;';
-		}
 		$css .= '}}';
 
 		return $css;
@@ -301,10 +264,7 @@ class NV_oOS_Design_System_CSS_Generator {
 		$css .= ':root{';
 
 		foreach ( $dark_tokens as $var => $value ) {
-			$css .= sprintf( '%s:%s;', esc_html( $var ), esc_html( $value ) );
-			if ( $this->include_legacy_aliases ) {
-				$css .= sprintf( '%s:%s;', esc_html( str_replace( '--nds-', '--cds-', $var ) ), esc_html( $value ) );
-			}
+			$css .= sprintf( '%s:%s;', $var, $this->sanitize_css_value( $value ) );
 		}
 
 		$css .= '}}';
@@ -339,10 +299,7 @@ class NV_oOS_Design_System_CSS_Generator {
 		$css .= ':root{';
 
 		foreach ( $hc_tokens as $var => $value ) {
-			$css .= sprintf( '%s:%s;', esc_html( $var ), esc_html( $value ) );
-			if ( $this->include_legacy_aliases ) {
-				$css .= sprintf( '%s:%s;', esc_html( str_replace( '--nds-', '--cds-', $var ) ), esc_html( $value ) );
-			}
+			$css .= sprintf( '%s:%s;', $var, $this->sanitize_css_value( $value ) );
 		}
 
 		$css .= '}}';

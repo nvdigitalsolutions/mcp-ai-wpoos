@@ -1,6 +1,6 @@
 # Proposals Completion Status
 
-**Last Updated:** August 26, 2026
+**Last Updated:** November 28, 2026
 **Total Proposals:** 100+ files
 **Completed:** 30+ proposals
 **In Progress:** 3 proposals
@@ -163,6 +163,12 @@
 | Places & Calendar Bulk Import | ✅ Complete | Batch import tools for Places and Calendar Booking toolkits |
 | CLI site-import Subcommand | ✅ Complete | Multi-phase HTML mirror import for static site migration |
 
+### v1.0.0 Addon Release (November 28, 2026)
+
+| Proposal | Status | Detail |
+|----------|--------|--------|
+| NV oOS Design System — Brand Ops & wp.org 1.0 (169) | ✅ Complete (validation) | Addon ships 1.0.0: DTCG 2025.10 codec + transactional importer, Global Styles bridge, brand kit, WCAG 2.2 contrast, email wrapper off by default with four modes, PCP 0 errors and 0 warnings, 163 PHPUnit tests green, POT 390 msgids, six screenshots captured. Fully standalone: NV oOS, Crocoblock, Elementor and WooCommerce are optional, capability-gated integrations (Appendix E). See [`169-nvoos-design-system-wporg-brand-ops-proposal.md`](./169-nvoos-design-system-wporg-brand-ops-proposal.md) |
+
 ---
 
 ## 🚧 In Progress Proposals (3)
@@ -187,6 +193,10 @@
 ## ⏳ Pending Proposals (~30)
 
 > Many of the proposals below have been pending since early 2026 without active development. See [`proposals-retirement-log.md`](./proposals-retirement-log.md) for retirement decisions on superseded documents.
+
+### Newly Proposed (November 2026)
+
+None — Proposal 169 moved to Completed on 2026-11-28.
 
 ### Stale / Deferred
 

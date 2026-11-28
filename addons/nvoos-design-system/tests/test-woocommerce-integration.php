@@ -13,68 +13,7 @@
  * @package NV_oOS_Design_System
  */
 
-// Stubs — only defined when WooCommerce is not present in the environment.
-if ( ! class_exists( 'WooCommerce' ) ) {
-	/**
-	 * WooCommerce facade stub.
-	 */
-	class WooCommerce {
-		/**
-		 * Mailer accessor.
-		 *
-		 * @return WC_Emails
-		 */
-		public function mailer() {
-			return $GLOBALS['nds_test_mailer'];
-		}
-	}
-}
-
-if ( ! class_exists( 'WC_Email' ) ) {
-	/**
-	 * WC_Email stub.
-	 */
-	class WC_Email {}
-}
-
-if ( ! class_exists( 'WC_Emails' ) ) {
-	/**
-	 * WC_Emails stub with the default header/footer handlers.
-	 */
-	class WC_Emails {
-		/**
-		 * Default header handler.
-		 *
-		 * @param string   $heading Heading.
-		 * @param WC_Email $email   Email object.
-		 * @return void
-		 */
-		public function email_header( $heading, $email ) {
-			echo 'DEFAULT-HEADER';
-		}
-
-		/**
-		 * Default footer handler.
-		 *
-		 * @param WC_Email $email Email object.
-		 * @return void
-		 */
-		public function email_footer( $email ) {
-			echo 'DEFAULT-FOOTER';
-		}
-	}
-}
-
-if ( ! function_exists( 'WC' ) ) {
-	/**
-	 * WooCommerce facade accessor.
-	 *
-	 * @return WooCommerce
-	 */
-	function WC() {
-		return $GLOBALS['nds_test_wc'];
-	}
-}
+require_once __DIR__ . '/stubs/woocommerce.php';
 
 /**
  * Tests for the WooCommerce rebrand integration.
@@ -117,7 +56,7 @@ class Test_WooCommerce_Integration extends WP_UnitTestCase {
 			// instance — the real constructor boots the whole plugin and
 			// reaches WP_CLI hooks that don't exist under PHPUnit. Drive the
 			// integration against the real singleton mailer instead.
-			$this->wc_init_handlers = isset( $GLOBALS['wp_filter']['woocommerce_init'] ) ? $GLOBALS['wp_filter']['woocommerce_init'] : null;
+			$this->wc_init_handlers     = isset( $GLOBALS['wp_filter']['woocommerce_init'] ) ? $GLOBALS['wp_filter']['woocommerce_init'] : null;
 			$GLOBALS['nds_test_wc']     = function_exists( 'WC' ) ? WC() : null;
 			$GLOBALS['nds_test_mailer'] = ( function_exists( 'WC' ) && WC() ) ? WC()->mailer() : null;
 

@@ -45,7 +45,7 @@ class NV_oOS_Design_System_Tool_Export_Email_Template implements WP_MCP_AI_Tool_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Export an NV oOS Design System email template as a JSON payload (HTML, scope, settings) for backup or transfer to another site. The matching nds_import_email_template tool imports the payload as a draft.', 'nvoos-design-system' );
+		return __( 'Export an NV oOS Design System email template as a JSON payload (HTML, scope, settings) for backup or transfer to another site. The matching nds_import_email_template tool imports the payload as a draft. When to use: backing up or migrating one template. When NOT to use: exporting the whole design-system configuration or the token set.', 'nvoos-design-system' );
 	}
 
 	/**
@@ -77,6 +77,9 @@ class NV_oOS_Design_System_Tool_Export_Email_Template implements WP_MCP_AI_Tool_
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$post = null;

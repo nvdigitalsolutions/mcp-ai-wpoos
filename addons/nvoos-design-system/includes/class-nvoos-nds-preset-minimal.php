@@ -115,6 +115,22 @@ class NV_oOS_Design_System_Preset_Minimal implements NV_oOS_Design_System_Data_P
 				'type'    => 'color',
 				'default' => '#ff9800',
 			),
+			array(
+				'id'          => 'color_focus_ring',
+				'label'       => __( 'Focus Ring', 'nvoos-design-system' ),
+				'group'       => 'colors',
+				'type'        => 'color',
+				'default'     => '#8b9f48',
+				'description' => __( 'Visible keyboard focus indicator (WCAG 2.4.11 / 2.4.13). Needs 3:1 against the surface.', 'nvoos-design-system' ),
+			),
+			array(
+				'id'          => 'color_border_strong',
+				'label'       => __( 'Border (Strong)', 'nvoos-design-system' ),
+				'group'       => 'colors',
+				'type'        => 'color',
+				'default'     => '#7a7a7a',
+				'description' => __( 'Non-text border that must meet the 3:1 UI contrast threshold.', 'nvoos-design-system' ),
+			),
 
 			// ── Typography ─────────────────────────────────────────
 			array(
@@ -263,6 +279,22 @@ class NV_oOS_Design_System_Preset_Minimal implements NV_oOS_Design_System_Data_P
 				'type'    => 'size',
 				'default' => '1px',
 			),
+			array(
+				'id'          => 'focus_ring_width',
+				'label'       => __( 'Focus Ring Width', 'nvoos-design-system' ),
+				'group'       => 'borders',
+				'type'        => 'size',
+				'default'     => '2px',
+				'description' => __( 'WCAG 2.2 focus appearance recommends a 2px perimeter.', 'nvoos-design-system' ),
+			),
+			array(
+				'id'          => 'focus_ring_offset',
+				'label'       => __( 'Focus Ring Offset', 'nvoos-design-system' ),
+				'group'       => 'borders',
+				'type'        => 'size',
+				'default'     => '2px',
+				'description' => __( 'Keeps the focus ring clear of the component edge.', 'nvoos-design-system' ),
+			),
 
 			// ── Shadows ────────────────────────────────────────────
 			array(
@@ -310,6 +342,14 @@ class NV_oOS_Design_System_Preset_Minimal implements NV_oOS_Design_System_Data_P
 				'type'        => 'size',
 				'default'     => '44px',
 				'description' => __( 'Height for form inputs and search fields.', 'nvoos-design-system' ),
+			),
+			array(
+				'id'          => 'size_target_min',
+				'label'       => __( 'Minimum Target Size', 'nvoos-design-system' ),
+				'group'       => 'sizing',
+				'type'        => 'size',
+				'default'     => '24px',
+				'description' => __( 'WCAG 2.2 SC 2.5.8 minimum pointer target (24×24 CSS px).', 'nvoos-design-system' ),
 			),
 
 			// ── Transitions ────────────────────────────────────────

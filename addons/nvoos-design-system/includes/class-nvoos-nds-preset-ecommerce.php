@@ -60,6 +60,8 @@ class NV_oOS_Design_System_Preset_Ecommerce extends NV_oOS_Design_System_Preset_
 			'radius_md'            => '8px',
 			'gap_grid'             => '16px',
 			'card_image_height'    => '240px',
+			'color_focus_ring'     => '#2563eb',
+			'color_border_strong'  => '#8a8a8a',
 
 			// Email palette — bright, product-first.
 			'email_page_bg'        => '#f4f6fb',
