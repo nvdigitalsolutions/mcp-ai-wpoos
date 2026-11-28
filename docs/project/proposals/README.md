@@ -1,6 +1,6 @@
 # NV oOS Proposals Directory
 
-**Last Updated:** November 26, 2026
+**Last Updated:** November 28, 2026
 **Total Proposals:** 100+ files (see [RELATED_PROPOSALS_INDEX.md](./RELATED_PROPOSALS_INDEX.md) for cross-reference map)
 **Completed:** 30+ | **In Progress:** 3 | **Pending:** ~30 (many stale)
 
@@ -682,6 +682,11 @@ Autonomous AI development loops with intelligent exit detection.
 - [CHAT_PRELOAD_CONNECTIONS_ENHANCEMENT.md](CHAT_PRELOAD_CONNECTIONS_ENHANCEMENT.md) - 🔮 Performance enhancement
 
 ### Technical Implementation
+- [170-php-floor-decision.md](170-php-floor-decision.md) - 🐘 PHP floor: hold at 8.1 and test it (4 of 9 servers still run 8.1); estate migration staged before any bump
+- [168-multi-agent-team-scale-and-a2a-conformance-proposal.md](168-multi-agent-team-scale-and-a2a-conformance-proposal.md) - 🤝 Durable Run Board (atomic claims + leases + task tree), role-enforced authority, policy gate, and A2A 1.0 conformance pass (Proposal 168)
+- [168-multi-agent-team-scale-and-a2a-conformance-research.md](168-multi-agent-team-scale-and-a2a-conformance-research.md) - 🤝 Research + recommendations for Proposal 168: A2A 1.0, OTel A2A conventions, RFC 8693 delegation, MAST, claim/lease portability, and the eight resolved decisions
+- [168-run-board-schema.md](168-run-board-schema.md) - 🤝 Run Board schema spec: three-table DDL, per-query index rationale, the affected-rows soundness rule, EXPLAIN assertions and the two-connection race harness
+- [168-multi-agent-team-scale-and-a2a-conformance-p0-implementation-plan.md](168-multi-agent-team-scale-and-a2a-conformance-p0-implementation-plan.md) - 🤝 P0 implementation plan: schema, envelope, board service, 8 tools, run-scope gate, sweeper, proofs (~15 dev-days)
 - [064-standalone-spa-wordpress-login-implementation-plan.md](064-standalone-spa-wordpress-login-implementation-plan.md) - 🌱 Standalone SPA WordPress login (Application Password) implementation plan (Proposal 064)
 - [063-phreshos-pro-toolkit-cloudways-velocity-addon-proposal.md](063-phreshos-pro-toolkit-cloudways-velocity-addon-proposal.md) - 🌱 PhreshOS Pro toolkit + Cloudways Velocity addon proposal (Proposal 063)
 - [063-phreshos-cloudways-velocity-research.md](063-phreshos-cloudways-velocity-research.md) - 🌱 PhreshOS/Cloudways Velocity research notes (Proposal 063)

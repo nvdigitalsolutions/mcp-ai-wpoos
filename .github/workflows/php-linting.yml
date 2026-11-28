@@ -273,6 +273,29 @@ jobs:
         # goes stale. PHPCS and Plugin Check cannot reason about this pattern.
         run: php .github/scripts/check-public-write-routes.php
 
+  db-charset:
+    name: Database Charset Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Run the database charset gate
+        # Fails when a first-party CREATE TABLE omits a charset. character_set_server
+        # is the MariaDB default (latin1 through 10.11; utf8mb4 only from 11.8), so a
+        # table built without $wpdb->get_charset_collate() inherits it: multi-byte text
+        # is silently mangled on a latin1 server, and the first non-ASCII insert raises
+        # "Incorrect string value" on an ascii one. Neither PHPCS nor Plugin Check can
+        # see this, and the server default is not ours to change.
+        run: php bin/check-db-charset.php --scope=all --selftest
+
   settings-field-registration:
     name: Settings Field Registration
     runs-on: ubuntu-latest
