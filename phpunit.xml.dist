@@ -13,6 +13,7 @@
             <directory suffix=".php">addons/saas-controller/tests</directory>
             <directory suffix=".php">addons/checkout-api/tests</directory>
             <directory suffix=".php">addons/nvoos-design-system/tests</directory>
+            <exclude>addons/nvoos-design-system/tests/stubs</exclude>
             			<directory suffix=".php">addons/schedule-anything-platform/tests</directory>
             			<directory suffix=".php">addons/nvoos-astro-bridge/tests</directory>
             <directory suffix=".php">addons/nvoos-wifi/tests/Unit</directory>

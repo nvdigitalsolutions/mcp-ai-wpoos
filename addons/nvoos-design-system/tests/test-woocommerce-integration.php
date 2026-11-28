@@ -80,7 +80,7 @@ class Test_WooCommerce_Integration extends WP_UnitTestCase {
 		remove_all_actions( 'woocommerce_email_footer' );
 		remove_all_filters( 'woocommerce_email_styles' );
 		remove_all_filters( 'woocommerce_email_get_option' );
-		remove_all_filters( 'nds_email_wc_rebrand' );
+		remove_all_filters( 'nvoos_nds_email_wc_rebrand' );
 
 		// Reset the integration's static guard so init() re-wires per test.
 		$registered = new ReflectionProperty( 'NV_oOS_Design_System_Integration_WooCommerce', 'registered' );
@@ -185,7 +185,7 @@ class Test_WooCommerce_Integration extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function test_per_email_filter_disables() {
-		add_filter( 'nds_email_wc_rebrand', '__return_false' );
+		add_filter( 'nvoos_nds_email_wc_rebrand', '__return_false' );
 
 		$this->assertSame( '/* base */', NV_oOS_Design_System_Integration_WooCommerce::inject_styles( '/* base */', new WC_Email() ) );
 	}
