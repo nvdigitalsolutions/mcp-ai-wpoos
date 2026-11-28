@@ -14409,8 +14409,92 @@ public signature unchanged; the family has one recipient checker.
 #### Where the family stands
 
 Thirteen remain: the ten deferred (five Excel, three document writers, the two
-authority integrations) and three undecided — the two requirements tools and
-`get_registration_timeline`. The next slice is requirements, and it has a known
-bug to fix on the way: §164.152 recorded that the writer stores `is_mandatory`
-through `! empty()`, so a requirement created as its own schema documents is
-skipped by `check_product_compliance`.
+authority integrations) and three undecided. The next slice is requirements, and
+it has a known bug to fix on the way (§164.162).
+
+### §164.162 — `regulatory-registration`, slice 15: requirements
+
+Two tools, 432 lines. The slice existed to fix one recorded defect, and the
+measurement found two more in the same pair.
+
+#### The writer stored `false` for the documented default
+
+```php
+update_post_meta( $requirement_id, 'is_mandatory', ! empty( $arguments['is_mandatory'] ) );
+```
+
+The schema declares `is_mandatory` with `'default' => true`. So the one caller
+who follows the schema — omitting the field because the default is documented —
+stored `false`. `check_product_compliance` then reached
+
+```php
+if ( ! $requirement['is_mandatory'] ) {
+    continue;
+}
+```
+
+and skipped the requirement. It looked configured and checked nothing.
+
+§164.152 recorded this while the compliance reader was ported and could not fix
+it from there. The port reads the flag through `boolParam()` with a `true`
+default, and the regression test does not stop at the stored value: it creates a
+requirement without the field, runs the compliance check against a product with
+no documents, and asserts the product fails with a critical `loa` issue. That is
+the end-to-end proof the previous slice could not give.
+
+#### The requirement kind was not validated
+
+The five kinds were an enum in the schema and absent from the handler, so
+`requirement_type: "loa"` — a **document type** mistaken for a requirement kind —
+stored a requirement that no compliance branch reads: `document` and
+`ingredient_restriction` are the only kinds the checker acts on. The port
+requires one of the five.
+
+#### Dates and URLs, which failed in opposite directions
+
+`effective_date` went through `sanitize_text_field`, which stores any string, so
+a malformed date became data. `reference_url` went through `esc_url_raw`, which
+returns the **empty string** for anything it does not recognise, so a malformed
+citation vanished and the requirement was created looking as though it had none.
+Both are validated now and the field is named in the error.
+
+#### The reader's mandatory filter compared a string to a boolean
+
+```php
+$meta_query[] = array( 'key' => 'is_mandatory', 'value' => '1' );
+```
+
+That matched only because `update_post_meta` serialises `true` as `1`. A value
+written as a real boolean, as `'true'`, or by an import matched nothing, so
+`mandatory_only` could return fewer requirements than the checker would enforce.
+The port filters with `flag()` after the query, which is the same reader
+`check_product_compliance` uses, so the filter and the checker cannot disagree.
+
+Two smaller ones in the same tool: `mandatory_only` was read with `! empty()`, so
+the string `'false'` switched the filter **on**, and `is_mandatory` was returned
+through `(bool)`, which reports the stored string `'false'` as true.
+
+#### No capability was enforced, for the third time
+
+Like `get_regulatory_updates` (§164.160) and `add_regulatory_requirement`'s own
+sibling, neither handler read `$context`. The reader gates on `read` and the
+writer on `edit_posts`, which is the family's rule for each shape.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryRequirementsTest` | **17 tests, 46 assertions**, 0 failures |
+| `lib/core` unit suite | **4,372 tests / 24,013 assertions**, 0 failures (+17 tests / +46 assertions) |
+| Adapter suite | **712 tests / 3,880 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | **632 rows**; servable **613**; ready **572**; no violations |
+| Toolkit parity | **411 ported**, 9 declined, 89 deferred, 447 remaining; `regulatory-registration` `59 \| 46 \| 0 \| 10 \| 13` → **`59 \| 48 \| 0 \| 10 \| 11`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+#### Where the family stands
+
+Eleven remain: the ten deferred and one undecided, `get_registration_timeline`.
+That tool closes the register — after it, everything left in this family is a
+deferral with a named prerequisite, and the next step is to re-measure the
+portfolio and pick the largest family with no deferrals.

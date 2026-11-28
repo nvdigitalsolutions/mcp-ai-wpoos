@@ -406,6 +406,7 @@
         ],
         "quiz-management": [],
         "regulatory-registration": [
+            "add_regulatory_requirement",
             "approve_registration",
             "check_authority_status",
             "check_document_expiry",
@@ -428,6 +429,7 @@
             "get_reg_document",
             "get_reg_product",
             "get_registration",
+            "get_regulatory_requirements",
             "get_regulatory_updates",
             "get_workflow_execution_log",
             "list_expiring_registrations",
