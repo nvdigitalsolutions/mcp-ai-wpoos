@@ -14875,11 +14875,97 @@ unvalidated reaches a renderer.
 
 #### Where the family stands
 
-Seven undecided, and they are one job: `derivative`, `integral`, `simplify`,
-`solve`, `matrix_operations`, `graph_function` and `render_math_equation` all
-need the media worker's `/api/math/*` route group and a `MathEngineInterface`
-adapter. The worker already depends on mathjs, chartjs-node-canvas and katex, so
-no new engine is required — only the routes and the adapter, in the shape
-`MediaWorkerVideoComposition` and `MediaWorkerImageProcessing` already establish.
+Seven undecided, in two groups rather than one.
+
+**Six call a filter and have no transport of their own.** `calculate_derivative`,
+`calculate_integral`, `simplify_expression`, `solve_equation` and
+`matrix_operations` read a result the `wp_mcp_ai_mathjs_*` filter returns, and
+`graph_function` does the same through `wp_mcp_ai_graph_function`; all six refuse
+with `wp_mcp_ai_engine_missing` when nothing implements it. None of them knows
+how to reach the sidecar. They need a `/api/math/*` route group on the worker —
+which already depends on mathjs, chartjs-node-canvas and katex, so no new engine
+is required — plus a `MathEngineInterface` adapter in the shape
+`MediaWorkerVideoComposition` already establishes.
+
+**One already knows the worker, and its route already exists.**
+`render_math_equation` consults `wp_mcp_ai_katex_render_equation`, then calls
+`sidecar_request( '/api/data/render-math', … )`. That route is live:
+`src/routes/data.js` registers `POST /render-math` over `katex.renderToString`
+and answers `{ success, html, latex }`. So this tool needs no worker work at
+all — only the scoping fix. The method reads `$latex` and `$arguments`, neither
+of which is in its scope: it takes one parameter, `$params`, so every sidecar
+request sent `latex: null` and the tool has never rendered an equation through
+the worker. The same method also carries an unreachable `return $result;` after
+a `return array( 'error' => … )`.
+
+#### What the worker already has, and where mathjs stops
+
+`design-media-worker` 3.4.0 declares `mathjs ^15.2.0` and `katex ^0.18.2` as
+dependencies and `chartjs-node-canvas ^5.0.0` as an optional one, and it already
+serves three related routes: `POST /api/data/math` (`mathjs.evaluate()` over a
+caller-supplied expression and scope), `POST /api/data/render-math` (KaTeX) and
+`POST /api/data/render-chart` (Chart.js, which degrades to a typed
+`503 capability_unavailable` when the native `canvas` build is absent). All are
+registered in `src/index.js` and listed in the worker README, so the six routes
+are additions to an established group rather than a new service.
+
+The dependency does not cover all six operations, though:
+
+| Tool | Operation | Available |
+|---|---|---|
+| `calculate_derivative` | `math.derivative()` | mathjs, installed |
+| `simplify_expression` | `math.simplify()` | mathjs, installed |
+| `matrix_operations` | `det`/`inv`/`transpose` and algebra | mathjs, installed |
+| `graph_function` | Chart.js render | chartjs-node-canvas, optional dependency (native `canvas`) |
+| `calculate_integral` | symbolic integration | **no** — mathjs has no `integral`; it is an open feature request, and the third-party `mathjs-simple-integral` extension has no integration by parts and no u-substitution |
+| `solve_equation` | general symbolic solving | **no** — mathjs reaches polynomials through `rationalize` and `polynomialRoot`, and nothing beyond them |
+
+The last two need a computer-algebra library the worker does not carry, where
+nerdamer covers simplify, `solveEquations` and integration and Algebrite is the
+usual fallback. That is a dependency decision for a commercial sidecar, not a
+route addition, so those two are deferred on the decision rather than on effort.
+
+#### The package gate would refuse before the route was reached
+
+The five mathjs tools open with a local-path probe:
+
+```php
+if ( function_exists( 'wp_mcp_ai_is_npm_package_available' ) && ! wp_mcp_ai_is_npm_package_available( 'mathjs' ) ) {
+	return new WP_Error( 'wp_mcp_ai_package_not_available', ... );
+}
+```
+
+`wp_mcp_ai_is_npm_package_available()`
+(`addons/pro/includes/npm-integration-filters.php`) checks the CDN loader,
+`assets/vendor/`, `node_modules/`, the document-generation bundles and
+Cornerstone — and has **no worker branch at all**. A site that routes maths to
+the sidecar but does not ship mathjs locally would refuse with
+`package_not_available` and never reach the filter, however healthy the worker
+was. `mathjs` is also absent from
+`WP_MCP_AI_Pro_Settings::WORKER_ROUTED_PACKAGES`, the map that would have told
+the status UI the operation lives elsewhere.
+
+Nothing in `npm-integration-filters.php` binds any of the six filters either, so
+on WordPress these tools fail twice over: the package gate refuses first and the
+filter would refuse second. The port should not reproduce the local-path probe.
+Availability on the Laravel runtime is the worker's answer — `/api/health` when
+asked, a typed refusal from the route when not — and a `MathEngineInterface`
+seam keeps that decision in one place.
+
+One constraint applies to any route added here: `POST /api/data/math` today
+evaluates an arbitrary caller-supplied expression with no per-expression length
+or time bound, so a `/api/math/*` group should carry both before it widens the
+surface.
+
+Both groups also share a presentation defect. The six that return LaTeX finish by
+appending markup to the response `message`: `link` and `script defer` tags
+pointing at the bundled KaTeX, a `div` carrying `data-latex`, and an inline
+`script` that calls `katex.render` in the browser. `is_katex_loaded()` hard-codes
+`false`, so every call re-emits the stylesheet and script tags inside the message
+body, and each placeholder carries an id from `wp_generate_password()`. An API
+response cannot enqueue assets, and a chat surface that sanitises HTML strips all
+of it, leaving the monospace `$$ … $$` fallback. The port returns `latex` as data
+and leaves rendering to the surface, which owns the KaTeX boundary.
+
 That slice owns a worker version bump across the five recorded spots. When it
-lands `math` closes at 9 of 9 with no deferrals.
+lands, `math` closes at 9 of 9 with no deferrals.
