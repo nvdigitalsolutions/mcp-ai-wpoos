@@ -394,6 +394,7 @@
         "regulatory-registration": [
             "approve_registration",
             "check_authority_status",
+            "check_document_expiry",
             "check_hs_code",
             "check_product_compliance",
             "create_reg_product",
@@ -403,6 +404,7 @@
             "get_reg_document",
             "get_reg_product",
             "get_registration",
+            "list_expiring_registrations",
             "list_reg_documents",
             "list_reg_products",
             "list_registrations",

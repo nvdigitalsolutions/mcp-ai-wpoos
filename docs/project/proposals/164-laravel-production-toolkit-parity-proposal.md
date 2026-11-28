@@ -13614,3 +13614,74 @@ The next slice is the expiry and monitoring group — `check_document_expiry`,
 `list_expiring_registrations`, `send_expiry_alerts` and
 `generate_expiry_forecast` — which is the first group in this family where a
 *dated* verdict is computed rather than an enumerated one.
+
+### §164.153 — `regulatory-registration`, slice 10a: expiry readers
+
+Two read-only tools, split from the group because they share a subject the
+other two do not: a verdict computed from a date. `send_expiry_alerts` and
+`generate_expiry_forecast` follow as 10b and 10c.
+
+#### The day count was wrong twice over
+
+Both tools computed
+`floor( ( strtotime( $expiry_date ) - time() ) / DAY_IN_SECONDS )`. Two faults
+followed from that one expression.
+
+An unreadable date is `false`, and `false` subtracts as zero, so a document
+dated `n/a` was reported as expired roughly fifty-five years ago — with a day
+count the value does not support. The port keeps the verdict, because a date
+that cannot be read is not evidence of validity, and reports `days_to_expiry:
+null` with the value named in `unparsed_expiry_dates`.
+
+The arithmetic also mixed a midnight with an instant. A document that expired
+*yesterday* reported `-2` as soon as the clock passed midday, because
+`floor` rounds a negative fraction away from zero. The number therefore drifted
+through the day, and never matched the calendar a compliance officer reads. The
+port compares two UTC calendar dates: today is `0`, yesterday is `-1`, and the
+value is stable from midnight to midnight.
+
+#### The sorts contradicted their own comment
+
+`expiring_soon` was sorted ascending — nearest expiry first — and `expired` was
+sorted **descending**, so the most recently expired record led and the one that
+had been invalid longest trailed. Both carried the comment "most urgent first".
+The port orders both lists by `days_to_expiry` ascending, with an unreadable
+date first, so overdue records lead with the longest-invalid and the two lists
+read as one monotone sequence when concatenated.
+
+#### What was not a defect
+
+`list_expiring_registrations` declares `include_expired` as `true` and reads it
+with `isset( ... ) ? (bool) ... : true`. That is the same answer for an omitted
+argument, so it joins `include_history` as one of the two default-true booleans
+in this family that were actually true — stated because six neighbours were
+not.
+
+#### Three smaller decisions
+
+- **A document with no expiry is not "valid".** Only documents carrying a
+  non-empty `expiry_date` are considered. WordPress behaved the same way and
+  never said so; the port says it, because `valid_count` would otherwise read
+  as a statement about every document in the store.
+- **An unreadable date stays visible when expired rows are hidden.** With
+  `include_expired: false` the row is excluded from `expired`, but the value is
+  still listed in `unparsed_expiry_dates`: a date nobody can read is a data
+  fault, not a result the filter is entitled to hide.
+- **The window is a question, not a hint.** `warning_days` outside 1–365 is
+  refused rather than clamped, so a caller that asks for a ten-year window is
+  told it is not a supported question instead of silently receiving 365.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryExpiryToolsTest` | **18 tests, 49 assertions**, 0 failures |
+| `lib/core` unit suite | **4,192 tests / 23,194 assertions** (+18 tests, +49 assertions), 0 failures |
+| Adapter suite | **698 tests / 3,794 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 599 → **601 rows**; servable 580 → **582**; ready 539 → **541**; no violations |
+| Toolkit parity | 378 → **380 ported**, 9 declined, 84 deferred, 467 → **465 remaining**; `regulatory-registration` `59 \| 26 \| 0 \| 5 \| 33` → **`59 \| 28 \| 0 \| 5 \| 31`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors across the two tools, the base class, the test and the manifest |
+
+The next slice is `generate_expiry_forecast` (10b), which adds risk bands and a
+monthly timeline — and with them a month-bucket bug worth measuring first.
