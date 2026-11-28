@@ -3520,6 +3520,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryRegistrationCoreTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'list_reg_documents' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\ListRegDocumentsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress document listing over ContentStoreInterface (Proposal 164 section 164.149). One correction: WordPress filtered by expiry classification in PHP after pagination, so total and total_pages counted rows the caller never saw and a page could come back short; the port reads the matching set up to the family 1000-row cap, filters, then paginates. The product and registration filters stay an OR group. The row status is the record status, where WordPress read a status meta key no tool ever wrote. Capability is read.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryDocumentWritesTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'list_reg_products' => array(
 			'class' => 'Nvoos\Core\Tool\Regulatory\\ListRegProductsTool',
 			'readiness' => 'ready',
@@ -4779,6 +4788,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/CacheQueueAndBatchToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'track_document_version' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\TrackDocumentVersionTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress version history over ContentStoreInterface (Proposal 164 section 164.149). Two defects fixed: the handler saved version_history before appending the new version, so the current version never appeared in its own history and the change notes were discarded; and it appended the outgoing version unconditionally, so repeated calls accumulated duplicates. The port appends only when the outgoing entry differs and saves once. History sorts by version_compare, so 2.10 ranks above 2.9. New file URLs are restricted to http and https.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryDocumentWritesTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'update_appointment' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Calendar\\UpdateAppointmentTool',
 			'readiness' => 'ready',
@@ -4835,6 +4853,15 @@ return array(
 			'probe' => 'dry_run',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
+		),
+		'update_reg_document' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\UpdateRegDocumentTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress document update over ContentStoreInterface (Proposal 164 section 164.149). A partial update that reports only the fields it wrote, where WordPress listed every field the caller supplied even when nothing was stored. The rejected status still maps to trash, which removes the record from published listings, as it did; the description says so because the word suggests the opposite. Dates are validated as ISO and the document type is written to meta and term in the caller spelling.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryDocumentWritesTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'update_reg_product' => array(
 			'class' => 'Nvoos\Core\Tool\Regulatory\\UpdateRegProductTool',
