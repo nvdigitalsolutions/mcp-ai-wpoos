@@ -136,6 +136,7 @@ wp-mcp-ai-pro-capture-tool-base
 wp-mcp-ai-pro-gmail-client
 wp-mcp-ai-pro-google-drive-client
 wp-mcp-ai-pro-google-service-account
+wp-mcp-ai-pro-mailjet-credentials
 wp-mcp-ai-pro-tool-add-discord-message-reaction
 wp-mcp-ai-pro-tool-add-google-chat-space-member
 wp-mcp-ai-pro-tool-add-telegram-message-reaction
@@ -236,6 +237,7 @@ wp-mcp-ai-pro-tool-list-google-calendar-events
 wp-mcp-ai-pro-tool-list-google-calendars
 wp-mcp-ai-pro-tool-list-google-chat-space-members
 wp-mcp-ai-pro-tool-list-icloud-drive-files
+wp-mcp-ai-pro-tool-list-mailjet-connections
 wp-mcp-ai-pro-tool-list-onedrive-files
 wp-mcp-ai-pro-tool-list-pro-schedules
 wp-mcp-ai-pro-tool-list-templates
