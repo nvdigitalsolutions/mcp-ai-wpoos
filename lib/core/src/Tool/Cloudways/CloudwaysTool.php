@@ -81,6 +81,41 @@ abstract class CloudwaysTool extends AbstractTool
     }
 
     /**
+     * The server and app a call targets, or the refusal envelope.
+     *
+     * Twenty-odd tools address one application on one server. Both ids are
+     * required and both are validated before a request, so a caller that forgot
+     * an argument gets a named validation error instead of a 404 from Cloudways
+     * that does not say which argument was wrong.
+     *
+     * @param array<string, mixed> $arguments Tool arguments.
+     *
+     * @return array{server_id: int, app_id: int}|mixed The pair, or the canonical error envelope.
+     */
+    protected function appPair(array $arguments): mixed
+    {
+        $serverId = $this->serverId($arguments);
+
+        if ($serverId <= 0) {
+            return $this->errors->validationFailed(
+                'A valid server id is required.',
+                array('server_id' => array('The id shown by cloudways_list_servers.'))
+            );
+        }
+
+        $appId = $this->appId($arguments);
+
+        if ($appId <= 0) {
+            return $this->errors->validationFailed(
+                'A valid app id is required.',
+                array('app_id' => array('The id shown by cloudways_list_apps.'))
+            );
+        }
+
+        return array('server_id' => $serverId, 'app_id' => $appId);
+    }
+
+    /**
      * A string field from an API row, or an empty string when absent.
      */
     protected function text(mixed $value): string
