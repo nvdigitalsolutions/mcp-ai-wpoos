@@ -31,7 +31,7 @@ use Nvoos\Core\Support\Text;
 class AppCreateTool extends CloudwaysTool
 {
     /** The application types this tool accepts. */
-    public const APPS = array('wordpress', 'woocommerce', 'laravel', 'magento', 'php');
+    public const APPS = CloudwaysTool::APP_TYPES;
 
     public function __construct(ErrorFactoryInterface $e, CloudwaysClientInterface $client)
     {
