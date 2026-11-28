@@ -583,6 +583,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/OrchestrationScheduleToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'customer_lifetime_value' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\CustomerLifetimeValueTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports lifetime value (Proposal 164 section 164.183) over the customer aggregate added in section 164.181. The reference listed customers with one query and then called wc_get_orders with limit -1 once per customer, so include_all over a hundred customers was a hundred and one queries and every one hydrated a full order history; this is one grouped aggregate. The projection is the correction that matters: the reference divided spend by the span between the first and last order, floored at one month, and multiplied by the prediction window, so a customer whose only order was three days old was projected at twelve times that order and both reported thirteen times it as lifetime value. The rate here is historical spend over the window that was actually observed, so a twelve month history and a twelve month prediction agree, and a store younger than its window understates rather than inflates. reset() and end() assumed wc_get_orders returns newest first, an ordering the call never asked for, so a changed default would have swapped first and last and divided by a negative span; the dates come from MIN and MAX in the aggregate. Identity is the account id the order carries, because the reference queried orders by billing email and silently dropped older orders placed under a different address; email is refused by name since resolving an address to an account needs a user directory this runtime does not have. Giving neither selector nor include_all was a no_customers_found error that read as nobody bought, and both together silently preferred customer_id; one is required, both is a field error, and a specific account with no paid orders is a not-found. total_clv sums only the components requested while historical spend is always reported as the basis a projection is derived from. The currency is required and is a filter. Read-only.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CustomerLifetimeValueToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'content_freshness_checker' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ContentFreshnessCheckerTool',
 			'readiness' => 'ready',

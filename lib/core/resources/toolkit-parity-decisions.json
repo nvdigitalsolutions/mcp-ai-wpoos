@@ -57,10 +57,6 @@
             "decision": "deferred",
             "reason": "Fetches crypto boards, quotes and OHLC history from keyless public endpoints through WP_MCP_AI_Market_Data_Providers (CoinGecko with a Binance fallback), cached in transients. Prerequisite: a market-data client over HttpClientInterface with a cache and a written provider decision, since the terms, rate limits and field shapes belong to whoever supplies the data. Serving it without one ships a wrapper whose only behaviour is an error."
         },
-        "customer_lifetime_value": {
-            "decision": "deferred",
-            "reason": "Computes lifetime value per customer. Prerequisite: CustomerStoreInterface with order aggregates; the arithmetic is trivial and the missing part is the data."
-        },
         "earnings_calendar_fetcher": {
             "decision": "deferred",
             "reason": "Reads an earnings calendar through WP_MCP_AI_Market_Data_Providers. Prerequisite: the same market-data client as crypto_market_data, because the calendar is a provider response and the tool does no arithmetic of its own."

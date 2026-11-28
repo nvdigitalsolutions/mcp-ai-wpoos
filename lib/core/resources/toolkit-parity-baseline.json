@@ -254,6 +254,7 @@
         "ecommerce": [
             "bulk_order_status_update",
             "bulk_update_products",
+            "customer_lifetime_value",
             "generate_invoice_pdf",
             "get_order_analytics",
             "printful",
