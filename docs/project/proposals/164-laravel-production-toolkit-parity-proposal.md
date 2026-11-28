@@ -16117,3 +16117,72 @@ One currency; paid statuses; spend descending, then customer id, so two runs on 
 `customer_lifetime_value` follows from the same two aggregates — historical spend per customer plus the predictive component.
 
 `woo_customers` is read-only (`get`, `list`, `search`, `get_orders`) and needs one thing this slice does not provide: a **customer directory** that can list accounts with no paid orders in a window. `OrderQuery::$customerId` already answers `get_orders`; the directory is a separate, smaller query. `export_customer_data` then combines that directory with orders and lines for one customer.
+
+### 164.182 — `segment_customers`, and three of five segment types
+
+Measured before the port. `ecommerce` moves to **44 wp / 22 ported / 1 declined / 21 deferred**.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `segment_customers` | `SegmentCustomersTool` -> `OrderStoreInterface::topCustomers()` |
+
+`ready`: the customer aggregate exists (164.181).
+
+#### The register predicted a store it did not need
+
+Its entry said *"Builds a customer audience from spend, order count, dates and tags. Prerequisite: CustomerStoreInterface, which does not exist yet, plus the order aggregates the filters need."* Two corrections belong here. The register reasoned from the tool's *name* to a customer store; everything the reference actually segments on comes from **orders**, so what it needed was an order aggregate, and 164.181 built one. The prediction was directionally right and specifically wrong, and the real shape was smaller than predicted.
+
+It also listed **tags**, which the tool has no argument for. There is no tag filter in the reference, in the schema or in the query.
+
+#### Three types computed, two refused by name
+
+`rfm`, `value_based` and `custom` are computed. The other two are refused with their prerequisites rather than answered with something that looks like a result:
+
+- **`geographic`** needs a billing address, and the order aggregate carries only a billing name and an email. The reference is worse than unbuilt: its schema advertises `country`, `state`, `city` and `postcode`, its query fetches only country and state, and `city` and `postcode` therefore fall through its `if/elseif` to `location_key = ''` — so every customer in the store lands in one segment named `""`.
+- **`product_preference`** filters by product *category*, and the product model has no category field — the same gap that made `woo_products` refuse `category` in 164.177. The reference did not implement it either: it returned two empty segments and a string saying order-item analysis was required. That string is a note inside a data structure, which a caller reads as a segment.
+
+#### Identity is the account
+
+The reference grouped by `_billing_email`, so a guest who checked out twice under two addresses counted as two customers, and a registered customer who changed their billing email was two accounts with their orders split. It also read `post_author` as the customer id, which on a WooCommerce order is usually zero — the real reference is `_customer_user`. This reads `topCustomers()`, which keys on the account (164.181).
+
+#### `custom_criteria` had two arguments nothing read
+
+`date_from` and `date_to` were accepted inside `custom_criteria` and never referenced, so a caller who filtered by date got an unfiltered answer that looked filtered — the same class of defect as `include_refunds` in 164.179. The window is the top-level date pair here, and the nested forms are refused by name rather than silently ignored.
+
+#### Value tiers were resolved by array order
+
+`segment_by_value()` built tiers keyed by a sanitized `name`, read `name`, `min` and `max` without checking that the keys existed, and matched with `break` — so two overlapping tiers silently gave the answer to whichever came first in the caller's array. Tiers are validated here: a name, a numeric min, an optional numeric max, no duplicate names, and no overlaps. Overlap is refused because two instructions about one field have no ordering that is not arbitrary.
+
+#### No currency, and thresholds in none
+
+`total_spent` was a bare float summed across whatever the store used, and `monetary_min`, every tier bound and every custom bound were numbers in no currency. The currency is required and is a filter; every threshold is an amount in it.
+
+#### Segments were unbounded payloads
+
+Each segment embedded the full customer record for every member, so five segments over a thousand customers was a very large JSON document inside a tool result. A segment now reports its true `count` and lists at most 25 members, with `truncated` set when there are more. **Empty segments are kept**: "nobody is at risk" is an answer, whereas a segment missing from the response reads as one that was never computed — which is exactly how the reference's stub `product_preference` misled its callers.
+
+#### The analysis ceiling moved, and only for customers
+
+`topCustomers()` accepted 1..100, which is right for a "top spenders" listing and wrong for a segmentation pass whose default is a thousand customers. The bound is 1..10000 for that method only; `topProducts()` stays at 100. Both are guards against an unbounded query rather than page sizes, and the calling tool decides what it will spend.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,758 / 25,103 |
+| adapter | 772 / 4,039, 2 skipped |
+| readiness | 652 rows, servable 633 (delegated 13), no violations |
+| parity | 431 ported / 9 declined / 93 deferred / 428 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+#### After this
+
+Twenty-one ecommerce tools remain deferred.
+
+`customer_lifetime_value` is next and needs nothing new: historical spend per customer is `topCustomers()`, and its predictive half is arithmetic over the same rows.
+
+`export_customer_data` and `woo_customers` still need the **customer directory** 164.181 named — accounts with no paid orders, which a spend aggregate cannot list by construction. `OrderQuery::$customerId` already answers `woo_customers`' `get_orders` action.
+
+The other three clusters are unchanged: coupons need a promotion model, inventory needs a movement ledger plus a multi-location decision, and carts need a cart model and a mail channel.

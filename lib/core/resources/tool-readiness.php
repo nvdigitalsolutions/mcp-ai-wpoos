@@ -4729,6 +4729,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/OrchestrationPlanToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'segment_customers' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\SegmentCustomersTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports customer segmentation (Proposal 164 section 164.182) over the customer aggregate added in section 164.181. The reference grouped by billing email, so a guest who checked out twice under two addresses counted as two customers and a registered customer who changed their email was two accounts with their orders split, and it read post_author as the customer id, which on a WooCommerce order is usually zero. This keys on the account, like topCustomers. RFM, spend tiers and custom order and spend bounds are computed. geographic is refused by name because the order aggregate carries only a billing name and email, so there is no country, state, city or postcode, and the reference fetched neither city nor postcode while its schema advertised both, so those values landed in one segment keyed by the empty string. product_preference is refused because it filters by product category and the product model has no category field, and the reference did not implement it either, returning two empty segments and a note. custom_criteria accepted date_from and date_to and never read them, so a caller who filtered by date got an unfiltered answer that looked filtered; the window is the top-level date pair and the nested forms are refused. Value tiers were resolved by array order when they overlapped and read name, min and max without checking that they existed; overlapping, duplicate or non-numeric tiers are field errors here. total_spent and every threshold had no currency; the currency is required and every threshold is an amount in it. Each segment embedded every customer record, so five segments over a thousand customers was a megabyte of JSON; a segment reports its true count and lists at most 25 members with truncated set. Empty segments are kept, because a segment missing from the response reads as one that was not computed. Read-only.',
+			'evidence' => 'lib/core/tests/Unit/Tool/SegmentCustomersToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'semantic_content_search' => array(
 			'class' => 'Nvoos\\Core\\Tool\\SemanticContentSearchTool',
 			'readiness' => 'ready',

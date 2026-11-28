@@ -363,8 +363,8 @@ class OrderStore implements OrderStoreInterface {
 			throw new ValidationException( 'A customer aggregate needs an ISO 4217 currency.' );
 		}
 
-		if ( $limit < 1 || $limit > 100 ) {
-			throw new ValidationException( 'A customer aggregate returns between 1 and 100 customers.' );
+		if ( $limit < 1 || $limit > 10000 ) {
+			throw new ValidationException( 'A customer aggregate returns between 1 and 10000 customers.' );
 		}
 
 		$rows = $this->filtered( $query )
