@@ -9,6 +9,10 @@
             "decision": "declined",
             "reason": "A watermark is a per-image `edit` operation, and a batch over it is a loop a caller writes in one line; offering it as a primitive would add a slug without adding a capability. The video counterpart, apply_watermark_to_video, is already served, so nothing in the portfolio changes shape. Declined rather than deferred because no prerequisite would make it more than a loop."
         },
+        "bank_account_sync": {
+            "decision": "deferred",
+            "reason": "Wraps Plaid: connect an account, sync transactions, list accounts, read transactions. The WordPress tool is a mock - it stores the Plaid access token in user meta, generates the account id with uniqid, and sync_transactions returns synced_count 0 with the sentence 'in production this would fetch real transactions'. Prerequisite: a Plaid client and a credential store. Porting the placeholder would persist a bank access token in a record nothing audits."
+        },
         "batch_process_images": {
             "decision": "declined",
             "reason": "It would be a chain of convert, resize and compress, and ImageProcessingInterface::resize/crop/rotate/convert each take a source path and return a persisted path, so a chain is one worker round trip and one intermediate file per step. A real batch needs a multi-operation `/transform` call, which is a worker contract change rather than a tool. The three served tools (optimise_images_batch, generate_responsive_images, compress_image) already cover the jobs this slug names, so there is nothing left to build behind the name."
@@ -57,9 +61,21 @@
             "decision": "deferred",
             "reason": "Renders React/Remotion compositions by running node against a pre-built addons/pro/bin/remotion-render.bundle.js shipped with the Pro plugin. Neither that bundle nor a Node subprocess path exists on this runtime; the media worker is Node but exposes no Remotion endpoint. Standing one up is a service and a product decision, not a tool to port. Prerequisite: a Remotion render route on the media worker."
         },
+        "crypto_market_data": {
+            "decision": "deferred",
+            "reason": "Fetches crypto boards, quotes and OHLC history from keyless public endpoints through WP_MCP_AI_Market_Data_Providers (CoinGecko with a Binance fallback), cached in transients. Prerequisite: a market-data client over HttpClientInterface with a cache and a written provider decision, since the terms, rate limits and field shapes belong to whoever supplies the data. Serving it without one ships a wrapper whose only behaviour is an error."
+        },
         "customer_lifetime_value": {
             "decision": "deferred",
             "reason": "Computes lifetime value per customer. Prerequisite: CustomerStoreInterface with order aggregates; the arithmetic is trivial and the missing part is the data."
+        },
+        "earnings_calendar_fetcher": {
+            "decision": "deferred",
+            "reason": "Reads an earnings calendar through WP_MCP_AI_Market_Data_Providers. Prerequisite: the same market-data client as crypto_market_data, because the calendar is a provider response and the tool does no arithmetic of its own."
+        },
+        "economic_calendar_fetcher": {
+            "decision": "deferred",
+            "reason": "Reads an economic calendar through WP_MCP_AI_Market_Data_Providers. Prerequisite: the market-data client. Unlike the forecast and sentiment analyzers, which compute over a series the caller supplies, this tool has nothing to compute until a provider answers."
         },
         "export_customer_data": {
             "decision": "deferred",
@@ -80,6 +96,14 @@
         "extract_video_metadata": {
             "decision": "declined",
             "reason": "Superseded by get_video_metadata, which is served: it returns the container, duration and bitrate plus the video and audio streams (codec, dimensions, frame rate, channels), and accepts file_id or a URL where this tool accepts only video_id. Its analyze_audio flag asks for the audio-stream detail the served tool already returns, so a port would be a second slug for one answer. Declined rather than deferred because there is nothing left to build."
+        },
+        "financial_news_aggregator": {
+            "decision": "deferred",
+            "reason": "Fetches and normalises finance headlines over wp_remote_get. Prerequisite: an HTTP client plus a source and terms decision; the WordPress tool hard-codes its feed list, so a port would freeze someone's feeds inside the runtime and still need a client to fetch them."
+        },
+        "financial_search": {
+            "decision": "deferred",
+            "reason": "Scrapes HTML from five sites: SEC EDGAR full-text search, Yahoo lookup, Google Finance, Investopedia and Finviz. Prerequisite: a provider decision and a terms review. HTML scraping breaks without notice and rate-limits by IP, so a port would carry an unowned dependency into a commercial admin - and the SEC endpoint it uses is the one that would be worth doing properly, as a documented JSON client."
         },
         "fnb_import_table": {
             "decision": "deferred",
@@ -209,13 +233,33 @@
             "decision": "deferred",
             "reason": "Scans for products under a threshold and notifies. Prerequisite: a catalog adapter to read stock plus the notification seam. The threshold rule is core work; what is missing is the reader."
         },
+        "macro_data_fetcher": {
+            "decision": "deferred",
+            "reason": "Reads macro series through WP_MCP_AI_Market_Data_Providers. Prerequisite: the market-data client. The tool is a thin projection of the provider response, so there is nothing to port ahead of the provider."
+        },
         "manage_classroom_push_watch": {
             "decision": "deferred",
             "reason": "It registers, renews and removes Classroom push-notification watches, which needs the client *and* a publicly reachable callback URL that this deployment model does not provide. Prerequisite: a Google Classroom client plus a public webhook endpoint the worker or app can serve."
         },
+        "market_overview_widget": {
+            "decision": "deferred",
+            "reason": "Builds a market board from quotes fetched through WP_MCP_AI_YFinance_Service, a microservice reached at yfinance_service_url (default http://localhost:5000/) and gated by enable_yfinance_service. Prerequisite: that service, or a replacement client. The Laravel runtime has no sidecar, so the tool would answer with a connection error and call it a board."
+        },
+        "market_screener": {
+            "decision": "deferred",
+            "reason": "Screens a symbol universe through WP_MCP_AI_Market_Data_Providers. Prerequisite: the market-data client. The WordPress implementation returns placeholder rows from a locally filtered list rather than a live screen, so porting it as-is would present a fixed list as a scan."
+        },
         "optimize_image_sharp": {
             "decision": "deferred",
             "reason": "It duplicates optimise_images_batch (which already batches convert and compress) plus the resize that batch_process_images would have added, so it is the same capability under a third name and lands with the multi-operation transform rather than beside it. Prerequisite: a multi-operation `/transform` call on the media worker."
+        },
+        "options_chain_fetcher": {
+            "decision": "deferred",
+            "reason": "Reads an options chain through WP_MCP_AI_Market_Data_Providers. Prerequisite: the market-data client, plus a decision on delayed-versus-live data, because an options chain quoted as current when it is delayed is the kind of wrong that costs money."
+        },
+        "portfolio_visualizer": {
+            "decision": "deferred",
+            "reason": "Renders portfolio series from prices fetched through WP_MCP_AI_YFinance_Service. Prerequisite: the yfinance sidecar or a replacement client. The stored portfolio itself lives in portfolio_transaction_log, which is ported without live pricing, so the local half of this tool is already reachable."
         },
         "post_classroom_announcement": {
             "decision": "deferred",
@@ -224,6 +268,10 @@
         "prepare_file_for_vector_store": {
             "decision": "deferred",
             "reason": "It converts CSV, XLSX and PPTX into PDF or structured text, OCRs scanned PDFs and repairs encoding before ingest. The runtime has the OCR half (OcrServiceInterface, PdfOcrInterface, PdfTextExtractorInterface) and PDF mutation, but nothing reads a spreadsheet or a slide deck: the media worker generates office documents, it does not parse them. Prerequisite: an office-document reader that exposes rows and sheets as text."
+        },
+        "price_alerts": {
+            "decision": "deferred",
+            "reason": "Stores alerts in its own $wpdb table and checks them against prices from WP_MCP_AI_YFinance_Service and WP_MCP_AI_Finnhub_Provider. Prerequisite: a market-data client plus an alerts store. The WordPress table sits outside every store interface this runtime uses, so a port needs both halves and the second one is the smaller problem."
         },
         "process_order_workflow": {
             "decision": "deferred",
@@ -276,6 +324,10 @@
         "send_cart_recovery_email": {
             "decision": "deferred",
             "reason": "Sends a recovery message for one cart. Prerequisite: a cart/session store plus the mail seam. The mail half is already served; the cart half is not."
+        },
+        "stock_data_fetcher": {
+            "decision": "deferred",
+            "reason": "Search, quote, history, batch quotes and indicators over WP_MCP_AI_YFinance_Service, the microservice at yfinance_service_url (default http://localhost:5000/) gated by enable_yfinance_service. Prerequisite: that service or a replacement client. The tool itself is a request mapper with no arithmetic, which is why there is nothing worth porting before the data exists."
         },
         "sync_classroom_courses_to_ecas": {
             "decision": "deferred",
@@ -372,6 +424,10 @@
         "vault_manage": {
             "decision": "deferred",
             "reason": "The write half of the same vault: folder and item creation, updates, moves and deletion. It shares the prerequisite of `vault_access` — there is no encrypted store — and splitting the pair would leave management without anything to manage. Prerequisite: a vault contract with an encrypted backing store and a key source."
+        },
+        "watchlist_sync": {
+            "decision": "deferred",
+            "reason": "Maintains a per-user watchlist and prices it through WP_MCP_AI_YFinance_Service. Prerequisite: the yfinance sidecar or a replacement client. The list half is a user-meta record that could be ported alone, but a watchlist whose only output is a price it cannot fetch is a list, not a watchlist, so the whole slug waits for the client."
         },
         "web_browser": {
             "decision": "deferred",

@@ -271,22 +271,6 @@ class GetNotificationHistoryTool extends RegulatoryTool
     }
 
     /**
-     * The date part of a stored timestamp, or an empty string.
-     *
-     * Same rule as the workflow log: `Y-m-d H:i:s` in UTC compared against
-     * `Y-m-d` arguments on the first ten characters, so nothing goes through
-     * `strtotime()` and an unreadable value is reported rather than dated 1970.
-     */
-    protected function stampDate(string $stamp): string
-    {
-        if (1 !== preg_match('/^(\d{4}-\d{2}-\d{2})/', $stamp, $matches)) {
-            return '';
-        }
-
-        return $this->isIsoDate($matches[1]) ? $matches[1] : '';
-    }
-
-    /**
      * One returned history row. Unknown meta keys are carried under `details`.
      *
      * @return array<string, mixed>

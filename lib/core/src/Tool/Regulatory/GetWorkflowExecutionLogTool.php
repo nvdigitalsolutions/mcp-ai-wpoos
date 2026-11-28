@@ -285,23 +285,6 @@ class GetWorkflowExecutionLogTool extends RegulatoryTool
     }
 
     /**
-     * The date part of a stored timestamp, or an empty string.
-     *
-     * Checks the shape rather than parsing it: `nowStamp()` writes
-     * `Y-m-d H:i:s` and the date arguments are `Y-m-d`, so the first ten
-     * characters are the comparison key. A value that is not a date is reported
-     * as unreadable instead of being coerced to 1970.
-     */
-    protected function stampDate(string $stamp): string
-    {
-        if (1 !== preg_match('/^(\d{4}-\d{2}-\d{2})/', $stamp, $matches)) {
-            return '';
-        }
-
-        return $this->isIsoDate($matches[1]) ? $matches[1] : '';
-    }
-
-    /**
      * One returned log row.
      *
      * Meta keys this tool does not know about are carried through under

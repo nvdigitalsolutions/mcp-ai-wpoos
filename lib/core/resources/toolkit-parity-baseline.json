@@ -429,6 +429,7 @@
             "get_reg_document",
             "get_reg_product",
             "get_registration",
+            "get_registration_timeline",
             "get_regulatory_requirements",
             "get_regulatory_updates",
             "get_workflow_execution_log",

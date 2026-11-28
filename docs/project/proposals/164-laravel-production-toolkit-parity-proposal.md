@@ -14496,5 +14496,189 @@ writer on `edit_posts`, which is the family's rule for each shape.
 
 Eleven remain: the ten deferred and one undecided, `get_registration_timeline`.
 That tool closes the register — after it, everything left in this family is a
-deferral with a named prerequisite, and the next step is to re-measure the
-portfolio and pick the largest family with no deferrals.
+deferral with a named prerequisite (§164.163).
+
+### §164.163 — `regulatory-registration`, slice 16: the registration timeline
+
+One tool, 408 lines, and it closes the register.
+
+#### An approved registration could never read as complete
+
+```php
+'status' => ! empty( $submission_date ) ? 'in_progress' : 'pending',
+```
+
+The review milestone was `in_progress` whenever a submission date existed, with no
+condition on approval. So the phase never ended: an **approved** registration
+scored one completed milestone out of three (`66.67%`) and reported
+`current_phase: "Under Review"` for ever, while the approval row beside it said
+`completed`. Every consumer that read progress or phase got the wrong answer for
+the one state that matters most.
+
+The port completes the review when an approval date exists, so an approved
+registration reaches `100%` and `"Completed"`. The review row's `actual_date`
+stays `null`: WordPress never populated it either, and inventing one would claim
+to know when review ended rather than when approval was recorded.
+
+#### An unreadable date put the schedule in 1970
+
+`strtotime()` returns `false` for anything it cannot read, and `false` is `0`, so
+a submission date of `"sometime last spring"` made every target date
+`1970-05-01`. The port parses with `date_create_immutable()`, names the field in
+`unreadable_dates`, and omits the dependent figures rather than computing them
+from a false epoch. The timeline cannot confirm a phase it cannot date, so the
+milestone stays `in_progress` rather than being marked complete.
+
+#### The expectations are a table, and `basis` says which row
+
+Nothing here contacts an authority; the days are fixed per registration type and,
+for LK, AE and SA, per country. Two consequences the port makes visible:
+
+- `total` is computed as the sum of the five phases, so the literal in the table
+  cannot drift from the response.
+- `basis` names the row used. The lookup checks the country table before the type
+  table, so a Sri Lankan **variation** falls back to `LK/new` — 210 days — rather
+  than to the 81-day default variation schedule. That is the WordPress
+  precedence, kept and named rather than silently corrected, because changing it
+  would move every estimate for those countries.
+
+#### One date helper, once
+
+`stampDate()` was written twice, in the workflow log and the notification
+history. This tool needed the same reader, so it moved to `RegulatoryTool` and
+both copies were deleted — the same consolidation `flag()` and
+`checkRecipients()` received in §164.159 and §164.161. Three tools, one rule:
+when a helper is needed a second time, it moves up.
+
+#### Gating
+
+The WordPress handler read no capability — the fifth tool in this family with
+that gap. The port gates on `read`.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryTimelineTest` | **11 tests, 44 assertions**, 0 failures |
+| `lib/core` unit suite | **4,383 tests / 24,057 assertions**, 0 failures (+11 tests / +44 assertions) |
+| Adapter suite | **712 tests / 3,881 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | **633 rows**; servable **614**; ready **573**; no violations |
+| Toolkit parity | **412 ported**, 9 declined, 89 deferred, 446 remaining; `regulatory-registration` `59 \| 48 \| 0 \| 10 \| 11` → **`59 \| 49 \| 0 \| 10 \| 10`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+#### The family closes
+
+`59 | 49 | 0 | 10 | 10`. **Zero undecided.** The ten that remain are deferrals
+with named prerequisites: five Excel readers/writers, three PDF/document
+generators, and the two authority API clients from §164.160.
+
+That makes this the template for the rest of the portfolio: a family is finished
+when every slug is ported, declined with an argument, or deferred with a
+prerequisite — not when the easy ones are done. The next family should be chosen
+by **manifest leverage**: Proposal 149 §56 renders any toolkit's settings,
+workbench and dashboard from a manifest, so a family whose manifest already
+exists gains an admin surface with no page work. `financial-planner`,
+`social-media`, `dietpi`, `comic-creation`, `analytics` and `multilingual` all
+have manifests in the app today and no tools ported.
+
+### §164.164 — `financial-planning`, slice 1: the measurement
+
+Forty-four tools, 18,314 lines — 2.3 times the whole regulatory family, which
+took sixteen slices. No code was written for this slice. Forty-four tools had to
+be classified before one was ported, and the classification changed the plan.
+
+#### How it was measured
+
+A dependency scan over every file — HTTP calls, service and provider class
+references, post meta, user meta, `$wpdb`, transients — then spot reads of the
+ambiguous ones. The scan is not the port; every tool is still read line by line
+when its slice runs. It is enough to decide what the family is made of.
+
+#### The split
+
+| Group | Count | Disposition |
+|---|---|---|
+| Pure calculators over caller-supplied inputs | **24** | port |
+| User-meta records (credit scores, expenses, savings goals) | **3** | port, with a store translation |
+| Transaction records over post meta | **2** | port |
+| Local ledger with live pricing bolted on | **1** | port with a documented reduction |
+| Market data through providers or the yfinance sidecar | **13** | defer |
+| Plaid integration that is a mock | **1** | defer |
+
+#### What the scan changed, and why names were not enough
+
+Before measuring, the estimate from the tool names was "about sixteen market-data
+tools need HTTP clients". That was wrong in both directions.
+
+**The tools make no HTTP calls themselves.** The network lives in two places:
+
+- `WP_MCP_AI_Market_Data_Providers` — CoinGecko with a Binance fallback, keyless,
+cached in transients — referenced by six tools.
+- `WP_MCP_AI_YFinance_Service` — a **microservice** at `yfinance_service_url`,
+defaulting to `http://localhost:5000/`, gated by `enable_yfinance_service` —
+referenced by six tools.
+- `financial_search` and `financial_news_aggregator`, which call their sources
+directly.
+
+**And the tools whose names sound like feeds are arithmetic.**
+`market_forecast_analyzer` runs statistics and a linear regression over a series
+the caller supplies. `market_sentiment_analyzer` does the same. Deferring them
+because of the word "market" would have thrown away portable tools; porting
+`crypto_market_data` because the word appears in a file it does not import would
+have shipped a wrapper around a provider that is not there.
+
+#### Why fourteen are deferred
+
+Thirteen wait on a market-data client and one on Plaid. The prerequisite is the
+same in twelve of the thirteen: a client over `HttpClientInterface` with a cache
+and a written provider decision, because the terms, rate limits and field shapes
+belong to whoever supplies the data. Three specific notes:
+
+- `financial_search` scrapes five sites (SEC EDGAR, Yahoo, Google Finance,
+  Investopedia, Finviz). HTML scraping breaks without notice and rate-limits by
+  IP; the SEC endpoint it uses is the one worth doing properly, as a documented
+  JSON client.
+- `price_alerts` stores alerts in its own `$wpdb` table, outside every store
+  interface this runtime uses, and prices them through the sidecar. Two
+  prerequisites, and the table is the smaller one.
+- `bank_account_sync` is a mock: it stores the Plaid access token in user meta,
+  generates the account id with `uniqid()`, and returns `synced_count: 0` with a
+  message saying production would fetch real transactions. Porting it would
+  persist a bank token in a record nothing audits.
+
+#### Two findings that shape the ports
+
+**One external tool has a local core.** `portfolio_transaction_log` uses the
+sidecar only in `fetch_current_prices()`, for the position summary. Add, list,
+remove and the ledger itself are local. It is ported **without live pricing**, and
+the response says prices were not fetched rather than omitting the field silently.
+
+**Three records need a store translation.** Credit scores, expenses and savings
+goals are user meta in WordPress, and this runtime has no user meta. They become
+content items keyed by user id — the same translation §164.159 made for workflow
+rules, and the same reason: an export carries them, so they must be an entity
+rather than an option.
+
+#### The first port slice
+
+`categorise_transactions`, `get_uncategorised_transactions` and
+`portfolio_transaction_log` — the three store-backed tools. They share the
+translation problem and prove it once, before twenty-four calculators arrive with
+nothing but arithmetic and a capability check.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| Toolkit parity | **412 ported**, 9 declined, **103 deferred**, 446 remaining; `financial-planning` `44 \| 0 \| 0 \| 0 \| 44` → **`44 \| 0 \| 0 \| 14 \| 44`** (44 remaining, of which 14 blocked and 30 to build) |
+| Readiness manifest | **633 rows**; servable **614**; ready **573**; no violations (unchanged — this slice adds no tool) |
+| `lib/core` unit suite | **4,383 tests / 24,057 assertions**, 0 failures |
+| Adapter suite | **712 tests / 3,881 assertions**, 2 skipped, 0 failures |
+
+#### Where the family stands
+
+Thirty tools to build in three groups: the three store-backed tools first, then
+the twenty-four calculators in slices of six to eight, then the three user-meta
+records. The fourteen deferrals carry named prerequisites, so nothing in this
+family is undecided.

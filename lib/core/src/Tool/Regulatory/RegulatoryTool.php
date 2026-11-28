@@ -424,6 +424,28 @@ abstract class RegulatoryTool extends AbstractTool
     }
 
     /**
+     * The date part of a stored timestamp, or an empty string.
+     *
+     * Timestamps are written as `Y-m-d H:i:s` and date arguments are `Y-m-d`, so
+     * the first ten characters are the comparison key. Checking the shape rather
+     * than parsing it keeps an unreadable value distinguishable from a real one:
+     * `strtotime()` returned `false`, which reads as 1970 and sorted to the end
+     * of a newest-first list.
+     *
+     * An empty input and an unreadable input both return an empty string; a
+     * caller that needs to tell them apart checks the raw value, which is what
+     * the timeline does.
+     */
+    protected function stampDate(string $stamp): string
+    {
+        if (1 !== preg_match('/^(\d{4}-\d{2}-\d{2})/', $stamp, $matches)) {
+            return '';
+        }
+
+        return $this->isIsoDate($matches[1]) ? $matches[1] : '';
+    }
+
+    /**
      * The inclusive lower bound of a named look-back window.
      *
      * WordPress passed `'after' => '30 days ago'` (or `'1 month ago'`) into
