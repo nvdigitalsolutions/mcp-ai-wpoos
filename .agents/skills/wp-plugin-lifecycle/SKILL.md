@@ -73,10 +73,14 @@ register_activation_hook( __FILE__, static function (): void {
     global $wpdb;
     $charset = $wpdb->get_charset_collate();
     // dbDelta is finicky — follow the canonical style EXACTLY:
-    //   - one column per line, two spaces after column name
-    //   - PRIMARY KEY on its own line at the end
-    //   - lowercase types ('bigint(20)', 'datetime'), as WP itself uses
+    //   - one column per line; lowercase types ('bigint(20)', 'datetime')
+    //   - TWO spaces between PRIMARY KEY and its parenthesis: PRIMARY KEY  (id)
+    //   - at least one KEY besides the primary key; use KEY, never INDEX
+    //   - no backticks or quotes around field names
     //   - no IF NOT EXISTS (dbDelta diff-applies)
+    //   - always append $wpdb->get_charset_collate(): character_set_server is
+    //     latin1 by default on MariaDB <= 10.11 (utf8mb4 only from 11.8), so the
+    //     explicit charset is the only thing keeping the table utf8mb4 everywhere
     dbDelta( "CREATE TABLE {$wpdb->prefix}myplugin_log (
         id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         created_at datetime NOT NULL,
@@ -104,6 +108,7 @@ Rules for the activation callback:
 - **Run the requirements check again.** The plugin file might have been activated through `activate_plugin()` programmatically, bypassing the wp-admin UI's pre-checks. Belt and suspenders.
 - **Use `add_option`, NOT `update_option`** for default seeding. `update_option` overwrites existing values, destroying user preferences if the plugin is reactivated.
 - **Always `require_once 'wp-admin/includes/upgrade.php'` before `dbDelta()`** — the file is not auto-loaded outside the admin context.
+- **Never omit the charset from `CREATE TABLE`.** Append `$wpdb->get_charset_collate()` (or `$wpdb->get_charset_collate()` into `$charset`) to every `dbDelta()` statement. `character_set_server` is `latin1` on 8 of the 9 servers in the Cloudways fleet — MariaDB's own default through 10.11, `utf8mb4` only from 11.8 — so an unstyled table is latin1 in production and utf8mb4 on a developer machine, and only non-ASCII content reveals it. `bin/check-db-charset.php` enforces this (`composer run quality:db-charset`, plus the `db-charset` job in `php-linting.yml`); it exits non-zero on the first unqualified `CREATE TABLE`.
 - **Don't register hooks** (`add_action`, `add_filter`) here. Activation is one-shot; runtime hooks belong in `plugins_loaded`.
 - **Don't perform expensive work synchronously.** A long-running activation hook that blocks the request shows up as "site is taking too long to respond" in the admin. Schedule a one-shot cron event with `wp_schedule_single_event` instead.
 

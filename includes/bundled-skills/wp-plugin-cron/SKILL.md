@@ -252,6 +252,47 @@ add_action( 'myplugin_daily_cleanup', static function (): void {
 
 The transient lock and `get_option`+`update_option` pattern is non-atomic (TOCTOU race) but good enough for soft idempotency. For a global singleton, modern Action Scheduler's `$unique` support can help; for per-entity hard idempotency, use a unique-key insert into a custom table as the gate.
 
+### Claiming a shared row (leases, not locks)
+
+When several workers must take *distinct* units of work and each unit may only be
+taken once, do not lock — **claim with one conditional `UPDATE` and read the
+affected-row count**:
+
+```php
+$won = $wpdb->query( $wpdb->prepare(
+    "UPDATE {$table}
+        SET claimed_by = %s, lease_expires_at = %s, attempts = attempts + 1
+      WHERE id = %s
+        AND ( state = 'open' OR ( state = 'claimed' AND lease_expires_at < %s ) )",
+    $agent, $expires, $id, $now
+) );
+// 1 = you own it. 0 = someone else does. Anything > 1 means `id` is not unique
+// and the schema is broken, not the race.
+```
+
+Five rules that make this correct:
+
+- **Always increment something monotonic.** MySQL reports **0 affected rows when
+  an `UPDATE` writes the values already stored**, so a renewal that only sets
+  `lease_expires_at` reports "lost" whenever two attempts land in the same
+  second. Set `attempts = attempts + 1` (or `renewals`) — a counter, never
+  `updated_at`.
+- **Do not bother with `SKIP LOCKED`.** It is MySQL 8.0+/recent-MariaDB only, and
+  MySQL's own manual restricts it to queue-like tables. The conditional `UPDATE`
+  works on every supported version and needs no transaction held across the work.
+- **Never arbitrate in the object cache.** With a non-persistent cache (or after a
+  flush) "atomic" increments are fiction. The database is the only arbiter.
+- **Expire by lease, renew explicitly, cap retries.** Expiry is the only liveness
+  signal; a separate heartbeat is a second clock that will disagree with the first.
+  Send a row to `blocked` after N expiries instead of retrying forever.
+- **`NULL` is distinct inside a unique index.** A dedupe column (`child_key`,
+  `client_msg_id`) must be `NOT NULL DEFAULT ''`, or every `NULL` row is "unique"
+  and the guard silently does nothing.
+
+Rank the guard before the lock: wp.org's own review guidance and every hosted
+incident review agree that *"only run once"* belongs in grants and unique keys,
+not in a prompt or a transient.
+
 ## Critical rules
 
 - **WP cron is pseudo-cron.** WordPress calls `wp_cron()` on `init`; since WP 6.9 the normal spawn runs on `shutdown` (`wp_loaded` for `ALTERNATE_WP_CRON`). No traffic = no cron. Use `DISABLE_WP_CRON` + system cron for timing-critical work.

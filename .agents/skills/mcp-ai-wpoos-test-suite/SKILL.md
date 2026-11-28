@@ -1469,6 +1469,16 @@ Moved to `reference/shell-harness-pitfalls.md` (PTY output interleaving,
 unstaged-`.gitattributes` trap - the false failures from the 2026-11-08
 packaging session).
 
+## Database test design (index assertions, race harnesses)
+
+Moved to `reference/database-test-design.md`. The traps that make a database
+test pass while proving nothing: `EXPLAIN` on a near-empty table reports
+`key=NULL` (seed 2,000 rows + `ANALYZE TABLE`; assert `key` **and**
+`possible_keys`, never `type` — MariaDB appends `|filter`), the harness
+rewriting `CREATE TABLE` to a per-connection `TEMPORARY` table (kills
+two-connection race tests: `suspend_temporary_table_rewrite()`), and
+`rows_affected` returning 0 on an identical-value `UPDATE`.
+
 ## Enumerating the suite
 
 Canonical scan dirs: `tests`, `addons/pro/tests`,
@@ -1506,6 +1516,9 @@ Moved to `reference/cluster-state-board.md` (the merged-cluster PR ledger).
 - Per-toolkit hardening audit loop: `.agents/skills/mcp-ai-wpoos-toolkit-audit/SKILL.md`
 - **WPCS/phpcs sweep playbook** (budget arithmetic, the `phpcbf` trap,
   structural edit recipes, Windows/MSYS notes): `reference/wpcs-sweep.md`
+- **Database test design** (EXPLAIN seeding rules, TEMPORARY-table rewrite,
+  affected-rows verdicts, the `bin/check-db-charset.php` gate):
+  `reference/database-test-design.md`
 - **ID-handoff contract suites (permanent CI infrastructure):**
   `tests/test-tool-id-handoff-contract.php` (L1 honesty — checks
   `tests/fixtures/tool-contract-manifest.php` against the live registry in
