@@ -113,6 +113,7 @@ class Phase4Test extends TestCase
                 'comic-creation',
                 'commerce',
                 'crm',
+                'database',
                 'dietpi',
                 'documents',
                 'ecommerce',
