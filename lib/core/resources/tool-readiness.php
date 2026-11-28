@@ -2804,6 +2804,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryRegistrationCoreTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'get_reg_document' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\GetRegDocumentTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress single-document read over ContentStoreInterface (Proposal 164 section 164.148). The row keeps the WordPress shape key for key, including the two references reported as text and the taxonomies map. Expiry is the same three-way classification at 90 days; an unparsable date is treated as no date rather than as expired. include_product and include_registration resolve only when the reference exists. Gated on read.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryDocumentToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'get_reg_product' => array(
 			'class' => 'Nvoos\Core\Tool\Regulatory\\GetRegProductTool',
 			'readiness' => 'ready',
@@ -4910,6 +4919,15 @@ return array(
 			'probe' => 'call',
 			'reason' => 'MediaWorkerImageProduction over the media-worker `POST /api/image/upscale` route. The slug is the WordPress slug, but no super-resolution model is involved: it resamples with a kernel and reports `method`. `model` and `denoise` are not offered because the port cannot honour them.',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ImageProductionToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
+		'upload_reg_document' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\UploadRegDocumentTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress document record over ContentStoreInterface (Proposal 164 section 164.148), with one declared gap: file_data is refused rather than written, because this runtime has no media or filesystem contract that could own a file lifecycle, and the refusal names the alternative. file_url is restricted to http and https, where esc_url_raw allowed any scheme into a link. A document must attach to a product or registration that exists, and the type term keeps the caller spelling instead of the slug WordPress stored.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryDocumentToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
 		'validate_json' => array(

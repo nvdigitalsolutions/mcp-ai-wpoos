@@ -13181,3 +13181,71 @@ rather than to the `false` that `! empty()` produced.
 
 The next slice is document management — upload, get, update and list — where the
 `registration_id` and `product_id` references meet their first writer.
+
+### §164.148 — `regulatory-registration`, slice 5: document record and read
+
+| Tool | What it does |
+|---|---|
+| `upload_reg_document` | creates the record from a URL, attached to a product or registration |
+| `get_reg_document` | one row, expiry classification, two expansions |
+
+The group is five tools; this slice takes the two whose behaviour is fully
+portable. `update_reg_document`, `list_reg_documents` and
+`track_document_version` follow in the next one.
+
+#### A declared gap: the bytes
+
+WordPress accepted either a URL or base64 `file_data` and wrote the decoded
+bytes into the uploads directory. This runtime has **no media or filesystem
+contract** — nothing that owns a file's storage, lifecycle or deletion — so
+writing bytes here would create files no other layer can account for or clean
+up. The port accepts a URL and refuses `file_data` with
+`reg_document_upload_unavailable`, naming the alternative: upload through the
+host, pass the resulting URL. The record, its metadata, its type term and its
+references are fully written; only the binary path is absent, and the refusal
+says so instead of pretending.
+
+That is the first deliberate capability gap in this family, and it is why the
+readiness reason records it rather than the tool being marked deferred: the
+document's *identity* is portable even where its *storage* is not.
+
+#### The URL scheme is restricted
+
+WordPress stored `esc_url_raw( $url )`, which does not restrict the scheme. A
+`javascript:` or `file:` value written to `file_url` is a payload waiting for
+the surface that later renders it as a link. The port accepts `http` and
+`https` only, and the test sends three other shapes.
+
+#### The type term holds the caller's spelling
+
+WordPress set the `mcp_ai_doc_type` term to `sanitize_title( $type )` — the
+slug — while the record's `document_type` meta kept the caller's text. A reader
+that projected the terms therefore saw `certificate-of-analysis` where the
+caller wrote `COA`, which is the drift §164.145 fixed for product categories
+reappearing in a second place. The port stores the name as given, so the meta
+and the term agree.
+
+#### An unparsable expiry is not an expired document
+
+The three-way classification keeps WordPress's thresholds — `expired`,
+`expiring_soon` within 90 days, `valid` — and its `days_to_expiry`. But
+WordPress compared `strtotime()` against `time()` without checking for `false`,
+so a malformed expiry read as *expired*. That is the wrong direction to be
+wrong in for a compliance system: it raises a false alarm on a document that
+may be perfectly current. An unparsable date is treated as no date.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryDocumentToolsTest` | **11 tests, 54 assertions**, 0 failures |
+| `lib/core` unit suite | **4,093 tests / 22,882 assertions** (+11 tests, +54 assertions), 0 failures |
+| Adapter suite | **698 tests / 3,783 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 588 → **590 rows**; servable 569 → **571**; ready 530; no violations |
+| Toolkit parity | 367 → **369 ported**, 9 declined, 79 deferred, 478 → **476 remaining**; `regulatory-registration` `59 \| 15 \| 0 \| 0 \| 44` → **`59 \| 17 \| 0 \| 0 \| 42`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors across the eighteen Regulatory classes, the tests and the manifest |
+| `check-file-docs.php --strict` | exit 0 |
+
+The next slice completes the group: document update, listing and version
+tracking.

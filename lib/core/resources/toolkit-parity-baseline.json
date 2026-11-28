@@ -397,6 +397,7 @@
             "create_registration",
             "delete_reg_product",
             "duplicate_reg_product",
+            "get_reg_document",
             "get_reg_product",
             "get_registration",
             "list_reg_products",
@@ -406,7 +407,8 @@
             "search_reg_products",
             "submit_registration",
             "update_reg_product",
-            "update_registration_status"
+            "update_registration_status",
+            "upload_reg_document"
         ],
         "remote-connections": [],
         "research": [],
