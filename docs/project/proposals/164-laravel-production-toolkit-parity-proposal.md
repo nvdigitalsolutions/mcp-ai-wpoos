@@ -12938,3 +12938,82 @@ search (4); registration CRUD (8); documents (4); compliance and validation
 (8); expiry and monitoring (4); reports and generation (8, less whatever the
 PDF decision removes); Excel import/export (4, subject to the same decision);
 workflow rules (6); authority sync, notifications and requirements (10).
+
+### §164.145 — `regulatory-registration`, slice 2: product writes and search
+
+| Tool | What it does |
+|---|---|
+| `update_reg_product` | partial update of one product |
+| `delete_reg_product` | permanent delete, `delete_posts` |
+| `duplicate_reg_product` | copy as a draft, satellites optional |
+| `search_reg_products` | seven ANDed filters, short rows |
+
+#### Four drifts, all in the WordPress source
+
+**The update never wrote the brand meta.** The handler listed ten meta fields and
+left `brand` out, so changing a product's brand updated the `mcp_ai_reg_brand`
+term and left the `brand` meta at its creation value. The WordPress row
+projection prefers the term, which is exactly why nobody noticed; an export
+reads the meta, and so do this toolkit's report tools. The port writes both, as
+`create_reg_product` always has.
+
+**Two tools disagreed about how a category is spelled.** Create stored a
+lower-cased slug (`skincare`), list filtered by slug, and search matched by term
+*name*. The default term is named `Skincare`, so `search_reg_products` with
+`category: "skincare"` — the value its own schema documents — matched nothing.
+The update had the same split, looking up the caller's exact case. All four now
+use the slug vocabulary, and a test pins that `Skincare` written through update
+is found by `skincare` through search.
+
+**Duplicate's declared defaults were not its actual defaults.** The schema
+promised `copy_meta: true` and `copy_taxonomies: true`; the handler read them
+with `! empty( $arguments[ ... ] )`, so a caller that omitted the flag got no
+copy at all. The port applies the documented defaults and only an explicit
+`false` turns a copy off.
+
+**The delete description claimed a cascade that does not happen.** WordPress
+said deleting a product "will also delete associated registrations and
+documents". `wp_delete_post( $id, true )` removes one post; a registration that
+references the product id in meta survives, pointing at a record that is gone.
+In a compliance system an orphaned registration is worse than a documented
+non-cascade, so the description now says the satellites are left in place and
+the test asserts only the product is removed.
+
+#### One addition
+
+`duplicate_reg_product` was the only write tool in the family with **no
+capability check at all** — it created a post for any caller that reached it.
+The port requires `edit_posts`, like its siblings.
+
+#### What a copied registration is, and is not
+
+A duplicate copies `country`, `authority` and `registration_type`, and
+deliberately not the COS number, submission date or approval date: those belong
+to the original application. The copy is a draft. Copying an approval would
+invent a regulatory claim nobody applied for, which is the one thing a
+compliance toolkit must never do by convenience.
+
+#### Two small choices
+
+- **No `confirm` on the delete.** WordPress had none, and there is no stricter
+  precedent in this family to follow. `destructiveHint: true` is the gate a
+  host reads; a second local flag would duplicate it rather than strengthen it.
+- **The update returns the full row.** WordPress returned a reduced one that
+  omitted `created_date`, `categories` and the ingredient lists. A caller that
+  just wrote a record should not need a second tool to read what it wrote.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryProductWritesTest` | **17 tests, 58 assertions**, 0 failures |
+| `lib/core` unit suite | **4,050 tests / 22,691 assertions** (+17 tests, +58 assertions), 0 failures |
+| Adapter suite | **698 tests / 3,773 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 576 → **580 rows**; servable 557 → **561**; ready 520; no violations |
+| Toolkit parity | 355 → **359 ported**, 9 declined, 79 deferred, 490 → **486 remaining**; `regulatory-registration` `59 \| 3 \| 0 \| 0 \| 56` → **`59 \| 7 \| 0 \| 0 \| 52`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors across the eight Regulatory classes and the new test |
+| `check-file-docs.php --strict` | exit 0 |
+
+The product group is complete at seven tools. The next slice is registration
+CRUD, where the status taxonomy and the expiry fields first matter.

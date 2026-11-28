@@ -393,8 +393,12 @@
         "quiz-management": [],
         "regulatory-registration": [
             "create_reg_product",
+            "delete_reg_product",
+            "duplicate_reg_product",
             "get_reg_product",
-            "list_reg_products"
+            "list_reg_products",
+            "search_reg_products",
+            "update_reg_product"
         ],
         "remote-connections": [],
         "research": [],
