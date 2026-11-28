@@ -3289,6 +3289,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/CalendarTriageToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'get_uninvoiced_orders' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\GetUninvoicedOrdersTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the uninvoiced-order listing (Proposal 164 section 164.174), the first tool over the new OrderStoreInterface, bound to OrderStore on the nvoos_orders and nvoos_order_lines tables, so the constructor is satisfiable and the tool is ready rather than unavailable. Four reference defects are corrected rather than reproduced: the minimum amount was applied after the limit, so asking for ten orders of at least 100 could return none while a hundred qualifying orders sat behind the page; floatval turned an unusable amount into 0.0 and silently switched the filter off; dates were sanitize_text_field output concatenated into an after...before string and an unparseable date was ignored; and absint turned a negative customer id into a positive one. The minimum amount now requires a currency, because an untyped float compared across a mixed-currency store is not a comparison; the adapter compares total_currency and total_minor, so orders in another currency are excluded rather than ranked against the bound. date_to includes the day it names, both bounds must round-trip as YYYY-MM-DD, and the response reports the match count and the page size separately, where WordPress called the page size the total. A page holds at most 100 and reports total_pages so a billing pass can iterate, instead of the reference 1000-row response. edit_url is present and always null because this runtime has no order admin screen.',
+			'evidence' => 'lib/core/tests/Unit/Tool/GetUninvoicedOrdersTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'get_unoptimised_images' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GetUnoptimisedImagesTool',
 			'readiness' => 'ready',

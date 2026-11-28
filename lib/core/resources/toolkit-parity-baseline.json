@@ -201,6 +201,7 @@
             "generate_pdf",
             "generate_word",
             "get_expired_documents",
+            "get_uninvoiced_orders",
             "html_to_pdf",
             "merge_pdfs",
             "ocr_pdf_text",

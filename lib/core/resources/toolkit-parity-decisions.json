@@ -165,10 +165,6 @@
             "decision": "deferred",
             "reason": "Lists media-library attachments filtered by _mcp_video_status and _mcp_video_target_platform. Nothing on this runtime writes either: the only writer in WordPress is upload_video_batch, which is itself unported. A port today could only answer with an empty list, and an empty list reads as a finding rather than as a missing model. Prerequisite: a video processing and upload job model. Deferred, not declined, because the query is sound once something writes the status."
         },
-        "get_uninvoiced_orders": {
-            "decision": "deferred",
-            "reason": "It lists WooCommerce orders that lack the `_invoiced` meta flag. This runtime has no order or invoice model at all — the app skeleton registers no Order or Invoice entity — so there is nothing to query and no flag to look for. Prerequisite: an order model carrying an invoiced marker, which arrives with the ecommerce toolkit rather than ahead of it."
-        },
         "get_unwatermarked_images": {
             "decision": "deferred",
             "reason": "It lists images that have no watermark, which needs a recorded relationship between a source and its watermarked rendition. FileDerivativeStoreInterface::ROLES currently offers only poster, caption and frame, so there is no watermark role to query and a port today could only answer with an empty list, which reads as a finding rather than as a missing model. Prerequisite: a watermark role on the derivative store, the same way the video inventories waited for their roles."
