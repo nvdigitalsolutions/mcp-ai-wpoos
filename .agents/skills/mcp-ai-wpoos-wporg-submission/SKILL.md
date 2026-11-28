@@ -338,9 +338,9 @@ The addon reached 1.0.0 and cleared PCP with **0 blocking errors**. The pass con
 - **Readme errors:** `mismatched_plugin_name` (readme title vs header), `plugin_header_tested_up_to_not_allowed` (remove `Tested up to` from the header), `upgrade_notice_limit` (>300 chars), `DiscouragedFunctions.load_plugin_textdomainFound` (drop the manual loader).
 - **Hidden file:** `languages/.gitkeep` triggered `hidden_files`. Fix in all three places: `.distignore`, `.gitattributes export-ignore`, staging tar exclude.
 - **Hook prefixes:** all `nds_*` filters were renamed to `nvoos_nds_*`, clearing 10 `NonPrefixedHooknameFound` warnings. Do this before 1.0, not after listeners exist; record it in the Upgrade Notice.
-- **AI provider:** `wp_ai_client_prompt()` is now the preferred path; the direct OpenAI/Gemini calls remain a fallback for WP < 7.0 and are disclosed, so the 2 `AIProvider.DirectIntegration` warnings are accepted.
-- **Standalone seam:** `nvoos_nds_ai_api_key` supplies a key with no companion plugin; the NV oOS key store is consulted only as a fallback. No `Requires Plugins` header and no admin nag.
-- **Validation:** 123 PHPUnit tests, PHPCS 0 errors, PHP 8.1–8.4 clean, POT 390 msgids, 6 screenshots captured.
+- **AI provider:** the first pass kept a disclosed OpenAI/Gemini fallback and accepted 2 advisory rows. The final pass deleted it (below) — the lesson is not to ship the fallback: it adds an API-key surface and a reviewer question for no user benefit once `wp_ai_client_prompt()` exists.
+- **Standalone seam:** `nvoos_nds_email_generation_provider` (callable returning HTML) is the only integration seam — no key option, no `Requires Plugins` header, no admin nag.
+- **Validation (final):** 163 PHPUnit tests / 481 assertions across 16 files, PHPCS 0 errors and 12 warnings, PHP 8.1–8.4 clean, PCP 0 errors and 0 warnings, POT 390 msgids, 6 screenshots captured.
 - **Gate script:** `bin/run-design-system-plugin-check.sh` — same pattern as docs-hub for a no-build PHP addon (stages `.distignore` excludes, runs PCP in a one-off `wordpress:cli-php8.2` container, gates on ERROR minus the allowlist).
 
 #### 1.0.0 final pass — reviewer-report follow-up (2026-11-28, later the same day)
