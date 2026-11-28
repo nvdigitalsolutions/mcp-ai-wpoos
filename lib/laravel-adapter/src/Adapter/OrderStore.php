@@ -51,6 +51,7 @@ use Nvoos\Core\Domain\Entity\OrderAnalytics;
 use Nvoos\Core\Domain\Entity\OrderCollection;
 use Nvoos\Core\Domain\Entity\OrderLine;
 use Nvoos\Core\Domain\Entity\OrderQuery;
+use Nvoos\Core\Domain\Entity\ProductSales;
 use Nvoos\Core\Domain\Error\ValidationException;
 use Nvoos\Core\Domain\Service\Order\OrderStatusTransition;
 use Nvoos\Core\Domain\ValueObject\Money;
@@ -163,8 +164,14 @@ class OrderStore implements OrderStoreInterface {
 	private function filtered( OrderQuery $query ): \Illuminate\Database\Eloquent\Builder {
 		$builder = NvoosOrder::query();
 
+		/*
+		 * Every column is qualified with the orders table. `query()` reads one
+		 * table and does not need it, but `topProducts()` joins the lines, and
+		 * both tables carry `created_at` and `updated_at`, so an unqualified
+		 * date bound would be ambiguous there.
+		 */
 		if ( $query->uninvoicedOnly ) {
-			$builder->whereNull( 'invoiced_at' );
+			$builder->whereNull( 'nvoos_orders.invoiced_at' );
 		}
 
 		if ( '' !== $query->search ) {
@@ -174,31 +181,31 @@ class OrderStore implements OrderStoreInterface {
 
 			$builder->where(
 				static function ( $scoped ) use ( $term ): void {
-					$scoped->where( 'number', 'like', $term )
-						->orWhere( 'billing_email', 'like', $term );
+					$scoped->where( 'nvoos_orders.number', 'like', $term )
+						->orWhere( 'nvoos_orders.billing_email', 'like', $term );
 				}
 			);
 		}
 
 		if ( null !== $query->status ) {
-			$builder->where( 'status', $query->status->value );
+			$builder->where( 'nvoos_orders.status', $query->status->value );
 		}
 
 		if ( null !== $query->customerId ) {
-			$builder->where( 'customer_id', $query->customerId );
+			$builder->where( 'nvoos_orders.customer_id', $query->customerId );
 		}
 
 		if ( null !== $query->createdAfter ) {
-			$builder->where( 'created_at', '>=', $query->createdAfter );
+			$builder->where( 'nvoos_orders.created_at', '>=', $query->createdAfter );
 		}
 
 		if ( null !== $query->createdBefore ) {
-			$builder->where( 'created_at', '<=', $query->createdBefore );
+			$builder->where( 'nvoos_orders.created_at', '<=', $query->createdBefore );
 		}
 
 		if ( null !== $query->minTotal ) {
-			$builder->where( 'total_currency', $query->minTotal->currency )
-				->where( 'total_minor', '>=', $query->minTotal->minorUnits );
+			$builder->where( 'nvoos_orders.total_currency', $query->minTotal->currency )
+				->where( 'nvoos_orders.total_minor', '>=', $query->minTotal->minorUnits );
 		}
 
 		return $builder;
@@ -286,6 +293,60 @@ class OrderStore implements OrderStoreInterface {
 			$statusCounts,
 			OrderAnalytics::buckets( $daily, $grouping ),
 		);
+	}
+	/**
+	 * The products a query sold most of, in one currency.
+	 *
+	 * One grouped query over the lines, joined to the filtered orders. The
+	 * grouping key is the product, so variants roll up into their parent. The
+	 * order currency bounds the selection; the line currency is checked too
+	 * because the table permits a mismatch that `Order` refuses.
+	 *
+	 * @return list<ProductSales>
+	 */
+	public function topProducts( OrderQuery $query, string $currency, int $limit ): array {
+		if ( 1 !== preg_match( '/^[A-Z]{3}$/', $currency ) ) {
+			throw new ValidationException( 'A product aggregate needs an ISO 4217 currency.' );
+		}
+
+		if ( $limit < 1 || $limit > 100 ) {
+			throw new ValidationException( 'A product aggregate returns between 1 and 100 products.' );
+		}
+
+		$rows = $this->filtered( $query )
+			->where( 'nvoos_orders.total_currency', $currency )
+			->whereIn( 'nvoos_orders.status', OrderAnalytics::REVENUE_STATUSES )
+			->join( 'nvoos_order_lines as lines', 'lines.order_id', '=', 'nvoos_orders.id' )
+			->whereNotNull( 'lines.product_id' )
+			->where( 'lines.line_total_currency', $currency )
+			->selectRaw(
+				'lines.product_id AS product_id, MIN(lines.sku) AS sku, MIN(lines.name) AS name, SUM(lines.quantity) AS quantity, SUM(lines.line_total_minor) AS minor'
+			)
+			->groupBy( 'lines.product_id' )
+			->get();
+
+		$products = array();
+
+		foreach ( $rows as $row ) {
+			$products[] = new ProductSales(
+				(int) $row->product_id,
+				(string) $row->name,
+				null === $row->sku ? null : (string) $row->sku,
+				(int) $row->quantity,
+				Money::fromMinorUnits( (int) $row->minor, $currency ),
+			);
+		}
+
+		usort(
+			$products,
+			static function ( ProductSales $a, ProductSales $b ): int {
+				return ( $b->revenue->minorUnits <=> $a->revenue->minorUnits )
+					?: ( $b->quantity <=> $a->quantity )
+					?: ( $a->name <=> $b->name );
+			}
+		);
+
+		return array_slice( $products, 0, $limit );
 	}
 	/**
 	 * Upsert the order's lines by id, then delete the ones no longer present.

@@ -28,14 +28,20 @@
  * currency as `excluded_orders` — a number the caller can see rather than an
  * error they cannot.
  *
- * ## Two sections are refused, not omitted
+ * ## One section is refused, one is not offered
  *
- * `include_products` and `include_customers` aggregate *order lines* and
- * *customers* respectively. Those are different aggregates, and the customer one
- * belongs with the customer store that `woo_customers` needs; the product one
- * belongs with per-line reporting. Both are refused by name, together with
- * `top_count`, which only they use. `payment_methods` is not reported because the
- * order model has no payment-method field.
+ * `include_customers` aggregates *customers*, which is a different aggregate and
+ * belongs with the customer store that `woo_customers` needs, so it is refused by
+ * name. `payment_methods` is not reported because the order model has no
+ * payment-method field.
+ *
+ * `include_products` was refused when this tool was first ported, because the
+ * store had no line aggregate. Section 164.180 added one
+ * (`OrderStoreInterface::topProducts()`), so the section is computed now:
+ * best-selling products by revenue over the same window and currency, with
+ * `top_count` as its size. The products are rolled up by product rather than by
+ * variant, count only paid orders, and keep a product whose catalogue entry has
+ * since been deleted, which the reference dropped by joining the products table.
  *
  * ## Corrected inputs
  *
@@ -44,8 +50,7 @@
  *   day it names, and the defaults are evaluated once rather than per call site.
  * - `group_by` accepted any string and fell through to `day` for an unknown one.
  *   It is an enum here, so an unknown value is a field error.
- * - `top_count` was `absint()` with no bound; it is refused with the sections
- *   that use it.
+ * - `top_count` was `absint()` with no bound; it is bounded to 1..100 here.
  *
  * @package Nvoos\Core
  * @since   3.0.0
@@ -61,6 +66,7 @@ namespace Nvoos\Core\Tool\Ecommerce;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\OrderStoreInterface;
 use Nvoos\Core\Domain\Entity\OrderQuery;
+use Nvoos\Core\Domain\Entity\ProductSales;
 use Nvoos\Core\Domain\ValueObject\OrderGrouping;
 use Nvoos\Core\Support\DateBound;
 use Nvoos\Core\Tool\AbstractTool;
@@ -71,14 +77,15 @@ final class GetOrderAnalyticsTool extends AbstractTool
     public const DEFAULT_DAYS = 30;
 
     /**
-     * Sections the reference offers that this slice does not compute.
+     * Sections the reference offers that this tool does not compute.
+     *
+     * `include_products` and `top_count` left this list in section 164.180,
+     * which added the line aggregate they need.
      *
      * @var array<string, string>
      */
     public const REFUSED_ARGUMENTS = array(
-        'include_products'  => 'Top products aggregate order lines, which is a different aggregate from this window; it arrives with per-line reporting.',
         'include_customers' => 'Customer analytics aggregate customers, which is a different aggregate from this window; it arrives with the customer store.',
-        'top_count'         => 'Only the products and customers sections use it, and both are refused.',
     );
 
     public function __construct(
@@ -100,7 +107,7 @@ final class GetOrderAnalyticsTool extends AbstractTool
 
     public function getDescription(): string
     {
-        return 'Summarises orders in a date window for one currency: order counts, gross total, revenue excluding cancelled, failed and refunded orders, average order value, status distribution, and optional totals bucketed by day, week or month. Top products and customer analytics are not computed by this tool.';
+        return 'Summarises orders in a date window for one currency: order counts, gross total, revenue excluding cancelled, failed and refunded orders, average order value, status distribution, optional totals bucketed by day, week or month, and optionally the best-selling products by revenue. Customer analytics are not computed by this tool.';
     }
 
     public function getRequiredCapability(): string
@@ -135,6 +142,17 @@ final class GetOrderAnalyticsTool extends AbstractTool
                     'type'        => 'boolean',
                     'description' => 'Include the per-period buckets.',
                 ),
+                'include_products' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Include the best-selling products, by revenue, for the window.',
+                ),
+                'top_count'       => array(
+                    'type'        => 'integer',
+                    'description' => 'How many products to report when include_products is true. Default 10.',
+                    'minimum'     => 1,
+                    'maximum'     => 100,
+                    'default'     => 10,
+                ),
             ),
             'required'   => array('currency'),
         );
@@ -147,7 +165,7 @@ final class GetOrderAnalyticsTool extends AbstractTool
         $fields = array();
 
         foreach (array_keys($arguments) as $key) {
-            $known = array('date_from', 'date_to', 'group_by', 'currency', 'include_trends');
+            $known = array('date_from', 'date_to', 'group_by', 'currency', 'include_trends', 'include_products', 'top_count');
 
             if (! in_array($key, $known, true)) {
                 $fields[$key] = array(self::REFUSED_ARGUMENTS[$key] ?? 'Unknown field.');
@@ -184,6 +202,12 @@ final class GetOrderAnalyticsTool extends AbstractTool
             $fields['group_by'] = array('One of: ' . implode(', ', OrderGrouping::values()) . '.');
         }
 
+        $topCount = $this->intParam($arguments, 'top_count', 10);
+
+        if ($topCount < 1 || $topCount > 100) {
+            $fields['top_count'] = array('Between 1 and 100.');
+        }
+
         if (array() !== $fields) {
             return $this->errors->validationFailed('The analytics window cannot be read.', $fields);
         }
@@ -211,6 +235,17 @@ final class GetOrderAnalyticsTool extends AbstractTool
 
         if (! $this->boolParam($arguments, 'include_trends', false)) {
             unset($data['periods']);
+        }
+
+        if ($this->boolParam($arguments, 'include_products', false)) {
+            $data['products'] = array_map(
+                static fn (ProductSales $product): array => $product->jsonSerialize(),
+                $this->orders->topProducts(
+                    new OrderQuery(createdAfter: $from, createdBefore: $to),
+                    $currency,
+                    $topCount
+                )
+            );
         }
 
         return $this->success(

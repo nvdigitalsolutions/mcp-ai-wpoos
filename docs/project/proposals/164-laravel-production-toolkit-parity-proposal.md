@@ -16000,3 +16000,64 @@ Twenty-two ecommerce tools remain deferred, in the same four clusters 164.178 na
 `create_product_advanced`, `import_products_csv`, `export_products_report`, `process_order_workflow` and `upsell_recommendations` each need a decision on one of those aggregates or on the product taxonomy. Four tools stay deferred because they move money or call external systems.
 
 The highest-leverage next prerequisite is the **top-products aggregate over order lines**: it is one contract method, and it closes `products` here and `include_products` in 164.178 together.
+
+### 164.180 — the line aggregate, and a revenue definition one status too wide
+
+No tool count changes: this adds a contract method and turns two refusals into sections. `ecommerce` stays at **44 wp / 21 ported / 1 declined / 22 deferred**, and the parity ledger stays at 430 served.
+
+| Contract | Surface |
+| --- | --- |
+| `OrderStoreInterface::topProducts()` | `list<ProductSales>` — the products a query sold most of, in one currency |
+
+#### What it closes
+
+Two refusals the last two sections recorded, both for the same missing aggregate:
+
+- `get_order_analytics`'s `include_products` and `top_count` (164.178);
+- `sales_performance_dashboard`'s `products` metric and `top_products_limit` (164.179).
+
+`category_ids` stays refused on the dashboard: the product model has no category field, and the reference's category filter could not have worked anyway (164.179).
+
+#### Rolled up by product, not by variant
+
+The lines carry `variantId` as well as `productId`, and the grouping key is the product. "Which product sold most" is a question about a catalogue entry; answering it per variant would rank the large size of a shirt separately from the small one.
+
+#### Deleted products keep their sales
+
+The reference joined `woo_order_itemmeta` to `wp_posts` on `_product_id`, so a product deleted from the catalogue **vanished from last quarter's best-sellers** — the sale happened, the line is still there, and the report quietly lost it. This aggregate groups the lines and never touches the product table, so a deleted product still reports under the name the order recorded. A line with no product id is a custom line, not a product, and is not aggregated; the reference excluded those too, though by accident rather than by rule.
+
+#### Revenue is `processing` and `completed`
+
+Section 164.178 introduced `REVENUE_STATUSES` as pending, on-hold, processing and completed, and its docblock described all four as "money actually taken". That was wrong for two of them. WooCommerce's **Revenue** report counts Processing and Completed; its Orders report additionally includes On-hold; Pending is excluded by both. The field is called revenue, so this section uses the Revenue report's set — `processing` and `completed`.
+
+**This is a behaviour change to two merged sections**, recorded rather than made silently: `get_order_analytics` and `sales_performance_dashboard` now report the narrower, correct figure. `gross_total` still counts every order, so nothing that was visible becomes invisible. One test changed with it, and one adapter fixture had to be marked completed because it existed to test bucket folding and was relying on `pending` counting as revenue.
+
+#### The currency guard, and a premise that was wrong
+
+`Order` refuses a line whose currency differs from the order's total. The order's currency bound is therefore the live rule, and the line's currency is checked as well because the *table* permits a mismatch that the entity would refuse.
+
+The first draft of this section's docblocks claimed a line "can be denominated differently from the order that carried it". It cannot. The test written to prove the line rule failed at `Order`'s constructor instead, which is exactly where that constraint belongs — so the docblocks now say the line check is a guard, not a scenario.
+
+#### Ordering, limits, names
+
+Ordered by revenue descending, then quantity descending, then name ascending — fully deterministic, so two runs on the same data agree. The limit is validated to 1..100 inside the implementation; the reference's `top_count` and `top_products_limit` were `absint()` with no bound.
+
+The reported name and SKU are `MIN(...)` over the window: one of the names the product sold under. Resolving the catalogue's current name would be a second store and a second failure mode for a display string, and would make the same report answer differently depending on when it ran. The test fake picks the lexicographic minimum with `strcmp` rather than `<`, because PHP compares two numeric-looking strings as numbers and products named "10" and "9" would then disagree with the database.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,734 / 25,034 |
+| adapter | 766 / 4,028, 2 skipped |
+| readiness | 651 rows, servable 632 (delegated 13), no violations |
+| parity | 430 ported / 9 declined / 94 deferred / 429 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+#### After this
+
+Twenty-two ecommerce tools remain deferred. The highest-leverage next prerequisite is now the **customer aggregate**: one store closes `include_customers` (164.178), the `new_customers` figure (164.179), and the four customer tools `woo_customers`, `segment_customers`, `customer_lifetime_value` and `export_customer_data` — six refusals and deferrals for one model.
+
+The other three clusters are unchanged: coupons need a promotion model, inventory needs a movement ledger plus a multi-location decision, and carts need a cart model and a mail channel.

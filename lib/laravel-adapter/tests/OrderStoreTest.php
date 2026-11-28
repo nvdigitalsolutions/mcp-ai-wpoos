@@ -347,12 +347,13 @@ final class OrderStoreTest extends TestCase {
 	/**
 	 * One order line for a fixture.
 	 */
-	private function line( string $name, int $unitMinor, int $quantity = 1 ): OrderLine {
+	private function line( string $name, int $unitMinor, int $quantity = 1, ?int $productId = null, string $currency = 'USD' ): OrderLine {
 		return new OrderLine(
 			name: $name,
 			quantity: $quantity,
-			unitPrice: Money::fromMinorUnits( $unitMinor, 'USD' ),
-			lineTotal: Money::fromMinorUnits( $unitMinor * $quantity, 'USD' ),
+			unitPrice: Money::fromMinorUnits( $unitMinor, $currency ),
+			lineTotal: Money::fromMinorUnits( $unitMinor * $quantity, $currency ),
+			productId: $productId,
 		);
 	}
 
@@ -418,9 +419,9 @@ final class OrderStoreTest extends TestCase {
 	public function test_analytics_folds_days_into_iso_weeks_and_months(): void {
 		$store = $this->store();
 
-		$store->save( $this->order( 'C-1', new \DateTimeImmutable( '2024-12-30 09:00:00' ), 1000 ) );
-		$store->save( $this->order( 'C-2', new \DateTimeImmutable( '2025-01-02 09:00:00' ), 2000 ) );
-		$store->save( $this->order( 'C-3', new \DateTimeImmutable( '2025-02-10 09:00:00' ), 4000 ) );
+		$store->save( $this->order( 'C-1', new \DateTimeImmutable( '2024-12-30 09:00:00' ), 1000, 'USD', null, null, array(), OrderStatus::Completed ) );
+		$store->save( $this->order( 'C-2', new \DateTimeImmutable( '2025-01-02 09:00:00' ), 2000, 'USD', null, null, array(), OrderStatus::Completed ) );
+		$store->save( $this->order( 'C-3', new \DateTimeImmutable( '2025-02-10 09:00:00' ), 4000, 'USD', null, null, array(), OrderStatus::Completed ) );
 
 		$query = new OrderQuery(
 			createdAfter: new \DateTimeImmutable( '2024-12-01 00:00:00' ),
@@ -477,5 +478,120 @@ final class OrderStoreTest extends TestCase {
 		$analytics = $this->store()->analytics( $this->february(), 'USD', OrderGrouping::Day );
 
 		$this->assertSame( 0, $analytics->customerCount );
+	}
+
+	public function test_top_products_rolls_by_product_and_orders_by_revenue(): void {
+		$store   = $this->store();
+		$created = new \DateTimeImmutable( '2024-02-05 10:00:00' );
+
+		$store->save(
+			$this->order(
+				'T-1',
+				$created,
+				5000,
+				'USD',
+				null,
+				null,
+				array(
+					$this->line( 'Shirt', 2000, 1, 100 ),
+					$this->line( 'Shirt', 2500, 1, 100 ),
+					$this->line( 'Hat', 600, 3, 200 ),
+				),
+				OrderStatus::Completed
+			)
+		);
+
+		$products = $store->topProducts( $this->february(), 'USD', 10 );
+
+		$this->assertCount( 2, $products );
+		$this->assertSame( 100, $products[0]->productId );
+		$this->assertSame( 2, $products[0]->quantity );
+		$this->assertSame( 4500, $products[0]->revenue->minorUnits );
+		$this->assertSame( 200, $products[1]->productId );
+		$this->assertSame( 3, $products[1]->quantity );
+	}
+
+	public function test_top_products_counts_only_paid_orders(): void {
+		$store   = $this->store();
+		$created = new \DateTimeImmutable( '2024-02-05 10:00:00' );
+
+		$store->save( $this->order( 'P-1', $created, 1000, 'USD', null, null, array( $this->line( 'Mug', 1000, 1, 100 ) ), OrderStatus::Completed ) );
+		$store->save( $this->order( 'P-2', $created, 9000, 'USD', null, null, array( $this->line( 'Cape', 9000, 1, 300 ) ), OrderStatus::Pending ) );
+		$store->save( $this->order( 'P-3', $created, 8000, 'USD', null, null, array( $this->line( 'Cane', 8000, 1, 400 ) ), OrderStatus::Cancelled ) );
+
+		$products = $store->topProducts( $this->february(), 'USD', 10 );
+
+		$this->assertSame( array( 100 ), array_map( static fn ( $product ): int => $product->productId, $products ) );
+	}
+
+	public function test_top_products_excludes_another_currency(): void {
+		$store   = $this->store();
+		$created = new \DateTimeImmutable( '2024-02-05 10:00:00' );
+
+		// Order refuses a line in a currency other than its own, so the order
+		// currency is the only one that can differ here; the line check in the
+		// adapter guards rows written outside the entity.
+		$store->save( $this->order( 'C-1', $created, 1000, 'USD', null, null, array( $this->line( 'Mug', 1000, 1, 100 ) ), OrderStatus::Completed ) );
+		$store->save( $this->order( 'C-2', $created, 3000, 'EUR', null, null, array( $this->line( 'Cape', 3000, 1, 300, 'EUR' ) ), OrderStatus::Completed ) );
+
+		$products = $store->topProducts( $this->february(), 'USD', 10 );
+
+		$this->assertCount( 1, $products );
+		$this->assertSame( 100, $products[0]->productId );
+		$this->assertSame( 1000, $products[0]->revenue->minorUnits );
+	}
+
+	public function test_top_products_skips_lines_without_a_product(): void {
+		$store   = $this->store();
+		$created = new \DateTimeImmutable( '2024-02-05 10:00:00' );
+
+		$store->save(
+			$this->order(
+				'S-1',
+				$created,
+				6000,
+				'USD',
+				null,
+				null,
+				array(
+					$this->line( 'Gift wrap', 5000, 1 ),
+					$this->line( 'Mug', 1000, 1, 100 ),
+				),
+				OrderStatus::Completed
+			)
+		);
+
+		$products = $store->topProducts( $this->february(), 'USD', 10 );
+
+		$this->assertCount( 1, $products );
+		$this->assertSame( 100, $products[0]->productId );
+	}
+
+	public function test_top_products_honours_the_limit_and_the_window(): void {
+		$store = $this->store();
+
+		$january  = new \DateTimeImmutable( '2024-01-05 10:00:00' );
+		$february = new \DateTimeImmutable( '2024-02-05 10:00:00' );
+
+		$store->save( $this->order( 'L-0', $january, 100, 'USD', null, null, array( $this->line( 'Old', 9900, 1, 900 ) ), OrderStatus::Completed ) );
+		$store->save( $this->order( 'L-1', $february, 100, 'USD', null, null, array( $this->line( 'A', 3000, 1, 101 ) ), OrderStatus::Completed ) );
+		$store->save( $this->order( 'L-2', $february, 100, 'USD', null, null, array( $this->line( 'B', 2000, 1, 102 ) ), OrderStatus::Completed ) );
+		$store->save( $this->order( 'L-3', $february, 100, 'USD', null, null, array( $this->line( 'C', 1000, 1, 103 ) ), OrderStatus::Completed ) );
+
+		$products = $store->topProducts( $this->february(), 'USD', 2 );
+
+		$this->assertSame( array( 101, 102 ), array_map( static fn ( $product ): int => $product->productId, $products ) );
+	}
+
+	public function test_top_products_refuses_a_currency_that_is_not_iso_4217(): void {
+		$this->expectException( ValidationException::class );
+
+		$this->store()->topProducts( $this->february(), 'dollars', 10 );
+	}
+
+	public function test_top_products_refuses_a_limit_outside_one_to_one_hundred(): void {
+		$this->expectException( ValidationException::class );
+
+		$this->store()->topProducts( $this->february(), 'USD', 0 );
 	}
 }

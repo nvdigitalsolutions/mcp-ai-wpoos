@@ -29,6 +29,7 @@ namespace Nvoos\Core\Tests\Unit\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Entity\Order;
+use Nvoos\Core\Domain\Entity\OrderLine;
 use Nvoos\Core\Domain\Error\AccessDeniedException;
 use Nvoos\Core\Domain\ValueObject\Money;
 use Nvoos\Core\Domain\ValueObject\OrderStatus;
@@ -65,7 +66,7 @@ final class SalesPerformanceDashboardToolTest extends TestCase
 
         $this->assertSame(array('currency'), $schema['required']);
         $this->assertSame(
-            array('revenue', 'orders', 'customers', 'average_order'),
+            array('revenue', 'orders', 'customers', 'average_order', 'products'),
             $schema['properties']['metrics']['items']['enum']
         );
     }
@@ -98,17 +99,15 @@ final class SalesPerformanceDashboardToolTest extends TestCase
         $this->assertArrayHasKey('group_by', $result['error']['data']);
     }
 
-    public function test_the_products_and_conversion_metrics_are_refused_by_name(): void
+    public function test_the_conversion_metric_is_refused_by_name(): void
     {
-        foreach (array('products', 'conversion') as $metric) {
-            $result = $this->execute(
-                array('currency' => 'USD', 'metrics' => array($metric)),
-                $this->store()
-            );
+        $result = $this->execute(
+            array('currency' => 'USD', 'metrics' => array('conversion')),
+            $this->store()
+        );
 
-            $this->assertFalse($result['success'], $metric . ' should be refused');
-            $this->assertArrayHasKey('metrics', $result['error']['data']);
-        }
+        $this->assertFalse($result['success']);
+        $this->assertArrayHasKey('metrics', $result['error']['data']);
     }
 
     public function test_an_unknown_metric_is_refused(): void
@@ -158,15 +157,40 @@ final class SalesPerformanceDashboardToolTest extends TestCase
         $this->assertTrue($accepted['success']);
     }
 
-    public function test_top_products_limit_is_refused(): void
+    public function test_top_products_limit_is_bounded(): void
     {
-        $result = $this->execute(
-            array('currency' => 'USD', 'top_products_limit' => 5),
-            $this->store()
+        foreach (array(0, 101) as $value) {
+            $result = $this->execute(
+                array('currency' => 'USD', 'top_products_limit' => $value),
+                $this->store()
+            );
+
+            $this->assertFalse($result['success'], (string) $value . ' should be refused');
+            $this->assertArrayHasKey('top_products_limit', $result['error']['data']);
+        }
+    }
+
+    public function test_the_products_metric_reports_paid_best_sellers_only(): void
+    {
+        $store = $this->store(
+            $this->order(1, 'completed', '30.00', 'USD', '2024-01-05 09:00:00', 7, array(
+                $this->line('Mug', 3, '30.00', 101),
+            )),
+            $this->order(2, 'pending', '99.00', 'USD', '2024-01-06 09:00:00', 7, array(
+                $this->line('Cape', 1, '99.00', 103),
+            ))
         );
 
-        $this->assertFalse($result['success']);
-        $this->assertArrayHasKey('top_products_limit', $result['error']['data']);
+        $result = $this->execute(
+            $this->window() + array('metrics' => array('products'), 'top_products_limit' => 5),
+            $store
+        );
+
+        $products = $result['data']['metrics']['products'];
+
+        $this->assertCount(1, $products);
+        $this->assertSame(101, $products[0]['product_id']);
+        $this->assertSame(3, $products[0]['quantity']);
     }
 
     public function test_a_malformed_date_is_refused(): void
@@ -368,6 +392,7 @@ final class SalesPerformanceDashboardToolTest extends TestCase
         string $currency = 'USD',
         string $created = '2024-01-15 10:00:00',
         ?int $customerId = 7,
+        array $lines = array(),
     ): Order {
         return new Order(
             id: $id,
@@ -375,10 +400,21 @@ final class SalesPerformanceDashboardToolTest extends TestCase
             status: OrderStatus::from($status),
             createdAt: new \DateTimeImmutable($created),
             total: Money::fromDecimal($total, $currency),
-            lines: array(),
+            lines: $lines,
             customerId: $customerId,
             billingName: 'Ada Lovelace',
             billingEmail: 'ada@example.test',
+        );
+    }
+
+    private function line(string $name, int $quantity, string $lineTotal, int $productId): OrderLine
+    {
+        return new OrderLine(
+            name: $name,
+            quantity: $quantity,
+            unitPrice: Money::fromDecimal($lineTotal, 'USD'),
+            lineTotal: Money::fromDecimal($lineTotal, 'USD'),
+            productId: $productId,
         );
     }
 }

@@ -43,14 +43,18 @@
  * the orders that carried it, the same definition `get_order_analytics` reports,
  * so `revenue / average_order` lands back on `orders`.
  *
- * ## Products and conversion are refused by name
+ * ## Products are computed, conversion is refused
  *
  * The `products` metric drives the top-products section, which aggregates order
- * *lines*; the store has no such aggregate yet, so it is refused with a named
- * prerequisite rather than answered with an empty list. `conversion` needs
- * sessions and traffic, which no store in this runtime records, so there is no
- * honest number to report at all. `category_ids` and `top_products_limit` are
- * refused with the section that used them.
+ * *lines*. Section 164.180 added that aggregate, so the section is computed:
+ * products roll up by product rather than by variant, count only paid orders, and
+ * keep a product whose catalogue entry has since been deleted, which the
+ * reference dropped by joining the products table. `top_products_limit` sizes it.
+ *
+ * `conversion` needs sessions and traffic, which no store in this runtime
+ * records, so there is no honest number to report at all. `category_ids` is still
+ * refused: the product model has no category field, and the reference's filter
+ * could not have worked anyway.
  *
  * The `new_customers` figure the reference reported is not offered: it counts
  * customers whose first order fell in the window, which needs a
@@ -86,6 +90,7 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\OrderStoreInterface;
 use Nvoos\Core\Domain\Entity\OrderAnalytics;
 use Nvoos\Core\Domain\Entity\OrderQuery;
+use Nvoos\Core\Domain\Entity\ProductSales;
 use Nvoos\Core\Domain\ValueObject\Money;
 use Nvoos\Core\Domain\ValueObject\OrderGrouping;
 use Nvoos\Core\Support\DateBound;
@@ -97,18 +102,16 @@ final class SalesPerformanceDashboardTool extends AbstractTool
     public const DEFAULT_DAYS = 30;
 
     /** The metrics this tool computes. */
-    public const METRICS = array('revenue', 'orders', 'customers', 'average_order');
+    public const METRICS = array('revenue', 'orders', 'customers', 'average_order', 'products');
 
-    /** The metrics the reference offers that this slice does not compute. */
+    /** The metrics the reference offers that this tool does not compute. */
     public const REFUSED_METRICS = array(
-        'products'   => 'Top products aggregate order lines, which this store does not expose; it arrives with a top-products aggregate over the order lines.',
         'conversion' => 'Conversion needs sessions and traffic, which no store in this runtime records, so there is no honest number to report.',
     );
 
-    /** Arguments the reference offers that this slice does not use. */
+    /** Arguments the reference offers that this tool does not use. */
     public const REFUSED_ARGUMENTS = array(
-        'category_ids'       => 'Only the top-products section filters by category, and that section is not computed here; the product model has no category field either.',
-        'top_products_limit' => 'Only the top-products section uses it, and that section is not computed here.',
+        'category_ids' => 'The product model has no category field, and the reference filter could not have worked anyway: it filtered on the term relationships table without joining it.',
     );
 
     public function __construct(
@@ -130,7 +133,7 @@ final class SalesPerformanceDashboardTool extends AbstractTool
 
     public function getDescription(): string
     {
-        return 'Summarises one currency over a date window for a dashboard: revenue excluding cancelled, failed and refunded orders, the count of revenue-bearing orders, average order value, the number of distinct customers who bought, and a daily revenue trend. Top products and conversion are not computed by this tool.';
+        return 'Summarises one currency over a date window for a dashboard: revenue excluding cancelled, failed and refunded orders, the count of revenue-bearing orders, average order value, the number of distinct customers who bought, a daily revenue trend, and optionally the best-selling products by revenue. Conversion is not computed by this tool.';
     }
 
     public function getRequiredCapability(): string
@@ -163,6 +166,13 @@ final class SalesPerformanceDashboardTool extends AbstractTool
                         'enum' => self::METRICS,
                     ),
                 ),
+                'top_products_limit' => array(
+                    'type'        => 'integer',
+                    'description' => 'How many products to report when the products metric is requested. Default 10.',
+                    'minimum'     => 1,
+                    'maximum'     => 100,
+                    'default'     => 10,
+                ),
                 'include_refunds' => array(
                     'type'        => 'boolean',
                     'description' => 'Accepted only as false. Revenue already excludes refunded orders and the model records no refunded amount, so including them would inflate revenue.',
@@ -189,10 +199,6 @@ final class SalesPerformanceDashboardTool extends AbstractTool
         // one is the top-products filter, which this tool does not compute.
         if (isset($arguments['category_ids']) && array() !== $arguments['category_ids']) {
             $fields['category_ids'] = array(self::REFUSED_ARGUMENTS['category_ids']);
-        }
-
-        if (array_key_exists('top_products_limit', $arguments)) {
-            $fields['top_products_limit'] = array(self::REFUSED_ARGUMENTS['top_products_limit']);
         }
 
         if ($this->boolParam($arguments, 'include_refunds', false)) {
@@ -225,6 +231,12 @@ final class SalesPerformanceDashboardTool extends AbstractTool
 
         $requested = $this->requestedMetrics($arguments, $fields);
 
+        $topLimit = $this->intParam($arguments, 'top_products_limit', 10);
+
+        if ($topLimit < 1 || $topLimit > 100) {
+            $fields['top_products_limit'] = array('Between 1 and 100.');
+        }
+
         if (array() !== $fields) {
             return $this->errors->validationFailed('The dashboard window cannot be read.', $fields);
         }
@@ -243,10 +255,25 @@ final class SalesPerformanceDashboardTool extends AbstractTool
             OrderGrouping::Day
         );
 
+        $products = null;
+
+        if (in_array('products', $requested, true)) {
+            $products = array_map(
+                static fn (ProductSales $product): array => $product->jsonSerialize(),
+                $this->orders->topProducts(
+                    new OrderQuery(createdAfter: $from, createdBefore: $to),
+                    $currency,
+                    $topLimit
+                )
+            );
+        }
+
         $metrics = array();
 
         foreach ($requested as $metric) {
-            $metrics[ $metric ] = $this->metric($metric, $analytics, $currency);
+            $metrics[ $metric ] = 'products' === $metric
+                ? $products
+                : $this->metric($metric, $analytics, $currency);
         }
 
         return $this->success(

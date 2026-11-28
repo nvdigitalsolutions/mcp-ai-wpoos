@@ -14,12 +14,12 @@
  * ## Two totals, because one number cannot answer both questions
  *
  * `grossTotal` sums every order in the window. `revenue` sums only the statuses
- * that represent money actually taken — pending, on-hold, processing and
- * completed — and excludes `cancelled`, `failed` and `refunded`. The reference
- * reported the gross figure under the name "total_revenue", so a store with a
- * refund or a cancelled order overstated its takings by exactly those amounts and
- * had no way to see that it had. Both numbers are reported here and neither is
- * called revenue by accident.
+ * that represent money actually taken — `processing` and `completed` — and
+ * excludes `pending`, `on-hold`, `cancelled`, `failed` and `refunded`. The
+ * reference reported the gross figure under the name "total_revenue", so a
+ * store with a refund or a cancelled order overstated its takings by exactly
+ * those amounts and had no way to see that it had. Both numbers are reported
+ * here and neither is called revenue by accident.
  *
  * `refunded` is excluded rather than subtracted because the model stores the
  * order's total and not how much of it came back; subtracting the whole total
@@ -64,9 +64,16 @@ final readonly class OrderAnalytics implements \JsonSerializable
     /**
      * The statuses whose totals count as revenue.
      *
+     * `processing` and `completed` are the two statuses WooCommerce's Revenue
+     * report counts: payment has been received. `pending` is an order whose
+     * payment has not completed and `on-hold` one awaiting confirmation, so
+     * neither is money taken, and section 164.180 corrects the wider set this
+     * constant carried when section 164.178 introduced it. `cancelled`,
+     * `failed` and `refunded` are excluded for the same reason.
+     *
      * @var list<string>
      */
-    public const REVENUE_STATUSES = array('pending', 'on-hold', 'processing', 'completed');
+    public const REVENUE_STATUSES = array('processing', 'completed');
 
     /**
      * @param int                            $orderCount        Orders in the window and currency.

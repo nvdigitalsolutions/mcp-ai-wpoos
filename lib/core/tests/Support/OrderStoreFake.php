@@ -28,6 +28,8 @@ use Nvoos\Core\Domain\Entity\Order;
 use Nvoos\Core\Domain\Entity\OrderAnalytics;
 use Nvoos\Core\Domain\Entity\OrderCollection;
 use Nvoos\Core\Domain\Entity\OrderQuery;
+use Nvoos\Core\Domain\Entity\ProductSales;
+use Nvoos\Core\Domain\Error\ValidationException;
 use Nvoos\Core\Domain\Service\Order\OrderStatusTransition;
 use Nvoos\Core\Domain\ValueObject\Money;
 use Nvoos\Core\Domain\ValueObject\OrderGrouping;
@@ -202,6 +204,100 @@ final class OrderStoreFake implements OrderStoreInterface
             $statusCounts,
             OrderAnalytics::buckets($daily, $grouping),
         );
+    }
+    /**
+     * The products a selection sold most of, in one currency.
+     *
+     * Mirrors the adapter: revenue-bearing orders only, the order's currency and
+     * the line's currency both checked, lines without a product id skipped, and
+     * the same ordering. The name reported is the lexicographic minimum, which is
+     * what `MIN(name)` gives the adapter; `strcmp` is used rather than `<`
+     * because PHP compares two numeric-looking strings as numbers, and products
+     * named "10" and "9" would then disagree with the database.
+     *
+     * @return list<ProductSales>
+     */
+    public function topProducts(OrderQuery $query, string $currency, int $limit): array
+    {
+        if (1 !== preg_match('/^[A-Z]{3}$/', $currency)) {
+            throw new ValidationException('A product aggregate needs an ISO 4217 currency.');
+        }
+
+        if ($limit < 1 || $limit > 100) {
+            throw new ValidationException('A product aggregate returns between 1 and 100 products.');
+        }
+
+        $this->queries[] = $query;
+
+        $groups = array();
+
+        foreach ($this->orders as $order) {
+            if (! $this->matches($order, $query)) {
+                continue;
+            }
+
+            if ($order->currency() !== $currency) {
+                continue;
+            }
+
+            if (! OrderAnalytics::isRevenueBearing($order->status)) {
+                continue;
+            }
+
+            foreach ($order->lines as $line) {
+                if (null === $line->productId || $line->lineTotal->currency !== $currency) {
+                    continue;
+                }
+
+                $key = $line->productId;
+
+                if (! isset($groups[ $key ])) {
+                    $groups[ $key ] = array(
+                        'product_id' => $key,
+                        'name'       => $line->name,
+                        'sku'        => $line->sku,
+                        'quantity'   => 0,
+                        'minor'      => 0,
+                    );
+                }
+
+                if (strcmp($line->name, $groups[ $key ]['name']) < 0) {
+                    $groups[ $key ]['name'] = $line->name;
+                }
+
+                if (null !== $line->sku) {
+                    if (null === $groups[ $key ]['sku'] || strcmp($line->sku, $groups[ $key ]['sku']) < 0) {
+                        $groups[ $key ]['sku'] = $line->sku;
+                    }
+                }
+
+                $groups[ $key ]['quantity'] += $line->quantity;
+                $groups[ $key ]['minor']    += $line->lineTotal->minorUnits;
+            }
+        }
+
+        $products = array();
+
+        foreach ($groups as $group) {
+            $products[] = new ProductSales(
+                $group['product_id'],
+                $group['name'],
+                $group['sku'],
+                $group['quantity'],
+                Money::fromMinorUnits($group['minor'], $currency),
+            );
+        }
+
+        usort(
+            $products,
+            static function (ProductSales $a, ProductSales $b): int {
+                return ($b->revenue->minorUnits <=> $a->revenue->minorUnits)
+                    ?: ($b->quantity <=> $a->quantity)
+                    ?: ($a->name <=> $b->name);
+            }
+        );
+
+        return array_slice($products, 0, $limit);
     }
     public function save(Order $order): Order
     {
