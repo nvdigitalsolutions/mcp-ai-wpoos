@@ -1,12 +1,14 @@
 # NV oOS Design System — Brand Ops Enhancement & WordPress.org 1.0.0 Proposal
 
 **Date:** November 28, 2026
-**Status:** Implemented — validation complete (PHPUnit 120/120, PHPCS 0 errors, Plugin Check 0 blocking errors); screenshots captured and the package is ready to submit
+**Status:** Implemented — validation complete (PHPUnit 163/163, PHPCS 0 errors, Plugin Check 0 errors and 0 warnings); screenshots captured and the 1.0.1 package is ready to submit
 **Proposal number:** 169
-**Target:** `addons/nvoos-design-system/` (now 1.0.0)
+**Target:** `addons/nvoos-design-system/` (submitted as **1.0.1**; see the version note below)
 **Research companion:** [`169-nvoos-design-system-wporg-brand-ops-research.md`](./169-nvoos-design-system-wporg-brand-ops-research.md)
 **Predecessors:** [047](./047-nvoos-design-system-addon-proposal.md) · [048](./048-nvoos-design-system-deferred-email-enhancements.md) · [058](./058-nvoos-design-system-dtcg-token-import-proposal.md)
 **Distribution:** WordPress.org plugin directory (free, GPL-3.0-or-later), slug `nvoos-design-system`
+
+**Version note:** this document is labelled 1.0.0 because that was the development target. 1.0.0 was never published, tagged or pushed to SVN — the WordPress.org submission and its `Stable tag` are **1.0.1**, so the released build is distinguishable from the pre-submission 1.0.0 snapshot mirrored at `nvdigitalsolutions/nvoos-design-system`. Read "1.0.0" below as "the 1.0 release line".
 
 ---
 

@@ -346,7 +346,7 @@ class NV_oOS_Design_System_Email_Generator {
 	 * WordPress 7.0+ ships a provider-agnostic AI Client. Using it avoids
 	 * direct provider credentials and keeps generation aligned with core.
 	 *
-	 * @since 1.0.0
+	 * @since 1.0.1
 	 *
 	 * @param string $system_prompt System prompt.
 	 * @param string $user_prompt   User prompt.

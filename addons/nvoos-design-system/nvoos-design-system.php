@@ -5,7 +5,7 @@
  * Description: Design tokens, brand kit, DTCG 2025.10 interchange,
  *              Global Styles sync, WCAG 2.2 contrast checks, and
  *              token-driven email templates for WordPress.
- * Version:     1.0.0
+ * Version:     1.0.1
  * Requires at least: 6.0
  * Requires PHP: 8.1
  * Author: NV Digital Solutions
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version — keep in sync with the header above. */
-define( 'NVOOS_DESIGN_SYSTEM_VERSION', '1.0.0' );
+define( 'NVOOS_DESIGN_SYSTEM_VERSION', '1.0.1' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_DESIGN_SYSTEM_FILE', __FILE__ );

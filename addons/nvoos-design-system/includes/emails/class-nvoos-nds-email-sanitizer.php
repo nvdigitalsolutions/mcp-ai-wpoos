@@ -9,7 +9,7 @@
  * rendered in a sandboxed iframe.
  *
  * @package NV_oOS_Design_System
- * @since   1.0.0
+ * @since   1.0.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Validates email template HTML before storage.
  *
- * @since 1.0.0
+ * @since 1.0.1
  */
 class NV_oOS_Design_System_Email_Sanitizer {
 

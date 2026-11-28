@@ -72,7 +72,7 @@ class Test_CSS_Generator extends TestCase {
 	}
 
 	/**
-	 * Legacy `--cds-*` aliases were removed in 1.0.0. The constructor still
+	 * Legacy `--cds-*` aliases were removed in 1.0.1. The constructor still
 	 * accepts the flag for back-compat, but it must not emit the variables.
 	 *
 	 * @return void
@@ -84,7 +84,7 @@ class Test_CSS_Generator extends TestCase {
 		$css_with    = $with_flag->generate();
 		$css_without = $without_flag->generate();
 
-		$this->assertStringNotContainsString( '--cds-color-surface', $css_with, 'Legacy aliases were removed in 1.0.0 and must not be reintroduced.' );
+		$this->assertStringNotContainsString( '--cds-color-surface', $css_with, 'Legacy aliases were removed in 1.0.1 and must not be reintroduced.' );
 		$this->assertStringNotContainsString( '--cds-color-surface', $css_without );
 		$this->assertSame( $css_without, $css_with, 'The legacy flag must not change the output.' );
 	}

@@ -7,7 +7,7 @@
  * updates the site, the block editor and every email.
  *
  * @package NV_oOS_Design_System
- * @since   1.0.0
+ * @since   1.0.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Brand identity store and exporter.
  *
- * @since 1.0.0
+ * @since 1.0.1
  */
 class NV_oOS_Design_System_Brand_Kit {
 

@@ -9,7 +9,7 @@
  *
  * @package NV_oOS_Design_System
  * @since   0.2.0
- * @since   1.0.0 Codec-backed, spec-shaped output.
+ * @since   1.0.1 Codec-backed, spec-shaped output.
  *
  * @see https://www.designtokens.org/tr/2025.10/
  */

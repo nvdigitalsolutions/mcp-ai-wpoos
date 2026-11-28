@@ -17,7 +17,7 @@
  *
  * @package NV_oOS_Design_System
  * @since   0.2.0
- * @since   1.0.0 Codec-backed, alias-aware, spec-shaped.
+ * @since   1.0.1 Codec-backed, alias-aware, spec-shaped.
  *
  * @see https://www.designtokens.org/tr/2025.10/
  */
@@ -254,7 +254,7 @@ class NV_oOS_Design_System_DTCG_Importer {
 	 * Keys keep their case (DTCG extension keys are camelCase); values are
 	 * text-sanitized, bounded in depth and length, and only scalars survive.
 	 *
-	 * @since 1.0.0
+	 * @since 1.0.1
 	 *
 	 * @param array $meta  Raw metadata.
 	 * @param int   $depth Current recursion depth.

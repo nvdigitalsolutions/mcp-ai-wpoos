@@ -8,7 +8,7 @@
  * replaces the theme's own palette.
  *
  * @package NV_oOS_Design_System
- * @since   1.0.0
+ * @since   1.0.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Runtime `theme.json` bridge.
  *
- * @since 1.0.0
+ * @since 1.0.1
  */
 class NV_oOS_Design_System_Global_Styles {
 

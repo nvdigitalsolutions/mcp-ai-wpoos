@@ -5,7 +5,7 @@ Tags: design tokens, brand kit, theme.json, accessibility, email templates
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -119,7 +119,7 @@ Options, token metadata, the brand kit, the send log and email template posts ar
 
 == Changelog ==
 
-= 1.0.0 =
+= 1.0.1 =
 * First WordPress.org release.
 * DTCG 2025.10 codec: spec-shaped colour, dimension, font-weight, number, duration and shadow values; aliases, `$root`, `$extends`, `$deprecated` and `$extensions`.
 * Global Styles bridge via `wp_theme_json_data_theme` (no file writes).
@@ -139,8 +139,8 @@ Options, token metadata, the brand kit, the send log and email template posts ar
 
 == Upgrade Notice ==
 
-= 1.0.0 =
-1.0.0 removes the legacy `--cds-*` variables and PHP class aliases; migrate custom CSS to `--nds-*`. Public hooks use the `nvoos_nds_` prefix, and email templates move to the prefixed `nvoos_nds_email` post type automatically. The email wrapper is off until you choose a template and delivery mode.
+= 1.0.1 =
+1.0.1 removes the legacy `--cds-*` variables and PHP class aliases; migrate custom CSS to `--nds-*`. Public hooks use the `nvoos_nds_` prefix, and email templates move to the prefixed `nvoos_nds_email` post type automatically. The email wrapper is off until you choose a template and delivery mode.
 
 == External services ==
 
