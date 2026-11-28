@@ -153,10 +153,6 @@
             "decision": "deferred",
             "reason": "Units are the rentable inventory rows in JetBooking's tables and have no local representation. Inventing a content type for them before the JetBooking client exists would be a schema guess. Prerequisite: the JetBooking client, and a unit model that check_availability and get_available_slots can read, so a unit is actually bookable rather than merely stored."
         },
-        "get_order_analytics": {
-            "decision": "deferred",
-            "reason": "Aggregates orders into revenue, average order value and period comparisons. Prerequisite: OrderStoreInterface. The original reads WooCommerce's order-stats table directly, which is the dependency the contract exists to remove."
-        },
         "get_queued_videos": {
             "decision": "deferred",
             "reason": "Lists media-library attachments filtered by _mcp_video_status and _mcp_video_target_platform. Nothing on this runtime writes either: the only writer in WordPress is upload_video_batch, which is itself unported. A port today could only answer with an empty list, and an empty list reads as a finding rather than as a missing model. Prerequisite: a video processing and upload job model. Deferred, not declined, because the query is sound once something writes the status."

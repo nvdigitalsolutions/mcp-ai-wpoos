@@ -34,7 +34,9 @@ use Nvoos\Core\Domain\Entity\OrderCollection;
 use Nvoos\Core\Domain\Entity\OrderLine;
 use Nvoos\Core\Domain\Entity\OrderQuery;
 use Nvoos\Core\Domain\Error\ConflictException;
+use Nvoos\Core\Domain\Error\ValidationException;
 use Nvoos\Core\Domain\ValueObject\Money;
+use Nvoos\Core\Domain\ValueObject\OrderGrouping;
 use Nvoos\Core\Domain\ValueObject\OrderStatus;
 use Nvoos\Laravel\Adapter\OrderStore;
 
@@ -351,5 +353,103 @@ final class OrderStoreTest extends TestCase {
 			unitPrice: Money::fromMinorUnits( $unitMinor, 'USD' ),
 			lineTotal: Money::fromMinorUnits( $unitMinor * $quantity, 'USD' ),
 		);
+	}
+
+	/**
+	 * A query covering February 2024, the fixture month for these cases.
+	 */
+	private function february(): OrderQuery {
+		return new OrderQuery(
+			createdAfter: new \DateTimeImmutable( '2024-02-01 00:00:00' ),
+			createdBefore: new \DateTimeImmutable( '2024-02-29 23:59:59' ),
+		);
+	}
+
+	public function test_analytics_separates_revenue_from_gross(): void {
+		$store   = $this->store();
+		$created = new \DateTimeImmutable( '2024-02-05 10:00:00' );
+
+		$store->save( $this->order( 'A-1', $created, 10000, 'USD', null, null, array(), OrderStatus::Completed ) );
+		$store->save( $this->order( 'A-2', $created, 5000, 'USD', null, null, array(), OrderStatus::Cancelled ) );
+		$store->save( $this->order( 'A-3', $created, 4000, 'USD', null, null, array(), OrderStatus::Refunded ) );
+		$store->save( $this->order( 'A-4', $created, 2000, 'USD', null, null, array(), OrderStatus::Failed ) );
+
+		$analytics = $store->analytics( $this->february(), 'USD', OrderGrouping::Day );
+
+		$this->assertSame( 4, $analytics->orderCount );
+		$this->assertSame( 1, $analytics->revenueOrderCount );
+		$this->assertSame( 21000, $analytics->grossTotal->minorUnits );
+		$this->assertSame( 10000, $analytics->revenue->minorUnits );
+		$this->assertSame( 10000, $analytics->averageOrderValueMinor() );
+		$this->assertSame( 1, $analytics->statusCounts['cancelled'] );
+	}
+
+	public function test_analytics_periods_carry_revenue_only(): void {
+		$store   = $this->store();
+		$created = new \DateTimeImmutable( '2024-02-05 10:00:00' );
+
+		$store->save( $this->order( 'P-1', $created, 1000, 'USD', null, null, array(), OrderStatus::Completed ) );
+		$store->save( $this->order( 'P-2', $created, 5000, 'USD', null, null, array(), OrderStatus::Cancelled ) );
+
+		$periods = $store->analytics( $this->february(), 'USD', OrderGrouping::Day )->periods;
+
+		$this->assertCount( 1, $periods );
+		$this->assertSame( '2024-02-05', $periods[0]['period'] );
+		$this->assertSame( 1, $periods[0]['orders'] );
+		$this->assertSame( 1000, $periods[0]['revenue_minor'] );
+	}
+
+	public function test_analytics_excludes_another_currency_and_counts_it(): void {
+		$store   = $this->store();
+		$created = new \DateTimeImmutable( '2024-02-05 10:00:00' );
+
+		$store->save( $this->order( 'B-1', $created, 10000, 'USD' ) );
+		$store->save( $this->order( 'B-2', $created, 20000, 'EUR' ) );
+
+		$analytics = $store->analytics( $this->february(), 'USD', OrderGrouping::Day );
+
+		$this->assertSame( 1, $analytics->orderCount );
+		$this->assertSame( 1, $analytics->excludedOrders );
+		$this->assertSame( 10000, $analytics->grossTotal->minorUnits );
+	}
+
+	public function test_analytics_folds_days_into_iso_weeks_and_months(): void {
+		$store = $this->store();
+
+		$store->save( $this->order( 'C-1', new \DateTimeImmutable( '2024-12-30 09:00:00' ), 1000 ) );
+		$store->save( $this->order( 'C-2', new \DateTimeImmutable( '2025-01-02 09:00:00' ), 2000 ) );
+		$store->save( $this->order( 'C-3', new \DateTimeImmutable( '2025-02-10 09:00:00' ), 4000 ) );
+
+		$query = new OrderQuery(
+			createdAfter: new \DateTimeImmutable( '2024-12-01 00:00:00' ),
+			createdBefore: new \DateTimeImmutable( '2025-02-28 23:59:59' ),
+		);
+
+		$weeks = $store->analytics( $query, 'USD', OrderGrouping::Week )->periods;
+
+		$this->assertSame( array( '2025-W01', '2025-W07' ), array_column( $weeks, 'period' ) );
+		$this->assertSame( 2, $weeks[0]['orders'] );
+		$this->assertSame( 3000, $weeks[0]['revenue_minor'] );
+
+		$months = $store->analytics( $query, 'USD', OrderGrouping::Month )->periods;
+
+		$this->assertSame( array( '2024-12', '2025-01', '2025-02' ), array_column( $months, 'period' ) );
+	}
+
+	public function test_analytics_on_an_empty_selection_reports_zeroes(): void {
+		$analytics = $this->store()->analytics( $this->february(), 'USD', OrderGrouping::Day );
+
+		$this->assertSame( 0, $analytics->orderCount );
+		$this->assertSame( 0, $analytics->revenueOrderCount );
+		$this->assertSame( 0, $analytics->excludedOrders );
+		$this->assertSame( 0, $analytics->grossTotal->minorUnits );
+		$this->assertSame( array(), $analytics->statusCounts );
+		$this->assertSame( array(), $analytics->periods );
+	}
+
+	public function test_analytics_refuses_a_currency_that_is_not_iso_4217(): void {
+		$this->expectException( ValidationException::class );
+
+		$this->store()->analytics( $this->february(), 'dollars', OrderGrouping::Day );
 	}
 }

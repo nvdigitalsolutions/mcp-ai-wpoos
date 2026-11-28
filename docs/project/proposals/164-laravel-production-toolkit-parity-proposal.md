@@ -15857,3 +15857,75 @@ A price needs a currency, because this model stores one with every amount and a 
 #### After this
 
 The remaining ecommerce tools each need a *store* rather than a wrapper: coupons and customers need their own aggregate and tables, inventory history needs a movement model, and the analytics tools need aggregation over `OrderQuery`. `woo_products` was the last one whose prerequisite was already built.
+
+### 164.178 — `get_order_analytics`, and two numbers where the reference had one
+
+Measured before the port. `ecommerce` moves to **44 wp / 20 ported / 1 declined / 23 deferred**.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `get_order_analytics` | `GetOrderAnalyticsTool` -> `OrderStoreInterface::analytics( OrderQuery, string $currency, OrderGrouping )` |
+
+`ready`: the store is bound (164.174) and the aggregate is a fourth method on the contract. Section 164.177 closed by predicting exactly this — "the analytics tools need aggregation over `OrderQuery`" — and that is the prerequisite this section lands.
+
+#### The register predicted this shape
+
+Its entry said *"Aggregates orders into revenue, average order value and period comparisons. Prerequisite: OrderStoreInterface. The original reads WooCommerce's order-stats table directly, which is the dependency the contract exists to remove."* The contract exists, so the entry is deleted.
+
+#### Four passes over the window became one `GROUP BY`
+
+The reference fetched every order in the range with `'limit' => -1`, then each of its four helpers called `wc_get_order()` again for every id it had just been handed — summary, trends, top products and customers. A month with ten thousand orders meant forty thousand hydrations inside one tool call, and the number grew with the store rather than with the window.
+
+`analytics()` asks the store instead: a status distribution, a count of orders the currency cannot include, and daily totals — three grouped queries. The cost is bounded by days and statuses, not by orders. `DATE( created_at )` is the only expression used, and it is standard on MariaDB, PostgreSQL and SQLite; weeks and months are folded from the days in PHP.
+
+#### "Total revenue" was not revenue
+
+The summary added `$order->get_total()` for every order regardless of status, so cancellations, failures and refunds were counted as takings, and a store with a refund overstated its revenue by exactly that amount with no way to see it. Two figures are reported now and only one is called revenue:
+
+- `gross_total` — every order in the window;
+- `revenue` — `pending`, `on-hold`, `processing` and `completed` only.
+
+`refunded` is **excluded rather than subtracted**, because the model stores the order total and not how much of it came back; subtracting the whole total would be as wrong in the other direction. `average_order_value` divides revenue by the revenue-bearing order count, so it agrees with the figure it divides instead of quietly mixing bases.
+
+#### A mixed-currency sum, labelled with the store's currency
+
+The reference summed raw floats across currencies and reported `get_woocommerce_currency()`. The port takes a **required** currency, aggregates only orders in it, and counts the rest as `excluded_orders`. The currency is an argument to `analytics()` rather than a field of `OrderQuery`, because a listing may legitimately return a mixed page and a sum cannot: the one method that cannot span currencies is the one that names it.
+
+#### The bucket that was gross wearing revenue's name
+
+The first draft of this slice summed every status into the per-period total and the entity labelled that field `revenue_minor`. That is the same defect one level down: the top-level split would have been right while every trend line overstated. The daily query is scoped to revenue-bearing statuses, so `sum( periods[].orders )` equals `revenue_order_count` and the figure under `revenue` is revenue. Gross per period would be a second series; the window totals carry it, and saying so is cheaper than implying it.
+
+#### Weeks use the ISO week-year
+
+The reference formatted `Y-W`, which mislabels the week spanning New Year: 2024-12-30 and 2025-01-02 are one ISO week, `2025-W01`, and `Y-W` splits them into `2024-W53` and `2025-W01`. The port formats `o-\WW`. A test pins both days into a single bucket.
+
+#### Three sections refused, one argument not offered
+
+`include_products` and `include_customers` aggregate order *lines* and *customers* respectively — different aggregates from a window of orders, and the customer one belongs with the customer store that `woo_customers` needs. `top_count` is refused with them because only they use it. `payment_methods` is not offered at all: the order model has no payment-method field, and reporting an empty map would read as a finding rather than as a missing model.
+
+#### Corrected inputs
+
+`group_by` accepted any string and fell through a `switch` default to `day`, so an unrecognised value silently answered a different question than the caller asked. It is a closed enum here, so an unknown value is a field error. Dates were `sanitize_text_field()` output concatenated into an `after...before` string with no validation; both bounds parse strictly through `DateBound` (164.176), `date_to` includes the day it names, and the defaults are evaluated once.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,711 / 24,981 |
+| adapter | 757 / 4,007, 2 skipped |
+| readiness | 650 rows, servable 631 (delegated 13), no violations |
+| parity | 429 ported / 9 declined / 95 deferred / 430 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+#### After this
+
+Twenty-three ecommerce tools remain deferred, and they fall into four prerequisites rather than twenty-three pieces of work:
+
+- **Coupons** — `woo_coupons`, `create_discount_campaign`: a promotion model.
+- **Customers** — `woo_customers`, `segment_customers`, `customer_lifetime_value`, `export_customer_data`: a customer aggregate. `include_customers` above waits on the same thing.
+- **Inventory** — `sync_product_inventory`, `track_inventory_movement`, `inventory_forecast`, `low_stock_alert_automation`: a movement ledger, and the last two also need a multi-location decision that no WordPress table makes for us.
+- **Carts** — `get_abandoned_carts`, `abandoned_cart_recovery`, `send_cart_recovery_email`: a cart model and a mail channel.
+
+`sales_performance_dashboard` is now a composition of this tool with those aggregates rather than a store of its own. Four tools — `refund_order_advanced`, `quickbooks_desktop_sync`, `rfdetr_catalog_search`, `get_import_duty` — move money or call external systems, and stay deferred for that reason rather than for a missing model.

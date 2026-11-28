@@ -255,6 +255,7 @@
             "bulk_order_status_update",
             "bulk_update_products",
             "generate_invoice_pdf",
+            "get_order_analytics",
             "printful",
             "product_actualization",
             "quickbooks_report",

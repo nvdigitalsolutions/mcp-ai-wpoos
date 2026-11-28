@@ -44,13 +44,17 @@ declare(strict_types=1);
 
 namespace Nvoos\Laravel\Adapter;
 
+use Illuminate\Support\Facades\DB;
 use Nvoos\Core\Domain\Contract\OrderStoreInterface;
 use Nvoos\Core\Domain\Entity\Order;
+use Nvoos\Core\Domain\Entity\OrderAnalytics;
 use Nvoos\Core\Domain\Entity\OrderCollection;
 use Nvoos\Core\Domain\Entity\OrderLine;
 use Nvoos\Core\Domain\Entity\OrderQuery;
+use Nvoos\Core\Domain\Error\ValidationException;
 use Nvoos\Core\Domain\Service\Order\OrderStatusTransition;
 use Nvoos\Core\Domain\ValueObject\Money;
+use Nvoos\Core\Domain\ValueObject\OrderGrouping;
 use Nvoos\Core\Domain\ValueObject\OrderStatus;
 use Nvoos\Laravel\Models\NvoosOrder;
 use Nvoos\Laravel\Models\NvoosOrderLine;
@@ -70,45 +74,7 @@ class OrderStore implements OrderStoreInterface {
 	 * One page of matching orders, newest first unless asked otherwise.
 	 */
 	public function query( OrderQuery $query ): OrderCollection {
-		$builder = NvoosOrder::query();
-
-		        if ( $query->uninvoicedOnly ) {
-		            $builder->whereNull( 'invoiced_at' );
-		        }
-
-		        if ( '' !== $query->search ) {
-		            // The wildcards in a caller's term are escaped, so a search for a
-		            // literal percent sign does not become a match-everything query.
-		            $term = '%' . addcslashes( $query->search, '%_\\' ) . '%';
-
-		            $builder->where(
-		                static function ( $scoped ) use ( $term ): void {
-		                    $scoped->where( 'number', 'like', $term )
-		                        ->orWhere( 'billing_email', 'like', $term );
-		                }
-		            );
-		        }
-
-		if ( null !== $query->status ) {
-			$builder->where( 'status', $query->status->value );
-		}
-
-		if ( null !== $query->customerId ) {
-			$builder->where( 'customer_id', $query->customerId );
-		}
-
-		if ( null !== $query->createdAfter ) {
-			$builder->where( 'created_at', '>=', $query->createdAfter );
-		}
-
-		if ( null !== $query->createdBefore ) {
-			$builder->where( 'created_at', '<=', $query->createdBefore );
-		}
-
-		if ( null !== $query->minTotal ) {
-			$builder->where( 'total_currency', $query->minTotal->currency )
-				->where( 'total_minor', '>=', $query->minTotal->minorUnits );
-		}
+		$builder = $this->filtered( $query );
 
 		$total = (int) ( clone $builder )->count();
 
@@ -191,6 +157,126 @@ class OrderStore implements OrderStoreInterface {
 		return $this->hydrate( $model );
 	}
 
+	/**
+	 * The filters every read path applies.
+	 */
+	private function filtered( OrderQuery $query ): \Illuminate\Database\Eloquent\Builder {
+		$builder = NvoosOrder::query();
+
+		if ( $query->uninvoicedOnly ) {
+			$builder->whereNull( 'invoiced_at' );
+		}
+
+		if ( '' !== $query->search ) {
+			// The wildcards in a caller's term are escaped, so a search for a
+			// literal percent sign does not become a match-everything query.
+			$term = '%' . addcslashes( $query->search, '%_\\' ) . '%';
+
+			$builder->where(
+				static function ( $scoped ) use ( $term ): void {
+					$scoped->where( 'number', 'like', $term )
+						->orWhere( 'billing_email', 'like', $term );
+				}
+			);
+		}
+
+		if ( null !== $query->status ) {
+			$builder->where( 'status', $query->status->value );
+		}
+
+		if ( null !== $query->customerId ) {
+			$builder->where( 'customer_id', $query->customerId );
+		}
+
+		if ( null !== $query->createdAfter ) {
+			$builder->where( 'created_at', '>=', $query->createdAfter );
+		}
+
+		if ( null !== $query->createdBefore ) {
+			$builder->where( 'created_at', '<=', $query->createdBefore );
+		}
+
+		if ( null !== $query->minTotal ) {
+			$builder->where( 'total_currency', $query->minTotal->currency )
+				->where( 'total_minor', '>=', $query->minTotal->minorUnits );
+		}
+
+		return $builder;
+	}
+
+	/**
+	 * Aggregate the selection, in one currency.
+	 *
+	 * Three grouped queries, not one per order: status distribution, the count of
+	 * orders this currency cannot include, and the daily totals that the buckets
+	 * are folded from. `DATE()` is the one expression used and it is standard on
+	 * MariaDB, PostgreSQL and SQLite.
+	 */
+	public function analytics( OrderQuery $query, string $currency, OrderGrouping $grouping ): OrderAnalytics {
+		if ( 1 !== preg_match( '/^[A-Z]{3}$/', $currency ) ) {
+			throw new ValidationException( 'An analytics query needs an ISO 4217 currency.' );
+		}
+
+		$base = $this->filtered( $query );
+
+		$excluded = ( clone $base )
+			->where( 'total_currency', '!=', $currency )
+			->count();
+
+		$scoped = ( clone $base )->where( 'total_currency', $currency );
+
+		$statusRows = ( clone $scoped )
+			->selectRaw( 'status, COUNT(*) AS orders, COALESCE( SUM( total_minor ), 0 ) AS minor' )
+			->groupBy( 'status' )
+			->get();
+
+		$statusCounts      = array();
+		$revenueOrderCount = 0;
+		$revenueMinor      = 0;
+
+		foreach ( $statusRows as $row ) {
+			$status = (string) $row->status;
+			$orders = (int) $row->orders;
+
+			$statusCounts[ $status ] = $orders;
+
+			$candidate = OrderStatus::tryFrom( $status );
+
+			if ( null !== $candidate && OrderAnalytics::isRevenueBearing( $candidate ) ) {
+				$revenueOrderCount += $orders;
+				$revenueMinor      += (int) $row->minor;
+			}
+		}
+
+		$gross = (int) ( clone $scoped )->sum( 'total_minor' );
+
+		$dailyRows = ( clone $scoped )
+			->whereIn( 'status', OrderAnalytics::REVENUE_STATUSES )
+			->selectRaw( 'DATE( created_at ) AS day, COUNT(*) AS orders, COALESCE( SUM( total_minor ), 0 ) AS minor' )
+			->groupBy( DB::raw( 'DATE( created_at )' ) )
+			->orderBy( DB::raw( 'DATE( created_at )' ) )
+			->get();
+
+		$daily = array();
+
+		foreach ( $dailyRows as $row ) {
+			$daily[ (string) $row->day ] = array(
+				'orders'        => (int) $row->orders,
+				'revenue_minor' => (int) $row->minor,
+			);
+		}
+
+		return new OrderAnalytics(
+			$currency,
+			(int) array_sum( $statusCounts ),
+			$revenueOrderCount,
+			(int) $excluded,
+			Money::fromMinorUnits( $gross, $currency ),
+			Money::fromMinorUnits( $revenueMinor, $currency ),
+			$statusCounts,
+			OrderAnalytics::buckets( $daily, $grouping ),
+		);
+	}
 	/**
 	 * Upsert the order's lines by id, then delete the ones no longer present.
 	 *
