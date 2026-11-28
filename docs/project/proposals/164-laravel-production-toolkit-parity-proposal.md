@@ -14682,3 +14682,88 @@ Thirty tools to build in three groups: the three store-backed tools first, then
 the twenty-four calculators in slices of six to eight, then the three user-meta
 records. The fourteen deferrals carry named prerequisites, so nothing in this
 family is undecided.
+
+### §164.165 — `math`, slice 1: the Boolean gate, and what the family is
+
+Nine tools, 3,015 lines. §164.164 chose this family to close quickly, and the
+measurement changed its shape twice — once before the slice and once when the
+media-worker was looked at.
+
+#### Seven of the nine are not PHP at all
+
+`calculate_derivative`, `calculate_integral`, `simplify_expression`,
+`solve_equation` and `matrix_operations` read their result from a WordPress
+filter:
+
+```php
+$math_result = apply_filters( 'wp_mcp_ai_mathjs_derivative', false, array( ... ) );
+if ( false === $math_result ) {
+    return new WP_Error( 'wp_mcp_ai_engine_missing', ... );
+}
+```
+
+`graph_function` does the same through `wp_mcp_ai_graph_function`, and
+`render_math_equation` needs a KaTeX/MathJax renderer. Every one of them refuses
+cleanly when no engine is installed — they are honest about their dependency,
+which is why they are **not** deferred: the dependency exists on this estate.
+
+#### The media worker already carries the three engines
+
+`addons/media-worker/package.json` depends on **`mathjs ^15.2.0`**,
+**`chartjs-node-canvas ^5.0.0`** and **`katex ^0.18.2`**, and
+`POST /api/data/render-chart` already renders Chart.js. `lib/core` already has
+`MediaWorkerClientInterface` and the domain-adapter pattern
+(`MediaWorkerVideoComposition`, `MediaWorkerImageProcessing`) that owns its own
+endpoint and request shape.
+
+So the seven need a `/api/math/*` route group in the worker plus a
+`MathEngineInterface` adapter — the same shape as the video-composition routes
+that already ship — rather than a new engine. They stay **undecided**, not
+deferred, until that slice lands. The worker is a versioned commercial sidecar,
+so that slice also owns a version bump across the five recorded spots.
+
+#### The n-ary NAND LaTeX dropped every input after the second
+
+The plain-text decomposition was right — `NAND(A, B, C)`. The LaTeX was built by
+re-parsing that text with a converter that read exactly two operands and then
+skipped to the closing parenthesis:
+
+```php
+$left  = $parse();                                   // A
+$right = $parse();                                   // B
+while ( ')' !== $expression_p[ $pos ] ) { ++$pos; }  // C discarded
+```
+
+`NAND(A, B, C)` therefore rendered as `(A \uparrow B)` — two-input NAND, which is
+a **different function** from the negation of a three-way conjunction. The port
+builds the decomposition as a tree and renders both forms from it, so they cannot
+disagree, and an n-ary NAND becomes `\overline{A \cdot B \cdot C}`. n-ary NAND is
+not a fold of two-input NAND (`NAND(NAND(A,B),C)` is `(A \wedge B) \vee \neg C`),
+so it stays one n-ary node rather than left-associating into something else.
+
+#### Two smaller corrections
+
+`decompose_to_nand` was read with `! empty()`, so the string `'false'` switched it
+on; it goes through `boolParam()`. An unknown `format` was silently replaced with
+`both`; the port refuses it, because the schema declares three values.
+
+Gated on `read`, matching both the declaration and the handler.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `MathLogicGateTest` | **13 tests, 40 assertions**, 0 failures |
+| Readiness manifest | 633 → **634 rows**; servable 614 → **615**; ready 573 → **574**; no violations |
+| Toolkit parity | 412 → **413 ported**, 9 declined, 103 deferred, 446 → **445 remaining**; `math` `9 \| 0 \| 0 \| 0 \| 9` → **`9 \| 1 \| 0 \| 0 \| 8`** |
+| `lib/core` unit suite | **4,396 tests / 24,125 assertions**, 0 failures |
+| Adapter suite | **712 tests / 3,881 assertions**, 2 skipped, 0 failures |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+#### Where the family stands
+
+Eight undecided: `generate_truth_table`, which is pure PHP and has its own
+tokenizer and recursive-descent parser, and the seven that need the worker route
+group. Slice 2 is `generate_truth_table`; slice 3 adds `/api/math/*` to the worker
+and a `MathEngineInterface` adapter, then converts the seven into ports.

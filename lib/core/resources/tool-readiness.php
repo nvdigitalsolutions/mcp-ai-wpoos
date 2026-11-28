@@ -1889,6 +1889,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ChartAndPlanningToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'evaluate_logic_gate' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Math\\EvaluateLogicGateTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the Boolean gate evaluator (Proposal 164 section 164.165), one of only two tools in the math family that does its own work rather than delegating to a Node math.js service. Fixes the n-ary NAND LaTeX: WordPress built it by re-parsing the plain-text NAND(A, B, C) with a converter that read two operands and skipped to the closing parenthesis, so C was discarded and the rendered form described two-input NAND instead of the negation of a three-way conjunction. The port builds the decomposition as a tree and renders text and LaTeX from it, so the two forms cannot disagree, and an n-ary NAND renders as the negated conjunction. n-ary NAND is not a fold of two-input NAND, so it stays one n-ary node. Also: decompose_to_nand goes through boolParam where WordPress used ! empty and the string false switched it on, and an unknown format is refused where WordPress silently used both. Gated on read, matching the declaration and the handler.',
+			'evidence' => 'lib/core/tests/Unit/Tool/MathLogicGateTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'excel_data_export' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ExcelDataExportTool',
 			'readiness' => 'ready',

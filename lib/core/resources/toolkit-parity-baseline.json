@@ -343,7 +343,9 @@
         ],
         "jetengine": [],
         "jev": [],
-        "math": [],
+        "math": [
+            "evaluate_logic_gate"
+        ],
         "media": [],
         "multilingual": [],
         "okf": [
