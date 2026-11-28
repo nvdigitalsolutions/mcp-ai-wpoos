@@ -400,10 +400,6 @@
         "woo_coupons": {
             "decision": "deferred",
             "reason": "Generic coupon CRUD over WooCommerce. Prerequisite: a promotion and coupon store; the same missing model as create_discount_campaign."
-        },
-        "woo_customers": {
-            "decision": "deferred",
-            "reason": "Generic customer CRUD over WooCommerce. Prerequisite: CustomerStoreInterface, then an adapter."
         }
     }
 }

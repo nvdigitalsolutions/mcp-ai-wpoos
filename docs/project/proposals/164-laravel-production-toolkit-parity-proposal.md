@@ -16257,3 +16257,66 @@ Twenty ecommerce tools remain deferred.
 `export_customer_data` and `woo_customers` are the last two customer-side tools and both need the **customer directory**: accounts with no paid orders, which every aggregate in this family deliberately cannot list because they all start from orders. `OrderQuery::$customerId` already answers the `get_orders` action of `woo_customers`.
 
 The other three clusters are unchanged: coupons need a promotion model, inventory needs a movement ledger plus a multi-location decision, and carts need a cart model and a mail channel.
+### 164.184 — the customer directory, and a lookup described as CRUD
+
+Measured before the port. `ecommerce` moves to **44 wp / 24 ported / 1 declined / 19 deferred**.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `woo_customers` | `WoocommerceCustomersTool` -> `CustomerDirectoryInterface::find()` / `query()`, plus `OrderStoreInterface` for one account's orders |
+
+New store: `CustomerDirectoryInterface` with `Customer`, `CustomerQuery` and `CustomerCollection`, a `CustomerDirectory` adapter over the host `users` table, and an in-memory fake. Sections 164.182 and 164.183 are in the base; this one needs only the 164.181 aggregate.
+
+`ready`: the directory is bound and the order store already existed.
+
+#### A second store, because the first can only see buyers
+
+Every aggregate in this family starts from orders, and each of the last four sections said the same thing in passing — *a spend aggregate cannot list an account that never ordered*. That is exactly what `list` and `search` have to do, so this slice adds the directory those sections kept naming. `CustomerDirectoryInterface` answers who the host knows about; `OrderStoreInterface` answers what one account bought.
+
+#### The register said CRUD; the tool is read-only
+
+Its entry read *"Generic customer CRUD over WooCommerce. Prerequisite: CustomerStoreInterface, then an adapter."* Both halves were wrong in a useful direction. The tool advertises four actions — `get`, `list`, `search`, `get_orders` — and its own capability flags say **"Only read operations for now"**. And the prerequisite was not a store that creates and deletes identities but a *directory* that reads them. Writing accounts is a different policy question: an account is an identity, an audit subject and a login.
+
+#### `total_spent` is not reported, and that is the point
+
+The reference's detailed view includes `total_spent` and `orders_count` from `WC_Customer`, which are WooCommerce-maintained summary columns this runtime does not keep. `orders_count` can be recovered from the order store, and is. `total_spent` **cannot be reported honestly here**: a sum needs a currency, and a lookup that quietly added one currency's orders — or labelled euros with the store default — is the defect this family has corrected in 164.178, 164.179, 164.181, 164.182 and 164.183. `customer_lifetime_value` reports spend per currency; this reports the two order facts that need none, a count and the date of the last order.
+
+#### Six fields the host does not have
+
+The detailed view also offers `billing` and `shipping` address blocks, `avatar_url`, `username`, `first_name` and `last_name`. This runtime stores one `name` column, no address on the account or the order — the same gap that made 164.182 refuse its geographic segments — and an avatar is an external URL a lookup has no reason to fetch. None is invented.
+
+#### The role enumeration was decoration
+
+The schema offers `customer`, `subscriber` and `all`; the server passes whatever string it is handed to `WP_User_Query`, so `role: administrator` listed administrators despite not being offered. The enumeration was never a boundary. The boundary is the capability, and that is what this port uses: `list_users`, which is the capability the reference itself checked. A role the host does not use returns nobody, which is a true answer rather than an error.
+
+This is also the first tool in the family to declare **`list_users`** rather than `edit_posts`. The others read order aggregates; this one returns account emails, and a lower capability would be a lie about what it exposes.
+
+#### Counts that were floats
+
+`total_pages` was `ceil( $total / $per_page )` — a float in a payload that otherwise carries integers — and `get_orders` reported `total` from a paginated query. Both are integers here and `total` counts matches across pages.
+
+#### A driver difference, recorded rather than papered over
+
+The adapter escapes wildcards in a search term with `addcslashes( $term, '%_' . chr(92) )`, producing `\%`. MySQL and PostgreSQL honour that as a literal by default because their `LIKE` escape character *is* a backslash; **SQLite's is not**, so the same term matches nothing there. The adapter test therefore asserts the property that has to hold on every driver — *a wildcard search must not match every row* — instead of a driver-specific count.
+
+The consequence is worth naming: on SQLite a search for a literal `%` in a name finds nothing rather than the name. The order store has behaved this way since 164.174. It is not fixed here because the fix means adding an explicit `ESCAPE` clause to two adapters and changing an established assertion in the same change; it is recorded as the next small correctness item.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,796 / 25,198 |
+| adapter | 779 / 4,056, 2 skipped |
+| readiness | 654 rows, servable 635 (delegated 13), no violations |
+| parity | 433 ported / 9 declined / 91 deferred / 426 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+#### After this
+
+Eighteen ecommerce tools remain deferred.
+
+`export_customer_data` now has the directory it needs and is the natural next port, but not a clean one: it offers `include_addresses` (no address model), `include_notes` (no notes model), a `csv` format and an `upload` step, so most of its arguments would be refusals. `customer_lifetime_value` and `woo_customers` now cover the subject-access need in two calls a caller can compose.
+
+The remaining clusters are unchanged: coupons need a promotion model, inventory needs a movement ledger plus a multi-location decision, and carts need a cart model and a mail channel.

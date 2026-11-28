@@ -273,6 +273,7 @@
             "update_woo_product_qty",
             "validate_image_for_product",
             "validate_image_for_vehicle",
+            "woo_customers",
             "woo_orders",
             "woo_products"
         ],
