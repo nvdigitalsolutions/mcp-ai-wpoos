@@ -12322,3 +12322,56 @@ The read-only queue in this family is now empty. What remains is 41 writes and
 their two readers' counterparts: the settings writers (`fpm`, `varnish`, `cname`,
 `cors`), the lifecycle writes (`create`, `clone`, `restore`), the Git and SSH
 writers, the Cloudflare and DNS writers, and the four deletes.
+
+### §164.136 — `cloudways`, slice 4: the settings writers
+
+The two writers whose readers landed in §164.134, plus the cache purge they sit
+beside:
+
+| Tool | Request |
+|---|---|
+| `cloudways_app_fpm_settings_update` | `PUT /app/{server}/{app}/fpm/settings` |
+| `cloudways_app_varnish_settings_update` | `PUT /app/{server}/{app}/varnish/settings` |
+| `cloudways_purge_app_cache` | `POST /app/{server}/{app}/cache/purge` |
+
+Both writers send a **partial** body, which is what makes the read-modify-write
+contract work: an update that named only `memory_limit` must not reset
+`max_children`, and the reader from the previous slice supplies the values a
+caller wants to keep.
+
+#### One correction, shared by both writers
+
+WordPress ran every numeric writer argument through `absint()` and then dropped
+anything that was not `> 0`:
+
+```php
+$max_children = isset( $arguments['max_children'] ) ? absint( $arguments['max_children'] ) : 0;
+if ( $max_children > 0 ) { $body['max_children'] = $max_children; }
+```
+
+That has two failure modes. A **negative** input is silently flipped into its
+absolute value and sent — `max_children: -20` becomes 20, a change the caller
+did not ask for. A **zero** disappears from the body with no explanation, so
+`ttl: 0` reads as success while nothing was written.
+
+The port separates the cases in `CloudwaysTool::positiveInts()`: an absent field
+stays absent, and a provided field with an unusable value is named in a
+validation error (`validation_failed` with the field key). Nothing is rewritten,
+nothing is dropped silently, and the API is never asked to guess. An entirely
+empty body is still refused locally as `cloudways_no_settings`, as WordPress
+did.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `CloudwaysAppWritesTest` | **10 tests, 30 assertions**, 0 failures |
+| `lib/core` unit suite | **3,902 tests / 22,254 assertions** (+10 tests, +30 assertions), 0 failures |
+| Adapter `ToolReadinessRegistrationTest` | 5 tests, 0 failures |
+| Readiness manifest | 532 → **535 rows**; servable 513 → **516**; ready 475; no violations |
+| Toolkit parity | 311 → **314 ported**, 9 declined, 79 deferred, 534 → **531 remaining**; `cloudways` `60 \| 19 \| 0 \| 0 \| 41` → `60 \| 22 \| 0 \| 0 \| 38` |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on all 26 Cloudways paths |
+
+Next: the two remaining app-setting writes (`cname`, `cors`), then the app
+lifecycle group.
