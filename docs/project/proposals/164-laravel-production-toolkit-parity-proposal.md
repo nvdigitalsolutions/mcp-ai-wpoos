@@ -12543,3 +12543,58 @@ refusal names every unusable field rather than the first.
 Twenty-three remain: server backups and `server_delete`, SSH (create/delete),
 Git (six), Cloudflare (two), DNS Made Easy (four), addons (two), Copilot (one),
 `app_credentials` and `app_vulnerabilities_list`.
+
+### §164.140 — `cloudways`, slice 8: the Git family
+
+Six tools, three reads and three writes:
+
+| Tool | Request |
+|---|---|
+| `cloudways_git_branches_get` | `GET /app/{s}/{a}/git/branches` |
+| `cloudways_git_history_get` | `GET /app/{s}/{a}/git/history` |
+| `cloudways_git_key_get` | `GET /app/{s}/{a}/git/key` |
+| `cloudways_git_clone` | `POST /app/{s}/{a}/git/clone` |
+| `cloudways_git_pull` | `POST /app/{s}/{a}/git/pull` |
+| `cloudways_git_generate_key` | `POST /app/{s}/{a}/git/key/generate` |
+
+#### Two corrections
+
+**A read that declared itself a write.** `cloudways_git_history_get` carried
+`write`, `state-changing`, `reversible` in its WordPress capability flags,
+although its only call is a GET. The flags are what an approval gate reads, so a
+false write flag is not cosmetic: it makes a safe tool ask for permission. The
+port is annotated `readOnlyHint: true` and does not carry the write words.
+
+**An HTML-escaped branch in a JSON envelope.** `git_clone` built its message
+with `esc_html( $branch )`. Escaping belongs at the render boundary; in a tool
+envelope it corrupts the value — a branch containing `&` or a quote came back as
+an entity and no longer matched the ref that was just deployed. The port returns
+the branch as given and a test pins that `feature/a&b` survives.
+
+#### Three small decisions
+
+- **Branches are strings, not rows.** The API sends names as strings, so the
+  projection is a list of strings and a non-scalar entry is dropped rather than
+  turned into an empty branch name.
+- **The deploy key is returned in full.** It is a public key; that is the point
+  of the tool. The private half never leaves Cloudways, which is why
+  `git_generate_key` creates a keypair instead of accepting one.
+- **`git_clone` says what it replaces.** The WordPress guidance mentions the web
+  root and a backup; the description now says it too, because a tool that
+  overwrites a directory should say so where the schema is read.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `CloudwaysGitToolsTest` | **12 tests, 29 assertions**, 0 failures |
+| `lib/core` unit suite | **3,957 tests / 22,407 assertions** (+12 tests, +29 assertions), 0 failures |
+| Adapter `ToolReadinessRegistrationTest` | 5 tests, 0 failures |
+| Readiness manifest | 550 → **556 rows**; servable 531 → **537**; ready 496; no violations |
+| Toolkit parity | 329 → **335 ported**, 9 declined, 79 deferred, 516 → **510 remaining**; `cloudways` `60 \| 37 \| 0 \| 0 \| 23` → `60 \| 43 \| 0 \| 0 \| 17` |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on all 48 Cloudways paths |
+
+Seventeen remain: the SSH writers, the three Cloudflare and DNS Made Easy
+readers, addons, Copilot, the two backup creators, `app_credentials`,
+`app_vulnerabilities_list` and the two deletes.
