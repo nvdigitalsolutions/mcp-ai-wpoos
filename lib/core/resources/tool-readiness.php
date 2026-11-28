@@ -2142,6 +2142,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryReportsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'generate_country_performance' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\GenerateCountryPerformanceTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress per-country performance report over ContentStoreInterface (Proposal 164 section 164.157). The comparison block was mostly null: highest_approval_rate and fastest_processing both called array_keys with a value search against rows that are arrays, so the search always came back empty and the [0] on it produced null with a warning, and highest_volume was simply the first row after sorting, so it named whichever country led the caller sort rather than the largest estate. All three are computed by key comparison, and an average nobody measured is null instead of a division by zero — count of array_filter over all-zero averages is zero. authority was read from the first registration of a country and reused for all of them, so a country with two authorities reported one and an empty first value made the whole country empty; the port keeps the first non-empty value and adds the distinct authorities list. An unreadable expiry counts as expired, the safe direction, and is counted; a negative approval interval is excluded and counted; sort_by is validated rather than used as an array key. The compliance score keeps the 60 approval 40 expiry weights.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryAnalyticsReportsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'generate_eca_analytics' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\GenerateEcaAnalyticsTool',
 			'readiness' => 'ready',
@@ -2202,6 +2211,15 @@ return array(
 			'reason' => 'Composes HTML through HtmlFormatter and renders it with the bound HtmlToPdfInterface (the media worker `POST /api/pdf/generate`), then stores through FileVisibilityStoreInterface. Deterministic formatter, so no model is involved despite the WordPress flagship declaring `requires-model`; the WordPress tool also could not have worked, because it delegated `content` to an operation that required `description` (Proposal 164 section 164.31).',
 			'evidence' => 'lib/core/tests/Unit/Tool/GeneratePdfToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
+		'generate_pipeline_report' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\GeneratePipelineReportTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress pipeline report over ContentStoreInterface (Proposal 164 section 164.157). The bottleneck list sorted average_stage_times in place with arsort and then returned the same array, so a field named average_stage_times came back ordered by value with no explanation; the port sorts a copy and returns the averages keyed by stage, with bottlenecks as a list carrying the sample count behind each average because a slow stage measured once is not a bottleneck. The six trend buckets used strtotime of minus N months from today, which overflows from the 29th to the 31st and produced a duplicate or missing month key, so a six-month trend could show five buckets; keys are built from the first of the month. total_registrations was the query found_posts while the pipeline was built from the first 1000 rows, so the two fields disagreed for a larger estate; the port reports the grouped count and sets truncated. Stage time is time since submission, not time in the stage, and the field keeps that meaning with the definition stated; negative intervals and unreadable dates are excluded and counted.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryAnalyticsReportsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'generate_gemini_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateGeminiImageTool',
