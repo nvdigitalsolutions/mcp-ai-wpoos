@@ -15752,3 +15752,58 @@ Setting the status the order already has is a successful no-op that writes nothi
 | PHPStan level 8 | clean |
 | phpcs (`phpcs-laravel.xml.dist`) | clean |
 | docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+### 164.176 — `bulk_order_status_update`, and why idempotence beats atomicity here
+
+Measured before the port. `ecommerce` moves to **44 wp / 18 ported / 1 declined / 25 deferred**.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `bulk_order_status_update` | `BulkOrderStatusUpdateTool` -> `OrderStoreInterface::find()` / `query()` / `save()` + `OrderStatusTransition` |
+
+`ready`: the store is bound (164.174) and the graph exists (164.175).
+
+#### The register named the defect, and the reference still has it
+
+The deferral entry said it plainly: *"a bulk update that skips the rule is how an order jumps from refunded to processing."* The reference skips it — `update_single_order()` calls `$order->update_status( $new_status, '', $send_notification )` with no check — so the tool deferred for skipping the rule was deferred *until the rule existed*, and it did not exist in WordPress either.
+
+Every selected order now goes through `Order::withStatus()`, which is the same call the single-order tool makes. One rule, two callers.
+
+#### A refusal is per order, not per call
+
+Refusing the whole batch because one order is `refunded` would make the tool unusable on any store that has ever refunded anything. The batch processes every selected order and reports each outcome: `updated`, `unchanged`, `refused` with the statuses it could have moved to, or `not_found`. A caller that wants only order `pending` → `processing` should select by that filter, and the response makes the mix visible when it does not.
+
+#### Partial application is safe because a retry is a no-op
+
+Each order is written independently. Normally that argues for a transaction — a call that fails half-way leaves the store inconsistent — but moving an order to the status it already has is a successful no-op (164.175), so re-running the same call finishes the job and changes nothing twice. That property is worth more than atomicity for this operation, and it is only true because of the previous section.
+
+#### There is no `page`, and that is the point
+
+A filter selects on the **current** status, and applying the change removes those orders from the filter. Page 2 of the same filter would therefore skip orders rather than continue through them — offset paging over a mutating set. The reference had no paging either, but it also applied `limit` silently: a filter matching five thousand orders updated one hundred and reported "100 of 100", because it counted the selection rather than the match. `requested` is the match count, `selected` is the selection, and `truncated` is true when the first exceeds the second.
+
+#### Three arguments refused, one accepted
+
+`send_notification` is accepted as `false` — doing nothing is exactly what a false flag asks for — and refused as `true`, because this runtime binds no mail channel to orders and silently not sending an email the caller asked for is the kind of quiet failure this family keeps correcting. `note` and `note_type` are refused because order notes have no model or storage here.
+
+#### The capability was declared and checked differently
+
+The reference declares `edit_posts` in `get_required_capability()` and its schema, then checks `manage_woocommerce` inside `execute()`. A capability that differs between the declaration and the check is one nobody can reason about: a caller cannot tell what is required, and a host cannot grant it. The port declares one thing, `edit_posts`, which is what the reference's own metadata said and what every other tool in this family declares.
+
+#### Corrections
+
+- `new_status` was `sanitize_text_field()`'d — an HTML filter on an enum — and never validated against the seven statuses, so an unknown value reached `update_status()` and WooCommerce recorded a status nobody had defined. It is validated, and a `wc-` prefix is still stripped as the reference did.
+- `order_ids` went through `absint()`, turning `-5` into `5`: a caller naming one order could update a different one. Ids must be positive, and an all-invalid list is a field error rather than an empty batch.
+- `limit` had no upper bound, so a filter could select an unbounded number of orders to write.
+- The filter's dates were concatenated into a `>=…<=…` string with no validation, so an unparseable date silently widened the selection to everything. Both bounds are parsed strictly, through the same `DateBound` helper the uninvoiced listing now shares, and `date_to` includes the day it names.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,667 / 24,864 |
+| adapter | 751 / 3,982, 2 skipped |
+| readiness | 648 rows, servable 629 (delegated 13), no violations |
+| parity | 427 ported / 9 declined / 97 deferred / 432 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |

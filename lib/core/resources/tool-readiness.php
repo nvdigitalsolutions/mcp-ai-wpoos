@@ -290,6 +290,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
+		'bulk_order_status_update' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\BulkOrderStatusUpdateTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the bulk status change (Proposal 164 section 164.176) over OrderStoreInterface and the status graph introduced in section 164.175. The register deferred this tool for a specific reason, that a bulk update which skips the rule is how an order jumps from refunded to processing, and the reference skips it: update_status is called with no check. Every selected order goes through Order::withStatus, and a refused order is reported with the statuses it could have moved to while the rest are still processed, because refusing the whole batch over one refunded order would make the tool unusable on a real store. Each order is written independently, which is normally a reason to add a transaction, but moving an order to the status it already has is a successful no-op, so re-running the same call finishes the job and changes nothing twice; idempotence is worth more than atomicity here. There is deliberately no page parameter: a filter selects on the current status and applying the change moves rows out of it, so page two of the same filter would skip orders. A call is capped at 100 orders and reports truncated when more matched than were selected. send_notification is refused when true because this runtime binds no mail channel to orders, note and note_type because notes have no model, and a false notification flag is accepted because doing nothing is exactly what it asks for. new_status was sanitize_text_field output never validated against the seven statuses, order_ids went through absint so a negative id became positive, limit had no upper bound, and the filter dates were concatenated with no validation so an unparseable date widened the selection to everything. All four are corrected.',
+			'evidence' => 'lib/core/tests/Unit/Tool/BulkOrderStatusUpdateTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'bulk_update_products' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\BulkUpdateProductsTool',
 			'readiness' => 'ready',

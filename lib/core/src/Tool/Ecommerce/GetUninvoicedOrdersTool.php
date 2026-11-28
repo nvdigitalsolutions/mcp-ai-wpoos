@@ -73,6 +73,7 @@ use Nvoos\Core\Domain\Entity\Order;
 use Nvoos\Core\Domain\Entity\OrderQuery;
 use Nvoos\Core\Domain\ValueObject\Money;
 use Nvoos\Core\Domain\ValueObject\OrderStatus;
+use Nvoos\Core\Support\DateBound;
 use Nvoos\Core\Tool\AbstractTool;
 
 final class GetUninvoicedOrdersTool extends AbstractTool
@@ -327,17 +328,12 @@ final class GetUninvoicedOrdersTool extends AbstractTool
      */
     private function bound(mixed $raw, string $field, bool $endOfDay, array &$fields): ?\DateTimeImmutable
     {
-        $text = is_string($raw) ? trim($raw) : '';
-        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $text);
+        $date = DateBound::parse($raw, $endOfDay);
 
-        // A round-trip check, because createFromFormat rolls 2024-13-01 over to
-        // 2025-01-01 instead of failing.
-        if (false === $date || $date->format('Y-m-d') !== $text) {
-            $fields[$field] = array('A date in YYYY-MM-DD form.');
-
-            return null;
+        if (null === $date) {
+            $fields[$field] = array(DateBound::reason());
         }
 
-        return $endOfDay ? $date->setTime(23, 59, 59) : $date;
+        return $date;
     }
 }
