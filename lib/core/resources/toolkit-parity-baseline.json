@@ -401,6 +401,8 @@
             "create_registration",
             "delete_reg_product",
             "duplicate_reg_product",
+            "generate_compliance_report",
+            "generate_cost_analysis",
             "generate_expiry_forecast",
             "get_reg_document",
             "get_reg_product",

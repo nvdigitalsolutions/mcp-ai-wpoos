@@ -287,6 +287,76 @@ abstract class RegulatoryTool extends AbstractTool
     }
 
     /**
+     * The inclusive lower bound of a named look-back window.
+     *
+     * WordPress passed `'after' => '30 days ago'` (or `'1 month ago'`) into
+     * `WP_Query`'s date query, which filters `post_date` — the record's creation
+     * date, not its submission or approval date. The ports filter the same
+     * field, so a caller asking for "last 30 days" gets registrations created in
+     * the last 30 days, which is what the WordPress tool actually did.
+     *
+     * Month-based windows are anchored to the first day of the current month
+     * rather than to today, because `-1 month` from the 31st lands in the wrong
+     * month in PHP. A window that starts on the 3rd of a month is not a month.
+     *
+     * @param int $now Reference instant.
+     *
+     * @return string|null A `Y-m-d` lower bound, or null when the window is
+     *                     open (the `all` range) or the name is unknown.
+     */
+    protected function rangeStart(string $range, int $now): ?string
+    {
+        $days = array(
+            'last_30_days' => 30,
+            'last_90_days' => 90,
+        );
+
+        if (isset($days[ $range ])) {
+            return gmdate('Y-m-d', $now - ( $days[ $range ] * 86400 ));
+        }
+
+        $months = array(
+            'last_month'   => 1,
+            'last_quarter' => 3,
+            'last_year'    => 12,
+        );
+
+        if (isset($months[ $range ])) {
+            $utc   = new \DateTimeZone('UTC');
+            $first = date_create_immutable(gmdate('Y-m-01', $now), $utc);
+
+            if (false === $first) {
+                return null;
+            }
+
+            return $first->modify('-' . $months[ $range ] . ' months')->format('Y-m-d');
+        }
+
+        return null;
+    }
+
+    /**
+     * Whether a record's creation date falls inside an inclusive date window.
+     *
+     * @param string|null $start Inclusive `Y-m-d` lower bound, or null.
+     * @param string|null $end   Inclusive `Y-m-d` upper bound, or null.
+     */
+    protected function withinRange(ContentItem $item, ?string $start, ?string $end): bool
+    {
+        $created = $item->createdAt->format('Y-m-d');
+
+        if (null !== $start && $created < $start) {
+            return false;
+        }
+
+        if (null !== $end && $created > $end) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * The current instant, in the form WordPress wrote `renewal_date`.
      */
     protected function nowStamp(): string
