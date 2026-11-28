@@ -170,6 +170,30 @@ abstract class CloudwaysTool extends AbstractTool
     }
 
     /**
+     * The `label` argument, trimmed, or '' when absent.
+     *
+     * @param array<string, mixed> $arguments Tool arguments.
+     */
+    protected function label(array $arguments): string
+    {
+        return trim($this->stringParam($arguments, 'label'));
+    }
+
+    /**
+     * Whether the caller confirmed a destructive action.
+     *
+     * Strict on purpose: WordPress required the literal boolean `true`, and a
+     * truthy string is not a confirmation. `"false"` is, after all, a non-empty
+     * string.
+     *
+     * @param array<string, mixed> $arguments Tool arguments.
+     */
+    protected function confirmed(array $arguments): bool
+    {
+        return isset($arguments['confirm']) && true === $arguments['confirm'];
+    }
+
+    /**
      * A string field from an API row, or an empty string when absent.
      */
     protected function text(mixed $value): string

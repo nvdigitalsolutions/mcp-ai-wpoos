@@ -12426,3 +12426,65 @@ valid input.
 The app-settings group is complete. Next: the app lifecycle writes
 (`create`, `clone`, `clone_to_server`, `delete`, `restore`, `restore_rollback`),
 where the delete is one of the four destructive tools that must land last.
+
+### §164.138 — `cloudways`, slice 6: the app lifecycle, including the first destructive tool
+
+Six tools, and the family passes the halfway mark:
+
+| Tool | Request | Destructive |
+|---|---|---|
+| `cloudways_app_create` | `POST /app` | no |
+| `cloudways_app_clone` | `POST /app/{s}/{a}/clone` | no |
+| `cloudways_app_clone_to_server` | `POST /app/{s}/{a}/clone-to-server` | no |
+| `cloudways_app_restore` | `POST /app/{s}/{a}/restore` | overwrites, reversible |
+| `cloudways_app_restore_rollback` | `POST /app/{s}/{a}/restore/rollback` | no |
+| `cloudways_app_delete` | `DELETE /app/{s}/{a}` | **yes** |
+
+#### The confirmation rule, and where it does not apply
+
+§164.133 said the four deletes must take "an explicit confirmation argument and
+an `idempotentHint` of false rather than a bare id". `app_delete` now does:
+`confirm` is required, the refusal is `cloudways_confirm_required`, the metadata
+says `destructiveHint: true`, and the check is **strict**:
+
+```php
+return isset( $arguments['confirm'] ) && true === $arguments['confirm'];
+```
+
+WordPress required the literal boolean and the port keeps it. A truthy string is
+not a confirmation — and `"false"` is a non-empty string, so a loose check would
+treat the most explicit refusal a caller can send as consent.
+
+`app_restore` deliberately has **no** `confirm`. Its own WordPress notes say
+"restoring overwrites current app data", which sounds like a case for one, but
+the platform ships the undo: `cloudways_app_restore_rollback` takes the same two
+ids and needs no extra state. Adding a confirmation to a pair that already has a
+one-call rollback would train callers to click through confirmations. The delete
+has no such undo, which is exactly why it is the one that asks.
+
+#### Two fidelity notes
+
+- **The five application types are the WordPress enum** (`wordpress`,
+  `woocommerce`, `laravel`, `magento`, `php`), not the Cloudways MCP surface's
+  wider set (`phpstack`, `phplaravel`, `wordpressdefault`). A caller that worked
+  against the WordPress toolkit validates identically; adding the others would
+  be a new capability.
+- **`clone-to-server` does not pre-check database compatibility.** Whether two
+  servers can accept a clone is the API's decision, and its message says which
+  side is incompatible. A local guess would be a second, weaker opinion.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `CloudwaysAppLifecycleTest` | **16 tests, 40 assertions**, 0 failures |
+| `lib/core` unit suite | **3,928 tests / 22,324 assertions** (+16 tests, +40 assertions), 0 failures |
+| Adapter `ToolReadinessRegistrationTest` | 5 tests, 0 failures |
+| Readiness manifest | 537 → **543 rows**; servable 518 → **524**; ready 483; no violations |
+| Toolkit parity | 316 → **322 ported**, 9 declined, 79 deferred, 529 → **523 remaining**; `cloudways` `60 \| 24 \| 0 \| 0 \| 36` → `60 \| 30 \| 0 \| 0 \| 30` |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on all 34 Cloudways paths |
+
+The family is half ported. Of the 30 that remain, three are destructive
+(`server_delete`, `ssh_key_delete`, `dns_delete_record`) and land last; the rest
+are server lifecycle, Git, SSH, Cloudflare, DNS, addons and Copilot.
