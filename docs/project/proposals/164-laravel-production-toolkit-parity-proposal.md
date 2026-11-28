@@ -12662,3 +12662,99 @@ The last nine: `ssh_key_create`, `ssh_key_delete`, `server_delete`,
 `dns_delete_record`, the two backup creators, `app_credentials`,
 `app_vulnerabilities_list` and the one remaining read. The three deletes close
 the family, each with the strict `confirm` rule `app_delete` established.
+
+### §164.142 — `cloudways`, slice 10: the two reads, the two backups, the rename and the SSH key
+
+Six tools, and the family reaches 57 of 60:
+
+| Tool | Request |
+|---|---|
+| `cloudways_app_credentials` | `GET /app/{s}/{a}/credentials` |
+| `cloudways_app_vulnerabilities_list` | `GET /app/{s}/{a}/vulnerabilities` |
+| `cloudways_create_app_backup` | `POST /app/{s}/{a}/backup` |
+| `cloudways_create_server_backup` | `POST /server/{s}/backup` |
+| `cloudways_update_app_label` | `PUT /app/{s}/{a}/label` |
+| `cloudways_ssh_key_create` | `POST /ssh-key` |
+
+#### Measured first: `app_credentials` projects the tuple, so a password cannot leak
+
+The endpoint is named for secrets, so the first thing read was what the
+WordPress tool does with the body. It reads `host`, `username` and `port` and
+drops everything else — and the port keeps exactly that projection. A response
+that also carried a password or passphrase cannot reach the envelope because no
+code path copies it; a test sets a `password` key and asserts the serialised
+envelope does not contain its value.
+
+A missing or unusable port falls back to 22. WordPress defaulted only an absent
+key and passed `0` through for a malformed one; `0` is not a port a caller can
+connect to, so both cases take the default.
+
+The WordPress tool also declared `write`, `state-changing`, `reversible` for
+this GET. Those flags describe side effects, and a GET has none, so the
+annotation is read-only — the same correction `git_history_get` needed in
+§164.140.
+
+#### The vulnerability listing keeps WordPress's three fields
+
+The endpoint carries more than `id`, `title` and `severity` — scores, affected
+and fixed versions, disclosure dates. WordPress projected three and the port
+does the same, so a caller reading this tool sees the row shape they already
+had. Widening it is a decision for a later section, not a silent improvement
+inside a port. Two robustness changes: a row with a missing key reads as `0` or
+`''` instead of raising a PHP warning, and a non-array row is skipped rather
+than fatal.
+
+#### Two backups, and why neither needs `confirm`
+
+Both are `POST` with an empty body — the target in the path is the whole
+instruction — and the API's answer travels under `result` unchanged, because it
+names the operation a caller polls through `cloudways_get_operation_status`.
+Neither is destructive: a backup adds a restore point and removes nothing.
+Neither is idempotent either: each call queues another backup, which the
+annotations record.
+
+#### The rename carries the label raw
+
+WordPress built the success message with `esc_html( $label )`, which turns
+`Ben & Jerry` into `Ben &amp; Jerry` inside a JSON envelope — the same defect
+`git_clone` had (§164.140). The port returns the trimmed label and a test pins
+the ampersand.
+
+The accepted range is `minLength` 1 and `maxLength` 200, deliberately identical
+to `cloudways_update_server_label`, so the two renames cannot disagree about a
+borderline label. WordPress imposed only the lower bound and left the upper one
+to the API, which still enforces its own.
+
+#### The SSH key tool refuses private material before the request
+
+`POST /ssh-key` serves two scopes through one endpoint: `app_id` is optional and
+travels as `0` for a server-level key. The port sends the field always, because
+omitting it is a different request from sending the zero — that is what
+WordPress did and it is preserved.
+
+One addition, and it is the only one in this slice: the tool refuses a value
+containing a PEM private-key header (`-----BEGIN … PRIVATE KEY-----`) with
+`cloudways_private_key_rejected` before any request. The tool's own guidance
+already said private key material must never be submitted; a caller who pastes
+the wrong file would otherwise hand a private key to a third-party control
+plane, and no later validation can undo that. The check is narrow — it cannot
+reject a valid public key, and it does not parse the key, because the API
+remains the authority on whether a public key is well formed. A test sends an
+OpenSSH private key and asserts no request was made, and a second sends a
+`PUBLIC KEY` PEM body and asserts it is accepted.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `CloudwaysBackupKeyToolsTest` | **23 tests, 66 assertions**, 0 failures |
+| `lib/core` unit suite | **4,003 tests / 22,527 assertions** (+23 tests, +66 assertions), 0 failures |
+| Adapter suite | **698 tests / 3,763 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 564 → **570 rows**; servable 545 → **551**; ready 510; no violations |
+| Toolkit parity | 343 → **349 ported**, 9 declined, 79 deferred, 502 → **496 remaining**; `cloudways` `60 \| 51 \| 0 \| 0 \| 9` → `60 \| 57 \| 0 \| 0 \| 3` |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on all 61 Cloudways paths |
+
+The last three are the deletes — `ssh_key_delete`, `dns_delete_record` and
+`server_delete` — each with the strict `confirm` rule `app_delete` established
+(§164.138). Slice 11 closes the family at 60 of 60.
