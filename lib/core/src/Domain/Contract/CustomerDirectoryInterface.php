@@ -41,6 +41,15 @@ interface CustomerDirectoryInterface
     public function find(int $id): ?Customer;
 
     /**
+     * One account by its email, or null when no account uses it.
+     *
+     * Emails are matched case-insensitively: the host stores whatever was
+     * registered, and a caller should not have to reproduce its case to find
+     * an identity.
+     */
+    public function findByEmail(string $email): ?Customer;
+
+    /**
      * One page of accounts matching the query.
      *
      * The returned collection's `total` is the number of matching accounts

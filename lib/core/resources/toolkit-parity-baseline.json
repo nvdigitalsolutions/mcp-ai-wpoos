@@ -255,6 +255,7 @@
             "bulk_order_status_update",
             "bulk_update_products",
             "customer_lifetime_value",
+            "export_customer_data",
             "generate_invoice_pdf",
             "get_order_analytics",
             "printful",

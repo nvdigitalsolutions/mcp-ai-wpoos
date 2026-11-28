@@ -16320,3 +16320,57 @@ Eighteen ecommerce tools remain deferred.
 `export_customer_data` now has the directory it needs and is the natural next port, but not a clean one: it offers `include_addresses` (no address model), `include_notes` (no notes model), a `csv` format and an `upload` step, so most of its arguments would be refusals. `customer_lifetime_value` and `woo_customers` now cover the subject-access need in two calls a caller can compose.
 
 The remaining clusters are unchanged: coupons need a promotion model, inventory needs a movement ledger plus a multi-location decision, and carts need a cart model and a mail channel.
+
+### 164.185 — `export_customer_data`, and three arguments that were never honoured
+
+Measured before the port. `ecommerce` moves to **44 wp / 25 ported / 1 declined / 18 deferred**.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `export_customer_data` | `ExportCustomerDataTool` -> `CustomerDirectoryInterface::find()` / `findByEmail()`, plus `OrderStoreInterface::query()` for the history |
+
+`ready`: the directory and the order store both exist (164.181, 164.184).
+
+#### The register described a bulk export; the tool exports one subject
+
+Its entry read *"Exports customer rows under an optional PII scope. Prerequisite: CustomerStoreInterface, and the scope/redaction rule belongs in the contract rather than in a tool, because an export that leaks one field is the failure mode."* Three corrections. It exports **one** customer, selected by id or email — there are no rows and no scope argument to hold a redaction rule. The prerequisite was a **directory**, to resolve an identity, which 164.184 built; the order store already answered the history. And because the tool writes no file here, the scope rule the entry predicted has no surface inside it. The PII control the reference does have is the `manage_woocommerce` capability, which this keeps.
+
+#### The id lookup had no existence check
+
+`customer_id` went into `new WC_Customer( absint( $id ) )` and the only guard afterwards was `! $customer->get_id()`. The constructor stores the id it is given, so the guard tested the caller's argument rather than whether an account exists. Here the id goes through `find()`, which returns null for an unknown account, and the email through `findByEmail()` — the reference's `get_user_by( 'email' )` without the user-object round trip, matched case-insensitively. Both a missing id and an unused email are a **not-found**, not an empty document.
+
+#### Three arguments accepted and not honoured
+
+- **`include_addresses`** assembled billing and shipping blocks from `WC_Customer` getters. This runtime keeps no address on the account or the order — the same gap that made `segment_customers` refuse its geographic type in 164.182.
+- **`include_notes`** ran `get_comments()` with `user_id => customer_id` and `type => 'order_note'`. An order note's `user_id` is its **author** — the shop manager, or zero for a system note — not the customer whose order it sits on, so the query could not return the notes it described.
+- **`format: csv`** wrote only `customer_info` and `orders`: the address and note blocks the same request had just gathered never reached the file. And `format` was never checked against its own enum, so any other string fell through to the CSV branch while the response reported the string the caller sent.
+
+All three are refused **by name**, with the missing model in the message. The defaults are the supported behaviour — `include_addresses` and `include_notes` false, `format` json, `upload` false — so a bare call works, which the reference's defaults did not: it defaulted to addresses on and upload on, and both paths were broken.
+
+#### An unbounded read, now bounded and reported
+
+`include_orders` called `wc_get_orders( array( 'limit' => -1 ) )`, so a customer with a long history produced an unbounded document. This reads pages of 100 up to 1,000 orders and reports `orders_total`, `orders_included` and `orders_truncated`, so a clipped export says so instead of looking complete.
+
+#### Fields the host does not have
+
+Each order row is the runtime's order document: no `payment_method` (payments are not modelled) and no second order number beyond `number`. The reference's `first_name`, `last_name`, `username` and `display_name` are one `name`, for the same reason `woo_customers` reports one in 164.184.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,816 / 25,246 |
+| adapter | 781 / 4,061, 2 skipped |
+| readiness | 655 rows, servable 636 (delegated 13), no violations |
+| parity | 434 ported / 9 declined / 90 deferred / 425 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+#### After this
+
+Seventeen ecommerce tools remain deferred.
+
+`create_product_advanced` and `import_products_csv` are the product-write pair and need a catalog write contract, which the read-only `ProductCatalogInterface` deliberately is not. `export_products_report` is a formatting exercise over the existing catalog and line aggregates, and the nearest clean slice.
+
+The other clusters are unchanged: coupons need a promotion model, inventory needs a movement ledger plus a multi-location decision, and carts need a cart model and a mail channel.

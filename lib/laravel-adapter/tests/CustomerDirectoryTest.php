@@ -111,6 +111,25 @@ final class CustomerDirectoryTest extends TestCase {
 		$this->assertNull( $this->directory()->find( $id + 99 ) );
 	}
 
+	public function test_find_by_email_is_case_insensitive_and_exact(): void {
+		$id = $this->account( 'Ada Lovelace', 'ada@example.test' );
+		$this->account( 'Grace Hopper', 'grace@example.test' );
+
+		$found = $this->directory()->findByEmail( 'ADA@Example.Test' );
+
+		$this->assertNotNull( $found );
+		$this->assertSame( $id, $found->id );
+
+		// A prefix is not an address: the lookup is an identity, not a search.
+		$this->assertNull( $this->directory()->findByEmail( 'ada@example' ) );
+	}
+
+	public function test_find_by_email_returns_null_when_missing(): void {
+		$this->account( 'Ada Lovelace', 'ada@example.test' );
+
+		$this->assertNull( $this->directory()->findByEmail( 'nobody@example.test' ) );
+	}
+
 	public function test_query_reports_the_total_across_pages(): void {
 		$this->account( 'Ada Lovelace', 'ada@example.test' );
 		$this->account( 'Grace Hopper', 'grace@example.test' );

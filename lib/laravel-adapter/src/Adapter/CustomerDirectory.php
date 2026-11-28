@@ -43,6 +43,18 @@ class CustomerDirectory implements CustomerDirectoryInterface {
 	}
 
 	/**
+	 * One account by email, case-insensitively.
+	 */
+	public function findByEmail( string $email ): ?Customer {
+		$row = DB::table( 'users' )
+			->select( array( 'id', 'name', 'email', 'role', 'created_at' ) )
+			->whereRaw( 'LOWER(email) = ?', array( strtolower( $email ) ) )
+			->first();
+
+		return null === $row ? null : $this->hydrate( $row );
+	}
+
+	/**
 	 * One page of matching accounts.
 	 */
 	public function query( CustomerQuery $query ): CustomerCollection {
