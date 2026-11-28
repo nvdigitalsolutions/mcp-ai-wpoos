@@ -552,6 +552,16 @@ done
 - `rm -f a b c` combined with `git checkout HEAD -- …` in one command can trip
   the editor's built-in security rule ("too harmful"). Run the `rm` and the
   `checkout` as separate calls.
+- **Scope the restore to the collision set, not to the dirty list.** The `comm`
+  intersection above is the only correct input. Restoring every path from
+  `git status` — `git restore --worktree --source=HEAD -- $(cat dirty.txt)` —
+  reverts other agents' tracked edits that the pull was never going to touch,
+  and nothing warns you because those paths never appeared in the collision
+  check. 2026-11-28: a 129-path restore silently reverted a foreign `dist/`
+  rebuild in `examples/nvoos-complete-velocity/` (83 deletions undone, 5 files
+  reverted). Recovery is cheap when the work is generated — `npm run
+  sync:dist` reproduced the same chunk hashes byte-for-byte — but say so
+  rather than leaving it silent.
 
 ## Isolated worktrees, allowlist staging, reaping (2026-11-16, Wave 0 admin PR)
 
@@ -798,6 +808,16 @@ can appear in the repo root. Two failure modes follow:
   (`MSYS_NO_PATHCONV=1 git show <branch>:<file>`) and parse-validate with
   `node -e` + `js-yaml` (available in the repo root's node_modules) — assert
   every step has `run` or `uses`. Cheap insurance before pushing.
+- **`index.lock` lives in the worktree's admin dir, and a nested worktree
+  hides where that is.** When the shared checkout is itself a linked worktree
+  (`.git` is a *file*), `git rev-parse --git-dir` from inside `.wt-<task>`
+  returns `<main>/.git/worktrees/<name>`, where `<name>` is the directory
+  basename with the **leading dot stripped** (`.wt-db-p7` → `-wt-db-p7`). A
+  failed `git add` leaves a 0-byte lock there. Remove it via that path:
+  `rm -f "$(git -C .wt-<task> rev-parse --git-dir)/index.lock"`. Guessing
+  `.git/worktrees/...` relative to the worktree fails, and `rm -f` on a
+  non-existent path is a silent success — so the next `git add` fails
+  identically and looks like a stuck process.
 - **Dispatching a workflow that exists only on a non-default branch:** the
   filename form of the workflow id accepts any ref —
   `gh api -X POST "repos/<o>/<r>/actions/workflows/<file>.yml/dispatches"
@@ -873,6 +893,13 @@ not have, so "new files since base" logic must fall back to a two-dot tree diff:
   `in_progress`/`pending`. Report `mergeable` (`MERGEABLE`) plus the JS suites
   (`test`, `test (18.x)`, `test (20.x)`) when the linting workflow is still
   running, but say that the lint gate has not reported.
+- **`gh run view --job <id> --log-failed` refuses while the parent run is
+  live** ("run … is still in progress; logs will be available when it is
+  complete") — which is exactly when you want a fast failure. Pull the job log
+  directly instead:
+  `gh api repos/<o>/<r>/actions/jobs/<id>/logs | grep -E '✘|FAILED|Tests:'`.
+  It streams the same text for a finished job and works while the run is
+  still going, so a live workflow is not a reason to stop triaging.
 - **The wedge is bounded in `php-compatibility` too (2026-11-21).** #8041 added
   `timeout-minutes: 5` + `continue-on-error: true` to the compatibility job's
   `Get changed PHP files` step, matching what `wpcs` already carried. Proven on

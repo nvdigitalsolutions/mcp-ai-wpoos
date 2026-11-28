@@ -40,6 +40,29 @@ that says so:
 
 A scoped sniff scan reported "0 remaining" in every one of those cases.
 
+### A file-level exclusion must be global, not inside a `<rule>`
+
+`<exclude-pattern>` is scoped to where it sits. Inside a `<rule ref="...">`
+block it silences **that one sniff** for matching paths — the file is still
+linted by every other rule, so the scope total barely moves. Global file-level
+exclusions live at `<ruleset>` level, beside the existing `*/vendor/*`,
+`*/lib/*`, `*/docker/*`, `*/tests/helpers/*`, `*/tests/fixtures/*` entries.
+
+The symptom catches people out: `phpcs <that-dir>/` reports **no findings**
+(the sniff is excluded) while a full-scope run still counts the file — 140
+errors in `tests/database/` appeared only in the `tests/` scope run
+(2026-11-28). Put the pattern at ruleset level and re-measure.
+
+Two related facts from the same sweep:
+
+- The scope budget is a **total for the scope**, not headroom. Sixteen new
+  files added 806 errors to a `tests` budget of 357 and failed the ratchet,
+  even though each file "only" had a few dozen.
+- A new suite written in another package's style (PSR-12, mirroring
+  `addons/pro/lib/database/tests/`) is excluded beside `*/lib/*` with the
+  reason in a comment: the repo keeps one style per suite rather than two
+  divergent copies, and WPCS still covers the tests that touch the plugin.
+
 ## 2. The sniff set is five, not four
 
 `Squiz.Commenting.DocCommentAlignment` sits outside the obvious four and is
