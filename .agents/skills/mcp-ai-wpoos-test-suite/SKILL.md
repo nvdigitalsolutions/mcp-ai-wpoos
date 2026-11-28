@@ -1483,6 +1483,17 @@ and `addons/pro/tests/class-wp-mcp-ai-media-toolkit-stub.php`.
 Batched runs sort the remaining files alphabetically and resume from a
 suffix index (chunk manifests list files, they are not inputs).
 
+**On Docker Desktop the enumeration itself is unreliable.** A Windows host
+bind mount makes `RecursiveDirectoryIterator` — which PHPUnit uses to walk
+`<directory>` — return a partial listing of large directories: measured 653 of
+1,252 entries for `tests/`, so ~1,200 files were skipped while PHPUnit exited
+0. `scandir`/`glob`/`readdir` are unaffected, and `tests/bootstrap.php` now
+compares the two counts and warns (fatal under
+`WP_MCP_AI_TESTS_STRICT_DISCOVERY=1`, which CI sets). Measurements,
+workarounds, and the two other scripts that inherit it:
+`reference/test-environments.md` → "Discovery is silently truncated on a
+Docker Desktop bind mount".
+
 ## Cluster state board
 
 Moved to `reference/cluster-state-board.md` (the merged-cluster PR ledger).

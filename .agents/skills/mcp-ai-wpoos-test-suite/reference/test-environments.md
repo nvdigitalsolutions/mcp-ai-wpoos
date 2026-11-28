@@ -5,6 +5,56 @@ Moved out of `SKILL.md` on 2026-11-08, which had reached 97 KB against Zed's
 the `oos-wp` container mounts and how to retarget it, the Pro addon
 dual-matrix run, and the standalone-plugin suites.
 
+### Discovery is silently truncated on a Docker Desktop bind mount (2026-11-28)
+
+PHPUnit finds test files by walking every `<directory>` in `phpunit.xml.dist`
+with `SebastianBergmann\FileIterator`, which is built on
+`RecursiveDirectoryIterator`. On a Docker Desktop bind mount of a Windows
+host, that SPL iterator returns a **partial listing** of large directories.
+PHPUnit then runs only the files it can see and **exits 0**.
+
+Symptom: `--filter <SomeRootTest> tests` prints "No tests executed!" while
+the same file runs normally when passed by path.
+
+Measured on the reference stack (`oos-wp`, plugin bind-mounted at
+`/var/www/html/wp-content/plugins/mcp-ai-wpoos`):
+
+| Probe | Result |
+|---|---|
+| `tests/*.php` on disk | 1,208 |
+| `scandir()` / `glob()` / raw `readdir()` in the container | 1,208 |
+| `DirectoryIterator` / `FilesystemIterator` in the container | **653** |
+| a fresh 1,300-file directory created inside the same mount | `scandir` 1,302, `DirectoryIterator` **278** |
+| the same 1,300 files under `/tmp`, same container | 1,300 |
+| host Windows PHP, `RecursiveDirectoryIterator` over `tests/` | 1,502 `.php` files |
+
+Both negative results matter:
+
+- **It is not a `phpunit.xml.dist` problem.** No `<exclude>`, `suffix` or
+  `prefix` change fixes it, and the tests themselves are fine — they pass by
+  path. Editing the config to "fix" discovery only hides it.
+- **It is not PHPUnit-specific.** `bin/generate-tool-capability-flags.php` and
+  `bin/check-class-aliases.php` also walk with `RecursiveDirectoryIterator`,
+  so run them on the host when their output feeds a gate.
+
+`tests/bootstrap.php` now guards it: it compares `count(glob('tests/*.php'))`
+against the SPL iterator count, prints both numbers and the workarounds, and
+exits when `WP_MCP_AI_TESTS_STRICT_DISCOVERY=1`. CI sets that variable
+workflow-wide, where a native ext4 checkout means any shortfall is a real
+regression.
+
+Workarounds, best first:
+
+1. Run the suite on the host.
+2. Run from a Linux-native copy inside the container. A full `cp -a` is 27 GB
+   (`addons/` + `node_modules`), so copy `vendor/`, `tests/` and the source
+   trees the suite actually loads.
+3. Run individual files by path — that never enumerates a directory:
+   `vendor/bin/phpunit --no-coverage tests/test-foo.php`.
+
+Never report "suite green" from a Docker run without the count:
+`phpunit --list-tests | grep -c '^ - '` should match the host.
+
 ### Cross-worktree runs (when `oos-wp` mounts a different worktree)
 
 The `oos-wp` plugin path bind-mounts **one** worktree. Check which one:

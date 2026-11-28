@@ -200,6 +200,32 @@ register and work fine). Wire both in the same PR as the tool map.
     `class-` prefix and `.php`), and only additions of your new classes should
     appear in the diff (sort-order churn can look like deletions).
 
+## 4b. CI gates a new toolkit trips (even when the toolkit works)
+
+§4 is about the toolkit appearing at all. These gates fail **after** it works,
+one at a time, and each failure costs a push. Wire them in the same PR.
+
+| Gate | What it wants |
+|---|---|
+| `php bin/generate-tool-capability-flags.php` (`--check` in CI) | regenerate `lib/core/src/Domain/Service/Safety/ToolCapabilityFlagCatalogue.php` |
+| `php bin/sync-toolkit-manifests.php --check` | the Laravel mirror at `docker/laravel/app-skeleton/resources/pro-toolkits/<slug>.json` |
+| `php bin/audit-admin-manifests.php` | every declared screen must be servable; a console-only screen goes in `$consoleOnlyScreens` with the wave noted |
+| `ProPlanCatalog::PLANS` + `EntitlementTest` | the manifest's `feature` must appear in **every** tier's list, not just the base plan |
+| `Phase4Test` | the toolkit-slug array is asserted literally — add the slug in sort order |
+| `contracts/surface-ownership.json` | exactly one row per `console-endpoints.json` key; `files` must equal the discovered Filament pages **exactly**, so never re-own a shared page (`ToolkitPage.php` belongs to the `toolkits` row) |
+| `bin/check-class-aliases.php` | a new cross-package namespace must be indexed in `WP_MCP_AI_ALIAS_DEFAULT_INDEX`, or its symbols read as "declared nowhere" |
+| PHPStan (lib/core) | `scanDirectories` the new package instead of giving `lib/core` a dependency on a Pro add-on |
+| Consumer `composer.json` | a dependency's `repositories` are **ignored by consumers** — the consumer root needs the path repo *and* a relock |
+
+**The silent one.** `bin/generate-tool-capability-flags.php` reads flags
+statically with `token_get_all()`. A tool that *inherits*
+`get_capability_flags()` from a base class is invisible to it, so the tool is
+absent from the catalogue — and `block_undeclared` then **denies it under the
+read-only profile guard**, at runtime, with no test failing. Declare the
+literal array in every tool even when the base already returns the same
+values (Proposal 167: 7 of 13 tools were invisible and `db_select` was
+denied).
+
 ## 5. Testing: fixtures, oracle, smoke harness
 
 - **Fixtures**: export the source data to `tests/fixtures/*.csv` (commit the
