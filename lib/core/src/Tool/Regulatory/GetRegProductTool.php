@@ -162,7 +162,7 @@ class GetRegProductTool extends RegulatoryTool
                     continue;
                 }
 
-                $rows[] = $this->registrationRow($item);
+                $rows[] = $this->registrationExpansionRow($item);
                 ++$fetched;
 
                 if (count($rows) >= self::MAX_REGISTRATIONS) {
@@ -185,7 +185,7 @@ class GetRegProductTool extends RegulatoryTool
      *
      * @return array<string, mixed>
      */
-    private function registrationRow(ContentItem $item): array
+    private function registrationExpansionRow(ContentItem $item): array
     {
         $meta = $item->meta;
 
