@@ -46,6 +46,7 @@ import {
 	rangeProblem,
 	sampleFunction,
 } from '../utils/graph-sample.js';
+import { rootText, solveEquation } from '../utils/polynomial.js';
 
 export const mathRouter = Router();
 
@@ -436,6 +437,107 @@ mathRouter.post( '/graph', async ( req, res ) => {
 		}
 
 		// A parse failure names the offending token better than a regex could.
+		res.status( 400 ).json( { success: false, error: err.message } );
+	}
+} );
+
+// ── POST /solve — solve a polynomial equation ──────────────
+
+/** The variable is interpolated into expressions, so it must be a bare name. */
+const VARIABLE_PATTERN = /^[A-Za-z][A-Za-z0-9_]*$/;
+
+/** Above this, roots cost more to find than the answer is worth. */
+const MAX_DEGREE = 12;
+
+/**
+ * Why a solve request cannot be attempted, or null.
+ *
+ * A missing side is a bad request rather than a parse failure, so it is
+ * separated from whatever mathjs would say about an empty string.
+ */
+function solveProblem( left, right, variable ) {
+	if ( 'string' !== typeof left || '' === left.trim() ) {
+		return 'Missing left expression';
+	}
+
+	if ( 'string' !== typeof right || '' === right.trim() ) {
+		return 'Missing right expression';
+	}
+
+	if ( left.length > MAX_EXPRESSION_LENGTH || right.length > MAX_EXPRESSION_LENGTH ) {
+		return `Expression is longer than ${ MAX_EXPRESSION_LENGTH } characters`;
+	}
+
+	if ( 'string' !== typeof variable || ! VARIABLE_PATTERN.test( variable ) ) {
+		return 'variable must be a bare identifier such as x';
+	}
+
+	return null;
+}
+
+/** `x = 5`, or `x1 = 2, x2 = -2` when there is more than one. */
+function solutionText( variable, solutions ) {
+	if ( 1 === solutions.length ) {
+		return `${ variable } = ${ rootText( solutions[ 0 ] ) }`;
+	}
+
+	return solutions
+		.map( ( root, index ) => `${ variable }${ index + 1 } = ${ rootText( root ) }` )
+		.join( ', ' );
+}
+
+/** `${ variable }_1 = 2, \quad ${ variable }_2 = -2`. */
+function solutionTex( variable, solutions ) {
+	return solutions
+		.map( ( root, index ) => `${ variable }_{${ index + 1 }} = ${ rootText( root ) }` )
+		.join( ', \\quad ' );
+}
+
+mathRouter.post( '/solve', async ( req, res ) => {
+	const { left, right, variable } = req.body || {};
+	const symbol = undefined === variable || null === variable ? 'x' : variable;
+
+	const problem = solveProblem( left, right, symbol );
+
+	if ( problem ) {
+		return res.status( 400 ).json( { success: false, error: problem } );
+	}
+
+	try {
+		const mathjs = await import( 'mathjs' );
+		const solved = solveEquation( mathjs, left, right, symbol );
+
+		// Not a polynomial: the caller asked for a solver this contract does not
+		// offer. The WordPress fallback guessed here, and guessed wrong.
+		if ( null !== solved.problem ) {
+			return res.status( 422 ).json( { success: false, error: solved.problem } );
+		}
+
+		if ( solved.degree > MAX_DEGREE ) {
+			return res.status( 422 ).json( {
+				success: false,
+				error: `Degree ${ solved.degree } is above the supported maximum of ${ MAX_DEGREE }`,
+			} );
+		}
+
+		const text = solved.infinite
+			? `Every value of ${ symbol } satisfies the equation`
+			: 0 === solved.solutions.length
+				? 'No solutions'
+				: solutionText( symbol, solved.solutions );
+
+		res.json( {
+			success: true,
+			equation: { left, right },
+			variable: symbol,
+			solutions: solved.solutions,
+			degree: solved.degree,
+			infinite: solved.infinite,
+			text,
+			tex: 0 === solved.solutions.length ? '' : solutionTex( symbol, solved.solutions ),
+		} );
+	} catch ( err ) {
+		// mathjs names the offending token better than a regex could.
 		res.status( 400 ).json( { success: false, error: err.message } );
 	}
 } );

@@ -106,6 +106,36 @@ final class MediaWorkerMathEngine implements MathEngineInterface
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function solve(string $left, string $right, string $variable): array
+    {
+        $body = $this->post(
+            '/api/math/solve',
+            array(
+                'left' => $left,
+                'right' => $right,
+                'variable' => $variable,
+            )
+        );
+
+        $solutions = $body['solutions'] ?? null;
+
+        if (! \is_array($solutions)) {
+            throw new \RuntimeException(
+                'The media worker answered without solutions for /api/math/solve.'
+            );
+        }
+
+        return array(
+            'solutions' => array_values($solutions),
+            'degree' => (int) ( $body['degree'] ?? 0 ),
+            'infinite' => (bool) ( $body['infinite'] ?? false ),
+            'text' => (string) ( $body['text'] ?? '' ),
+            'tex' => (string) ( $body['tex'] ?? '' ),
+        );
+    }
+    /**
      * POST a compute request, mapping a refusal to the caller's mistake.
      *
      * @param array<string, mixed> $payload
