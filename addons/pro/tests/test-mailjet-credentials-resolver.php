@@ -138,8 +138,8 @@ class Test_Mailjet_Credentials_Resolver extends WP_UnitTestCase {
 	 * A restricted assistant cannot reach a connection it was not assigned.
 	 */
 	public function test_restricted_assistant_rejects_unassigned_connection() {
-		$allowed  = $this->save_mailjet( array( 'name' => 'Allowed' ) );
-		$other    = $this->save_mailjet( array( 'name' => 'Other' ) );
+		$allowed   = $this->save_mailjet( array( 'name' => 'Allowed' ) );
+		$other     = $this->save_mailjet( array( 'name' => 'Other' ) );
 		$assistant = $this->assistant_allowing( array( $allowed ) );
 
 		$resolved = WP_MCP_AI_Pro_Mailjet_Credentials::resolve(
@@ -263,7 +263,7 @@ class Test_Mailjet_Credentials_Resolver extends WP_UnitTestCase {
 			WP_MCP_AI_Pro_Mailjet_Credentials::api_base( $resolved['region'] )
 		);
 		$this->assertSame(
-			'Basic ' . base64_encode( 'key-one:secret-one' ),
+			'Basic ' . base64_encode( 'key-one:secret-one' ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Expected Basic-auth header fixture.
 			WP_MCP_AI_Pro_Mailjet_Credentials::authorization_header( 'key-one', 'secret-one' )
 		);
 	}

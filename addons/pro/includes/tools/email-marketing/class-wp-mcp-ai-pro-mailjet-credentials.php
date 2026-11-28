@@ -442,15 +442,15 @@ class WP_MCP_AI_Pro_Mailjet_Credentials {
 			$api_secret = isset( $connection['api_secret'] ) ? trim( (string) WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( (string) $connection['api_secret'] ) ) : '';
 
 			$list[] = array(
-				'id'                => (string) $connection_id,
-				'name'              => isset( $connection['name'] ) ? (string) $connection['name'] : '',
-				'region'            => isset( $connection['mailjet_region'] ) && 'eu' === $connection['mailjet_region'] ? 'eu' : 'us',
-				'from_email'        => isset( $connection['mailjet_from_email'] ) ? (string) $connection['mailjet_from_email'] : '',
-				'from_name'         => isset( $connection['mailjet_from_name'] ) ? (string) $connection['mailjet_from_name'] : '',
-				'has_credentials'   => '' !== $api_key && '' !== $api_secret,
-				'has_mcp_bridge'    => '' !== trim( isset( $connection['mailjet_mcp_url'] ) ? (string) $connection['mailjet_mcp_url'] : '' ),
-				'last_test_status'  => isset( $connection['mcp_last_test']['success'] ) ? ( ! empty( $connection['mcp_last_test']['success'] ) ? 'ok' : 'failed' ) : '',
-				'last_tested_at'    => isset( $connection['updated'] ) ? (string) $connection['updated'] : '',
+				'id'               => (string) $connection_id,
+				'name'             => isset( $connection['name'] ) ? (string) $connection['name'] : '',
+				'region'           => isset( $connection['mailjet_region'] ) && 'eu' === $connection['mailjet_region'] ? 'eu' : 'us',
+				'from_email'       => isset( $connection['mailjet_from_email'] ) ? (string) $connection['mailjet_from_email'] : '',
+				'from_name'        => isset( $connection['mailjet_from_name'] ) ? (string) $connection['mailjet_from_name'] : '',
+				'has_credentials'  => '' !== $api_key && '' !== $api_secret,
+				'has_mcp_bridge'   => '' !== trim( isset( $connection['mailjet_mcp_url'] ) ? (string) $connection['mailjet_mcp_url'] : '' ),
+				'last_test_status' => isset( $connection['mcp_last_test']['success'] ) ? ( ! empty( $connection['mcp_last_test']['success'] ) ? 'ok' : 'failed' ) : '',
+				'last_tested_at'   => isset( $connection['updated'] ) ? (string) $connection['updated'] : '',
 			);
 		}
 
