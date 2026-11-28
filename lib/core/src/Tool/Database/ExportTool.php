@@ -377,8 +377,10 @@ final class ExportTool extends DatabaseTool
         }
 
         try {
-            if ($this->files instanceof FileVisibilityStoreInterface
-                && $this->files->supportsVisibility(FileVisibilityStoreInterface::VISIBILITY_PRIVATE)) {
+            if (
+                $this->files instanceof FileVisibilityStoreInterface
+                && $this->files->supportsVisibility(FileVisibilityStoreInterface::VISIBILITY_PRIVATE)
+            ) {
                 return $this->files->storeWithVisibility(
                     $path,
                     $filename,

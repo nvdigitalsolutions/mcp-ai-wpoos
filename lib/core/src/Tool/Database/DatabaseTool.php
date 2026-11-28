@@ -542,6 +542,9 @@ abstract class DatabaseTool extends AbstractTool
      * lists what a principal may see — so an id outside that list is
      * indistinguishable from an unknown one, which is the correct disclosure.
      *
+     * @param string               $id      Connection id.
+     * @param array<string, mixed> $context Execution context.
+     *
      * @throws DatabaseRefusal When the principal cannot see the id.
      */
     protected function descriptor(string $id, array $context): \Nvoos\Database\Domain\ValueObject\Database\ConnectionDescriptor

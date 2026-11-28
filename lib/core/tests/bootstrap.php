@@ -27,22 +27,22 @@ require __DIR__ . '/../vendor/autoload.php';
 // installs `nvoos/core` alone simply gets no database tools, which is why the
 // tools are declared behind the readiness manifest.
 $siblingPrefixes = array(
-	'Nvoos\\Database\\' => dirname( __DIR__, 3 ) . '/addons/pro/lib/database/src/',
-	'Nvoos\\Laravel\\'  => dirname( __DIR__, 3 ) . '/lib/laravel-adapter/src/',
+	'Nvoos\\Database\\' => dirname(__DIR__, 3) . '/addons/pro/lib/database/src/',
+	'Nvoos\\Laravel\\'  => dirname(__DIR__, 3) . '/lib/laravel-adapter/src/',
 );
 
 spl_autoload_register(
-	static function ( string $class_name ) use ( $siblingPrefixes ): void {
-		foreach ( $siblingPrefixes as $prefix => $root ) {
-			$length = strlen( $prefix );
+	static function (string $class_name) use ($siblingPrefixes): void {
+		foreach ($siblingPrefixes as $prefix => $root) {
+			$length = strlen($prefix);
 
-			if ( 0 !== strncmp( $prefix, $class_name, $length ) ) {
+			if (0 !== strncmp($prefix, $class_name, $length)) {
 				continue;
 			}
 
-			$file = $root . str_replace( '\\', '/', substr( $class_name, $length ) ) . '.php';
+			$file = $root . str_replace('\\', '/', substr($class_name, $length)) . '.php';
 
-			if ( is_file( $file ) ) {
+			if (is_file($file)) {
 				require $file;
 			}
 

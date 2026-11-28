@@ -27,7 +27,7 @@ final readonly class ResultSet
     public const TRUNCATED_DEADLINE = 'deadline';
 
     /**
-     * @param list<array{name: string, type: string}> $columns Column metadata, in projection order.
+     * @param list<string>                            $columns Column names, in projection order.
      * @param list<array<string, mixed>>              $rows    Shaped rows.
      * @param int                                     $rowCount Rows returned.
      * @param bool                                    $truncated Whether a cap was hit.
@@ -53,7 +53,7 @@ final readonly class ResultSet
     /**
      * An empty result carrying only the projection.
      *
-     * @param list<array{name: string, type: string}> $columns
+     * @param list<string> $columns
      */
     public static function empty(array $columns = array()): self
     {
