@@ -16186,3 +16186,74 @@ Twenty-one ecommerce tools remain deferred.
 `export_customer_data` and `woo_customers` still need the **customer directory** 164.181 named — accounts with no paid orders, which a spend aggregate cannot list by construction. `OrderQuery::$customerId` already answers `woo_customers`' `get_orders` action.
 
 The other three clusters are unchanged: coupons need a promotion model, inventory needs a movement ledger plus a multi-location decision, and carts need a cart model and a mail channel.
+### 164.183 — `customer_lifetime_value`, and a projection that multiplied a first order by twelve
+
+Measured before the port. `ecommerce` moves to **44 wp / 23 ported / 1 declined / 20 deferred**. Section 164.182 (`segment_customers`) is the parent commit and occupies a different region of the register, which is why this one is numbered after it rather than on top of it.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `customer_lifetime_value` | `CustomerLifetimeValueTool` -> `OrderStoreInterface::topCustomers()` |
+
+`ready`: the customer aggregate exists (164.181). No new contract method was needed — spend, order count and the first and last order dates are exactly what `CustomerSpend` already carries.
+
+#### The register called the arithmetic trivial, and the arithmetic was the defect
+
+Its entry said *"Prerequisite: CustomerStoreInterface with order aggregates; the arithmetic is trivial and the missing part is the data."* The data was indeed missing. The arithmetic was not trivial: it was wrong in the one place where being wrong is invisible, because the answer is a plausible number.
+
+#### One query per customer, each unbounded
+
+The reference listed customers with one `$wpdb` query and then called `wc_get_orders( array( 'limit' => -1, 'billing_email' => $email ) )` **once per customer**, so `include_all` over a hundred customers was a hundred and one queries and every one hydrated that customer's whole order history inside the request. This is one grouped aggregate for the whole selection (164.181).
+
+#### A first order projected at twelve times its value
+
+`calculate_predictive_clv()` divided the spend by the customer's own active span, floored at one month, and multiplied by the prediction window:
+
+```
+months_active = max( 1, ( last_order - first_order ) / 30 days )
+monthly_avg   = historical_clv / months_active
+predictive    = monthly_avg * prediction_months
+```
+
+A customer whose only order was three days old therefore had `months_active = 1`, was projected at twelve times that order, and — under the default `both` — was reported as worth **thirteen times** their single purchase. The floor exists to avoid dividing by zero, and it guarantees the most optimistic estimate at exactly the point where the least is known.
+
+The rate here is `historical / timeframe_months`: the period that was actually observed. With a twelve-month history and a twelve-month prediction the two components are equal, which reads as *"at the pace they have kept for the last year"*, and a store younger than its window understates rather than inflates. `monthly_clv_rate` is reported so a caller can see the rate the projection used instead of inferring it.
+
+#### `reset()` and `end()` relied on an ordering nobody asked for
+
+Both the projection and the churn test took the newest order as `reset( $orders )` and the oldest as `end( $orders )`, on the strength of `wc_get_orders()`'s default sort — which the call never specified. Had the default changed, the two would have swapped and the projection would have divided by a negative span. The dates come from `MIN` and `MAX` in the aggregate, where they do not depend on a default.
+
+#### Identity is the account, and `email` is refused
+
+The reference resolved `customer_id` through `WC_Customer` and `email` through `get_user_by()`, then queried orders **by billing email** — so a customer whose older orders carried a different address had those orders silently left out of their value. The selector here is the account id the order already carries. `email` is refused by name: resolving an address to an account needs a user directory this runtime does not have, which is the same missing customer directory that 164.181 and 164.182 both name.
+
+#### Two ways to say nothing, and one to say both
+
+Giving neither selector nor `include_all` returned a `no_customers_found` error, which reads as *"nobody bought"* rather than *"you did not say who"*; giving both silently preferred `customer_id`. Here at least one is required, both together is a field error, and a specific account with no paid orders in the window is a **not-found** rather than an empty success. An `include_all` that finds nobody is still a success with an empty list, because for a selection of everyone, nobody is an answer.
+
+#### Components, and what totals what
+
+`total_clv` sums only the components the caller asked for: `historical` totals the spend, `predictive` totals the projection, `both` totals their sum. Historical spend is **always** reported, because a projection is derived from it and hiding the basis would make the projection unauditable. The reference formatted every amount with `wc_format_decimal()` — strings in a JSON payload that otherwise carries numbers.
+
+#### Currency
+
+Sums were floats labelled with `get_woocommerce_currency()`, and both windows are amounts in whatever that was. The currency is required and is a filter.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,777 / 25,157 |
+| adapter | 772 / 4,040, 2 skipped |
+| readiness | 653 rows, servable 634 (delegated 13), no violations |
+| parity | 432 ported / 9 declined / 92 deferred / 427 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+#### After this
+
+Twenty ecommerce tools remain deferred.
+
+`export_customer_data` and `woo_customers` are the last two customer-side tools and both need the **customer directory**: accounts with no paid orders, which every aggregate in this family deliberately cannot list because they all start from orders. `OrderQuery::$customerId` already answers the `get_orders` action of `woo_customers`.
+
+The other three clusters are unchanged: coupons need a promotion model, inventory needs a movement ledger plus a multi-location decision, and carts need a cart model and a mail channel.
