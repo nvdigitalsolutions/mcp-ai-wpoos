@@ -1480,6 +1480,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'delete_reg_product' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\DeleteRegProductTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress product delete over ContentStoreInterface (Proposal 164 section 164.145). Gated on delete_posts, which is what WordPress checked rather than the family edit_posts. The WordPress description claimed the delete also removed associated registrations and documents; it does not, and in a compliance system an orphaned registration is worse than a documented non-cascade, so the description says what actually happens. No confirm argument: WordPress had none, and destructiveHint is the gate a host reads.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryProductWritesTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'delete_setting' => array(
 			'class' => 'Nvoos\\Core\\Tool\\DeleteSettingTool',
 			'readiness' => 'ready',
@@ -1582,6 +1591,15 @@ return array(
 			'probe' => 'call',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/DuplicateAssistantToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => false ),
+		),
+		'duplicate_reg_product' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\DuplicateRegProductTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress product duplicate over ContentStoreInterface (Proposal 164 section 164.145). The copy is a draft and keeps the source content. WordPress declared copy_meta and copy_taxonomies defaulting to true and then read them with empty, so an omitted flag behaved as false; the port applies the documented defaults. Copied registrations carry country, authority and type but never the COS number or dates, because those belong to the original application. The WordPress handler performed no capability check; the port requires edit_posts.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryProductWritesTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
 		'docgen_capture_style_memory' => array(
 			'class' => 'Nvoos\\Core\\Tool\\DocgenCaptureStyleMemoryTool',
@@ -4225,6 +4243,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/SearchAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
+		'search_reg_products' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\SearchRegProductsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress product search over ContentStoreInterface (Proposal 164 section 164.145). Manufacturer and ingredients match as substrings, origin_country and hs_code exactly, all ANDed. One correction: WordPress matched category by term name here while create stored a lower-cased slug and list filtered by slug, so a search for the documented value matched nothing; the port uses the slug vocabulary everywhere. The row keeps the WordPress 30-word description trim, with an ellipsis character rather than the HTML entity that used to reach the JSON envelope.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryProductWritesTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'seed_template_library' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Orchestration\\SeedTemplateLibraryTool',
 			'readiness' => 'ready',
@@ -4736,6 +4763,15 @@ return array(
 			'probe' => 'dry_run',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
+		),
+		'update_reg_product' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\UpdateRegProductTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress product update over ContentStoreInterface (Proposal 164 section 164.145). Only the fields supplied are written and an empty string clears one. Two corrections: WordPress changed the brand term but left the brand meta at its creation value, so an export read a stale brand; and it looked the category up with the caller exact case while the listing filtered by lower-cased slug. The response is the same full row get_reg_product returns rather than the reduced update row.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryProductWritesTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'update_setting' => array(
 			'class' => 'Nvoos\\Core\\Tool\\UpdateSettingTool',
