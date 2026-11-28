@@ -85,25 +85,25 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'      => array(
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: list_contacts, add_contact, remove_contact, list_contactlists.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'list_contacts', 'add_contact', 'remove_contact', 'list_contactlists' ),
 				),
-				'email'       => array(
+				'email'         => array(
 					'type'        => 'string',
 					'description' => __( 'Email address for add_contact or remove_contact actions.', 'mcp-ai-wpoos-pro' ),
 				),
-				'name'        => array(
+				'name'          => array(
 					'type'        => 'string',
 					'description' => __( 'Name for the contact (optional, used with add_contact).', 'mcp-ai-wpoos-pro' ),
 				),
-				'list_id'     => array(
+				'list_id'       => array(
 					'type'        => 'integer',
 					'maximum'     => WP_MCP_AI_Tool_Schema_Helper::MAX_SAFE_INTEGER,
 					'description' => __( 'Contact list ID for add_contact or remove_contact actions (optional).', 'mcp-ai-wpoos-pro' ),
 				),
-				'is_excluded' => array(
+				'is_excluded'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to add contact to exclusion list (default: false).', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -112,7 +112,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 					'type'        => 'string',
 					'description' => __( 'Optional Mailjet connection ID. Omit when only one Mailjet connection is assigned to this assistant. Call list_mailjet_connections for the IDs.', 'mcp-ai-wpoos-pro' ),
 				),
-				'limit'       => array(
+				'limit'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of results to return (default: 10, max: 1000).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
