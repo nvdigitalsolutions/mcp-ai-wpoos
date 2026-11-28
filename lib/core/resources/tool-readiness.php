@@ -750,6 +750,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysIntegrationToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
+		'cloudways_dns_delete_record' => array(
+			'class' => 'Nvoos\Core\Tool\Cloudways\\DnsRecordDeleteTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress DNS record delete over CloudwaysClientInterface (Proposal 164 section 164.143). The domain travels through the same host check and rawurlencode as the DNS readers, because WordPress interpolated a sanitize_text_field value straight into the path and that function leaves slashes and dots intact. The literal boolean confirm is required, a non-positive record id is named rather than absint-flipped, and the message carries the domain raw rather than HTML-escaped.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysDeleteToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
 		'cloudways_dns_list_domains' => array(
 			'class' => 'Nvoos\Core\Tool\Cloudways\\DnsDomainsTool',
 			'readiness' => 'ready',
@@ -912,6 +921,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysServerLifecycleTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
+		'cloudways_server_delete' => array(
+			'class' => 'Nvoos\Core\Tool\Cloudways\\ServerDeleteTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress server delete over CloudwaysClientInterface (Proposal 164 section 164.143). The largest blast radius in the family: every app, database and file on the machine is destroyed and no tool can restore it, which the description states where the schema is read. Requires the literal boolean confirm, and names server_stop and create_server_backup as the reversible alternatives for a caller who does not want this.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysDeleteToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
 		'cloudways_server_monitor_summary' => array(
 			'class' => 'Nvoos\Core\Tool\Cloudways\\ServerMonitorSummaryTool',
 			'readiness' => 'ready',
@@ -992,6 +1010,15 @@ return array(
 			'reason' => 'Ports the WordPress SSH key creation over CloudwaysClientInterface (Proposal 164 section 164.142). The single endpoint serves both scopes: app_id travels as 0 for a server-level key, which is what WordPress sent and a different request from omitting the field. A value carrying a PEM private-key header is refused before the request, enforcing the rule the tool guidance states; the format of a public key is left to the API.',
 			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysBackupKeyToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
+		'cloudways_ssh_key_delete' => array(
+			'class' => 'Nvoos\Core\Tool\Cloudways\\DeleteSshKeyTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress SSH key delete over CloudwaysClientInterface (Proposal 164 section 164.143). Revoking a key cuts access for every machine that uses it and nothing in the toolkit recreates it. Requires the literal boolean confirm; a negative id is named rather than flipped by absint, which would have deleted a different key. The API answer travels under result, the shape cloudways_app_delete established.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysDeleteToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
 		'cloudways_ssh_key_list' => array(
 			'class' => 'Nvoos\Core\Tool\Cloudways\\ListSshKeysTool',

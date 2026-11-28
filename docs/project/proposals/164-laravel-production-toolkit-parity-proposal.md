@@ -12758,3 +12758,87 @@ OpenSSH private key and asserts no request was made, and a second sends a
 The last three are the deletes — `ssh_key_delete`, `dns_delete_record` and
 `server_delete` — each with the strict `confirm` rule `app_delete` established
 (§164.138). Slice 11 closes the family at 60 of 60.
+
+### §164.143 — `cloudways`, slice 11: the three deletes, and the family closes at 60 of 60
+
+| Tool | Request |
+|---|---|
+| `cloudways_ssh_key_delete` | `DELETE /ssh-key/{ssh_key_id}` |
+| `cloudways_dns_delete_record` | `DELETE /dns/domain/{domain}/record/{record_id}` |
+| `cloudways_server_delete` | `DELETE /server/{server_id}` |
+
+#### One confirmation rule, inherited rather than re-invented
+
+All three use the strict literal `true` that `cloudways_app_delete` established
+in §164.138. The WordPress base class was
+`isset( $arguments['confirm'] ) && true === $arguments['confirm']`, and a test
+per tool pins that the *string* `'true'` is refused with no request made. The
+schema marks `confirm` required; the check is still the guard, because a schema
+is a hint to a client.
+
+The annotations are the destructive set: `destructiveHint: true`,
+`readOnlyHint: false`, `idempotentHint: false`.
+
+#### The DNS delete had the same traversal shape as the readers
+
+`dns_delete_record` built `/dns/domain/` . `$domain` . `/record/` . `$record_id`
+from `sanitize_text_field( $domain )` — the exact builder §164.141 fixed in the
+DNS readers and `dns_add_record`. The delete now runs the same host check and
+`rawurlencode()`, and a data provider pins five traversal shapes (`../server/1`,
+`../../app/1/2`, an embedded slash, a scheme, a space) with no request
+attempted. It is the same defect in its most dangerous context: a *delete*
+addressed by a caller-controlled path segment.
+
+#### No HTML escaping in the messages
+
+`dns_delete_record` ran `esc_html( $domain )` in its success message. The port
+returns the domain raw, and the encoding test uses `a&b.example`: the path must
+be `a%26b.example` and the message must contain `a&b.example`, not
+`&amp;b.example`.
+
+#### A negative id is named, not flipped
+
+The SSH-key delete read `absint( $arguments['ssh_key_id'] )`. `absint( -77 )` is
+`77`, so a caller who computed the wrong id could revoke a *different* key. The
+port refuses a non-positive id and names the field; the test passes `-77` and
+asserts that nothing was sent.
+
+#### `server_delete` names the smaller tools
+
+The description says the machine, its applications, its databases and its files
+are destroyed and that no tool can restore them, and it points at
+`cloudways_server_stop` for "offline" and `cloudways_create_server_backup` for
+"keep a copy". That is not padding: the common mistake with a delete tool is
+wanting one of those two instead.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `CloudwaysDeleteToolsTest` | **16 tests, 46 assertions**, 0 failures |
+| `lib/core` unit suite | **4,019 tests / 22,573 assertions** (+16 tests, +46 assertions), 0 failures |
+| Adapter suite | **698 tests / 3,766 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 570 → **573 rows**; servable 551 → **554**; ready 513; no violations |
+| Toolkit parity | 349 → **352 ported**, 9 declined, 79 deferred, 496 → **493 remaining**; `cloudways` `60 \| 57 \| 0 \| 0 \| 3` → **`60 \| 60 \| 0 \| 0 \| 0`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors across all 63 Cloudways classes and 2 test files |
+
+#### The family, closed
+
+Sixty tools across eleven slices, no declines and no deferrals. What the slices
+found, in order of how much they mattered: a **path traversal** in the DNS tools
+where a sanitised-but-unvalidated domain was concatenated into an authenticated
+URL (§164.141); **two HTML-escaped branches inside JSON envelopes** that
+corrupted the value they reported (§164.140, §164.142); **`absint()` silently
+flipping negative writer values** into the opposite positive one (§164.136);
+**a GET declared as a write** in three separate tools, which made safe calls ask
+for approval (§164.140, §164.142); and **a private key that could be uploaded
+as if it were public** (§164.142).
+
+None of these were porting mistakes. They were all present in the WordPress
+toolkit, and each is now pinned by a test that would fail if the correction were
+reverted. That is the argument for reading every tool line by line rather than
+translating signatures.
+
+The next toolkit is chosen by measurement rather than by mood: the largest
+remaining family with no deferrals, taken in one slice per surface group.
