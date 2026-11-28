@@ -14293,7 +14293,124 @@ code change was involved.
 
 #### Where the family stands
 
-Sixteen remain: notifications (4), requirements (2), and the eight reports now
-dispositioned, plus the two authority integrations this slice deferred. The next
-slice is notifications, which writes settings rather than records and shares the
-mail seam question the sync pair raised.
+Sixteen remain. Ten are deferred and six are undecided: notifications (3),
+requirements (2) and `get_registration_timeline` (1). The next slice is
+notifications, which writes settings rather than records and shares the mail seam
+question the sync pair raised.
+
+### §164.161 — `regulatory-registration`, slice 14: notifications
+
+Three tools, 681 lines. §164.160 listed the group as four; the register has
+three, and `get_registration_timeline` belongs with the requirements group
+rather than here.
+
+#### Nothing reads two thirds of a notification rule
+
+The option `configure_email_notifications` wrote,
+`wp_mcp_ai_notification_settings`, was read in exactly two places in the whole
+plugin: `send_expiry_alerts` and `send_status_change_notification`. Both read
+one field — `recipients`. **No code reads `enabled`, and no code reads
+`conditions`.** Nothing dispatches on a status change or an expiry date.
+
+The port keeps that shape. The rule is a `mcp_ai_notification_rule` item per
+type, with `enabled` and `conditions` stored and returned so a host can enforce
+them later, and the description says plainly that nothing does today. Building a
+dispatcher — an event hook that mails when a status changes — is a subsystem with
+its own delivery, retry and idempotency questions, not a port, and it would
+change behaviour nobody asked to change. Recorded here as a declared gap.
+
+#### The configuration log had no reader at all
+
+`configure_email_notifications` also appended to `wp_mcp_ai_notification_log`,
+capped at 100 entries, and **nothing anywhere read it**. The port does not create
+the store: a write-only log is a store with no reader, the same reasoning that
+stopped the §164.160 sample updates from being served. The rule item carries
+`updated_at` and `updated_by`, which is the audit information a reader would
+want, and `configure_email_notifications` returns it.
+
+#### Three store-level corrections
+
+**The type was not validated.** `notification_type` was sanitised and then used
+as a settings key, so `notification_type: "nonsense"` created a bucket nothing
+would ever read. The port requires one of the four types.
+
+**`enabled` was cast.** `(bool) $arguments['enabled']` turns the string `'false'`
+into `true`, so a caller that sent the string enabled a rule it meant to disable.
+The port reads it through `boolParam()`.
+
+**Recipients were stored unvalidated.** `sanitize_email()` returns an empty
+string for a junk address, and the empty string was stored and later handed to
+`wp_mail`. The port validates each address with `FILTER_VALIDATE_EMAIL` and, when
+a transport is injected, with the transport's own check. Valid addresses are
+stored, invalid ones are reported, and a supplied list that yields nothing valid
+is a refusal rather than a silently emptied rule.
+
+#### The history reader had the workflow log's three faults
+
+`get_notification_history` reproduced §164.159 exactly: `isset()` guards that
+kept entries lacking the filtered field, `by_type` counted over the whole store
+while sitting beside `filtered_results` from the sliced result, and dates through
+`strtotime()` so an unreadable timestamp sorted as 1970. The corrections are the
+same — unconditional comparison, statistics over the matched set, first-ten-
+character date comparison, `unreadable_timestamps` counted, and `total` /
+`matched` / `store_entries` reported separately.
+
+One thing is different and is stated rather than fixed: the store has **one
+writer**, `send_status_change_notification`. Expiry alerts log to a different
+option and configuration changes to a third, so this history has never contained
+anything but status-change entries.
+
+#### The sender names the step that supplied its recipients
+
+Recipients resolve in three steps: the argument, then the stored `status_change`
+rule, then a host-supplied default. WordPress ended the chain with
+`get_option( 'admin_email' )`; this runtime has no admin address, so the last step
+becomes the constructor default the expiry-alert tool already takes, and with
+none of the three available the call is **refused** instead of logging a send of
+zero and returning success.
+
+The response reports `recipients_source` as `argument`, `configuration` or
+`default`. The WordPress reply could not answer "which list was used", which is
+the first question asked when a message reaches the wrong person. A configured
+rule supplies recipients **whether or not it is enabled**, which is what
+WordPress did; adding an `enabled` gate would let a disabled rule silence an
+explicit request.
+
+Delivery failure does not fail the call. A missing transport, or a transport that
+refuses every address, returns `success: true` with `emails_sent: 0`,
+`transport_available`, `failed_recipients` and a message that says nothing went
+out — the same rule §164.155 follows, and the attempt is still logged. `emails_sent`
+is written into the log entry, which WordPress did not record: an entry that
+cannot say whether anything was delivered is a weaker audit than one that can.
+
+The body's trailing "View Registration" line is omitted, because it was
+`get_edit_post_link()` and this runtime has no admin screen to link to.
+
+#### One helper moved, once
+
+`checkRecipients()` and `addressList()` were private to `SendExpiryAlertsTool`
+and this slice needed both. Rather than a third copy, they moved to
+`RegulatoryTool`, which now takes an optional `EmailServiceInterface` as its
+third constructor argument. `SendExpiryAlertsTool` passes it up and keeps its
+public signature unchanged; the family has one recipient checker.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryNotificationToolsTest` | **22 tests, 100 assertions**, 0 failures |
+| `lib/core` unit suite | **4,355 tests / 23,967 assertions**, 0 failures (+22 tests / +100 assertions) |
+| Adapter suite | **712 tests / 3,878 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | **630 rows**; servable **611**; ready **570**; no violations |
+| Toolkit parity | **409 ported**, 9 declined, 89 deferred, 449 remaining; `regulatory-registration` `59 \| 43 \| 0 \| 10 \| 16` → **`59 \| 46 \| 0 \| 10 \| 13`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+#### Where the family stands
+
+Thirteen remain: the ten deferred (five Excel, three document writers, the two
+authority integrations) and three undecided — the two requirements tools and
+`get_registration_timeline`. The next slice is requirements, and it has a known
+bug to fix on the way: §164.152 recorded that the writer stores `is_mandatory`
+through `! empty()`, so a requirement created as its own schema documents is
+skipped by `check_product_compliance`.
