@@ -15625,3 +15625,66 @@ For the same reason the filter accepts the WooCommerce `publish` spelling and ma
 | PHPStan level 8 | clean |
 | phpcs (`phpcs-laravel.xml.dist`) | clean |
 | docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+### 164.174 — the `order` aggregate, and the first tool over it
+
+Measured before the port. The register deferred `get_uninvoiced_orders` with *"this runtime has no order or invoice model at all — the app skeleton registers no Order or Invoice entity"*. That sentence is now false, and the entry is deleted rather than reworded.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `get_uninvoiced_orders` | `GetUninvoicedOrdersTool` -> `OrderStoreInterface::query()` -> `OrderStore` over `nvoos_orders` / `nvoos_order_lines` |
+
+`ready`, not `delegated`: the store is bound in the service provider, so the tool works whenever the runtime does.
+
+#### The readiness vocabulary forced the scope
+
+A first pass registered the tool `unavailable` — the value the audit defines for *"needs a service this runtime does not bind"* — with the domain shipped and no adapter. That is honest, but it is not servable, and the parity baseline is a **served** ledger: `ported` is computed from the readiness manifest, so an `unavailable` tool counts as neither ported nor deferred, and the baseline cannot list it without reporting a regression. Registering `ready` without a binding would have been worse: a row claiming a capability whose constructor cannot be satisfied.
+
+The project's own precedent settles it. `ProductCatalogInterface` is `ready` because `ProductCatalog` exists, and section 164.114 shipped that adapter with its tables. So this slice ships the aggregate *and* its storage: two migrations, two Eloquent models, one adapter, one binding. The alternative — a domain with nothing to read it from — would have been a half-slice that unblocked nobody.
+
+#### Totals are snapshots, and the marker is a time
+
+Every amount on an order is what the customer was charged, not what the catalogue says today. Tax rates move, prices move, and an invoice for a past order has to keep saying what that order cost — so `total` is a stored fact rather than `sum(lines)`, and a line's `lineTotal` is stored rather than `quantity * unitPrice`, because real orders carry line-level discounts that deriving would discard.
+
+The component totals are nullable because a source may record only a total. `null` means "the source did not say", which is not zero and is never invented.
+
+WooCommerce records invoicing as the mere existence of an `_invoiced` meta key. The model holds a `\DateTimeImmutable`: null still answers "has this been invoiced", and the timestamp additionally answers *when*, which is the next question a billing pass asks. A marker with no time can always be written as a time; the reverse is not true.
+
+#### The four reference defects
+
+1. **The minimum amount was applied after the limit.** WordPress fetched the newest N uninvoiced orders and then dropped the cheap ones, so asking for ten orders of at least 100 could return none while a hundred qualifying orders sat behind the page. A filter applied to a page is a page-size change. The port filters in the query, and the adapter counts and pages over the same filtered builder.
+2. **`floatval()` made a bad amount disappear.** `"abc"` became `0.0`, silently switching the filter off. A non-numeric or negative amount is a field error.
+3. **Dates were `sanitize_text_field()`'d and concatenated** into an `after...before` string, and an unparseable date was ignored. Both bounds are parsed strictly and must round-trip as `YYYY-MM-DD`, which is also what catches `2024-13-01` — `createFromFormat()` rolls that over to 2025 rather than failing.
+4. **`absint()` on the customer id** turned `-5` into `5`, so a caller asking about one customer was answered about another.
+
+Two smaller corrections: `date_to` now includes the day it names (the bound is that day's end, not its midnight), and the response separates the match count from the page size, where WordPress called the page size the total.
+
+#### A minimum amount needs a currency
+
+WordPress compared an untyped float against every order's total, which is only meaningful in a single-currency store. The port takes `currency` alongside `min_amount`, and the adapter compares `total_currency` and `total_minor`, so an order in another currency is excluded rather than ranked against the bound. An order that cannot be compared cannot be said to satisfy it.
+
+#### A page, not a blob
+
+WordPress returned up to 1,000 orders in one response. A thousand-row response is not a page, and the query contract caps one at 100, so the port keeps the cap rather than silently truncating. The response reports `total_count` and `total_pages`, so a billing pass iterates pages instead of receiving a blob it cannot resume.
+
+#### Lines keep their identity
+
+`OrderStore::save()` upserts lines by id: a line with an id is updated in place, one without is inserted, and a stored line absent from the incoming set is deleted. The first implementation replaced the whole set on every save, which would have given every line a new id each time an invoice marker was written — and an invoice may reference a line. The update path also scopes the line lookup to the order, so an id belonging to another order cannot be moved here.
+
+#### Gates
+
+Measured on the tree that includes section 164.173.
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,613 / 24,669 |
+| adapter | 747 / 3,975, 2 skipped |
+| readiness | 646 rows, servable 627 (delegated 13), no violations |
+| parity | 425 ported / 9 declined / 99 deferred / 433 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+#### What this unblocks, and what it does not
+
+`get_uninvoiced_orders` lives in the **document-generation** toolkit, not `ecommerce`, so that family moves to 38 of 38 while the ecommerce count is unchanged. The order model is still the keystone for the ecommerce tools — `woo_orders`, `woo_coupons`, `woo_customers`, order analytics, abandoned carts — but each of those needs more than this aggregate: `woo_orders` needs guarded status transitions, and the coupon and customer tools need their own stores. Statuses are a vocabulary here and a policy engine later; the two change for different reasons, which is why `OrderStatus` names the seven states and refuses to say which may follow which.

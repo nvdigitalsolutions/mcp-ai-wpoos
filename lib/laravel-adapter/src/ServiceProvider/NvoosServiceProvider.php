@@ -84,6 +84,7 @@ use Nvoos\Core\Domain\Contract\PdfTextExtractorInterface;
 use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
 use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
 use Nvoos\Core\Domain\Contract\OkfBundleLocatorInterface;
+use Nvoos\Core\Domain\Contract\OrderStoreInterface;
 use Nvoos\Core\Domain\Contract\PaperStoreInterface;
 use Nvoos\Core\Domain\Contract\ProductCatalogInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
@@ -186,6 +187,7 @@ use Nvoos\Laravel\Adapter\OpenAiTranscription;
 use Nvoos\Laravel\Adapter\OpenAiVision;
 use Nvoos\Laravel\Adapter\PlatformFlush;
 use Nvoos\Laravel\Adapter\ProductCatalog;
+use Nvoos\Laravel\Adapter\OrderStore;
 use Nvoos\Laravel\Adapter\ProEntitlementFactory;
 use Nvoos\Laravel\Adapter\ProfessionRepository;
 use Nvoos\Laravel\Profession\JsonProfessionOverlay;
@@ -480,6 +482,12 @@ class NvoosServiceProvider extends ServiceProvider {
 		// the product tools declare the capability rather than probing for it: a
 		// missing binding must fail at construction, not midway through a run.
 		$this->app->bind( ProductCatalogInterface::class, ProductCatalog::class );
+
+		// Orders are the second bound commerce contract (Proposal 164 section
+		// 164.174). Bound alongside the catalogue for the same reason: the order
+		// tools declare the capability rather than probing for it, so a missing
+		// binding must fail at construction rather than midway through a run.
+		$this->app->bind( OrderStoreInterface::class, OrderStore::class );
 
 		$this->app->bind( SchemaStoreInterface::class, SchemaStore::class );
 
