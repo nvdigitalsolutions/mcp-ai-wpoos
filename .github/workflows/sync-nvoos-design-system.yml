@@ -1,15 +1,41 @@
 name: Sync nvoos-design-system
 
+# One-way mirror of addons/nvoos-design-system to the public repo
+# nvdigitalsolutions/nvoos-design-system.
+#
+# Each sync snapshots HEAD's subtree as ONE root commit and force-pushes it:
+# the mirror history is intentionally flat (one commit per sync). Never commit
+# to the mirror directly; addons/nvoos-design-system is the source of truth.
+#
+# 🚨 Do NOT reintroduce `git subtree split` + `fetch-depth: 0`. The monorepo
+# pack reached ~68 GiB by 2026-11-28 (build artifacts committed over time), so
+# the full clone sits in Checkout for 10+ minutes and is cancelled. A snapshot
+# only needs HEAD's tree, so depth 1 is enough. This is the same fix as
+# sync-nvoos-cognition.yml and the gateway syncs (2026-11-04, #7421).
+#
+# Activation (owner steps, one-time):
+#   1. Create the repo nvdigitalsolutions/nvoos-design-system (public).
+#      Done 2026-11-28.
+#   2. Add a repo-scoped deploy token as the secret
+#      NVOOS_DESIGN_SYSTEM_REPO_TOKEN. Done 2026-11-28.
+#   3. Run this workflow once via workflow_dispatch (backfills the mirror).
+#   4. Verify the mirror's readme.txt renders and the plugin files sit at the
+#      repo root (no `addons/` prefix).
+
 on:
-  workflow_dispatch:
   push:
     branches: [main, alpha-working]
     paths:
       - 'addons/nvoos-design-system/**'
+  # Manual runs force a sync without waiting for a merge (first-run backfill,
+  # re-sync after a revert, verification after rotating the token).
+  workflow_dispatch:
 
+# Newest run wins. A sync snapshots the full subtree content at HEAD, so an
+# older in-flight sync can never contain anything the newer one lacks.
 concurrency:
   group: sync-nvoos-design-system
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   sync:
@@ -18,29 +44,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          # Depth 1 is enough: the mirror step snapshots HEAD's subtree and
+          # reads only HEAD's commit message — nothing needs history.
+          fetch-depth: 1
 
-      # GitHub forbids `secrets.*` inside `if:` expressions, so the presence
-      # check is promoted to a step output.
-      - name: Check mirror token
-        id: token
+      - name: Mirror the subtree with a flat snapshot commit
         env:
           TOKEN: ${{ secrets.NVOOS_DESIGN_SYSTEM_REPO_TOKEN }}
         run: |
-          if [ -z "$TOKEN" ]; then
+          set -euo pipefail
+
+          if [ -z "${TOKEN}" ]; then
             echo "::warning::NVOOS_DESIGN_SYSTEM_REPO_TOKEN is not set; skipping the public mirror."
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
-      - name: Split subtree
-        if: steps.token.outputs.ready == 'true'
-        run: |
-          git subtree split --prefix=addons/nvoos-design-system --branch=nvoos-design-system-split
+          # The ambient GITHUB_TOKEN extraheader would override the token URL
+          # auth below — drop it for the rest of the job.
+          git config --local --unset-all http.https://github.com/.extraheader || true
+          git config --local user.name 'github-actions[bot]'
+          git config --local user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
-      - name: Push to nvoos-design-system
-        if: steps.token.outputs.ready == 'true'
-        run: |
-          git config --local --unset-all http.https://github.com/.extraheader
-          git push https://x-access-token:${{ secrets.NVOOS_DESIGN_SYSTEM_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-design-system.git nvoos-design-system-split:main --force
+          MIRROR_URL="https://x-access-token:${TOKEN}@github.com/nvdigitalsolutions/nvoos-design-system.git"
+          MSG="$(git log -1 --format='%s%n%n%b' -- addons/nvoos-design-system)"
+          MSG="${MSG:-Sync nvoos-design-system from mcp-ai-wpoos@${GITHUB_SHA}}"
+          TREE="$(git rev-parse HEAD:addons/nvoos-design-system)"
+
+          # Root commit (no parent): the mirror stays flat, one commit per
+          # sync, force-pushed. The fully-qualified destination also creates
+          # the branch on the first backfill into an empty mirror.
+          SYNC_COMMIT="$(printf '%s\n' "$MSG" | git commit-tree "$TREE")"
+          git push --quiet "$MIRROR_URL" "$SYNC_COMMIT:refs/heads/main" --force
+          echo "Pushed ${SYNC_COMMIT} to nvoos-design-system:main"
