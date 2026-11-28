@@ -393,10 +393,13 @@
         "quiz-management": [],
         "regulatory-registration": [
             "create_reg_product",
+            "create_registration",
             "delete_reg_product",
             "duplicate_reg_product",
             "get_reg_product",
+            "get_registration",
             "list_reg_products",
+            "list_registrations",
             "search_reg_products",
             "update_reg_product"
         ],

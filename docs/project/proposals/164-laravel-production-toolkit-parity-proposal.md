@@ -13017,3 +13017,78 @@ compliance toolkit must never do by convenience.
 
 The product group is complete at seven tools. The next slice is registration
 CRUD, where the status taxonomy and the expiry fields first matter.
+
+### §164.146 — `regulatory-registration`, slice 3: registration create, get, list
+
+| Tool | Store |
+|---|---|
+| `create_registration` | creates `mcp_ai_registration` |
+| `get_registration` | one row, expiry flags, two expansions |
+| `list_registrations` | five filters, newest first |
+
+#### The status is written as a term name and addressed by its slug
+
+WordPress derived a slug from the caller's status (`pending_documents` →
+`pending-documents`), looked the term up by slug, and created it named
+`Pending Documents`. The seeded vocabulary uses those names. The port writes the
+name — that is the spelling the store actually holds — and resolves the
+caller's documented slug form to it when filtering. One vocabulary, whichever
+end you start from, and a test pins that
+`create(status: pending_documents)` is found by
+`list(status: pending_documents)`.
+
+#### Dates are validated here, not just in the schema
+
+WordPress declared `YYYY-MM-DD` in the schema and trusted it. Every expiry
+comparison in the toolkit is a lexical or date comparison on that string, so a
+malformed value does not fail loudly — it fails silently, later, in a report that
+says nothing is expiring. The port refuses a provided value that is not an ISO
+date and names the field while the caller still knows which one to fix.
+
+#### The expiry arithmetic is the WordPress one, including its caution
+
+`days_to_expiry` is the floor of the day difference, `expiring_soon` is 0–90
+days, and `is_expired` is negative. One addition: a value `strtotime()` cannot
+parse yields **no flags** rather than the WordPress answer, which would have
+compared `false` and reported a date decades in the past. In an expiry system a
+wrong flag is worse than an absent one.
+
+#### Documents are found by `registration_id`, and the product by `product_id`
+
+A document may carry either reference — `duplicate_reg_product` copies the
+product one — but `get_registration` lists the documents attached to *this
+registration*, which is the `registration_id` meta, exactly as WordPress did.
+`include_product` returns the four-field summary WordPress returned, with the
+brand from the `brand` meta (not the term), because that is the projection this
+route has always used.
+
+#### The page-boundary rule is shared, not re-invented
+
+`list_registrations` uses the same `offset % limit` refusal as
+`list_reg_products`: the store paginates by page, and rounding an arbitrary
+offset would silently shift the window. `expiring_within_days` excludes rows
+with no expiry date, because a registration with no expiry is not expiring —
+that is what the WordPress `meta_query` did, and the test pins it.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryRegistrationCoreTest` | **16 tests, 65 assertions**, 0 failures |
+| `lib/core` unit suite | **4,066 tests / 22,756 assertions** (+16 tests, +65 assertions), 0 failures |
+| Adapter suite | **698 tests / 3,776 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 580 → **583 rows**; servable 561 → **564**; ready 523; no violations |
+| Toolkit parity | 359 → **362 ported**, 9 declined, 79 deferred, 486 → **483 remaining**; `regulatory-registration` `59 \| 7 \| 0 \| 0 \| 52` → **`59 \| 10 \| 0 \| 0 \| 49`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors across the eleven Regulatory classes, the tests and the manifest |
+| `check-file-docs.php --strict` | exit 0 |
+
+One small collision worth recording: the base class gained
+`registrationRow()` for this slice, and `GetRegProductTool` already had a private
+method of that name for its registration expansion. PHPStan caught the override
+immediately; the private one is now `registrationExpansionRow()`, which is what
+it always was.
+
+The next slice is the registration lifecycle — status transitions, approval,
+submission and renewal — where the status vocabulary becomes a state machine
+rather than a label.

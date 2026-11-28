@@ -1266,6 +1266,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
+		'create_registration' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\CreateRegistrationTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress registration creation over ContentStoreInterface (Proposal 164 section 164.146). The title convention is kept — product, country, Registration — because it is how an operator recognises a record in a list. The status is written as the term name the seeded vocabulary uses, while callers address it by slug. Dates are validated locally as ISO 8601 rather than trusting the schema alone, because a malformed date silently fails every expiry comparison later. The product must exist and be a product.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryRegistrationCoreTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'create_reg_product' => array(
 			'class' => 'Nvoos\Core\Tool\Regulatory\\CreateRegProductTool',
 			'readiness' => 'ready',
@@ -2777,6 +2786,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndCrawlerToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'get_registration' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\GetRegistrationTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress single-registration read over ContentStoreInterface (Proposal 164 section 164.146). The expiry arithmetic is the WordPress one — floor of the day difference, expiring-soon within 90 days — and an unparsable date yields no flags rather than a wrong one. include_documents finds documents by registration_id, their own reference, and include_product returns the four-field product summary. Gated on read, as WordPress gated it.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryRegistrationCoreTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'get_reg_product' => array(
 			'class' => 'Nvoos\Core\Tool\Regulatory\\GetRegProductTool',
 			'readiness' => 'ready',
@@ -3473,6 +3491,15 @@ return array(
 			'readiness' => 'pure',
 			'probe' => 'call',
 			'evidence' => 'lib/laravel-adapter/tests/CoreToolCatalogueTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'list_registrations' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\ListRegistrationsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress registration listing over ContentStoreInterface (Proposal 164 section 164.146). Country, product_id and registration_type are exact meta matches; status is addressed by its documented slug form and resolved to the term name the store writes; expiring_within_days excludes undated rows, as the WordPress meta clause did, because a registration with no expiry is not expiring. Newest first, 20 per page and 100 at most, and offset must be a multiple of limit for the same page-boundary reason as the product listing.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryRegistrationCoreTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'list_reg_products' => array(

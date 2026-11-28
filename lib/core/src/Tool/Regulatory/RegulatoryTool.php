@@ -227,6 +227,107 @@ abstract class RegulatoryTool extends AbstractTool
     }
 
     /**
+     * The term name a status slug is stored under.
+     *
+     * WordPress created the term from the slug with `ucwords( $status, '_' )`
+     * and then turned the underscores into spaces, so `pending_documents`
+     * became `Pending Documents`. The default terms are seeded with those names,
+     * which is why the name — not the slug — is the canonical spelling in the
+     * store.
+     */
+    protected function statusName(string $slug): string
+    {
+        $words = str_replace('_', ' ', ucwords(strtolower(trim($slug)), '_'));
+
+        return trim((string) preg_replace('/\s+/', ' ', $words));
+    }
+
+    /**
+     * The slug a status name or slug is addressed by.
+     */
+    protected function statusSlug(string $value): string
+    {
+        $slug = strtolower(trim($value));
+
+        return trim((string) preg_replace('/[\s_]+/', '-', $slug), '-');
+    }
+
+    /**
+     * The full registration row `get_registration` returns.
+     *
+     * @param array<string, mixed>              $meta
+     * @param array<string, array<int, string>> $terms
+     *
+     * @return array<string, mixed>
+     */
+    protected function registrationRow(ContentItem $item, array $meta = array(), array $terms = array()): array
+    {
+        $meta = array() !== $meta ? $meta : $item->meta;
+
+        $row = array(
+            'id'                => $item->id,
+            'title'             => $item->title,
+            'notes'             => $item->content,
+            'product_id'        => $this->intValue($meta['product_id'] ?? null),
+            'country'           => $this->text($meta['country'] ?? null),
+            'authority'         => $this->text($meta['authority'] ?? null),
+            'registration_type' => $this->text($meta['registration_type'] ?? null),
+            'cos_number'        => $this->text($meta['cos_number'] ?? null),
+            'submission_date'   => $this->text($meta['submission_date'] ?? null),
+            'approval_date'     => $this->text($meta['approval_date'] ?? null),
+            'expiry_date'       => $this->text($meta['expiry_date'] ?? null),
+            'created_date'      => $item->createdAt->format('Y-m-d H:i:s'),
+            'modified_date'     => $item->updatedAt->format('Y-m-d H:i:s'),
+        );
+
+        $statuses = $this->termNames($terms, self::STATUS_TAX);
+
+        if (array() !== $statuses) {
+            $row['status'] = $statuses[0];
+        }
+
+        return $row;
+    }
+
+    /**
+     * The lighter registration row `list_registrations` returns.
+     *
+     * It carries no notes and no modified date, and gains `product_name` when
+     * the product still exists — the same trade the product listing makes.
+     *
+     * @param array<string, mixed>              $meta
+     * @param array<string, array<int, string>> $terms
+     *
+     * @return array<string, mixed>
+     */
+    protected function registrationSummaryRow(ContentItem $item, array $meta = array(), array $terms = array()): array
+    {
+        $meta = array() !== $meta ? $meta : $item->meta;
+
+        $row = array(
+            'id'                => $item->id,
+            'title'             => $item->title,
+            'product_id'        => $this->intValue($meta['product_id'] ?? null),
+            'country'           => $this->text($meta['country'] ?? null),
+            'authority'         => $this->text($meta['authority'] ?? null),
+            'registration_type' => $this->text($meta['registration_type'] ?? null),
+            'cos_number'        => $this->text($meta['cos_number'] ?? null),
+            'submission_date'   => $this->text($meta['submission_date'] ?? null),
+            'approval_date'     => $this->text($meta['approval_date'] ?? null),
+            'expiry_date'       => $this->text($meta['expiry_date'] ?? null),
+            'created_date'      => $item->createdAt->format('Y-m-d H:i:s'),
+        );
+
+        $statuses = $this->termNames($terms, self::STATUS_TAX);
+
+        if (array() !== $statuses) {
+            $row['status'] = $statuses[0];
+        }
+
+        return $row;
+    }
+
+    /**
      * An id from untyped meta or arguments, or 0.
      *
      * The scalar check matters: `(int) array()` is 1, so a malformed meta value
