@@ -56,6 +56,7 @@ use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\FileDerivativeStoreInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
+use Nvoos\Core\Domain\Contract\MathRendererInterface;
 use Nvoos\Core\Domain\Contract\ControlledDocumentInterface;
 use Nvoos\Core\Domain\Contract\DocsCorpusInterface;
 use Nvoos\Core\Domain\Contract\FileVisibilityStoreInterface;
@@ -162,6 +163,7 @@ use Nvoos\Laravel\Adapter\MediaWorkerClient;
 use Nvoos\Laravel\Adapter\MediaWorkerHtmlToPdf;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProcessing;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProduction;
+use Nvoos\Laravel\Adapter\MediaWorkerMathRenderer;
 use Nvoos\Laravel\Adapter\MediaWorkerVideoGeneration;
 use Nvoos\Laravel\Adapter\MediaWorkerOfficeWriter;
 use Nvoos\Laravel\Adapter\MediaWorkerBrowserCapture;
@@ -290,6 +292,12 @@ class NvoosServiceProvider extends ServiceProvider {
 		// single-input route above keeps the meaning every other operation
 		// depends on. `merge` will join it rather than widen this one.
 		$this->app->bind( VideoCompositionInterface::class, MediaWorkerVideoComposition::class );
+
+		// LaTeX rendering is one route, `/api/data/render-math`, over KaTeX. The
+		// contract is deliberately narrower than the route's options: the route
+		// reads `displayMode` and `output` only, so a macro map would be a
+		// promise the engine cannot keep (§164.167).
+		$this->app->bind( MathRendererInterface::class, MediaWorkerMathRenderer::class );
 
 		// Frames are many files out of one video, which is a return shape
 		// `process()` deliberately does not have. Its own contract keeps that
