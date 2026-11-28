@@ -13685,3 +13685,121 @@ not.
 
 The next slice is `generate_expiry_forecast` (10b), which adds risk bands and a
 monthly timeline — and with them a month-bucket bug worth measuring first.
+
+### §164.154 — `regulatory-registration`, slice 10b: the expiry forecast
+
+`generate_expiry_forecast` adds risk bands, a monthly timeline and a country
+count. The bands ported unchanged; the timeline did not.
+
+#### The timeline skipped a month, three days out of thirty-one
+
+WordPress built the buckets with
+`gmdate( 'Y-m', strtotime( "+{$i} months" ) )` for `$i` from zero to the horizon.
+PHP's `+1 month` is month arithmetic on *today's day number*, so it overflows:
+31 January plus one month is 3 March. On the 29th, 30th and 31st, the key
+`2026-02` therefore never existed — and because the counter only incremented
+when `isset( $by_month[ $key ] )`, **every February expiry disappeared from the
+timeline** on those days.
+
+The port builds buckets from the first day of the current month, where month
+arithmetic cannot overflow, and makes the horizon the last day of the final
+month. A bucket now exists exactly when its month is inside the forecast.
+
+#### The timeline counted only one band
+
+The restored loop also exposed a second fault in the same block: WordPress
+counted a registration into `by_month` only when it fell past both day bands,
+because the month increment sat inside the `low_risk` branch. The timeline is
+the "what expires in March" list, so it must count every non-expired
+registration inside the horizon whatever its band; the port does that, and three
+registrations in three bands now sum to three on the timeline.
+
+#### Bands are day-based; the horizon is not
+
+The bands stayed as WordPress defined them — `expired`, `high` at
+`days <= threshold`, `medium` at `days <= threshold * 2` — because they answer
+"how soon", not "how soon within the window". With `forecast_months: 1` that
+means a registration eleven months out is still reported as `medium_risk`,
+which is true. What was missing is that such a record is inside no bucket
+either, so it vanished from `total_expiring`. Records in no band and no bucket
+are now counted in `beyond_horizon`, and `total_considered` is the sum of every
+registration the query returned.
+
+An unreadable date is expired with a null day count and named, as in §164.153;
+`forecast_months` and `risk_threshold` are validated against the schema bounds
+rather than read with `! empty()`, which was safe only because the schema
+forbids zero.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryExpiryForecastTest` | **14 tests, 74 assertions**, 0 failures |
+| `lib/core` unit suite | 4,192 → **4,219 tests / 23,309 assertions** (10b + 10c), 0 failures |
+| Readiness manifest | 601 → **603 rows** (10b + 10c); servable 582 → **584**; ready 541 → **543**; no violations |
+| Toolkit parity | 380 → **382 ported** (10b + 10c), 9 declined, 84 deferred, 465 → **463 remaining** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+### §164.155 — `regulatory-registration`, slice 10c: expiry alerts
+
+`send_expiry_alerts` closes the expiry group: it is the only writing tool in
+this family, and the only one that leaves the runtime.
+
+#### Where recipients came from, and where they cannot
+
+WordPress resolved recipients in three steps: the `recipients` argument, then
+the `expiry_alert` entry of `wp_mcp_ai_notification_settings` that
+`configure_email_notifications` writes, then `admin_email`. This runtime has no
+options store and no administrator address, so the second and third steps do not
+exist. The port takes the argument, falls back to recipients the host supplies
+at construction, and **refuses** the call when both are empty — naming the
+argument — rather than sending to a guess.
+
+#### An empty address was attempted, not refused
+
+`sanitize_email( $address )` turns an invalid address into an empty string, and
+WordPress then called `wp_mail( '' )` for it. The send failed silently, and the
+response still listed the address as a recipient. The port validates each
+address (a format check, then the transport's own `validateRecipient` when one
+is bound), drops the failures, reports them in `invalid_recipients`, and refuses
+the call when none survives.
+
+#### No transport still answers
+
+A host without an email service gets the full report: the registrations are
+listed, `emails_sent` is zero and `transport_available` is false. Losing the
+answer because the mail could not go out would be worse than a missed email,
+which is the rule the calendar tools already follow. A transport that refuses
+one recipient is recorded per address in `failed_recipients` rather than
+collapsing the whole send.
+
+#### Two gaps, recorded rather than papered over
+
+The WordPress option log (`wp_mcp_ai_expiry_alert_log`, capped at fifty entries)
+is not ported, because this runtime has no options store; the response reports
+what was sent and `sent_at`. There is also **no idempotency guard**: calling the
+tool twice sends twice. The calendar tools log sends per record because a
+confirmation is a promise to a client; this tool mails the operator's own team,
+who control the cadence, so the port follows WordPress and leaves cadence to
+the caller. `test_mode` is the preview.
+
+Already-expired registrations are excluded from the window — that window starts
+today — and counted in `expired_excluded`, because a caller who assumes "no
+alert" means "nothing wrong" should see them. Gated on `edit_posts`, matching
+both the declaration and the handler: the family's relaxation to `read` does
+not apply to a tool that sends mail.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryExpiryAlertsTest` | **13 tests, 41 assertions**, 0 failures |
+| Adapter suite | **698 tests / 3,796 assertions**, 2 skipped, 0 failures |
+| Toolkit parity | `regulatory-registration` `59 \| 28 \| 0 \| 5 \| 31` → **`59 \| 30 \| 0 \| 5 \| 29`** |
+| `check-file-docs.php --strict` | exit 0 |
+
+The expiry and monitoring group is closed: four tools, **59 \| 30 \| 0 \| 5 \| 29**
+in the family. The next slice is the reports and generation group, which needs
+one recorded decision first — whether this runtime hosts a PDF writer or
+declares the binary path a gap, as §164.144 and §164.148 already did.
