@@ -15929,3 +15929,74 @@ Twenty-three ecommerce tools remain deferred, and they fall into four prerequisi
 - **Carts** — `get_abandoned_carts`, `abandoned_cart_recovery`, `send_cart_recovery_email`: a cart model and a mail channel.
 
 `sales_performance_dashboard` is now a composition of this tool with those aggregates rather than a store of its own. Four tools — `refund_order_advanced`, `quickbooks_desktop_sync`, `rfdetr_catalog_search`, `get_import_duty` — move money or call external systems, and stay deferred for that reason rather than for a missing model.
+
+### 164.179 — `sales_performance_dashboard`, and a dashboard that was empty on modern stores
+
+Measured before the port. `ecommerce` moves to **44 wp / 21 ported / 1 declined / 22 deferred**.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `sales_performance_dashboard` | `SalesPerformanceDashboardTool` -> `OrderStoreInterface::analytics()` |
+
+`ready`. The register predicted this shape — *"Builds the revenue dashboard. Prerequisite: OrderStoreInterface."* — and 164.178 built the aggregate it needs.
+
+#### Four raw queries over tables that no longer hold orders
+
+Every section was `$wpdb` SQL against `wp_posts` and `wp_postmeta`: `shop_order` posts in `wc-completed` and `wc-processing`, `_order_total` for money, `_customer_user` for the customer. WooCommerce moved orders to its own `wc_orders` tables (High-Performance Order Storage), where those rows do not exist — so on a store using the current storage the reference returned a dashboard of zeroes and reported success. The port reads the order store, the same source `get_order_analytics` reads, so the two tools cannot disagree and neither depends on which storage WooCommerce is configured for.
+
+#### `include_refunds` did not net refunds, it added them
+
+The flag appended `wc-refunded` to the status list and revenue was `SUM(_order_total)` over that list. A refunded order still carries its original total, so **including refunds increased revenue** by the full value of every refunded order. The flag is refused when true, for the reason 164.178 gives: the model stores the total and not how much came back, so neither adding nor subtracting is truthful. `false` is accepted because doing nothing is exactly what it asks for.
+
+#### `average_order` depended on a different metric being requested
+
+The reference computed it inside the `orders` branch, from `$results['revenue'] / $results['orders']`. Asking for `metrics: ['revenue', 'average_order']` returned revenue alone, with no error. Every requested metric is computed independently here, and the average divides revenue by the orders that carried it — the 164.178 definition, so `revenue / average_order` lands back on `orders`.
+
+#### There was no currency
+
+`SUM()` ran over a text column and the result was labelled with the store's currency. `currency` is required and is a filter, and orders in another currency are not aggregated.
+
+#### One definition of revenue
+
+The dashboard reports the same `revenue` as `get_order_analytics`: `pending`, `on-hold`, `processing` and `completed`, with `cancelled`, `failed` and `refunded` excluded. The reference used `completed` and `processing` only — a different number under the same name. One toolkit gets one definition, and `status_counts` remains available on `get_order_analytics` for callers who need a stricter reading.
+
+#### `customers` is buyers, and `new_customers` is not offered
+
+`customers` counts distinct customers who placed a **revenue-bearing** order in the window; a guest order carries no customer id and is not a customer, which is the same rule as the reference's `_customer_user > 0` test, now expressed on a column instead of a meta row. This needed one new field on the aggregate — `customerCount`, a `COUNT(DISTINCT customer_id)` over the same selection.
+
+The `new_customers` figure is **not** offered. The reference derived it from a correlated subquery over each customer's first completed order ever, which needs a first-order-per-customer aggregate the store does not expose. Reporting the window's buyer count under the name "new customers" would be a different number wearing the right label.
+
+#### Two metrics refused, and a filter that never worked
+
+`products` drives the top-products section, which aggregates order *lines*; `OrderLine` carries a `product_id`, so this is a missing aggregate rather than a missing model — one prerequisite that would also unlock `include_products` in 164.178. `conversion` needs sessions and traffic, which no store in this runtime records, so there is no honest number to report at all. `category_ids` and `top_products_limit` are refused with the section that used them; an empty `category_ids` array is accepted because it asks for nothing.
+
+Worth recording separately: the reference's category filter **could never have worked**. It appended `AND tr.term_taxonomy_id IN (...)` to the top-products query without ever joining `term_relationships`, so any call passing `category_ids` was a SQL error rather than a filtered result. That is independent of the missing aggregate.
+
+#### Dates, and a day that was not counted
+
+The arguments are `date_from` and `date_to`, matching 164.178 so one toolkit has one date idiom, rather than the reference's `start_date` / `end_date`. Both bounds parse strictly through `DateBound` (164.176), `date_to` includes the day it names, and a reversed range is a field error rather than a dashboard of zeroes. `days` counts both ends of the window; the reference rounded the difference between two timestamps, which under-counts an inclusive window by one at every multiple of 24 hours.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,731 / 25,030 |
+| adapter | 759 / 4,012, 2 skipped |
+| readiness | 651 rows, servable 632 (delegated 13), no violations |
+| parity | 430 ported / 9 declined / 94 deferred / 429 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+#### After this
+
+Twenty-two ecommerce tools remain deferred, in the same four clusters 164.178 named:
+
+- **Coupons** — `woo_coupons`, `create_discount_campaign`: a promotion model.
+- **Customers** — `woo_customers`, `segment_customers`, `customer_lifetime_value`, `export_customer_data`: a customer aggregate, which would also supply `new_customers` above and the `include_customers` section of 164.178.
+- **Inventory** — `sync_product_inventory`, `track_inventory_movement`, `inventory_forecast`, `low_stock_alert_automation`: a movement ledger, plus a multi-location decision for the last two.
+- **Carts** — `get_abandoned_carts`, `abandoned_cart_recovery`, `send_cart_recovery_email`: a cart model and a mail channel.
+
+`create_product_advanced`, `import_products_csv`, `export_products_report`, `process_order_workflow` and `upsell_recommendations` each need a decision on one of those aggregates or on the product taxonomy. Four tools stay deferred because they move money or call external systems.
+
+The highest-leverage next prerequisite is the **top-products aggregate over order lines**: it is one contract method, and it closes `products` here and `include_products` in 164.178 together.

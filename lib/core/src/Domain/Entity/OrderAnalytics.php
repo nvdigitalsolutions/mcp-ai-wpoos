@@ -72,6 +72,7 @@ final readonly class OrderAnalytics implements \JsonSerializable
      * @param int                            $orderCount        Orders in the window and currency.
      * @param int                            $revenueOrderCount Orders in a revenue-bearing status.
      * @param int                            $excludedOrders    Orders in the window but another currency.
+     * @param int                            $customerCount     Distinct customers with revenue-bearing orders.
      * @param Money                          $grossTotal        Every order's total.
      * @param Money                          $revenue           The revenue-bearing statuses' totals.
      * @param array<string, int>             $statusCounts      Orders per status.
@@ -82,6 +83,7 @@ final readonly class OrderAnalytics implements \JsonSerializable
         public int $orderCount,
         public int $revenueOrderCount,
         public int $excludedOrders,
+        public int $customerCount,
         public Money $grossTotal,
         public Money $revenue,
         public array $statusCounts,
@@ -146,6 +148,7 @@ final readonly class OrderAnalytics implements \JsonSerializable
             'order_count'         => $this->orderCount,
             'revenue_order_count' => $this->revenueOrderCount,
             'excluded_orders'     => $this->excludedOrders,
+            'customer_count'      => $this->customerCount,
             'gross_total'         => (float) $this->grossTotal->toDecimal(),
             'revenue'             => (float) $this->revenue->toDecimal(),
             'average_order_value' => (float) Money::fromMinorUnits(

@@ -159,6 +159,7 @@ final class OrderStoreFake implements OrderStoreInterface
         $grossMinor        = 0;
         $revenueMinor      = 0;
         $daily             = array();
+        $customers         = array();
 
         foreach ($scoped as $order) {
             $status = $order->status->value;
@@ -172,6 +173,11 @@ final class OrderStoreFake implements OrderStoreInterface
 
             ++$revenueOrderCount;
             $revenueMinor += $order->total->minorUnits;
+
+            // A guest order carries no customer id and is not a customer.
+            if (null !== $order->customerId && $order->customerId > 0) {
+                $customers[$order->customerId] = true;
+            }
 
             $day = $order->createdAt->format('Y-m-d');
 
@@ -190,6 +196,7 @@ final class OrderStoreFake implements OrderStoreInterface
             count($scoped),
             $revenueOrderCount,
             $excluded,
+            count($customers),
             Money::fromMinorUnits($grossMinor, $currency),
             Money::fromMinorUnits($revenueMinor, $currency),
             $statusCounts,

@@ -4595,6 +4595,15 @@ return array(
 			'reason' => 'Declined, not ported: the WordPress tool posts workflow_id or assistant_id to /v1/responses, and neither is a Responses parameter. assistant_id is an Assistants API identifier, and that API was sunset on 2026-08-26. workflow_id is an Agent Builder identifier ChatKit invokes through a server-side session endpoint, not this API. A faithful port would always fail. Proposal 090-M section 31.',
 			'annotations' => array( 'readOnlyHint' => true, 'openWorldHint' => false ),
 		),
+		'sales_performance_dashboard' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\SalesPerformanceDashboardTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the sales dashboard (Proposal 164 section 164.179) over OrderStoreInterface. The reference is raw SQL over wp_posts and wp_postmeta: shop_order posts in wc-completed and wc-processing, _order_total for money and _customer_user for the customer. WooCommerce moved orders to its own wc_orders tables, where those rows do not exist, so on a modern store the reference returned a dashboard of zeroes and reported success; this tool reads the same order store as get_order_analytics, so the two cannot disagree. Revenue, orders, average order value, distinct buyers and the daily trend come from the store aggregate. include_refunds is refused when true because the flag added wc-refunded to the sum, and a refunded order carries its original total, so asking to include refunds increased revenue by the full value of every refunded order rather than netting anything; revenue already excludes cancelled, failed and refunded orders, and the model records no refunded amount to net with. average_order divided revenue by an order count computed only when orders had also been requested, so asking for revenue and average order value returned revenue alone; every requested metric is computed here. The currency is required and is a filter, where the reference summed a text column and labelled the result with the store currency. customers counts distinct buyers among revenue-bearing orders and ignores guest orders, which carry no customer id. The products metric is refused by name because top products aggregate order lines, which this store does not expose yet, and conversion is refused because it needs sessions and traffic that no store here records. category_ids and top_products_limit are refused with the section that used them, and an empty category list is accepted because it asks for nothing. The new_customers breakdown is not offered: it needs a first-order-per-customer aggregate. Dates are parsed strictly, date_to includes the day it names, a reversed range is a field error, and days counts both ends of the window where the reference rounded the timestamp difference. Read-only.',
+			'evidence' => 'lib/core/tests/Unit/Tool/SalesPerformanceDashboardToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'save_post' => array(
 			'class' => 'Nvoos\\Core\\Tool\\SavePostTool',
 			'readiness' => 'ready',
