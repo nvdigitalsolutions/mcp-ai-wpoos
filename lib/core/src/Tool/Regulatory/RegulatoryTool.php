@@ -62,6 +62,15 @@ abstract class RegulatoryTool extends AbstractTool
     /** The content type a regulatory requirement is stored as. */
     public const REQUIREMENT_TYPE = 'mcp_ai_requirement';
 
+    /** The requirement kinds `add_regulatory_requirement` accepts. */
+    public const REQUIREMENT_TYPES = array(
+        'document',
+        'test',
+        'certification',
+        'ingredient_restriction',
+        'other',
+    );
+
     /**
      * The content type a published regulatory update is stored as.
      *

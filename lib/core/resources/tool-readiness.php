@@ -56,6 +56,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/ChatChannelMessengerGoogleChatToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
+		'add_regulatory_requirement' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\AddRegulatoryRequirementTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Stores a requirement as an mcp_ai_requirement content item. Fixes the bug §164.152 recorded: the schema declares is_mandatory with a default of true and the WordPress writer read it with ! empty(), so the caller who followed the schema stored false and check_product_compliance skipped the requirement entirely; the port reads it through boolParam with a true default and the regression test runs the compliance check end to end, where the product now fails for the missing document. Also validates requirement_type against the five declared kinds, where WordPress accepted any string including a document type mistaken for a kind; and validates effective_date and reference_url, where esc_url_raw stored the empty string for anything it did not recognise. Optional meta is absent rather than empty, so a reader can tell all-categories from a blank category. Gated on edit_posts, which the handler declared and never checked (Proposal 164 section 164.162).',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryRequirementsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'add_telegram_message_reaction' => array(
 			'class' => 'Nvoos\Core\Tool\ChatChannels\AddTelegramMessageReactionTool',
 			'readiness' => 'ready',
@@ -3046,6 +3055,15 @@ return array(
 			'reason' => 'Ports the WordPress single-product read over ContentStoreInterface (Proposal 164 section 164.144). The full row includes the INCI and allergen lists, which the listing projection omits. include_registrations appends up to 1000 registrations, read in pages of 200 because the store contract caps a page there, and each row carries its status term when one is attached. A wrong-type id reads as not found, which the store already refuses.',
 			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryProductToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'get_regulatory_requirements' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\GetRegulatoryRequirementsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Lists mcp_ai_requirement items for a country, narrowed by authority, kind, product category and the mandatory flag, grouped by kind and paged within the schema range of 1 to 100. Two corrections: the mandatory filter was a meta query for the string 1, which only matched because update_post_meta serialised true that way, so the port reads the flag with flag() and a boolean or a true string now matches the same as the checker reads it; and mandatory_only went through ! empty(), so the string false switched the filter on, and it now goes through boolParam. The handler checked no capability; the port gates on read, the listing convention. Rows report is_mandatory as flag() reads it rather than a (bool) cast that reports the string false as true (Proposal 164 section 164.162).',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryRequirementsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'get_regulatory_updates' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\GetRegulatoryUpdatesTool',
