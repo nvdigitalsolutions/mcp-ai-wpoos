@@ -3298,6 +3298,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/CalendarTriageToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'get_order_analytics' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\GetOrderAnalyticsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the order analytics summary (Proposal 164 section 164.178) over OrderStoreInterface, with the aggregate computed by the store as a GROUP BY rather than by hydrating the window. The reference fetched every order in the range with limit -1 and hydrated each one four times, once for the summary and again for trends, top products and customers, so the cost grew with the store rather than with the window. Two totals are reported and only one is called revenue: gross_total sums every order in the window, revenue sums only pending, on-hold, processing and completed, and the reference added every total regardless of status and called the result total_revenue, so cancellations, failures and refunds were counted as takings. refunded is excluded rather than subtracted because the model stores the order total and not how much came back. The currency is required and is a filter: the store aggregates one currency and reports the rest as excluded_orders, where the reference summed raw floats across currencies and labelled the sum with the store currency. group_by is a closed enum, so an unknown value is a field error rather than a silent fall-through to day. Periods are bucketed from calendar days and weeks use the ISO week-year, so the week spanning New Year is one bucket rather than two, and a bucket counts only revenue-bearing orders so the figure under revenue is revenue. include_trends is opt-in. include_products, include_customers and top_count are refused by name because they aggregate order lines and customers, which are different aggregates from this window, and payment_methods is not reported because the order model has no payment-method field. Dates are parsed strictly and date_to includes the day it names. Read-only.',
+			'evidence' => 'lib/core/tests/Unit/Tool/GetOrderAnalyticsToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'get_uninvoiced_orders' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\GetUninvoicedOrdersTool',
 			'readiness' => 'ready',

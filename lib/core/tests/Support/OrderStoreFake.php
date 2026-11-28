@@ -25,9 +25,12 @@ namespace Nvoos\Core\Tests\Support;
 
 use Nvoos\Core\Domain\Contract\OrderStoreInterface;
 use Nvoos\Core\Domain\Entity\Order;
+use Nvoos\Core\Domain\Entity\OrderAnalytics;
 use Nvoos\Core\Domain\Entity\OrderCollection;
 use Nvoos\Core\Domain\Entity\OrderQuery;
 use Nvoos\Core\Domain\Service\Order\OrderStatusTransition;
+use Nvoos\Core\Domain\ValueObject\Money;
+use Nvoos\Core\Domain\ValueObject\OrderGrouping;
 
 final class OrderStoreFake implements OrderStoreInterface
 {
@@ -60,50 +63,7 @@ final class OrderStoreFake implements OrderStoreInterface
 
         $matching = array_values(array_filter(
             $this->orders,
-            static function (Order $order) use ($query): bool {
-                if ($query->uninvoicedOnly && $order->isInvoiced()) {
-                    return false;
-                }
-
-                if ('' !== $query->search) {
-                    $needle = strtolower($query->search);
-                    $haystack = strtolower($order->number . ' ' . (string) $order->billingEmail);
-
-                    if (false === strpos($haystack, $needle)) {
-                        return false;
-                    }
-                }
-
-                if (null !== $query->status && $order->status !== $query->status) {
-                    return false;
-                }
-
-                if (null !== $query->customerId && $order->customerId !== $query->customerId) {
-                    return false;
-                }
-
-                if (null !== $query->createdAfter && $order->createdAt < $query->createdAfter) {
-                    return false;
-                }
-
-                if (null !== $query->createdBefore && $order->createdAt > $query->createdBefore) {
-                    return false;
-                }
-
-                if (null !== $query->minTotal) {
-                    // An order in another currency cannot be compared to the
-                    // bound, so it cannot be said to satisfy it.
-                    if ($order->currency() !== $query->minTotal->currency) {
-                        return false;
-                    }
-
-                    if ($order->total->minorUnits < $query->minTotal->minorUnits) {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
+            fn (Order $order): bool => $this->matches($order, $query)
         ));
 
         usort(
@@ -118,6 +78,124 @@ final class OrderStoreFake implements OrderStoreInterface
         return new OrderCollection($page, $total, $query->page, $query->perPage, $totalPages);
     }
 
+    /**
+     * Whether an order satisfies every filter in the query.
+     *
+     * `query()` and `analytics()` share this so the two paths cannot disagree
+     * about what the selection is; in the adapter the same job is done by
+     * `filtered()`.
+     */
+    private function matches(Order $order, OrderQuery $query): bool
+    {
+        if ($query->uninvoicedOnly && $order->isInvoiced()) {
+            return false;
+        }
+
+        if ('' !== $query->search) {
+            $needle = strtolower($query->search);
+            $haystack = strtolower($order->number . ' ' . (string) $order->billingEmail);
+
+            if (false === strpos($haystack, $needle)) {
+                return false;
+            }
+        }
+
+        if (null !== $query->status && $order->status !== $query->status) {
+            return false;
+        }
+
+        if (null !== $query->customerId && $order->customerId !== $query->customerId) {
+            return false;
+        }
+
+        if (null !== $query->createdAfter && $order->createdAt < $query->createdAfter) {
+            return false;
+        }
+
+        if (null !== $query->createdBefore && $order->createdAt > $query->createdBefore) {
+            return false;
+        }
+
+        if (null !== $query->minTotal) {
+            // An order in another currency cannot be compared to the bound, so
+            // it cannot be said to satisfy it.
+            if ($order->currency() !== $query->minTotal->currency) {
+                return false;
+            }
+
+            if ($order->total->minorUnits < $query->minTotal->minorUnits) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Aggregate the selection in one currency, matching the adapter.
+     *
+     * The periods are built from revenue-bearing orders only, because the bucket
+     * field is called `revenue_minor` and a bucket that summed cancellations
+     * would be gross wearing revenue's name — the defect this slice corrects.
+     */
+    public function analytics(OrderQuery $query, string $currency, OrderGrouping $grouping): OrderAnalytics
+    {
+        $this->queries[] = $query;
+
+        $filtered = array_values(array_filter(
+            $this->orders,
+            fn (Order $order): bool => $this->matches($order, $query)
+        ));
+
+        $scoped = array_values(array_filter(
+            $filtered,
+            static fn (Order $order): bool => $order->currency() === $currency
+        ));
+
+        $excluded = count($filtered) - count($scoped);
+
+        $statusCounts      = array();
+        $revenueOrderCount = 0;
+        $grossMinor        = 0;
+        $revenueMinor      = 0;
+        $daily             = array();
+
+        foreach ($scoped as $order) {
+            $status = $order->status->value;
+
+            $statusCounts[$status] = ($statusCounts[$status] ?? 0) + 1;
+            $grossMinor           += $order->total->minorUnits;
+
+            if (! OrderAnalytics::isRevenueBearing($order->status)) {
+                continue;
+            }
+
+            ++$revenueOrderCount;
+            $revenueMinor += $order->total->minorUnits;
+
+            $day = $order->createdAt->format('Y-m-d');
+
+            if (! isset($daily[$day])) {
+                $daily[$day] = array('orders' => 0, 'revenue_minor' => 0);
+            }
+
+            ++$daily[$day]['orders'];
+            $daily[$day]['revenue_minor'] += $order->total->minorUnits;
+        }
+
+        ksort($daily);
+
+        return new OrderAnalytics(
+            $currency,
+            count($scoped),
+            $revenueOrderCount,
+            $excluded,
+            Money::fromMinorUnits($grossMinor, $currency),
+            Money::fromMinorUnits($revenueMinor, $currency),
+            $statusCounts,
+            OrderAnalytics::buckets($daily, $grouping),
+        );
+    }
     public function save(Order $order): Order
     {
         // The same boundary guard the Eloquent adapter applies: a caller that

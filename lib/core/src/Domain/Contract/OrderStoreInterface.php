@@ -35,8 +35,10 @@ declare(strict_types=1);
 namespace Nvoos\Core\Domain\Contract;
 
 use Nvoos\Core\Domain\Entity\Order;
+use Nvoos\Core\Domain\Entity\OrderAnalytics;
 use Nvoos\Core\Domain\Entity\OrderCollection;
 use Nvoos\Core\Domain\Entity\OrderQuery;
+use Nvoos\Core\Domain\ValueObject\OrderGrouping;
 
 interface OrderStoreInterface
 {
@@ -60,4 +62,19 @@ interface OrderStoreInterface
      * decides whether that is an insert (null id) or an update.
      */
     public function save(Order $order): Order;
+
+    /**
+     * Aggregate the orders a query selects, in one currency.
+     *
+     * The currency is an argument rather than a field of the query because this
+     * is the only operation that cannot span currencies: a listing can return a
+     * mixed page, a sum cannot. An adapter must aggregate only orders in that
+     * currency and report the rest as `excludedOrders`, never add across them.
+     *
+     * The aggregate is computed over the whole selection — not over a page — and
+     * `$grouping` sizes the trend buckets. Adapters should compute it with
+     * `GROUP BY` so the cost is bounded by days and statuses rather than by the
+     * number of orders.
+     */
+    public function analytics(OrderQuery $query, string $currency, OrderGrouping $grouping): OrderAnalytics;
 }
