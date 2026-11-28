@@ -116,6 +116,60 @@ abstract class CloudwaysTool extends AbstractTool
     }
 
     /**
+     * The positive integer fields a caller provided, split by validity.
+     *
+     * WordPress passed every writer argument through `absint()` and then dropped
+     * anything that was not `> 0`. On a negative input that silently flipped the
+     * sign and sent the opposite value, and on a zero it dropped the field with
+     * no explanation. The port separates the two cases: absent fields stay
+     * absent, and a field that was provided with an unusable value is named in a
+     * validation error rather than rewritten.
+     *
+     * @param array<string, mixed> $arguments Tool arguments.
+     * @param list<string>         $keys      Field names to read.
+     *
+     * @return array{set: array<string, int>, invalid: list<string>}
+     */
+    protected function positiveInts(array $arguments, array $keys): array
+    {
+        $set     = array();
+        $invalid = array();
+
+        foreach ($keys as $key) {
+            if (! array_key_exists($key, $arguments)) {
+                continue;
+            }
+
+            $value = $this->intParam($arguments, $key, 0);
+
+            if ($value <= 0) {
+                $invalid[] = $key;
+                continue;
+            }
+
+            $set[ $key ] = $value;
+        }
+
+        return array('set' => $set, 'invalid' => $invalid);
+    }
+
+    /**
+     * The validation envelope for unusable writer fields.
+     *
+     * @param list<string> $fields Field names.
+     */
+    protected function invalidFields(array $fields, string $requirement = 'A positive integer is required.'): mixed
+    {
+        $errors = array();
+
+        foreach ($fields as $field) {
+            $errors[ $field ] = array($requirement);
+        }
+
+        return $this->errors->validationFailed('One or more settings have an unusable value.', $errors);
+    }
+
+    /**
      * A string field from an API row, or an empty string when absent.
      */
     protected function text(mixed $value): string

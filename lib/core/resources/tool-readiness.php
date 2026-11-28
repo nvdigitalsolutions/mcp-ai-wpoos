@@ -525,6 +525,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysAppSettingsToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
+		'cloudways_app_fpm_settings_update' => array(
+			'class' => 'Nvoos\Core\Tool\Cloudways\\FpmSettingsUpdateTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress PHP-FPM writer over CloudwaysClientInterface (Proposal 164 section 164.136) as a partial body, so an update never resets a field the caller did not name. One correction: WordPress ran all three values through absint and dropped any that were not above zero, so a negative max_children was sent as its absolute value and a zero vanished with no explanation; here an absent field stays absent and a provided field with an unusable value is named in a validation error.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysAppWritesTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
 		'cloudways_app_monitor_summary' => array(
 			'class' => 'Nvoos\Core\Tool\Cloudways\\AppMonitorSummaryTool',
 			'readiness' => 'ready',
@@ -569,6 +578,15 @@ return array(
 			'reason' => 'Ports the WordPress Varnish settings read over CloudwaysClientInterface (Proposal 164 section 164.134). ttl is an integer, enabled a boolean and the two path lists are strings, matching the writer schema. enabled reads false for both the string 0 and an absent key, so a disabled cache cannot be reported as on because PHP treats a non-empty string as true.',
 			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysAppSettingsToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
+		'cloudways_app_varnish_settings_update' => array(
+			'class' => 'Nvoos\Core\Tool\Cloudways\\VarnishSettingsUpdateTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress Varnish TTL writer over CloudwaysClientInterface (Proposal 164 section 164.136). Only ttl is sent, as a partial body. One correction: WordPress sent absint(ttl) only when it was above zero, so a negative TTL became its absolute value and a zero was dropped silently; a provided value that is not positive is now named, and an absent one is the only way to leave the TTL alone.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysAppWritesTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
 		'cloudways_get_app' => array(
 			'class' => 'Nvoos\Core\Tool\Cloudways\\GetAppTool',
@@ -623,6 +641,15 @@ return array(
 			'reason' => 'Ports the WordPress project listing over CloudwaysClientInterface (Proposal 164 section 164.133). One GET /project and two fields per row. WordPress passed each key to absint and sanitize_text_field without checking it existed, so a row missing a name raised a warning and produced an empty string; the port reads tolerantly and drops entries that are not arrays rather than turning one into an empty project. A response without a projects array is refused, because an empty account and an API change look identical in a count.',
 			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysInspectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
+		'cloudways_purge_app_cache' => array(
+			'class' => 'Nvoos\Core\Tool\Cloudways\\PurgeAppCacheTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress cache purge over CloudwaysClientInterface (Proposal 164 section 164.136). One POST with no body, addressed to the app. The API answer is returned under result unchanged because it names the operation a caller may poll through cloudways_get_operation_status.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysAppWritesTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
 		'cloudways_restart_service' => array(
 			'class' => 'Nvoos\Core\Tool\Cloudways\\RestartServiceTool',
