@@ -17,12 +17,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once __DIR__ . '/class-wp-mcp-ai-pro-mailjet-credentials.php';
 
 /**
  * Provides a tool for retrieving Mailjet email statistics.
  */
 class WP_MCP_AI_Pro_Tool_Get_Mailjet_Statistics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
-	const API_ENDPOINT = 'https://api.mailjet.com/v3/REST/statcounters';
+
+	/**
+	 * Statistics path, relative to the region's API base.
+	 *
+	 * @since 1.2.25
+	 * @var string
+	 */
+	const API_PATH = '/v3/REST/statcounters';
 
 	/**
 	 * {@inheritdoc}
@@ -54,8 +62,8 @@ class WP_MCP_AI_Pro_Tool_Get_Mailjet_Statistics implements WP_MCP_AI_Tool_Interf
 		return array(
 			'when_to_use'     => __( 'Fetching Mailjet send counters scoped to APIKey, Campaign, ContactsList, or User with optional date filters.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Fetching Brevo metrics; use get_brevo_statistics. Contact work belongs to manage_mailjet_contacts.', 'mcp-ai-wpoos-pro' ),
-			'related_tools'   => array( 'get_brevo_statistics', 'manage_mailjet_contacts', 'send_mailjet_email' ),
-			'notes'           => __( 'Defaults to APIKey source with Message timing; from_ts and to_ts accept UNIX timestamps or ISO 8601 dates.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'get_brevo_statistics', 'manage_mailjet_contacts', 'send_mailjet_email', 'list_mailjet_connections' ),
+			'notes'           => __( 'Defaults to APIKey source with Message timing; from_ts and to_ts accept UNIX timestamps or ISO 8601 dates. Counters are accounted per API key, so connection_id selects which Mailjet subaccount is reported.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -85,6 +93,10 @@ class WP_MCP_AI_Pro_Tool_Get_Mailjet_Statistics implements WP_MCP_AI_Tool_Interf
 				'to_ts'          => array(
 					'type'        => 'string',
 					'description' => __( 'End timestamp (UNIX timestamp or ISO 8601 date). Optional.', 'mcp-ai-wpoos-pro' ),
+				),
+				'connection_id'  => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Mailjet connection ID. Omit when only one Mailjet connection is assigned to this assistant. Call list_mailjet_connections for the IDs.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'additionalProperties' => false,
@@ -119,17 +131,21 @@ class WP_MCP_AI_Pro_Tool_Get_Mailjet_Statistics implements WP_MCP_AI_Tool_Interf
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$credentials = WP_MCP_AI_Pro_Mailjet_Credentials::resolve(
+			$context,
+			isset( $arguments['connection_id'] ) ? sanitize_text_field( (string) $arguments['connection_id'] ) : ''
+		);
 
-		$api_key    = isset( $settings['mailjet_api_key'] ) ? trim( $settings['mailjet_api_key'] ) : '';
-		$api_secret = isset( $settings['mailjet_api_secret'] ) ? trim( $settings['mailjet_api_secret'] ) : '';
-
-		if ( '' === $api_key || '' === $api_secret ) {
-			return new WP_Error(
-				'wp_mcp_ai_mailjet_missing_credentials',
-				__( 'Mailjet API credentials have not been configured.', 'mcp-ai-wpoos-pro' )
-			);
+		if ( is_wp_error( $credentials ) ) {
+			return $credentials;
 		}
+
+		$api_key    = (string) $credentials['api_key'];
+		$api_secret = (string) $credentials['api_secret'];
+
+		// Settings still supply the request timeout; credentials come from the
+		// resolver above.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 		// Build query parameters.
 		$params = array(
@@ -145,13 +161,13 @@ class WP_MCP_AI_Pro_Tool_Get_Mailjet_Statistics implements WP_MCP_AI_Tool_Interf
 			$params['ToTS'] = sanitize_text_field( $arguments['to_ts'] );
 		}
 
-		$url = add_query_arg( $params, self::API_ENDPOINT );
+		$url = add_query_arg( $params, WP_MCP_AI_Pro_Mailjet_Credentials::api_base( (string) $credentials['region'] ) . self::API_PATH );
 
 		$timeout = $this->resolve_timeout( $settings );
 
 		$request_args = array(
 			'headers' => array(
-				'Authorization' => 'Basic ' . base64_encode( $api_key . ':' . $api_secret ),
+				'Authorization' => WP_MCP_AI_Pro_Mailjet_Credentials::authorization_header( $api_key, $api_secret ),
 				'Content-Type'  => 'application/json',
 			),
 			'timeout' => $timeout,

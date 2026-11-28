@@ -17,9 +17,13 @@ namespace App\Support\RemoteSites;
  *    against `wp-json/wp/v2/users/me`.
  *  - **`mcp_server`** — an MCP server over Streamable HTTP, optional bearer
  *    token, verified by the shared handshake (dialect negotiation + tools/list).
+ *  - **`mailjet_mcp`** — a Mailjet API key pair with an optional Streamable HTTP
+ *    bridge. Verified by an MCP handshake when a bridge URL is saved, and by
+ *    `GET /v3/REST/user` otherwise. The upstream Mailjet MCP server is stdio
+ *    only and read-only, so the bridge is never assumed to exist.
  *
- * Both are also the two kinds the console's commerce site picker and the
- * assistant editor consume. Vendor types stay in wp-admin until their
+ * Both of the first two are also the kinds the console's commerce site picker
+ * and the assistant editor consume. Vendor types stay in wp-admin until their
  * verification lands, and adding one is a matter of appending here plus a
  * branch in {@see RemoteSiteVerifier}.
  *
@@ -83,6 +87,51 @@ final class RemoteSiteTypes
                     'label' => 'Bearer token',
                     'secret' => true,
                     'help' => 'Leave blank when the server requires no token.',
+                ],
+            ],
+        ],
+        'mailjet_mcp' => [
+            'id' => 'mailjet_mcp',
+            'label' => 'Mailjet',
+            'category' => 'Email',
+            'help' => 'A Mailjet API key pair. Add a bridge URL to expose the read-only Mailjet MCP tool surface; leave it blank to use this as a credential source only.',
+            'fields' => [
+                [
+                    'key' => 'url',
+                    'label' => 'API base URL',
+                    'required' => true,
+                    'placeholder' => 'https://api.mailjet.com',
+                    'help' => 'Informational. The region below decides which API host is actually used.',
+                ],
+                [
+                    'key' => 'api_key',
+                    'label' => 'API key',
+                    'secret' => true,
+                    'required' => true,
+                    'help' => 'Mailjet → Account → API Key Management. Each key is its own subaccount.',
+                ],
+                [
+                    'key' => 'api_secret',
+                    'label' => 'API secret',
+                    'secret' => true,
+                    'required' => true,
+                ],
+                [
+                    'key' => 'region',
+                    'label' => 'Region',
+                    'placeholder' => 'us',
+                    'help' => 'us or eu. Mailjet runs independent API regions; a key created in one does not authenticate against the other.',
+                ],
+                [
+                    'key' => 'mailjet_mcp_url',
+                    'label' => 'MCP bridge URL',
+                    'placeholder' => 'https://mailjet-mcp.example.com/mcp',
+                    'help' => 'Optional. The official Mailjet server speaks stdio only, so this must be a deployed Streamable HTTP bridge. Blank means credential-only.',
+                ],
+                [
+                    'key' => 'from_email',
+                    'label' => 'Default from address',
+                    'help' => 'Optional. Sender addresses are validated per API key, so each subaccount may need its own.',
                 ],
             ],
         ],

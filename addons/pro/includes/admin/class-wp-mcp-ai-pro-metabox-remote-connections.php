@@ -175,7 +175,7 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 		</p>
 
 		<p class="description">
-			<?php esc_html_e( 'Only enabled connections can be selected. Remote connections allow this assistant to query posts, products, orders, and other data from external WordPress/WooCommerce sites. The site-wide settings row grants the base-settings credentials of the configured families (Gmail, Google Drive, Google Calendar, FlowHub, QuickBooks, iSAMS).', 'mcp-ai-wpoos-pro' ); ?>
+			<?php esc_html_e( 'Only enabled connections can be selected. Remote connections allow this assistant to query posts, products, orders, and other data from external WordPress/WooCommerce sites. The site-wide settings row grants the base-settings credentials of the configured families (Gmail, Google Drive, Google Calendar, FlowHub, QuickBooks, Mailjet, iSAMS).', 'mcp-ai-wpoos-pro' ); ?>
 		</p>
 		<?php
 	}
@@ -217,6 +217,10 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 
 			if ( ! empty( $settings['flowhub_client_id'] ) && ! empty( $settings['flowhub_api_key'] ) ) {
 				$families[] = __( 'FlowHub', 'mcp-ai-wpoos-pro' );
+			}
+
+			if ( ! empty( $settings['mailjet_api_key'] ) && ! empty( $settings['mailjet_api_secret'] ) ) {
+				$families[] = __( 'Mailjet', 'mcp-ai-wpoos-pro' );
 			}
 		}
 

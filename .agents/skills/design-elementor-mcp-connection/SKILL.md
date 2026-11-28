@@ -166,6 +166,17 @@ storage), create it once in **NV oOS Pro → Remote Sites → Add Connection**:
    **pre-registered Intuit clients** (client ID + secret → HTTP Basic token
    requests per RFC 6749 §2.3.1, DCR skipped; client IDs keep their case).
    Setup, auth modes, and troubleshooting: `docs/quickbooks-mcp-connect.md`.
+   **(v1.2.25):** **Mailjet** connections use `connection_type: mailjet_mcp`
+   with a dual shape — a **credential source** (no bridge) or an **MCP**
+   connection (bridge URL set). The official server is **stdio only and
+   read-only** (`supportedMethods = ["GET"]`), so there is no hosted endpoint;
+   `MAILJET_MCP_DEFAULT_URL` is deliberately `''`. `is_mcp_app_connection()` is
+   **URL-gated** (`mailjet_mcp_url`), so credential-only connections never
+   appear in the dropdown — unlike QuickBooks, which always has a default.
+   `resolve_connection_ref()` → `build_mailjet_mcp_app_config()` maps the key
+   pair onto `auth_type: basic` (`token = key:secret`). Bridge reference
+   deployment: `examples/mailjet-mcp-http-bridge`. Setup and troubleshooting:
+   `docs/mailjet-mcp-connect.md`.
 
 ### Path B — inline MCP App (per-assistant)
 

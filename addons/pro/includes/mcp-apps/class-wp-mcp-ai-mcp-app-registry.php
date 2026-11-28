@@ -657,6 +657,8 @@ class WP_MCP_AI_MCP_App_Registry {
 	 * @since 1.1.92 FlowHub MCP connections resolve against the official gateway.
 	 * @since 1.2.21 QuickBooks Online MCP connections resolve through their
 	 *              dedicated config builder.
+	 * @since 1.2.25 Mailjet MCP connections resolve through their dedicated
+	 *              config builder (bridge URL + Basic key pair).
 	 *
 	 * @param array $app Stored MCP App entry with `connection_ref` set.
 	 * @return array|null Resolved runtime config, or null when unresolvable.
@@ -696,6 +698,17 @@ class WP_MCP_AI_MCP_App_Registry {
 			// Streamable HTTP wrapper, both authenticated through the MCP Apps
 			// OAuth flow when oauth is selected.
 			$config = WP_MCP_AI_Pro_Remote_Site_Manager::build_quickbooks_mcp_app_config( $connection );
+		} elseif ( 'mailjet_mcp' === $connection_type ) {
+			// Mailjet MCP: a Streamable HTTP bridge in front of the official
+			// stdio server, authenticated with the connection's Basic key pair.
+			// Credential-only Mailjet connections are rejected upstream by
+			// is_mcp_app_connection(), so an empty endpoint here is a stale
+			// reference rather than a supported shape.
+			if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_mcp_app_connection( $connection ) ) {
+				return null;
+			}
+
+			$config = WP_MCP_AI_Pro_Remote_Site_Manager::build_mailjet_mcp_app_config( $connection );
 		} elseif ( 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' ) ) {
 			// Upwork MCP connections authenticate against the official gateway
 			// through the MCP Apps OAuth flow; the token blob lives in the

@@ -260,6 +260,9 @@ class RemoteSitesController
         return match ($type) {
             'wordpress' => 'application_password',
             'mcp_server' => '' !== trim((string) ($credentials['token'] ?? '')) ? 'bearer' : 'none',
+            // Mailjet authenticates with HTTP Basic over the API key pair; both
+            // halves are sealed credentials.
+            'mailjet_mcp' => '' !== trim((string) ($credentials['api_key'] ?? '')) ? 'basic_auth' : 'none',
             default => 'none',
         };
     }

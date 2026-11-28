@@ -17,12 +17,31 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once __DIR__ . '/class-wp-mcp-ai-pro-mailjet-credentials.php';
 
 /**
  * Provides a tool for managing Mailjet contact lists.
  */
 class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
+
+	/**
+	 * The US API base. Used as the default and as the path suffix source.
+	 *
+	 * @since 1.2.25
+	 * @var string
+	 */
 	const API_BASE = 'https://api.mailjet.com/v3/REST';
+
+	/**
+	 * Region-aware API base for the connection resolved by the current call.
+	 *
+	 * Set at the top of {@see self::execute()} so the per-action helpers can build
+	 * their URLs without threading another parameter through six call sites.
+	 *
+	 * @since 1.2.25
+	 * @var string
+	 */
+	protected $api_base = self::API_BASE;
 
 	/**
 	 * {@inheritdoc}
@@ -54,8 +73,8 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 		return array(
 			'when_to_use'     => __( 'Adding, removing, or listing Mailjet contacts and contact lists by email address.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Brevo contact work; use manage_brevo_contacts. Sending email belongs to send_mailjet_email.', 'mcp-ai-wpoos-pro' ),
-			'related_tools'   => array( 'manage_brevo_contacts', 'send_mailjet_email', 'get_mailjet_statistics' ),
-			'notes'           => __( 'remove_contact resolves the contact by email before deletion; is_excluded adds contacts to the exclusion list.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'manage_brevo_contacts', 'send_mailjet_email', 'get_mailjet_statistics', 'list_mailjet_connections' ),
+			'notes'           => __( 'remove_contact resolves the contact by email before deletion; is_excluded adds contacts to the exclusion list. Contacts live per API key, so connection_id selects which Mailjet subaccount is touched.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -88,6 +107,10 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 					'type'        => 'boolean',
 					'description' => __( 'Whether to add contact to exclusion list (default: false).', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
+				),
+				'connection_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Mailjet connection ID. Omit when only one Mailjet connection is assigned to this assistant. Call list_mailjet_connections for the IDs.', 'mcp-ai-wpoos-pro' ),
 				),
 				'limit'       => array(
 					'type'        => 'integer',
@@ -130,17 +153,24 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$credentials = WP_MCP_AI_Pro_Mailjet_Credentials::resolve(
+			$context,
+			isset( $arguments['connection_id'] ) ? sanitize_text_field( (string) $arguments['connection_id'] ) : ''
+		);
 
-		$api_key    = isset( $settings['mailjet_api_key'] ) ? trim( $settings['mailjet_api_key'] ) : '';
-		$api_secret = isset( $settings['mailjet_api_secret'] ) ? trim( $settings['mailjet_api_secret'] ) : '';
-
-		if ( '' === $api_key || '' === $api_secret ) {
-			return new WP_Error(
-				'wp_mcp_ai_mailjet_missing_credentials',
-				__( 'Mailjet API credentials have not been configured.', 'mcp-ai-wpoos-pro' )
-			);
+		if ( is_wp_error( $credentials ) ) {
+			return $credentials;
 		}
+
+		$api_key    = (string) $credentials['api_key'];
+		$api_secret = (string) $credentials['api_secret'];
+
+		// Point the per-action helpers at the resolved connection's region.
+		$this->api_base = WP_MCP_AI_Pro_Mailjet_Credentials::api_base( (string) $credentials['region'] ) . '/v3/REST';
+
+		// Settings still supply the request timeout; credentials come from the
+		// resolver above.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 		$action = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : '';
 
@@ -179,7 +209,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 		$limit = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
 		$limit = min( max( $limit, 1 ), 1000 );
 
-		$url = add_query_arg( array( 'Limit' => $limit ), self::API_BASE . '/contact' );
+		$url = add_query_arg( array( 'Limit' => $limit ), $this->api_base . '/contact' );
 
 		$response = $this->make_api_request( $url, 'GET', null, $api_key, $api_secret, $settings );
 
@@ -222,7 +252,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 			$payload['Name'] = sanitize_text_field( $arguments['name'] );
 		}
 
-		$url = self::API_BASE . '/contact';
+		$url = $this->api_base . '/contact';
 
 		$response = $this->make_api_request( $url, 'POST', $payload, $api_key, $api_secret, $settings );
 
@@ -243,7 +273,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 				'IsActive'  => true,
 			);
 
-			$list_url      = self::API_BASE . '/contactslist/' . $list_id . '/managecontact';
+			$list_url      = $this->api_base . '/contactslist/' . $list_id . '/managecontact';
 			$list_response = $this->make_api_request( $list_url, 'POST', $list_payload, $api_key, $api_secret, $settings );
 
 			if ( is_wp_error( $list_response ) ) {
@@ -274,7 +304,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 		}
 
 		// First, find the contact ID.
-		$find_url = add_query_arg( array( 'Email' => $email ), self::API_BASE . '/contact' );
+		$find_url = add_query_arg( array( 'Email' => $email ), $this->api_base . '/contact' );
 		$response = $this->make_api_request( $find_url, 'GET', null, $api_key, $api_secret, $settings );
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -289,7 +319,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 		$contact_id = $decoded['Data'][0]['ID'];
 
 		// Delete the contact.
-		$delete_url = self::API_BASE . '/contact/' . $contact_id;
+		$delete_url = $this->api_base . '/contact/' . $contact_id;
 		$response   = $this->make_api_request( $delete_url, 'DELETE', null, $api_key, $api_secret, $settings );
 
 		if ( is_wp_error( $response ) ) {
@@ -316,7 +346,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 		$limit = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
 		$limit = min( max( $limit, 1 ), 1000 );
 
-		$url = add_query_arg( array( 'Limit' => $limit ), self::API_BASE . '/contactslist' );
+		$url = add_query_arg( array( 'Limit' => $limit ), $this->api_base . '/contactslist' );
 
 		$response = $this->make_api_request( $url, 'GET', null, $api_key, $api_secret, $settings );
 
@@ -355,7 +385,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 		$args = array(
 			'method'  => $method,
 			'headers' => array(
-				'Authorization' => 'Basic ' . base64_encode( $api_key . ':' . $api_secret ),
+				'Authorization' => WP_MCP_AI_Pro_Mailjet_Credentials::authorization_header( $api_key, $api_secret ),
 				'Content-Type'  => 'application/json',
 			),
 			'timeout' => $timeout,

@@ -28,7 +28,7 @@ use Illuminate\Support\Str;
  *  3. **`primary_role_slugs` → `meta`** — WordPress keeps profession IDs in
  *     `_wp_mcp_ai_primary_roles`; here the slug is the identity and it lives in
  *     `meta`, which is what makes an `nvoos-assistant` bundle round-trip.
- *  4. **`advanced` → flat `meta` keys** — a 14-key whitelist with per-key
+ *  4. **`advanced` → flat `meta` keys** — a 15-key whitelist with per-key
  *     coercion. Absent keys are untouched; present-but-empty keys are removed.
  *     This is what keeps the console's edit form readable against either
  *     runtime.
@@ -59,6 +59,7 @@ final class AssistantWriter
      */
     public const ADVANCED_FIELD_TYPES = array(
         'fallback_chain' => 'string_list',
+        'remote_connections' => 'string_list',
         'adaptive_tool_cap' => 'enum:on,off',
         'memory_files' => 'int_list',
         'vector_store_id' => 'string',

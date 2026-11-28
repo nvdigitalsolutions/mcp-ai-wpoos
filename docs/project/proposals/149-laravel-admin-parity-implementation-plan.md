@@ -1321,7 +1321,7 @@ So the slice is a **refactor plus a resource**, in that order:
    only, mirroring the `(tenant_id, slug)` unique index.
 3. **`primary_role_slugs` → `meta`** — the profession selection is metadata,
    because the catalogue is reference data and the slug is the identity.
-4. **`advanced` → flat `meta`** — the 14-key whitelist with per-key coercion;
+4. **`advanced` → flat `meta`** — the 15-key whitelist with per-key coercion;
    absent keys untouched, present-but-empty keys removed.
 5. **`is_default` exclusivity** — clearing is scoped to the assistant's estate.
 

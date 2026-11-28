@@ -662,6 +662,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				case 'composio':
 					$api_key = isset( $_POST['composio_api_key'] ) ? trim( (string) wp_unslash( $_POST['composio_api_key'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API key must not be sanitized; trimmed to drop copy/paste whitespace.
 					break;
+				case 'mailjet_mcp':
+					// Mailjet API keys are a pair: both halves are credentials and
+					// the API authenticates with HTTP Basic `key:secret`.
+					$api_key    = isset( $_POST['mailjet_api_key'] ) ? trim( (string) wp_unslash( $_POST['mailjet_api_key'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API key must not be sanitized.
+					$api_secret = isset( $_POST['mailjet_api_secret'] ) ? trim( (string) wp_unslash( $_POST['mailjet_api_secret'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API secret must not be sanitized.
+					break;
 			}
 
 			// For FlowHub connections, always use the fixed API URL and custom_header auth.
@@ -1136,12 +1142,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'custom_post_types'              => isset( $_POST['custom_post_types'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_post_types'] ) ) : '',
 				// JetEngine CCT access controls.
 				'jetengine_cct_access'           => $this->resolve_jetengine_cct_access(),
-				// MCP Server fields (Elementor MCP / WordPress MCP Adapter / QuickBooks MCP).
-				'mcp_header_name'                => in_array( $connection_type, array( 'mcp_server', 'quickbooks_mcp' ), true ) && isset( $_POST['mcp_header_name'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				// MCP Server fields (Elementor MCP / WordPress MCP Adapter / QuickBooks MCP / Mailjet MCP).
+				'mcp_header_name'                => in_array( $connection_type, array( 'mcp_server', 'quickbooks_mcp', 'mailjet_mcp' ), true ) && isset( $_POST['mcp_header_name'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
 					? sanitize_text_field( wp_unslash( $_POST['mcp_header_name'] ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized above.
 					: '',
-				'mcp_verify_ssl'                 => in_array( $connection_type, array( 'mcp_server', 'quickbooks_mcp' ), true ) ? empty( $_POST['mcp_verify_ssl'] ) : true, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked state only.
-				'mcp_timeout'                    => in_array( $connection_type, array( 'mcp_server', 'quickbooks_mcp' ), true ) && isset( $_POST['mcp_timeout'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				'mcp_verify_ssl'                 => in_array( $connection_type, array( 'mcp_server', 'quickbooks_mcp', 'mailjet_mcp' ), true ) ? empty( $_POST['mcp_verify_ssl'] ) : true, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked state only.
+				'mcp_timeout'                    => in_array( $connection_type, array( 'mcp_server', 'quickbooks_mcp', 'mailjet_mcp' ), true ) && isset( $_POST['mcp_timeout'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
 					? absint( $_POST['mcp_timeout'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- absint above.
 					: 30,
 				// QuickBooks Online MCP environment (sandbox/production).
@@ -1153,6 +1159,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'quickbooks_disable_write'       => 'quickbooks_mcp' === $connection_type && ! empty( $_POST['quickbooks_disable_write'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked state only.
 				'quickbooks_disable_update'      => 'quickbooks_mcp' === $connection_type && ! empty( $_POST['quickbooks_disable_update'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked state only.
 				'quickbooks_disable_delete'      => 'quickbooks_mcp' === $connection_type && ! empty( $_POST['quickbooks_disable_delete'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked state only.
+				// Mailjet region (independent US/EU API hosts) and the optional
+				// Streamable HTTP bridge URL. An empty bridge URL makes this a
+				// credential-only connection for the native Mailjet tools.
+				'mailjet_region'                 => 'mailjet_mcp' === $connection_type && isset( $_POST['mailjet_region'] ) && 'eu' === sanitize_key( wp_unslash( $_POST['mailjet_region'] ) ) ? 'eu' : 'us', // phpcs:ignore WordPress.Security.NonceVerification.Missing -- sanitized above.
+				'mailjet_mcp_url'                => 'mailjet_mcp' === $connection_type && isset( $_POST['mailjet_mcp_url'] ) ? esc_url_raw( wp_unslash( $_POST['mailjet_mcp_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing -- sanitized above.
+				'mailjet_from_email'             => 'mailjet_mcp' === $connection_type && isset( $_POST['mailjet_from_email'] ) ? sanitize_email( wp_unslash( $_POST['mailjet_from_email'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing -- sanitized above.
+				'mailjet_from_name'              => 'mailjet_mcp' === $connection_type && isset( $_POST['mailjet_from_name'] ) ? sanitize_text_field( wp_unslash( $_POST['mailjet_from_name'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing -- sanitized above.
 			);
 
 			// Google Classroom uses its own scope-profile select; fold it into the
@@ -2330,6 +2343,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="quickbooks_mcp" <?php selected( $connection_type, 'quickbooks_mcp' ); ?>>
 								<?php esc_html_e( 'QuickBooks Online (MCP)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="mailjet_mcp" <?php selected( $connection_type, 'mailjet_mcp' ); ?>>
+								<?php esc_html_e( 'Mailjet (Email API / MCP)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="ezuite_erp" <?php selected( $connection_type, 'ezuite_erp' ); ?>>
 								<?php esc_html_e( 'EZuite ERP (Inventory)', 'mcp-ai-wpoos-pro' ); ?>
@@ -3689,6 +3705,80 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</label>
 						</fieldset>
 						<p class="description"><?php esc_html_e( 'Mirrors the reference server environment flags. Suppressed categories are hidden from tool discovery and blocked at execution on this site. Self-hosted wrappers should also set the matching server-side flags so the endpoint itself stays restricted. get_*, search_* and read_* tools are always available.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for Mailjet (REST API / optional MCP bridge) -->
+				<tr class="mailjet_mcp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="mailjet_api_key"><?php esc_html_e( 'Mailjet API Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="mailjet_api_key" id="mailjet_api_key" class="regular-text" value="" autocomplete="off" spellcheck="false">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep the existing API key.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<p class="description"><?php esc_html_e( 'Mailjet → Account → API Key Management. Each API key is effectively a subaccount: sender addresses are validated per key and statistics are accounted per key.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="mailjet_mcp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="mailjet_api_secret"><?php esc_html_e( 'Mailjet API Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<textarea name="mailjet_api_secret" id="mailjet_api_secret" class="large-text" rows="2" autocomplete="off" spellcheck="false"></textarea>
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep the existing API secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<p class="description"><?php esc_html_e( 'Encrypted at rest. Never sent back to the browser after save.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="mailjet_mcp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="mailjet_region"><?php esc_html_e( 'API Region', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$saved_mailjet_region = $is_edit && ! empty( $connection['mailjet_region'] ) ? $connection['mailjet_region'] : 'us';
+						?>
+						<select name="mailjet_region" id="mailjet_region">
+							<option value="us" <?php selected( $saved_mailjet_region, 'us' ); ?>><?php esc_html_e( 'US (api.mailjet.com)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="eu" <?php selected( $saved_mailjet_region, 'eu' ); ?>><?php esc_html_e( 'EU (api.eu.mailjet.com)', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Mailjet runs independent API regions. A key created in one region does not authenticate against the other.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="mailjet_mcp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="mailjet_mcp_url"><?php esc_html_e( 'MCP Bridge URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="url" name="mailjet_mcp_url" id="mailjet_mcp_url" class="regular-text" value="<?php echo $is_edit && isset( $connection['mailjet_mcp_url'] ) ? esc_attr( $connection['mailjet_mcp_url'] ) : ''; ?>" placeholder="https://mailjet-mcp.example.com/mcp" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Optional. The official Mailjet MCP server speaks stdio only, so a Streamable HTTP bridge must be deployed before the MCP tool surface is available. Leave blank to use this connection only as a credential source for the native Mailjet tools (send, statistics, contacts).', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><strong><?php esc_html_e( 'The bridged surface is read-only:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'the upstream server registers tools only for GET endpoints, so it can read analytics, contacts, lists and messages but can never send or modify. Sending stays on send_mailjet_email.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="mailjet_mcp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="mailjet_from_email"><?php esc_html_e( 'Default From Address', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="email" name="mailjet_from_email" id="mailjet_from_email" class="regular-text" value="<?php echo $is_edit && isset( $connection['mailjet_from_email'] ) ? esc_attr( $connection['mailjet_from_email'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Overrides the site-wide Mailjet sender for sends made through this connection. Sender addresses are validated per API key, so each subaccount may need its own.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="mailjet_mcp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="mailjet_from_name"><?php esc_html_e( 'Default From Name', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="mailjet_from_name" id="mailjet_from_name" class="regular-text" value="<?php echo $is_edit && isset( $connection['mailjet_from_name'] ) ? esc_attr( $connection['mailjet_from_name'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Display name paired with the address above. Falls back to the site-wide Mailjet from-name setting.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -8115,6 +8205,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var quickbooksFields = document.querySelectorAll('.quickbooks-only-field');
 			var quickbooksMcpFields = document.querySelectorAll('.quickbooks_mcp-only-field');
 			var quickbooksDesktopFields = document.querySelectorAll('.quickbooks_desktop-only-field');
+			var mailjetMcpFields = document.querySelectorAll('.mailjet_mcp-only-field');
 			var ezuiteFields = document.querySelectorAll('.ezuite_erp-only-field');
 			var gmailFields = document.querySelectorAll('.gmail-only-field');
 			var googleDriveFields = document.querySelectorAll('.google_drive-only-field');
@@ -8171,6 +8262,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			quickbooksDesktopFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			mailjetMcpFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 			ezuiteFields.forEach(function(field) {
@@ -8345,6 +8439,27 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				});
 				// QuickBooks Desktop uses custom_header auth (Bearer token to relay).
 				authTypeSelect.value = 'custom_header';
+			} else if (connectionType === 'mailjet_mcp') {
+				mailjetMcpFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// A Mailjet connection's authentication type is not meaningful: the
+				// API key pair IS the credential, and the MCP config builder derives
+				// HTTP Basic from it regardless of what is stored here. Leaving the
+				// select at "none" keeps the unrelated username/password rows hidden.
+				authTypeSelect.value = 'none';
+				if (typeof toggleAuthFields === 'function') {
+					toggleAuthFields(authTypeSelect.value);
+				}
+				// The connection URL is informational for Mailjet (the selected
+				// region decides the API host). Default it so the required field
+				// does not block a credential-only save.
+				if (!urlField.value) {
+					urlField.value = 'https://api.mailjet.com';
+				}
+				urlField.readOnly = false;
+				urlField.style.backgroundColor = '';
+				urlDescription.style.display = 'block';
 			} else if (connectionType === 'ezuite_erp') {
 				ezuiteFields.forEach(function(field) {
 					field.style.display = 'table-row';

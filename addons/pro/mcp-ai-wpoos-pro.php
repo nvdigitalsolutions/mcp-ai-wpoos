@@ -911,6 +911,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Get_Drive_File'            => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-get-drive-file.php',
 			'WP_MCP_AI_Pro_Tool_List_Drive_Connections'    => WP_MCP_AI_PRO_PATH . 'includes/tools/google-workspace/class-wp-mcp-ai-pro-tool-list-drive-connections.php',
 			'WP_MCP_AI_Pro_Tool_Send_Mailjet_Email'        => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-send-mailjet-email.php',
+			'WP_MCP_AI_Pro_Tool_List_Mailjet_Connections'  => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-list-mailjet-connections.php',
 			'WP_MCP_AI_Pro_Tool_Send_Brevo_Email'          => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-send-brevo-email.php',
 			'WP_MCP_AI_Pro_Tool_Manage_Brevo_Contacts'     => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-manage-brevo-contacts.php',
 			'WP_MCP_AI_Pro_Tool_Get_Brevo_Statistics'      => WP_MCP_AI_PRO_PATH . 'includes/tools/email-marketing/class-wp-mcp-ai-pro-tool-get-brevo-statistics.php',
