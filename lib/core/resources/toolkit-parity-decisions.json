@@ -21,10 +21,6 @@
             "decision": "deferred",
             "reason": "Changes status across many orders. Prerequisite: OrderStoreInterface plus a per-order status transition rule, because a bulk update that skips the rule is how an order jumps from refunded to processing."
         },
-        "bulk_update_products": {
-            "decision": "deferred",
-            "reason": "Applies one field change across many products, optionally filtered. Prerequisite: a catalog adapter plus a filtered batch query; the loop is the ProductCatalogInterface save path once an adapter exists."
-        },
         "classroom_course_analytics": {
             "decision": "deferred",
             "reason": "It aggregates enrolment, coursework and submission-completion metrics that only exist on the Classroom side; there is no local copy to compute over. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."

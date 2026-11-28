@@ -251,6 +251,7 @@
             "withdraw_student_eca"
         ],
         "ecommerce": [
+            "bulk_update_products",
             "generate_invoice_pdf",
             "printful",
             "product_actualization",

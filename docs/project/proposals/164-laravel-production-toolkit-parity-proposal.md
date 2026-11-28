@@ -15558,3 +15558,70 @@ A WooCommerce variable product has a parent price range this model has no field 
 | PHPStan level 8 | clean |
 | phpcs (`phpcs-laravel.xml.dist`) | clean |
 | docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+### 164.173 — `ecommerce` slice 2: one plan across many products
+
+Measured before the port. `ecommerce` moves to **44 wp / 16 ported / 1 declined / 27 deferred**.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `bulk_update_products` | `BulkUpdateProductsTool` -> `ProductCatalogInterface::find()` / `query()` + `saveVariant()` |
+
+`ready`, not `delegated`: the catalog contract is bound to the local Eloquent catalog, so the tool works whenever the runtime does.
+
+#### The deferral register asked for a filtered batch query; the contract already had one
+
+The register entry said the prerequisite was "a catalog adapter plus a filtered batch query". `ProductQuery` is that query — status, search, tags, vendor, in-stock and a page size — so the loop reduces to the same `saveVariant` path the single-product tools use. The entry is deleted rather than reworded.
+
+#### A sub-cent adjustment is a real case, and `Money` refuses it
+
+This was found by the tests, not by inspection. `Money::fromDecimal()` does not round: it throws when the amount carries more decimal places than the currency allows. Ten percent of 19.99 is 21.989, so the obvious implementation — compute in decimal, hand the result back — fails on the first percentage adjustment.
+
+The port therefore computes in **minor units** and rounds once at the end:
+
+```
+unit  = 10 ** price->exponent()      // 100 for USD, 1 for a zero-exponent currency
+delta = percentage ? minor * value / 100 : value * unit
+next  = clamp(increase ? minor + delta : minor - delta, 0)
+```
+
+Rounding once, at the end, keeps 21.99 exactly and stops a sequence of adjustments drifting. The unit comes from the currency rather than a literal 100, so a zero-exponent currency is not divided by a hundred.
+
+#### WordPress applies the adjustment to the price nobody pays
+
+`price_adjustment` targets `regular_price`, which in the section 164.172 mapping is the **comparison** price. A bulk price change would therefore move no charged price — and on a product with no comparison price it would do nothing at all, while reporting success. The port adjusts the charged price and states that in the class docblock and the description. Callers who want the WooCommerce-exact behaviour still have explicit `sale_price` / `regular_price`.
+
+#### Ambiguity is refused rather than ordered
+
+WordPress accepts `sale_price` and `price_adjustment` together and applies them in a fixed order, and it accepts a stock field alongside `manage_stock: false`. Both are two instructions about one field in one call. The port refuses each combination with a field error naming the conflict, because an order-dependent result is a guess the caller cannot see.
+
+#### Backorder has no representation
+
+`stock_status: onbackorder` is refused by name. The runtime variant tracks a quantity and whether that quantity is tracked; there is no third state to map onto, and mapping it to zero stock would report a stock-out that is not one. `instock` lifts a zero quantity to one and leaves a positive one alone, `outofstock` sets zero, and `manage_stock: false` clears the quantity rather than zeroing it.
+
+#### Fields this slice does not write
+
+WooCommerce's bulk update also accepts `status`, `featured`, `add_categories`, `remove_categories`, `add_tags`, `remove_tags`, and filters on `category` and `stock_status`. `status` and the tag fields are representable — but on `Product`, a readonly entity with its own copy path, while this tool writes `ProductVariant`. The rest have no representation at all. All eight are refused **by name** with the reason, rather than dropped: a caller who sends `add_tags` is told it did not happen instead of receiving a success envelope for a write that never occurred.
+
+For the same reason the filter accepts the WooCommerce `publish` spelling and maps it to `published`, while `private` is refused: the runtime has draft, published and archived, and no private state.
+
+#### Corrections
+
+- `absint()` on `product_ids` silently rewrites a negative id, and `absint()` on `stock_quantity` turns `-5` into `5`, so a caller asking to remove stock adds it. Both are typed reads here, and a negative quantity is refused.
+- `floatval()` on a price is the defect the single-product tools corrected: `"abc"` becomes `0.0`, which would have made every matched variant free. A non-numeric amount is refused.
+- `sanitize_text_field()` on `stock_status` and `status` — an HTML filter on an enum, the sixth instance in this family. Both are validated against their allowed sets instead.
+- A product id the catalog does not hold is skipped, and the response reports how many products matched rather than implying the list was complete.
+- A variant whose values already equal the plan is not written, so an idempotent call performs no writes; the response separates `updated` from `unchanged` and names any `skipped_products`.
+- The scope defaults to `all`, matching WordPress, and uses the section 164.172 definition: `product` is the first variant by position, `variations` every later one.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,577 / 24,573 |
+| adapter | 737 / 3,948, 2 skipped |
+| readiness | 645 rows, servable 626 (delegated 13), no violations |
+| parity | 424 ported / 9 declined / 100 deferred / 434 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
