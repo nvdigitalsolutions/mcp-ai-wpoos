@@ -45,11 +45,16 @@ $json   = in_array( '--json', array_slice( $argv, 1 ), true );
 /** Screens the Filament renderer routes (App\Filament\Admin\Pages\ToolkitPage). */
 $panelScreens = array( 'settings', 'entities', 'research', 'consolidate', 'dashboard' );
 
-// Wave 4 routed `research` and `consolidate` on the panel, so the console-only
-// allowance is now empty: every screen a manifest may declare is servable by at
-// least one surface. The list stays (rather than being deleted) because a future
-// screen that only the console serves belongs here, with its wave noted.
-$consoleOnlyScreens = array();
+// Wave 4 routed `research` and `consolidate` on the panel. Anything still
+// listed here is served by the React console but by no panel route, and must
+// carry the wave that introduced it.
+$consoleOnlyScreens = array(
+	// Proposal 167 P3: the database toolkit's Observe/Edit/Preview surface is a
+	// React console (features/toolkits/database/DatabaseConsole.tsx). The panel
+	// serves its `settings` screen; the scope editor writes through
+	// WP_MCP_AI_Db_Scope_Registry and has no Filament route.
+	'console',
+);
 
 $errors = array();
 $report = array();
