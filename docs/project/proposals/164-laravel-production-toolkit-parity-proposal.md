@@ -16061,3 +16061,59 @@ The reported name and SKU are `MIN(...)` over the window: one of the names the p
 Twenty-two ecommerce tools remain deferred. The highest-leverage next prerequisite is now the **customer aggregate**: one store closes `include_customers` (164.178), the `new_customers` figure (164.179), and the four customer tools `woo_customers`, `segment_customers`, `customer_lifetime_value` and `export_customer_data` — six refusals and deferrals for one model.
 
 The other three clusters are unchanged: coupons need a promotion model, inventory needs a movement ledger plus a multi-location decision, and carts need a cart model and a mail channel.
+
+### 164.181 — the customer aggregate, and a `new_customers` that counted the wrong thing
+
+No tool-count change: two contract methods, and two sections that were refused become sections that are computed. `ecommerce` stays at **44 wp / 21 ported / 1 declined / 22 deferred**, and the served ledger stays at 430.
+
+| Contract | Surface |
+| --- | --- |
+| `OrderStoreInterface::topCustomers()` | `list<CustomerSpend>` — biggest spenders first, in one currency |
+| `OrderStoreInterface::newCustomerCount()` | `int` — first paid order ever, inside the window |
+
+#### What it closes
+
+- `include_customers` on `get_order_analytics`, refused in 164.178;
+- the dashboard's `new_customers`, refused in 164.179.
+
+#### Identity is the account, not the email string
+
+The reference keyed customers by `customer_id` when there was one and by the billing email otherwise. A guest who checked out twice under two addresses counted as two customers; a registered customer who changed their billing email counted as two as well, while their orders split across both. This aggregate counts **registered accounts only**, keyed by the account id. Guests are real buyers and are counted in orders and revenue; they are not customers — the same rule `customerCount` already followed in 164.179, and the one WooCommerce's own Customers report applies.
+
+#### `new_customers` meant "ordered once that month"
+
+In `get_order_analytics`, the reference incremented `new_customers` for every customer whose `order_count` was 1 **in the window**, and `returning_customers` for everyone else. A customer of five years with one order that month was reported as new. The port does not reproduce that split, and says so rather than renaming it: the honest question — *who bought for the first time?* — is `newCustomerCount()`, and that is what the dashboard reports.
+
+The dashboard's own reference figure **was** that question: a correlated subquery on `MIN(post_date)`. Its intent survives; its implementation does not, because it read `wp_postmeta` and returned zero on High-Performance Order Storage.
+
+#### `first_order_date` was whichever order the loop saw first
+
+The reference initialised `first_order_date` from the first order it encountered for a customer and never updated it, while order ids are not guaranteed to be in date order — so the field was an arbitrary order's date wearing the name of the customer's first. `CustomerSpend` reports `firstOrderAt` and `lastOrderAt` as `MIN` and `MAX` **in the window**, named as window facts. A global first-order date is a different question, answered by `newCustomerCount()`.
+
+#### `total_spent` summed every status
+
+The same defect as every other section of this family: the published figure counted cancelled, failed, refunded and unpaid orders as spend. `CustomerSpend::$spend` sums paid orders only, and the name and email are the lexicographic minimum over the window so a customer who changed either is still one row.
+
+#### Bounds, currency, ordering
+
+One currency; paid statuses; spend descending, then customer id, so two runs on the same data agree; limit 1..100 validated in the implementation. `newCustomerCount()` reads **only** the window bounds from the query — a first order is a property of the customer rather than of the filtered selection, and a `customerId` filter would make every answer zero or one. The currency is part of the identity of that first order, because "first" across two currencies is not a date but a comparison of amounts.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,735 / 25,036 |
+| adapter | 772 / 4,038, 2 skipped |
+| readiness | 651 rows, servable 632 (delegated 13), no violations |
+| parity | 430 ported / 9 declined / 94 deferred / 429 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+#### After this
+
+`segment_customers` is now unblocked: its RFM, value, geographic and product-preference segments are derived from order history, and this aggregate supplies recency, frequency and monetary per customer. It also needs the line aggregate from 164.180 for product preference, which exists.
+
+`customer_lifetime_value` follows from the same two aggregates — historical spend per customer plus the predictive component.
+
+`woo_customers` is read-only (`get`, `list`, `search`, `get_orders`) and needs one thing this slice does not provide: a **customer directory** that can list accounts with no paid orders in a window. `OrderQuery::$customerId` already answers `get_orders`; the directory is a separate, smaller query. `export_customer_data` then combines that directory with orders and lines for one customer.

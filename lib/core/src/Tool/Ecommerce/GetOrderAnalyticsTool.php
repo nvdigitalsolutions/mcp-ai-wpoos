@@ -28,20 +28,26 @@
  * currency as `excluded_orders` — a number the caller can see rather than an
  * error they cannot.
  *
- * ## One section is refused, one is not offered
+ * ## Both sections are computed, one field is not offered
  *
- * `include_customers` aggregates *customers*, which is a different aggregate and
- * belongs with the customer store that `woo_customers` needs, so it is refused by
- * name. `payment_methods` is not reported because the order model has no
+ * `include_products` and `include_customers` were refused when this tool was
+ * first ported, because the store had neither aggregate. Section 164.180 added
+ * the line aggregate and section 164.181 the customer one, so both sections are
+ * computed now, and `top_count` sizes both.
+ *
+ * The products are rolled up by product rather than by variant, count only paid
+ * orders, and keep a product whose catalogue entry has since been deleted, which
+ * the reference dropped by joining the products table. The customers are
+ * registered accounts only: the reference keyed by account id **or** billing
+ * email, so a guest using two addresses counted twice, and a customer who changed
+ * their billing email counted twice as well. Its `new_customers` and
+ * `returning_customers` figures are not reproduced — they counted orders in the
+ * window rather than customer history, so a five-year customer with one order
+ * that month was reported as new. The honest version of that question is
+ * `newCustomerCount()`, which the dashboard reports.
+ *
+ * `payment_methods` is not offered because the order model has no
  * payment-method field.
- *
- * `include_products` was refused when this tool was first ported, because the
- * store had no line aggregate. Section 164.180 added one
- * (`OrderStoreInterface::topProducts()`), so the section is computed now:
- * best-selling products by revenue over the same window and currency, with
- * `top_count` as its size. The products are rolled up by product rather than by
- * variant, count only paid orders, and keep a product whose catalogue entry has
- * since been deleted, which the reference dropped by joining the products table.
  *
  * ## Corrected inputs
  *
@@ -65,6 +71,7 @@ namespace Nvoos\Core\Tool\Ecommerce;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\OrderStoreInterface;
+use Nvoos\Core\Domain\Entity\CustomerSpend;
 use Nvoos\Core\Domain\Entity\OrderQuery;
 use Nvoos\Core\Domain\Entity\ProductSales;
 use Nvoos\Core\Domain\ValueObject\OrderGrouping;
@@ -76,17 +83,6 @@ final class GetOrderAnalyticsTool extends AbstractTool
     /** How far back the window reaches when the caller does not say. */
     public const DEFAULT_DAYS = 30;
 
-    /**
-     * Sections the reference offers that this tool does not compute.
-     *
-     * `include_products` and `top_count` left this list in section 164.180,
-     * which added the line aggregate they need.
-     *
-     * @var array<string, string>
-     */
-    public const REFUSED_ARGUMENTS = array(
-        'include_customers' => 'Customer analytics aggregate customers, which is a different aggregate from this window; it arrives with the customer store.',
-    );
 
     public function __construct(
         ErrorFactoryInterface $errors,
@@ -107,7 +103,7 @@ final class GetOrderAnalyticsTool extends AbstractTool
 
     public function getDescription(): string
     {
-        return 'Summarises orders in a date window for one currency: order counts, gross total, revenue excluding cancelled, failed and refunded orders, average order value, status distribution, optional totals bucketed by day, week or month, and optionally the best-selling products by revenue. Customer analytics are not computed by this tool.';
+        return 'Summarises orders in a date window for one currency: order counts, gross total, revenue excluding cancelled, failed and refunded orders, average order value, status distribution, optional totals bucketed by day, week or month, and optionally the best-selling products by revenue and the biggest-spending customers.';
     }
 
     public function getRequiredCapability(): string
@@ -146,6 +142,10 @@ final class GetOrderAnalyticsTool extends AbstractTool
                     'type'        => 'boolean',
                     'description' => 'Include the best-selling products, by revenue, for the window.',
                 ),
+                'include_customers' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Include the biggest-spending customers for the window.',
+                ),
                 'top_count'       => array(
                     'type'        => 'integer',
                     'description' => 'How many products to report when include_products is true. Default 10.',
@@ -165,10 +165,10 @@ final class GetOrderAnalyticsTool extends AbstractTool
         $fields = array();
 
         foreach (array_keys($arguments) as $key) {
-            $known = array('date_from', 'date_to', 'group_by', 'currency', 'include_trends', 'include_products', 'top_count');
+            $known = array('date_from', 'date_to', 'group_by', 'currency', 'include_trends', 'include_products', 'include_customers', 'top_count');
 
             if (! in_array($key, $known, true)) {
-                $fields[$key] = array(self::REFUSED_ARGUMENTS[$key] ?? 'Unknown field.');
+                $fields[$key] = array('Unknown field.');
             }
         }
 
@@ -232,6 +232,20 @@ final class GetOrderAnalyticsTool extends AbstractTool
             'to'       => $to->format('Y-m-d'),
             'group_by' => $grouping->value,
         );
+
+        if ($this->boolParam($arguments, 'include_customers', false)) {
+            $data['customers'] = array(
+                'total_customers' => $analytics->customerCount,
+                'top_customers'   => array_map(
+                    static fn (CustomerSpend $customer): array => $customer->jsonSerialize(),
+                    $this->orders->topCustomers(
+                        new OrderQuery(createdAfter: $from, createdBefore: $to),
+                        $currency,
+                        $topCount
+                    )
+                ),
+            );
+        }
 
         if (! $this->boolParam($arguments, 'include_trends', false)) {
             unset($data['periods']);

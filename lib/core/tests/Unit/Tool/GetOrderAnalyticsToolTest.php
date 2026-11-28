@@ -114,15 +114,26 @@ final class GetOrderAnalyticsToolTest extends TestCase
         $this->assertArrayHasKey('limit', $result['error']['data']);
     }
 
-    public function test_the_customers_section_is_refused_by_name(): void
+    public function test_include_customers_returns_the_biggest_spenders(): void
     {
-        $result = $this->execute(
-            array('currency' => 'USD', 'include_customers' => true),
-            $this->store()
+        $store = $this->store(
+            $this->order(1, 'completed', '100.00', 'USD', '2024-01-05 09:00:00', array(), 7),
+            $this->order(2, 'processing', '50.00', 'USD', '2024-01-06 09:00:00', array(), 7),
+            $this->order(3, 'completed', '200.00', 'USD', '2024-01-07 09:00:00', array(), 8),
+            $this->order(4, 'pending', '999.00', 'USD', '2024-01-08 09:00:00', array(), 9)
         );
 
-        $this->assertFalse($result['success']);
-        $this->assertArrayHasKey('include_customers', $result['error']['data']);
+        $result = $this->execute(
+            $this->window() + array('include_customers' => true, 'top_count' => 5),
+            $store
+        );
+
+        $this->assertSame(2, $result['data']['customers']['total_customers']);
+        $this->assertSame(
+            array(8, 7),
+            array_column($result['data']['customers']['top_customers'], 'customer_id')
+        );
+        $this->assertSame(150.0, $result['data']['customers']['top_customers'][1]['spend']);
     }
 
     public function test_include_products_returns_the_best_sellers(): void
@@ -412,6 +423,7 @@ final class GetOrderAnalyticsToolTest extends TestCase
         string $currency = 'USD',
         string $created = '2024-01-15 10:00:00',
         array $lines = array(),
+        ?int $customerId = 7,
     ): Order {
         return new Order(
             id: $id,
@@ -420,7 +432,7 @@ final class GetOrderAnalyticsToolTest extends TestCase
             createdAt: new \DateTimeImmutable($created),
             total: Money::fromDecimal($total, $currency),
             lines: $lines,
-            customerId: 7,
+            customerId: $customerId,
             billingName: 'Ada Lovelace',
             billingEmail: 'ada@example.test',
         );

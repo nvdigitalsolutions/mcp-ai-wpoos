@@ -46,6 +46,7 @@ namespace Nvoos\Laravel\Adapter;
 
 use Illuminate\Support\Facades\DB;
 use Nvoos\Core\Domain\Contract\OrderStoreInterface;
+use Nvoos\Core\Domain\Entity\CustomerSpend;
 use Nvoos\Core\Domain\Entity\Order;
 use Nvoos\Core\Domain\Entity\OrderAnalytics;
 use Nvoos\Core\Domain\Entity\OrderCollection;
@@ -347,6 +348,86 @@ class OrderStore implements OrderStoreInterface {
 		);
 
 		return array_slice( $products, 0, $limit );
+	}
+	/**
+	 * The customers a query's orders belong to, biggest spenders first.
+	 *
+	 * Registered customers only, keyed by account id. The name and email are the
+	 * lexicographic minimum over the window, so a customer who changed either is
+	 * still one row.
+	 *
+	 * @return list<CustomerSpend>
+	 */
+	public function topCustomers( OrderQuery $query, string $currency, int $limit ): array {
+		if ( 1 !== preg_match( '/^[A-Z]{3}$/', $currency ) ) {
+			throw new ValidationException( 'A customer aggregate needs an ISO 4217 currency.' );
+		}
+
+		if ( $limit < 1 || $limit > 100 ) {
+			throw new ValidationException( 'A customer aggregate returns between 1 and 100 customers.' );
+		}
+
+		$rows = $this->filtered( $query )
+			->where( 'nvoos_orders.total_currency', $currency )
+			->whereIn( 'nvoos_orders.status', OrderAnalytics::REVENUE_STATUSES )
+			->where( 'nvoos_orders.customer_id', '>', 0 )
+			->selectRaw(
+				'nvoos_orders.customer_id AS customer_id, MIN(nvoos_orders.billing_email) AS email, MIN(nvoos_orders.billing_name) AS name, COUNT(*) AS orders, SUM(nvoos_orders.total_minor) AS minor, MIN(nvoos_orders.created_at) AS first_at, MAX(nvoos_orders.created_at) AS last_at'
+			)
+			->groupBy( 'nvoos_orders.customer_id' )
+			->orderByRaw( 'SUM(nvoos_orders.total_minor) DESC' )
+			->orderBy( 'nvoos_orders.customer_id' )
+			->limit( $limit )
+			->get();
+
+		$customers = array();
+
+		foreach ( $rows as $row ) {
+			$customers[] = new CustomerSpend(
+				(int) $row->customer_id,
+				null === $row->email ? null : (string) $row->email,
+				null === $row->name ? null : (string) $row->name,
+				(int) $row->orders,
+				Money::fromMinorUnits( (int) $row->minor, $currency ),
+				null === $row->first_at ? null : new \DateTimeImmutable( (string) $row->first_at ),
+				null === $row->last_at ? null : new \DateTimeImmutable( (string) $row->last_at ),
+			);
+		}
+
+		return $customers;
+	}
+
+	/**
+	 * Registered customers whose first paid order fell in the window.
+	 *
+	 * The inner query is the whole history, grouped per customer, so the bound
+	 * applies to a date the window does not contain. Only the window bounds are
+	 * read from the query; the other filters would make a first order a property
+	 * of the selection rather than of the customer.
+	 */
+	public function newCustomerCount( OrderQuery $query, string $currency ): int {
+		if ( 1 !== preg_match( '/^[A-Z]{3}$/', $currency ) ) {
+			throw new ValidationException( 'A customer aggregate needs an ISO 4217 currency.' );
+		}
+
+		$firstOrders = NvoosOrder::query()
+			->selectRaw( 'nvoos_orders.customer_id AS customer_id, MIN(nvoos_orders.created_at) AS first_at' )
+			->where( 'nvoos_orders.total_currency', $currency )
+			->whereIn( 'nvoos_orders.status', OrderAnalytics::REVENUE_STATUSES )
+			->where( 'nvoos_orders.customer_id', '>', 0 )
+			->groupBy( 'nvoos_orders.customer_id' );
+
+		$builder = DB::query()->fromSub( $firstOrders->toBase(), 'firsts' );
+
+		if ( null !== $query->createdAfter ) {
+			$builder->where( 'first_at', '>=', $query->createdAfter );
+		}
+
+		if ( null !== $query->createdBefore ) {
+			$builder->where( 'first_at', '<=', $query->createdBefore );
+		}
+
+		return (int) $builder->count();
 	}
 	/**
 	 * Upsert the order's lines by id, then delete the ones no longer present.
