@@ -424,7 +424,9 @@ Route::prefix('api/v1')->group(function (): void {
 
             // Orchestration overview — the console's Orchestration page. An
             // agent is an assistant record on this runtime, so the inventory
-            // is real; workflow fields are honestly empty (no engine).
+            // is real, and the recent-run feed reads `nvoos_workflow_runs`
+            // (090-h H3). Only `last_used`, `workflow_pattern` and the
+            // profession task patterns have no column here.
             Route::get('/orchestration/stats', OrchestrationStatsController::class);
 
             // 090-h H2 — workflow graph storage. A workflow is a content
