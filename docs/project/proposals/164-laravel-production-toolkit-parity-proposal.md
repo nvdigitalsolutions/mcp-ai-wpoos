@@ -14496,5 +14496,88 @@ writer on `edit_posts`, which is the family's rule for each shape.
 
 Eleven remain: the ten deferred and one undecided, `get_registration_timeline`.
 That tool closes the register — after it, everything left in this family is a
-deferral with a named prerequisite, and the next step is to re-measure the
-portfolio and pick the largest family with no deferrals.
+deferral with a named prerequisite (§164.163).
+
+### §164.163 — `regulatory-registration`, slice 16: the registration timeline
+
+One tool, 408 lines, and it closes the register.
+
+#### An approved registration could never read as complete
+
+```php
+'status' => ! empty( $submission_date ) ? 'in_progress' : 'pending',
+```
+
+The review milestone was `in_progress` whenever a submission date existed, with no
+condition on approval. So the phase never ended: an **approved** registration
+scored one completed milestone out of three (`66.67%`) and reported
+`current_phase: "Under Review"` for ever, while the approval row beside it said
+`completed`. Every consumer that read progress or phase got the wrong answer for
+the one state that matters most.
+
+The port completes the review when an approval date exists, so an approved
+registration reaches `100%` and `"Completed"`. The review row's `actual_date`
+stays `null`: WordPress never populated it either, and inventing one would claim
+to know when review ended rather than when approval was recorded.
+
+#### An unreadable date put the schedule in 1970
+
+`strtotime()` returns `false` for anything it cannot read, and `false` is `0`, so
+a submission date of `"sometime last spring"` made every target date
+`1970-05-01`. The port parses with `date_create_immutable()`, names the field in
+`unreadable_dates`, and omits the dependent figures rather than computing them
+from a false epoch. The timeline cannot confirm a phase it cannot date, so the
+milestone stays `in_progress` rather than being marked complete.
+
+#### The expectations are a table, and `basis` says which row
+
+Nothing here contacts an authority; the days are fixed per registration type and,
+for LK, AE and SA, per country. Two consequences the port makes visible:
+
+- `total` is computed as the sum of the five phases, so the literal in the table
+  cannot drift from the response.
+- `basis` names the row used. The lookup checks the country table before the type
+  table, so a Sri Lankan **variation** falls back to `LK/new` — 210 days — rather
+  than to the 81-day default variation schedule. That is the WordPress
+  precedence, kept and named rather than silently corrected, because changing it
+  would move every estimate for those countries.
+
+#### One date helper, once
+
+`stampDate()` was written twice, in the workflow log and the notification
+history. This tool needed the same reader, so it moved to `RegulatoryTool` and
+both copies were deleted — the same consolidation `flag()` and
+`checkRecipients()` received in §164.159 and §164.161. Three tools, one rule:
+when a helper is needed a second time, it moves up.
+
+#### Gating
+
+The WordPress handler read no capability — the fifth tool in this family with
+that gap. The port gates on `read`.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryTimelineTest` | **11 tests, 44 assertions**, 0 failures |
+| `lib/core` unit suite | **4,383 tests / 24,057 assertions**, 0 failures (+11 tests / +44 assertions) |
+| Adapter suite | **712 tests / 3,881 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | **633 rows**; servable **614**; ready **573**; no violations |
+| Toolkit parity | **412 ported**, 9 declined, 89 deferred, 446 remaining; `regulatory-registration` `59 \| 48 \| 0 \| 10 \| 11` → **`59 \| 49 \| 0 \| 10 \| 10`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+#### The family closes
+
+`59 | 49 | 0 | 10 | 10`. **Zero undecided.** The ten that remain are deferrals
+with named prerequisites: five Excel readers/writers, three PDF/document
+generators, and the two authority API clients from §164.160.
+
+That makes this the template for the rest of the portfolio: a family is finished
+when every slug is ported, declined with an argument, or deferred with a
+prerequisite — not when the easy ones are done. The next family should be chosen
+by **manifest leverage**: Proposal 149 §56 renders any toolkit's settings,
+workbench and dashboard from a manifest, so a family whose manifest already
+exists gains an admin surface with no page work. `financial-planner`,
+`social-media`, `dietpi`, `comic-creation`, `analytics` and `multilingual` all
+have manifests in the app today and no tools ported.

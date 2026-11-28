@@ -3038,6 +3038,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryRegistrationCoreTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'get_registration_timeline' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\GetRegistrationTimelineTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Reports a registration against the fixed expectation table: three milestones with target dates, progress and a time analysis. Fixes the status rule that never finished the review — WordPress set the review to in_progress whenever a submission date existed, with no condition on approval, so an approved registration scored 66.67 percent and reported Under Review for ever while the approval row beside it read completed; the port completes the review on approval, so approved registrations reach 100 percent and Completed. Dates are parsed with date_create_immutable and an unreadable value is named in unreadable_dates with its dependent figures omitted, where strtotime returned false and put every target date in 1970. total is computed as the sum of the five phases so the table cannot drift from the response, and basis names the row used because the country lookup precedes the type lookup: a Sri Lankan variation falls back to LK/new at 210 days rather than the 81-day default variation. The review row keeps actual_date null because WordPress never populated it and inventing an end date would claim to know when review ended rather than when approval was recorded. Gated on read; the WordPress handler checked no capability (Proposal 164 section 164.163).',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryTimelineTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'get_reg_document' => array(
 			'class' => 'Nvoos\Core\Tool\Regulatory\\GetRegDocumentTool',
 			'readiness' => 'ready',
