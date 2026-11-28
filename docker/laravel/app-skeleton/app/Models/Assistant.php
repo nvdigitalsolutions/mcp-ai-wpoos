@@ -64,6 +64,11 @@ class Assistant extends Model
      */
     public const ADVANCED_FIELD_DEFAULTS = [
         'fallback_chain' => [],
+        // Which Remote Sites connections this assistant may use. Mirrors
+        // WordPress's `_wp_mcp_ai_pro_remote_connections` meta: empty means
+        // unrestricted, and the literal "settings" grants the site-wide
+        // credential fallback.
+        'remote_connections' => [],
         'adaptive_tool_cap' => '',
         'memory_files' => [],
         'vector_store_id' => '',

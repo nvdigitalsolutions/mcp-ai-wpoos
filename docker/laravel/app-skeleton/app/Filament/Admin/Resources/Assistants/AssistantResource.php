@@ -8,6 +8,7 @@ use App\Models\Assistant;
 use App\Services\AssistantWriter;
 use App\Support\EstateScope;
 use App\Support\Models\ModelConfigCatalogue;
+use App\Support\RemoteSites\RemoteSiteStore;
 use BackedEnum;
 use UnitEnum;
 use Filament\Actions\DeleteAction;
@@ -42,7 +43,7 @@ use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
  * Writes go through `AssistantWriter`, not `Model::save()`. The writer is the
  * extraction of the five invariants `AssistantController` already enforced —
  * estate assignment, per-estate slug uniqueness, profession slugs into `meta`,
- * the 14-key `advanced` whitelist, and `is_default` exclusivity. A form that
+ * the 15-key `advanced` whitelist, and `is_default` exclusivity. A form that
  * wrote the model directly would be a second implementation of all five, and
  * the REST surface and the panel would disagree the first time either changed.
  *
@@ -58,7 +59,7 @@ use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
  * than the writer would turn that rule into data loss. `getOptionLabelUsing()`
  * is therefore deliberately lenient for a non-empty off-list value.
  *
- * The fourteen `advanced` keys are rendered in a collapsed **Advanced** section
+ * The fifteen `advanced` keys are rendered in a collapsed **Advanced** section
  * with four tabs (Behaviour, Knowledge, Shortcuts, Action & access). The simple
  * lists use `TagsInput` or a single-field `Repeater`; the structured lists use a
  * nested `Repeater`; `tool_prebuilt_shortcuts` is stored as a tool-slug map and
@@ -411,6 +412,46 @@ class AssistantResource extends Resource
                                             ->maxLength(191)
                                             ->placeholder('manage_options')
                                             ->helperText('Capability a user needs to chat with this assistant.'),
+                                        Select::make('advanced.remote_connections')
+                                            ->label('Remote site connections')
+                                            ->multiple()
+                                            ->options(function (Get $get): array {
+                                                $options = array();
+
+                                                foreach (app(RemoteSiteStore::class)->all() as $connection) {
+                                                    $id = (string) $connection['id'];
+                                                    $label = sprintf(
+                                                        '%s (%s)',
+                                                        (string) $connection['name'],
+                                                        (string) $connection['connection_type'],
+                                                    );
+
+                                                    if (empty($connection['enabled'])) {
+                                                        $label .= ' — disabled';
+                                                    }
+
+                                                    $options[$id] = $label;
+                                                }
+
+                                                // A stored id that no longer resolves — the
+                                                // connection was deleted, or the record was
+                                                // imported from another site — stays
+                                                // selectable. Hiding it would make the first
+                                                // save drop the value silently, the same
+                                                // failure the provider select is written to
+                                                // avoid.
+                                                foreach ((array) $get('advanced.remote_connections') as $stored) {
+                                                    if (! is_string($stored) || '' === $stored || array_key_exists($stored, $options)) {
+                                                        continue;
+                                                    }
+
+                                                    $options[$stored] = $stored.' — current value';
+                                                }
+
+                                                return $options;
+                                            })
+                                            ->helperText('Which Remote Sites connections this assistant may use. Leave empty to allow every connection. Add "settings" to grant the site-wide credential fallback.')
+                                            ->columnSpanFull(),
                                     ])
                                     ->columns(2),
                             ]),

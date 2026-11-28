@@ -67,6 +67,36 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	);
 
 	/**
+	 * Default endpoint for a Mailjet MCP bridge.
+	 *
+	 * Deliberately empty: the official Mailjet server
+	 * (github.com/mailgun/mailjet-mcp-server) speaks **stdio only** — it has no
+	 * hosted HTTP endpoint, so there is nothing to default to. An operator who
+	 * wants the bridged read-only tool surface must deploy a Streamable HTTP
+	 * bridge and save its URL on the connection. A connection with no URL is a
+	 * credential source for the native Mailjet tools, not an MCP App.
+	 *
+	 * @since 1.2.25
+	 * @var string
+	 */
+	const MAILJET_MCP_DEFAULT_URL = '';
+
+	/**
+	 * Mailjet REST API hosts, keyed by the stored region code.
+	 *
+	 * Mailjet runs two independent API regions; a key minted in the EU region
+	 * does not authenticate against the US host. Mirrors the upstream server's
+	 * `MAILJET_API_REGION` handling (`api.<region>.mailjet.com`).
+	 *
+	 * @since 1.2.25
+	 * @var array<string, string>
+	 */
+	const MAILJET_API_HOSTS = array(
+		'us' => 'https://api.mailjet.com',
+		'eu' => 'https://api.eu.mailjet.com',
+	);
+
+	/**
 	 * Supported authentication types.
 	 *
 	 * @var array<string>
@@ -668,6 +698,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				}
 			}
 
+			// Preserve the Mailjet bridge URL, region and sender identity when an
+			// update omits them. A metadata-only save must not silently drop the
+			// bridge (turning an MCP connection into a credential-only one) or
+			// reset a per-subaccount sender to the site-wide default.
+			foreach ( array( 'mailjet_mcp_url', 'mailjet_region', 'mailjet_from_email', 'mailjet_from_name' ) as $mailjet_field ) {
+				if ( ! isset( $connection_data[ $mailjet_field ] ) && isset( $existing_connection[ $mailjet_field ] ) ) {
+					$connection_data[ $mailjet_field ] = $existing_connection[ $mailjet_field ];
+				}
+			}
+
 			// Preserve Upwork/LinkedIn mode and search criteria when updating.
 			if ( ! isset( $connection_data['upwork_mode'] ) && isset( $existing_connection['upwork_mode'] ) ) {
 				$connection_data['upwork_mode'] = $existing_connection['upwork_mode'];
@@ -718,15 +758,19 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		// Prepare connection data.
-		// MCP endpoints are exact routes — Intuit's hosted QuickBooks gateway
-		// (and most vendor MCP gateways) 404 on an appended slash, so preserve
-		// the operator-supplied URL verbatim for quickbooks_mcp connections.
-		$is_quickbooks_mcp = isset( $connection_data['connection_type'] ) && 'quickbooks_mcp' === sanitize_key( $connection_data['connection_type'] );
+		// MCP endpoints are exact routes — Intuit's hosted QuickBooks gateway and
+		// a self-hosted Mailjet MCP bridge both 404 on an appended slash, so
+		// preserve the operator-supplied URL verbatim for those types.
+		$connection_type_input = isset( $connection_data['connection_type'] ) ? sanitize_key( $connection_data['connection_type'] ) : '';
+		$url_verbatim          = in_array( $connection_type_input, array( 'quickbooks_mcp', 'mailjet_mcp' ), true );
 
+		// A Mailjet connection may legitimately have no URL: it then acts only as
+		// a credential source for the native Mailjet tools. esc_url_raw( '' ) is
+		// an empty string, so the same expression covers both shapes.
 		$connection = array(
 			'id'                             => $connection_id,
 			'name'                           => sanitize_text_field( $connection_data['name'] ),
-			'url'                            => $is_quickbooks_mcp
+			'url'                            => $url_verbatim
 				? esc_url_raw( (string) $connection_data['url'] )
 				: esc_url_raw( trailingslashit( $connection_data['url'] ) ),
 			'connection_type'                => isset( $connection_data['connection_type'] ) ? sanitize_key( $connection_data['connection_type'] ) : 'wordpress',
@@ -945,6 +989,18 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'quickbooks_disable_write'       => ! empty( $connection_data['quickbooks_disable_write'] ),
 			'quickbooks_disable_update'      => ! empty( $connection_data['quickbooks_disable_update'] ),
 			'quickbooks_disable_delete'      => ! empty( $connection_data['quickbooks_disable_delete'] ),
+			// Mailjet MCP / API region. Mailjet runs independent US and EU API
+			// regions and a key minted in one does not authenticate against the
+			// other, so the region is part of the connection identity.
+			'mailjet_region'                 => isset( $connection_data['mailjet_region'] ) && 'eu' === sanitize_key( (string) $connection_data['mailjet_region'] ) ? 'eu' : 'us',
+			// Streamable HTTP bridge endpoint override. Empty means "credential
+			// source only" — no MCP surface, no MCP App reference.
+			'mailjet_mcp_url'                => isset( $connection_data['mailjet_mcp_url'] ) ? esc_url_raw( (string) $connection_data['mailjet_mcp_url'] ) : '',
+			// Per-connection sender identity. Sender addresses are validated per
+			// Mailjet API key (subaccount), so a marketing subaccount and a
+			// transactional subaccount legitimately carry different senders.
+			'mailjet_from_email'             => isset( $connection_data['mailjet_from_email'] ) ? sanitize_email( (string) $connection_data['mailjet_from_email'] ) : '',
+			'mailjet_from_name'              => isset( $connection_data['mailjet_from_name'] ) ? sanitize_text_field( (string) $connection_data['mailjet_from_name'] ) : '',
 			'mcp_protocol_version'           => isset( $connection_data['mcp_protocol_version'] ) ? sanitize_text_field( $connection_data['mcp_protocol_version'] ) : '',
 			'mcp_server_name'                => isset( $connection_data['mcp_server_name'] ) ? sanitize_text_field( $connection_data['mcp_server_name'] ) : '',
 			'mcp_tool_count'                 => isset( $connection_data['mcp_tool_count'] ) ? absint( $connection_data['mcp_tool_count'] ) : 0,
@@ -1652,6 +1708,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_quickbooks_mcp_connection( $connection );
 		}
 
+		// Handle Mailjet connections separately. Two shapes share one type:
+		// a Streamable HTTP bridge endpoint (real MCP handshake) and a
+		// credential-only connection (Mailjet REST identity probe).
+		if ( 'mailjet_mcp' === $connection_type ) {
+			return self::test_mailjet_mcp_connection( $connection );
+		}
+
 		// Handle QuickBooks Online (Accounting) connections separately — a real
 		// authenticated company-info probe instead of the WordPress REST probe.
 		if ( 'quickbooks' === $connection_type ) {
@@ -2159,6 +2222,229 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * Map a stored Mailjet connection onto an MCP App client config.
+	 *
+	 * One connection type covers two deployment shapes, selected by whether a
+	 * bridge URL is present:
+	 *
+	 * - **Bridge** (`mailjet_mcp_url` or `url` set) — a Streamable HTTP wrapper
+	 *   around the official stdio server
+	 *   (github.com/mailgun/mailjet-mcp-server). The bridge is read-only by
+	 *   design: upstream registers tools only for the GET verbs in its bundled
+	 *   OpenAPI spec, so the bridged surface can read analytics, contacts,
+	 *   lists and messages but can never send or mutate.
+	 * - **Credential source** (no URL) — the connection backs the native
+	 *   `send_mailjet_email`, `get_mailjet_statistics` and
+	 *   `manage_mailjet_contacts` tools and is never referenceable from MCP
+	 *   Apps; {@see is_mcp_app_connection()} enforces that.
+	 *
+	 * Mailjet authenticates with HTTP Basic over `api_key:secret_key`. The MCP
+	 * App client detects the `:` and base64-encodes it, which matches the
+	 * upstream server's own `Buffer.from( api_key + ':' + secret_key )`.
+	 *
+	 * @since 1.2.25
+	 *
+	 * @param array $connection Stored Mailjet connection array.
+	 * @return array MCP App client config.
+	 */
+	public static function build_mailjet_mcp_app_config( $connection ) {
+		if ( ! is_array( $connection ) ) {
+			return array();
+		}
+
+		// `mailjet_mcp_url` is the single source of truth for "has an MCP surface".
+		// surface". The connection's `url` column holds the Mailjet API base
+		// for the selected region and is never treated as a bridge endpoint —
+		// otherwise every credential-only connection would look like a broken
+		// MCP App as soon as a URL was filled in.
+		$server_url = isset( $connection['mailjet_mcp_url'] ) ? trim( (string) $connection['mailjet_mcp_url'] ) : '';
+
+		$api_key    = isset( $connection['api_key'] ) ? trim( (string) self::decrypt_value( (string) $connection['api_key'] ) ) : '';
+		$api_secret = isset( $connection['api_secret'] ) ? trim( (string) self::decrypt_value( (string) $connection['api_secret'] ) ) : '';
+
+		$config = array(
+			'server_url'  => '' !== $server_url ? esc_url_raw( $server_url ) : self::MAILJET_MCP_DEFAULT_URL,
+			'auth_type'   => 'none',
+			'token'       => '',
+			'header_name' => isset( $connection['mcp_header_name'] ) ? $connection['mcp_header_name'] : '',
+			'verify_ssl'  => array_key_exists( 'mcp_verify_ssl', $connection ) ? (bool) $connection['mcp_verify_ssl'] : true,
+			'timeout'     => ! empty( $connection['mcp_timeout'] ) ? max( 5, min( 120, (int) $connection['mcp_timeout'] ) ) : 30,
+		);
+
+		$stored_auth = isset( $connection['auth_type'] ) ? sanitize_key( (string) $connection['auth_type'] ) : '';
+
+		if ( '' !== $api_key && '' !== $api_secret ) {
+			// Mailjet API keys are a pair: both halves are credentials and the
+			// upstream server authenticates with Basic `key:secret`.
+			$config['auth_type'] = 'basic';
+			$config['token']     = $api_key . ':' . $api_secret;
+		} elseif ( 'custom_header' === $stored_auth ) {
+			$config['auth_type'] = 'header';
+			$config['token']     = isset( $connection['token'] ) ? self::decrypt_value( (string) $connection['token'] ) : '';
+		} elseif ( in_array( $stored_auth, array( 'bearer', 'jwt' ), true ) ) {
+			// Third-party bridges may front Mailjet with their own bearer.
+			$config['auth_type'] = 'bearer';
+			$config['token']     = isset( $connection['token'] ) ? self::decrypt_value( (string) $connection['token'] ) : '';
+		}
+
+		// Route automatic refreshes and diagnostics back to the central store.
+		if ( ! empty( $connection['id'] ) ) {
+			$config['connection_ref'] = $connection['id'];
+		}
+
+		return $config;
+	}
+
+	/**
+	 * Test a Mailjet connection in whichever shape it was saved as.
+	 *
+	 * A bridge connection runs the same JSON-RPC handshake as any other MCP
+	 * Server connection. A credential-only connection probes
+	 * `GET /v3/REST/user` — the cheapest authenticated Mailjet endpoint, and the
+	 * exact probe the upstream server uses to validate `MAILJET_API_KEY` at
+	 * boot — so "reached but rejected" stays distinguishable from "unreachable".
+	 *
+	 * @since 1.2.25
+	 *
+	 * @param array $connection Stored Mailjet connection array.
+	 * @return array|WP_Error Test results or error.
+	 */
+	protected static function test_mailjet_mcp_connection( $connection ) {
+		$config = self::build_mailjet_mcp_app_config( $connection );
+
+		if ( '' === $config['server_url'] ) {
+			return self::test_mailjet_api_connection( $connection );
+		}
+
+		if ( 'none' === $config['auth_type'] ) {
+			return new WP_Error(
+				'wp_mcp_ai_mailjet_missing_credentials',
+				__( 'This Mailjet connection has no API key. Add the API key and secret, or remove the bridge URL to use it as a credential-only connection.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			$client_file = WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php';
+			if ( file_exists( $client_file ) ) {
+				require_once $client_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_mcp_client_missing',
+				__( 'The MCP App client is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$client = new WP_MCP_AI_MCP_App_Client( $config );
+		$result = $client->test_connection();
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$tool_count = isset( $result['tool_count'] ) ? (int) $result['tool_count'] : 0;
+
+		return array(
+			'success'     => true,
+			'mailjet_mcp' => true,
+			'mcp'         => true,
+			'message'     => sprintf(
+				/* translators: %d: number of discovered tools. */
+				_n( 'Mailjet MCP bridge answered the handshake and lists %d read-only tool.', 'Mailjet MCP bridge answered the handshake and lists %d read-only tools.', $tool_count, 'mcp-ai-wpoos-pro' ),
+				$tool_count
+			),
+			'handshake'   => isset( $result['handshake'] ) ? $result['handshake'] : '',
+			'protocol'    => isset( $result['protocol'] ) ? $result['protocol'] : '',
+			'server_info' => isset( $result['server_info'] ) ? $result['server_info'] : array(),
+			'tool_count'  => isset( $result['tool_count'] ) ? $result['tool_count'] : 0,
+			'latency_ms'  => isset( $result['latency_ms'] ) ? $result['latency_ms'] : null,
+		);
+	}
+
+	/**
+	 * Probe the Mailjet REST API with a connection's stored key pair.
+	 *
+	 * @since 1.2.25
+	 *
+	 * @param array $connection Stored Mailjet connection array.
+	 * @return array|WP_Error Test results or error.
+	 */
+	protected static function test_mailjet_api_connection( $connection ) {
+		$api_key    = isset( $connection['api_key'] ) ? trim( (string) self::decrypt_value( (string) $connection['api_key'] ) ) : '';
+		$api_secret = isset( $connection['api_secret'] ) ? trim( (string) self::decrypt_value( (string) $connection['api_secret'] ) ) : '';
+
+		if ( '' === $api_key || '' === $api_secret ) {
+			return new WP_Error(
+				'wp_mcp_ai_mailjet_missing_credentials',
+				__( 'A Mailjet API key and secret are required to test this connection. Create or copy them from Mailjet → Account → API Key Management.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$region = isset( $connection['mailjet_region'] ) && 'eu' === $connection['mailjet_region'] ? 'eu' : 'us';
+		$host   = self::MAILJET_API_HOSTS[ $region ];
+
+		$response = wp_remote_get(
+			$host . '/v3/REST/user',
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Accept'        => 'application/json',
+					'Authorization' => 'Basic ' . base64_encode( $api_key . ':' . $api_secret ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- HTTP Basic credential encoding, not obfuscation.
+					'User-Agent'    => 'NV-oOS-Mailjet/1.2.25',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+
+		if ( 401 === $status_code || 403 === $status_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_mailjet_credentials_rejected',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: API region. */
+					__( 'Mailjet rejected these credentials (HTTP %1$d) in the %2$s region. Check the key pair, and confirm the key was created in the same region.', 'mcp-ai-wpoos-pro' ),
+					$status_code,
+					'eu' === $region ? __( 'EU', 'mcp-ai-wpoos-pro' ) : __( 'US', 'mcp-ai-wpoos-pro' )
+				),
+				array( 'status' => $status_code )
+			);
+		}
+
+		if ( 200 !== $status_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_mailjet_unexpected_response',
+				sprintf(
+					/* translators: %d: HTTP status code. */
+					__( 'Unexpected response from the Mailjet API (HTTP %d).', 'mcp-ai-wpoos-pro' ),
+					$status_code
+				),
+				array( 'status' => $status_code )
+			);
+		}
+
+		$body    = json_decode( wp_remote_retrieve_body( $response ), true );
+		$account = is_array( $body ) && isset( $body['Data'][0] ) && is_array( $body['Data'][0] ) ? $body['Data'][0] : array();
+
+		return array(
+			'success'       => true,
+			'mailjet'       => true,
+			'mcp'           => false,
+			'region'        => $region,
+			'account_email' => isset( $account['Email'] ) ? (string) $account['Email'] : '',
+			'account_name'  => isset( $account['CompanyName'] ) ? (string) $account['CompanyName'] : '',
+			'message'       => __( 'Mailjet accepted the API key pair. This connection has no bridge URL, so it backs the native Mailjet tools rather than an MCP tool surface.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Test a QuickBooks Online (Accounting) connection.
 	 *
 	 * Unlike the generic WordPress probe, this calls the QuickBooks API with the
@@ -2452,6 +2738,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		if ( 'quickbooks_mcp' === $connection_type ) {
 			$config = self::build_quickbooks_mcp_app_config( $connection );
+		} elseif ( 'mailjet_mcp' === $connection_type ) {
+			$config = self::build_mailjet_mcp_app_config( $connection );
 		} else {
 			$config = self::build_mcp_app_config_from_connection( $connection );
 
@@ -2565,6 +2853,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @since 1.1.90
 	 * @since 1.1.92 FlowHub MCP-mode connections are referenceable.
 	 * @since 1.2.21 QuickBooks Online MCP connections are referenceable.
+	 * @since 1.2.25 Mailjet connections are referenceable only when they carry a
+	 *              bridge URL. A credential-only Mailjet connection has no MCP
+	 *              endpoint, so offering it in the metabox would put a row on
+	 *              screen that can only fail its handshake.
 	 *
 	 * @param array $connection Stored connection array.
 	 * @return bool True when the connection is referenceable from MCP Apps.
@@ -2582,6 +2874,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		if ( 'quickbooks_mcp' === $connection_type ) {
 			return true;
+		}
+
+		if ( 'mailjet_mcp' === $connection_type ) {
+			// Credential-only Mailjet connections have no MCP endpoint at all.
+			return '' !== trim( isset( $connection['mailjet_mcp_url'] ) ? (string) $connection['mailjet_mcp_url'] : '' );
 		}
 
 		if ( 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' ) ) {
@@ -2656,6 +2953,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @since 1.1.90
 	 * @since 1.1.92 FlowHub MCP-mode connections are included.
 	 * @since 1.2.21 QuickBooks Online MCP connections are included.
+	 * @since 1.2.25 Mailjet connections with a bridge URL are included.
 	 *
 	 * @return array<int, array> Referenceable connection arrays.
 	 */
@@ -2663,9 +2961,38 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		return array_merge(
 			self::get_mcp_server_connections(),
 			self::get_quickbooks_mcp_connections(),
+			self::get_mailjet_mcp_connections(),
 			self::get_upwork_mcp_connections(),
 			self::get_flowhub_mcp_connections()
 		);
+	}
+
+	/**
+	 * List stored Mailjet connections that expose an MCP bridge endpoint.
+	 *
+	 * Credential-only Mailjet connections are excluded on purpose: they back the
+	 * native tools and have no endpoint to handshake with.
+	 *
+	 * @since 1.2.25
+	 *
+	 * @return array<int, array> Mailjet MCP connection arrays.
+	 */
+	public static function get_mailjet_mcp_connections() {
+		$mailjet = array();
+
+		foreach ( self::get_all_connections() as $connection ) {
+			if ( ! is_array( $connection ) || 'mailjet_mcp' !== ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+				continue;
+			}
+
+			if ( ! self::is_mcp_app_connection( $connection ) ) {
+				continue;
+			}
+
+			$mailjet[] = $connection;
+		}
+
+		return $mailjet;
 	}
 
 	/**
@@ -4828,7 +5155,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			);
 		}
 
-		if ( in_array( $auth_type, array( 'application_password', 'basic_auth' ), true ) ) {
+		if ( in_array( $auth_type, array( 'application_password', 'basic_auth' ), true ) && 'mailjet_mcp' !== $connection_type ) {
 			if ( empty( $connection['username'] ) || empty( $connection['password'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_credentials',
@@ -4856,7 +5183,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		// MCP Server auth-specific requirements. The generic basic/application
 		// password check above covers the Elementor MCP application-password
 		// flow; bearer and custom-header MCP auth need their own checks.
-		if ( in_array( $connection_type, array( 'mcp_server', 'quickbooks_mcp' ), true ) ) {
+		if ( in_array( $connection_type, array( 'mcp_server', 'quickbooks_mcp', 'mailjet_mcp' ), true ) ) {
 			if ( 'custom_header' === $auth_type && ( empty( $connection['mcp_header_name'] ) || empty( $connection['token'] ) ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_mcp_header',
@@ -4888,6 +5215,21 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_mcp_bearer',
 					__( 'A bearer token is required for bearer authentication on MCP connections.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
+		// Mailjet's HTTP Basic credential is the API key pair, not a
+		// username/password. A connection without a pair can neither call the
+		// API nor expose a bridge, so refuse it at save time instead of letting
+		// every later tool call fail with a credential error. The check is
+		// independent of `auth_type` because the key pair is the only credential
+		// this type uses.
+		if ( 'mailjet_mcp' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) || empty( $connection['api_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_mailjet_keys',
+					__( 'A Mailjet API key and secret are required. Both halves are needed: the API authenticates with HTTP Basic over the pair. Leave the fields blank when editing to keep the stored values.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}

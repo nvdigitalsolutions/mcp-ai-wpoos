@@ -17,12 +17,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once __DIR__ . '/class-wp-mcp-ai-pro-mailjet-credentials.php';
 
 /**
  * Provides a tool for triggering Mailjet email deliveries.
  */
 class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
-	const API_ENDPOINT = 'https://api.mailjet.com/v3.1/send';
+
+	/**
+	 * Send path, relative to the region's API base.
+	 *
+	 * @since 1.2.25
+	 * @var string
+	 */
+	const API_PATH = '/v3.1/send';
 
 	/**
 	 * {@inheritdoc}
@@ -54,8 +62,8 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'when_to_use'     => __( 'Sending transactional email through the configured Mailjet account with CC, BCC, reply-to, and an optional custom ID.', 'mcp-ai-wpoos-pro' ),
 			'when_not_to_use' => __( 'Brevo or Mailgun delivery; use send_brevo_email or send_mailgun_email. Contact work belongs to manage_mailjet_contacts.', 'mcp-ai-wpoos-pro' ),
-			'related_tools'   => array( 'send_brevo_email', 'send_mailgun_email', 'manage_mailjet_contacts' ),
-			'notes'           => __( 'Send status is reported per message in the Messages array; custom_id is truncated to 255 characters.', 'mcp-ai-wpoos-pro' ),
+			'related_tools'   => array( 'send_brevo_email', 'send_mailgun_email', 'manage_mailjet_contacts', 'list_mailjet_connections' ),
+			'notes'           => __( 'Send status is reported per message in the Messages array; custom_id is truncated to 255 characters. When several Mailjet connections are assigned, pass connection_id (see list_mailjet_connections) — each API key is a separate subaccount with its own validated senders.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -159,6 +167,10 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 					'type'        => 'string',
 					'description' => __( 'Optional sender name override.', 'mcp-ai-wpoos-pro' ),
 				),
+				'connection_id'  => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Mailjet connection ID. Omit when only one Mailjet connection is assigned to this assistant — the tool resolves it automatically. Call list_mailjet_connections for the IDs.', 'mcp-ai-wpoos-pro' ),
+				),
 				'reply_to_email' => array(
 					'type'        => 'string',
 					'description' => __( 'Optional reply-to email address.', 'mcp-ai-wpoos-pro' ),
@@ -205,23 +217,24 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		// Resolve the Mailjet account for this call. A wrong, disabled, foreign or
+		// ambiguous connection is an error — the tool never falls back to a
+		// different account than the caller named, and never guesses between two.
+		$credentials = WP_MCP_AI_Pro_Mailjet_Credentials::resolve(
+			$context,
+			isset( $arguments['connection_id'] ) ? sanitize_text_field( (string) $arguments['connection_id'] ) : ''
+		);
 
-		$api_key    = isset( $settings['mailjet_api_key'] ) ? trim( $settings['mailjet_api_key'] ) : '';
-		$api_secret = isset( $settings['mailjet_api_secret'] ) ? trim( $settings['mailjet_api_secret'] ) : '';
-
-		if ( '' === $api_key || '' === $api_secret ) {
-			return new WP_Error(
-				'wp_mcp_ai_mailjet_missing_credentials',
-				__( 'Mailjet API credentials have not been configured.', 'mcp-ai-wpoos-pro' ),
-				array(
-					'status'  => 400,
-					'actions' => array(
-						'configure_mailjet_credentials' => __( 'Add a Mailjet API key and secret in the NV oOS settings.', 'mcp-ai-wpoos-pro' ),
-					),
-				)
-			);
+		if ( is_wp_error( $credentials ) ) {
+			return $credentials;
 		}
+
+		$api_key    = (string) $credentials['api_key'];
+		$api_secret = (string) $credentials['api_secret'];
+
+		// Settings still supply the request timeout; credentials come from the
+		// resolver above.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 		$subject = isset( $arguments['subject'] ) ? sanitize_text_field( $arguments['subject'] ) : '';
 
@@ -248,8 +261,10 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 		$from_email = '';
 		if ( ! empty( $arguments['from_email'] ) ) {
 			$from_email = sanitize_email( $arguments['from_email'] );
-		} elseif ( ! empty( $settings['mailjet_from_email'] ) ) {
-			$from_email = sanitize_email( $settings['mailjet_from_email'] );
+		} elseif ( ! empty( $credentials['from_email'] ) ) {
+			// The connection's sender wins over the site-wide default: addresses
+			// are validated per Mailjet API key (subaccount).
+			$from_email = sanitize_email( $credentials['from_email'] );
 		}
 
 		if ( '' === $from_email ) {
@@ -268,8 +283,8 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 		$from_name = '';
 		if ( ! empty( $arguments['from_name'] ) ) {
 			$from_name = sanitize_text_field( $arguments['from_name'] );
-		} elseif ( ! empty( $settings['mailjet_from_name'] ) ) {
-			$from_name = sanitize_text_field( $settings['mailjet_from_name'] );
+		} elseif ( ! empty( $credentials['from_name'] ) ) {
+			$from_name = sanitize_text_field( $credentials['from_name'] );
 		}
 
 		$message = array(
@@ -329,9 +344,11 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 
 		$timeout = $this->resolve_timeout( $settings );
 
+		$endpoint = WP_MCP_AI_Pro_Mailjet_Credentials::api_base( (string) $credentials['region'] ) . self::API_PATH;
+
 		$request_args = array(
 			'headers' => array(
-				'Authorization' => 'Basic ' . base64_encode( $api_key . ':' . $api_secret ),
+				'Authorization' => WP_MCP_AI_Pro_Mailjet_Credentials::authorization_header( $api_key, $api_secret ),
 				'Content-Type'  => 'application/json',
 			),
 			'timeout' => $timeout,
@@ -356,7 +373,7 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 		if ( null !== $preempt ) {
 			$response = $preempt;
 		} else {
-			$response = wp_remote_post( self::API_ENDPOINT, $request_args );
+			$response = wp_remote_post( $endpoint, $request_args );
 		}
 
 		if ( is_wp_error( $response ) ) {

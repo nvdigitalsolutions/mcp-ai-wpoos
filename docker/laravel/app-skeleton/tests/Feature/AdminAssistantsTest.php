@@ -319,7 +319,7 @@ class AdminAssistantsTest extends TestCase
     }
 
     /**
-     * A panel edit now carries the fourteen `advanced` keys rather than leaving
+     * A panel edit now carries the fifteen `advanced` keys rather than leaving
      * them to the console, so it must round-trip them instead of dropping them.
      * The structured editors are covered by `AssistantAdvancedFormTest`; this
      * keeps the simple path pinned on the assistants suite.

@@ -15,7 +15,7 @@ use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * Proposal 149 §12.3 — the fourteen `advanced` keys on the assistant form.
+ * Proposal 149 §12.3 — the fifteen `advanced` keys on the assistant form.
  *
  * The panel now owns the vocabulary the console and REST surface already
  * carried: simple values (fallback chain, IDs, enum, booleans) plus four
@@ -174,6 +174,55 @@ class AssistantAdvancedFormTest extends TestCase
         $this->assertSame('owner/dataset', $meta['preferred_datasets'][0]['dataset']);
         $this->assertSame('nlp', $meta['preferred_datasets'][0]['category']);
         $this->assertSame('high', $meta['preferred_datasets'][0]['priority']);
+    }
+
+    public function test_the_remote_connections_selection_hydrates_and_survives_a_panel_save(): void
+    {
+        [$alice, $tenant] = $this->actor();
+        $assistant = $this->assistantIn(array(
+            'title' => 'Mailjet bot',
+            'advanced' => array('remote_connections' => array('conn-a', 'settings')),
+        ));
+
+        $this->mountEdit($alice, $tenant, $assistant)
+            ->assertSchemaComponentExists(
+                'advanced.remote_connections',
+                checkComponentUsing: static fn ($component): bool => array('conn-a', 'settings') === array_values(
+                    $component->getState() ?? array()
+                )
+            )
+            ->setTableActionData(array('title' => 'Mailjet bot renamed'))
+            ->callMountedTableAction();
+
+        $fresh = $assistant->fresh();
+
+        $this->assertSame('Mailjet bot renamed', $fresh->title);
+        $this->assertSame(array('conn-a', 'settings'), $fresh->meta['remote_connections']);
+    }
+
+    /**
+     * A connection id that no longer resolves must survive a panel save.
+     *
+     * Filament validates a multi-select against its option labels, so a stale
+     * id that the option closure omitted would fail validation or be dropped —
+     * the same silent-loss failure the provider select is written to avoid.
+     * This is the remote-site half of that rule.
+     */
+    public function test_a_remote_connection_that_no_longer_exists_is_preserved_on_save(): void
+    {
+        [$alice, $tenant] = $this->actor();
+        $assistant = $this->assistantIn(array(
+            'title' => 'Stale bot',
+            'advanced' => array('remote_connections' => array('deleted-connection-id')),
+        ));
+
+        $this->mountEdit($alice, $tenant, $assistant)
+            ->callMountedTableAction();
+
+        $this->assertSame(
+            array('deleted-connection-id'),
+            $assistant->fresh()->meta['remote_connections']
+        );
     }
 
     public function test_the_create_form_saves_the_advanced_object(): void

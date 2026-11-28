@@ -66,13 +66,13 @@ final class RemoteSitesApiTest extends TestCase
         $this->postJson('/api/v1/pro/remote-sites', [])->assertForbidden();
     }
 
-    public function test_types_returns_the_two_supported_catalogues(): void
+    public function test_types_returns_the_supported_catalogues(): void
     {
         $this->actAsAdmin();
 
         $items = $this->getJson('/api/v1/pro/remote-sites/types')->assertOk()->json('items');
 
-        $this->assertSame(['wordpress', 'mcp_server'], array_column($items, 'id'));
+        $this->assertSame(['wordpress', 'mcp_server', 'mailjet_mcp'], array_column($items, 'id'));
 
         $passwordField = collect($items[0]['fields'])->firstWhere('key', 'password');
         $this->assertTrue($passwordField['secret']);

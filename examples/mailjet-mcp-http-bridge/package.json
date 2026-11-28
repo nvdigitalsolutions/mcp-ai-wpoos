@@ -1,0 +1,19 @@
+{
+  "name": "mailjet-mcp-http-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Streamable HTTP bridge in front of @mailjet/mailjet-mcp-server, which is stdio-only.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "dev": "node --watch src/server.mjs"
+  },
+  "dependencies": {
+    "@mailjet/mailjet-mcp-server": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}
