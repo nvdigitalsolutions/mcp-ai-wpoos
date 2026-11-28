@@ -1,8 +1,8 @@
 {
     "_doc": "docs/developer/phpcs-ratchet.md",
     "_policy": "Budgets only shrink. --update refuses to raise one without --allow-increase, and --check fails when a scope comes in more than `tolerance` under budget without recording the improvement. `noise` is the allowance for run-to-run measurement variation on the over-budget side.",
-    "measured_at": "2026-11-23",
-    "measured_on": "chore/phpcs-tests-string-concat (tests re-measured at 357/1607; the unnecessary-concat class is now closed tree-wide; other scopes carry their 2e6537ffb6 values)",
+    "measured_at": "2026-11-28",
+    "measured_on": "fix/mailjet-phpunit-failures (addons-other re-measured at 184/758 after the design system moved out of addons/ in 86698899f6; other scopes carry their 2026-11-23 values).",
     "ruleset": "phpcs.xml.dist",
     "tolerance": 25,
     "scopes": [
@@ -27,8 +27,8 @@
             "paths": [
                 "addons/"
             ],
-            "errors": 270,
-            "warnings": 841
+            "errors": 184,
+            "warnings": 758
         },
         {
             "name": "tests",
