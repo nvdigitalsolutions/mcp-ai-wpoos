@@ -85,6 +85,10 @@
             "decision": "deferred",
             "reason": "It imports transactional rows from the Drive/CSV source into five WordPress native-storage CPTs, and this runtime has one table backend by decision (Proposal 164 section 164.71 deliberately dropped the native-storage hint and the CPT-backed tables). A port today would write rows that nothing reads: fnb_read_table and all twenty-one metric tools read FnbTableSource, so the import would be a write with no reader and the probe gate would be right to refuse it. The import itself is sound once something reads the store, which is why this is deferred rather than declined. Prerequisite: a native-table store plus a read fallback in FnbTableSource, which changes the storage contract for the whole toolkit and belongs in its own proposal."
         },
+        "generate_compliance_certificate": {
+            "decision": "deferred",
+            "reason": "Issues a numbered compliance certificate and stores it on the registration. The WordPress writer concatenates plain-text lines and saves them under a .pdf filename with no PDF library in the call: the file opens as text, which is the same lie the Excel exporters tell. It also writes straight into uploads, outside any file-registry contract, and records _certificate_number and _certificate_issued_date as side effects. Prerequisite: a PDF writer contract, so the binary path stays a declared gap rather than a document that claims to be a format it is not. Deferred rather than declined because the certificate number and metadata half is straightforward once a writer exists."
+        },
         "generate_architectural_drawing": {
             "decision": "deferred",
             "reason": "Its value is the structured-prompt compiler — scale notation, dimension callouts, materials, building codes — wrapped around a DALL-E/Imagen call and a raster-to-SVG step this runtime already serves as `output_format: svg` on the image tools. There is no image-generation contract here: each of the three served generators speaks to a provider through SettingsStoreInterface and HttpClientInterface directly, so a faithful port today would be a fourth copy of that plumbing plus a second vectoriser. Prerequisite: a shared image-generation seam the prompt compiler can sit on. Deferred rather than declined because the capability is worth having once that seam exists."
@@ -92,6 +96,14 @@
         "generate_image_ai": {
             "decision": "declined",
             "reason": "Its handler dispatches to no provider of its own: it is a generic front door whose work is already served by generate_openai_image, generate_gemini_image and generate_cloudflareai_image, each of which names the provider it will bill. Porting it would be a fourth slug for the same three calls with a provider the caller cannot see in advance."
+        },
+        "generate_cover_letter": {
+            "decision": "deferred",
+            "reason": "Builds a cover letter and writes it to a .pdf filename as plain text, with no PDF library involved and no quoting of the interpolated product name. The string itself is already served: generate_submission_pack returns the same letter as cover_letter text, so a caller that needs the wording has it today. Prerequisite: a PDF writer, shared with generate_compliance_certificate and generate_pdf_dossier. Deferred rather than declined because a real PDF letter is worth having once that writer exists, and porting the current writer would ship a text file named .pdf."
+        },
+        "generate_pdf_dossier": {
+            "decision": "deferred",
+            "reason": "The WordPress implementation says so itself in a comment: the dossier is a placeholder that writes about six lines of plain text under an .xlsx-style .pdf name, listing the registration and a document count. There is no real dossier to port, and the manifest it would need is what generate_submission_pack already produces. Prerequisite: a PDF writer plus a document-binary contract that can assemble attached documents, which this runtime deliberately does not have (section 164.148 refuses file_data for the same reason). Deferred rather than declined because assembling the pack into one file is the point of the tool."
         },
         "generate_image_variations": {
             "decision": "declined",

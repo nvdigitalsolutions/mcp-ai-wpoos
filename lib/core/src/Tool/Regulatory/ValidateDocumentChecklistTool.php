@@ -57,20 +57,6 @@ use Nvoos\Core\Domain\Entity\ContentItem;
 
 class ValidateDocumentChecklistTool extends RegulatoryTool
 {
-    /** The documents most countries require. */
-    private const DEFAULT_DOCUMENTS = array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'artwork', 'formula');
-
-    /** Country-specific additions to the default set. */
-    private const COUNTRY_DOCUMENTS = array(
-        'LK' => array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'artwork', 'formula', 'iso'),
-        'AE' => array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'artwork', 'formula'),
-        'SA' => array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'cpsr', 'artwork', 'formula'),
-        'QA' => array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'artwork', 'formula'),
-        'KW' => array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'artwork', 'formula'),
-        'OM' => array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'artwork', 'formula'),
-        'IN' => array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'artwork', 'formula', 'stability'),
-    );
-
     public function __construct(ErrorFactoryInterface $e, ContentStoreInterface $content)
     {
         parent::__construct($e, $content);
@@ -212,7 +198,7 @@ class ValidateDocumentChecklistTool extends RegulatoryTool
         $presentKeys = array();
 
         foreach (array_unique($present) as $documentType) {
-            $presentKeys[] = $this->fold($documentType);
+            $presentKeys[] = $this->foldDocType($documentType);
         }
 
         $missing = array();
@@ -263,18 +249,6 @@ class ValidateDocumentChecklistTool extends RegulatoryTool
     }
 
     /**
-     * The document types one country requires.
-     *
-     * @return list<string>
-     */
-    private function requiredDocuments(string $country): array
-    {
-        $key = strtoupper(trim($country));
-
-        return self::COUNTRY_DOCUMENTS[ $key ] ?? self::DEFAULT_DOCUMENTS;
-    }
-
-    /**
      * A document's type: the term when one is attached, else the meta value.
      */
     private function documentType(ContentItem $document): string
@@ -291,13 +265,5 @@ class ValidateDocumentChecklistTool extends RegulatoryTool
         }
 
         return array() !== $terms ? $terms[0] : $type;
-    }
-
-    /**
-     * The comparison form of a document type.
-     */
-    private function fold(string $value): string
-    {
-        return strtolower(trim($value));
     }
 }

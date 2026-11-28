@@ -13885,3 +13885,169 @@ substring of it.
 The next slice is `generate_country_performance` and `generate_pipeline_report`
 (11b), then `generate_submission_pack` (11c) with the three PDF-writer
 deferrals, which closes the group.
+
+### §164.157 — `regulatory-registration`, slice 11b: country and pipeline analytics
+
+Two analytic reports. Both are read-only and side-effect free, and both carried a
+block whose output did not mean what its name said.
+
+#### The country comparison was mostly `null`
+
+`generate_comparison()` promised three named countries and two averages. Two of
+the three could never be produced:
+
+```php
+'highest_approval_rate' => array_keys( $metrics, max( array_column( $metrics, 'approval_rate' ) ) )[0],
+'fastest_processing'    => array_keys( $metrics, min( array_filter( $approval_days ) ) )[0],
+```
+
+`array_keys( $array, $value )` searches the array's **values**. The values of
+`$metrics` are metric rows — arrays — so the search never matched, returned an
+empty array, and `[0]` on it produced `null` plus a warning. Both facts were
+therefore permanently absent from every response.
+
+The third was worse than absent because it looked plausible:
+`'highest_volume' => array_keys( $metrics )[0]` is the first row **after
+sorting**, so it named whichever country led the caller's chosen `sort_by` —
+the highest approval rate, when the caller sorted by that.
+
+The port computes all three by comparing keys. And `avg_processing_days
+divided by `count( array_filter( $approval_days ) )`, which is zero when every
+country's average is `0.0`; that is a fatal error waiting for a small estate, so
+an unmeasured average is now `null`.
+
+#### One authority per country was whichever came first
+
+The authority was read from the first registration seen for a country and
+reused, so a country with two authorities reported one, and a first registration
+with an empty authority made the whole country report `''`. The port keeps
+`authority` as the first **non-empty** value and adds `authorities`, the distinct
+list — a country may legitimately have more than one.
+
+Three smaller guards match the sibling reports: an unreadable expiry counts as
+expired (the safe direction) and is counted, a negative approval interval is
+excluded from the average and counted, and `sort_by` is validated against the
+documented set instead of being used as an array key.
+
+#### The bottleneck list reordered the map it was built from
+
+`generate_pipeline_report` sorted `$average_stage_times` **in place** with
+`arsort()` and returned the same array, so a field named
+`average_stage_times` came back ordered by value, which reads as arbitrary
+unless the caller knows why. The port sorts a copy and returns the averages keyed
+by stage. `bottlenecks` becomes a list of `{stage, days, samples}`: the sample
+count is what tells a reader whether a slow stage is slow or was measured once.
+
+#### The trend window could show five months
+
+The six buckets came from `strtotime( "-{$i} months" )` — the month-arithmetic
+overflow §164.154 fixed in the forecast. Here a duplicate key overwrites an
+earlier bucket and a gap leaves one missing, so a six-month trend could render
+five. The keys are built from the first day of the current month.
+
+#### `total_registrations` did not describe the pipeline
+
+It was the query's `found_posts` (every match) while `pipeline` was built from
+the first 1000 rows, so a caller comparing the two could not tell a larger
+estate from a capped read. The port reports the count it grouped and sets
+`truncated`.
+
+Finally, the name: **stage time is time since submission**, not time in the
+stage — the arithmetic is `approval_date ?? now` minus `submission_date`. That
+is what WordPress measured, so the field is kept and the definition stated,
+rather than renaming a field a caller may already read.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryAnalyticsReportsTest` | **22 tests, 66 assertions**, 0 failures |
+| `lib/core` unit suite | 4,238 → **4,260 tests / 23,422 assertions**, 0 failures |
+| Adapter suite | **698 tests / 3,800 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 605 → **607 rows**; servable 586 → **588**; ready 545 → **547**; no violations |
+| Toolkit parity | 384 → **386 ported**, 9 declined, 84 deferred, 461 → **459 remaining**; `regulatory-registration` `59 \| 32 \| 0 \| 5 \| 27` → **`59 \| 34 \| 0 \| 5 \| 25`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+The next slice is `generate_submission_pack` (11c), which stores a pack manifest
+on the registration, together with the three PDF-writer deferrals that close the
+group.
+
+### §164.158 — `regulatory-registration`, slice 11c: the submission pack
+
+`generate_submission_pack` is the one tool in the reports group that assembles
+something real without a file: a manifest stored on the registration, plus a
+cover letter and an index as text. It also carries the family's most repeated
+fault in the form that removes the artefact.
+
+#### The two flags that build the pack were off
+
+`include_cover_letter` and `include_index` are declared `true`. The handler read
+each with `! empty( $arguments[ ... ] )`, so a bare
+`generate_submission_pack({ registration_id })` returned
+`cover_letter: null` and `document_index: null` — **the two things the tool
+exists to assemble, absent from the pack it stored**.
+
+This is the fourth instance of the same fault: §164.150 fixed it in
+`validate_reg_product`, §164.151 in `validate_inci_ingredients`, §164.152 in
+`check_product_compliance`. Four tools, four authors, one line of PHP. The
+family's rule is stated once because of it: a default belongs in `boolParam()`,
+never in `! empty()`.
+
+#### One table, two copies, compared the wrong way
+
+WordPress kept the required-document table twice — in
+`validate_document_checklist` and again here — so the two tools could disagree
+about what a country requires. Both compared lowercase slugs against a type
+stored with the caller's spelling using `array_diff`, so a document uploaded as
+`LoA` read as missing and the pack was refused even though the document was
+present.
+
+The table now lives once in `RegulatoryTool` and both ports read it; both fold
+case before comparing, as §164.152 decided. The checklist's eleven tests were
+re-run unchanged against the shared table to prove the move changed no
+behaviour.
+
+#### A missing document is a refusal, not a verdict
+
+Unlike the validators, this tool cannot produce its artefact without the
+documents: a pack that omits a required certificate is worse than no pack. That
+remains a refusal, as in WordPress, but it goes through the canonical envelope
+carrying the same `missing_documents` list, so a caller sees one error shape
+from the family instead of one per tool.
+
+#### The three PDF writers are deferred
+
+With this tool the reports group closes, and the three remaining members are
+deferred together because they share one prerequisite:
+
+| Tool | What it actually does |
+|---|---|
+| `generate_compliance_certificate` | Concatenates plain text, saves it as `.pdf` |
+| `generate_cover_letter` | The same, and the letter itself is already served here as `cover_letter` text |
+| `generate_pdf_dossier` | Its own comment calls it a placeholder; six lines of text as `.pdf` |
+
+No PDF library appears in any of the three calls. All are deferred rather than
+declined: the exports are worth having once a writer exists, and `file_data` was
+refused in §164.148 for the same reason — this runtime does not fabricate a file
+it cannot render.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatorySubmissionPackTest` | **10 tests, 35 assertions**, 0 failures |
+| `lib/core` unit suite | 4,260 → **4,270 tests / 23,463 assertions**, 0 failures |
+| Adapter suite | **698 tests / 3,801 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 607 → **608 rows**; servable 588 → **589**; ready 547 → **548**; no violations |
+| Toolkit parity | 386 → **387 ported**, 9 declined, 84 → **87 deferred**, 459 → **458 remaining**; `regulatory-registration` `59 \| 34 \| 0 \| 5 \| 25` → **`59 \| 35 \| 0 \| 8 \| 24`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+#### Where the family stands
+
+The reports and generation group is closed at 3 ported and 3 deferred. The
+remaining 24 are workflow rules (6), authority sync (4), notifications (4),
+requirements (2), and the eight reports now dispositioned. The next slice is the
+workflow rules group, which is the first in this family whose tools **execute** a
+rule rather than describe one.
