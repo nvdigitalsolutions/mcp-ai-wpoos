@@ -328,6 +328,7 @@ final class OrderStoreTest extends TestCase {
 		array $lines = array(),
 		OrderStatus $status = OrderStatus::Pending,
 		string $billingEmail = 'ada@example.test',
+		?int $customerId = 5,
 	): Order {
 		return new Order(
 			id: $id,
@@ -336,7 +337,7 @@ final class OrderStoreTest extends TestCase {
 			createdAt: $createdAt ?? new \DateTimeImmutable( '2024-01-01 00:00:00' ),
 			total: Money::fromMinorUnits( $totalMinor, $currency ),
 			lines: $lines,
-			customerId: 5,
+			customerId: $customerId,
 			billingName: 'Ada Lovelace',
 			billingEmail: $billingEmail,
 			invoicedAt: $invoicedAt,
@@ -382,6 +383,7 @@ final class OrderStoreTest extends TestCase {
 		$this->assertSame( 10000, $analytics->revenue->minorUnits );
 		$this->assertSame( 10000, $analytics->averageOrderValueMinor() );
 		$this->assertSame( 1, $analytics->statusCounts['cancelled'] );
+		$this->assertSame( 1, $analytics->customerCount );
 	}
 
 	public function test_analytics_periods_carry_revenue_only(): void {
@@ -451,5 +453,29 @@ final class OrderStoreTest extends TestCase {
 		$this->expectException( ValidationException::class );
 
 		$this->store()->analytics( $this->february(), 'dollars', OrderGrouping::Day );
+	}
+
+	public function test_analytics_counts_distinct_buyers_and_ignores_guests(): void {
+		$store   = $this->store();
+		$created = new \DateTimeImmutable( '2024-02-05 10:00:00' );
+
+		$store->save( $this->order( 'D-1', $created, 1000, 'USD', null, null, array(), OrderStatus::Completed, 'ada@example.test', 5 ) );
+		$store->save( $this->order( 'D-2', $created, 2000, 'USD', null, null, array(), OrderStatus::Processing, 'ada@example.test', 5 ) );
+		$store->save( $this->order( 'D-3', $created, 3000, 'USD', null, null, array(), OrderStatus::Completed, 'grace@example.test', 6 ) );
+		$store->save( $this->order( 'D-4', $created, 4000, 'USD', null, null, array(), OrderStatus::Completed, 'guest@example.test', null ) );
+		$store->save( $this->order( 'D-5', $created, 5000, 'USD', null, null, array(), OrderStatus::Cancelled, 'cancelled@example.test', 7 ) );
+
+		$analytics = $store->analytics( $this->february(), 'USD', OrderGrouping::Day );
+
+		// Four orders are revenue-bearing, including the guest order, but only
+		// ada and grace are identified buyers; the cancelled order is neither.
+		$this->assertSame( 2, $analytics->customerCount );
+		$this->assertSame( 4, $analytics->revenueOrderCount );
+	}
+
+	public function test_analytics_reports_no_buyers_for_an_empty_selection(): void {
+		$analytics = $this->store()->analytics( $this->february(), 'USD', OrderGrouping::Day );
+
+		$this->assertSame( 0, $analytics->customerCount );
 	}
 }

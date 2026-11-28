@@ -250,6 +250,15 @@ class OrderStore implements OrderStoreInterface {
 
 		$gross = (int) ( clone $scoped )->sum( 'total_minor' );
 
+		// Customers who bought, not customers who have an order. A guest order has
+		// no customer id and is not a customer, which is what the reference also
+		// assumed with its `_customer_user > 0` test.
+		$customerCount = (int) ( clone $scoped )
+			->whereIn( 'status', OrderAnalytics::REVENUE_STATUSES )
+			->where( 'customer_id', '>', 0 )
+			->distinct()
+			->count( 'customer_id' );
+
 		$dailyRows = ( clone $scoped )
 			->whereIn( 'status', OrderAnalytics::REVENUE_STATUSES )
 			->selectRaw( 'DATE( created_at ) AS day, COUNT(*) AS orders, COALESCE( SUM( total_minor ), 0 ) AS minor' )
@@ -271,6 +280,7 @@ class OrderStore implements OrderStoreInterface {
 			(int) array_sum( $statusCounts ),
 			$revenueOrderCount,
 			(int) $excluded,
+			$customerCount,
 			Money::fromMinorUnits( $gross, $currency ),
 			Money::fromMinorUnits( $revenueMinor, $currency ),
 			$statusCounts,
