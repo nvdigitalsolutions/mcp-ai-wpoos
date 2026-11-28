@@ -138,6 +138,69 @@ final class MediaWorkerMathEngineTest extends TestCase {
 		$this->assertFalse( $this->engine()->isAvailable() );
 	}
 
+	public function test_it_solves_a_polynomial_and_returns_every_root(): void {
+		Http::fake(
+			array(
+				'worker.test/api/math/solve' => Http::response(
+					array(
+						'success'   => true,
+						'variable'  => 'x',
+						'solutions' => array( -2, 2 ),
+						'degree'    => 2,
+						'infinite'  => false,
+						'text'      => 'x1 = -2, x2 = 2',
+						'tex'       => 'x_{1} = -2, \\quad x_{2} = 2',
+					)
+				),
+			)
+		);
+
+		$result = $this->engine()->solve( 'x^2 - 4', '0', 'x' );
+
+		$this->assertSame( array( -2, 2 ), $result['solutions'] );
+		$this->assertSame( 2, $result['degree'] );
+		$this->assertFalse( $result['infinite'] );
+		$this->assertSame( 'x1 = -2, x2 = 2', $result['text'] );
+
+		Http::assertSent(
+			static function ( $request ): bool {
+				return \str_ends_with( $request->url(), '/api/math/solve' )
+					&& 'x^2 - 4' === ( $request['left'] ?? null )
+					&& '0' === ( $request['right'] ?? null )
+					&& 'x' === ( $request['variable'] ?? null );
+			}
+		);
+	}
+
+	public function test_a_non_polynomial_is_the_callers_mistake(): void {
+		Http::fake(
+			array(
+				'worker.test/api/math/solve' => Http::response(
+					array( 'success' => false, 'error' => 'The equation is not a polynomial in x.' ),
+					422
+				),
+			)
+		);
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'not a polynomial' );
+
+		$this->engine()->solve( 'sin(x)', '0.5', 'x' );
+	}
+
+	public function test_an_answer_without_solutions_is_a_runtime_failure(): void {
+		Http::fake(
+			array(
+				'worker.test/api/math/solve' => Http::response( array( 'success' => true ) ),
+			)
+		);
+
+		$this->expectException( \RuntimeException::class );
+		$this->expectExceptionMessage( 'without solutions' );
+
+		$this->engine()->solve( 'x', '1', 'x' );
+	}
+
 	private function engine(): MediaWorkerMathEngine {
 		return new MediaWorkerMathEngine( new MediaWorkerClient() );
 	}

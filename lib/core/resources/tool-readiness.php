@@ -5038,6 +5038,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/MathComputeToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'solve_equation' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Math\\SolveEquationTool',
+			'readiness' => 'delegated',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the polynomial solver (Proposal 164 section 164.170) through MathEngineInterface over POST /api/math/solve. mathjs rationalize supplies coefficients in the solved variable and refuses a non-polynomial, polynomialRoot handles degrees one to three, and the companion matrix plus eigs covers every higher degree, so no new dependency is needed. Fixes the defect that made the WordPress tool unsafe to trust: with no filter registered it fell back to a regex that matched ax + b and ignored everything else, so 3x^2 + 2 = 5 was read as 3x + 2 = 5 and answered x = 1 under a success envelope with the exponent silently discarded. The port has no fallback: a non-polynomial, a second symbol, a variable that is absent from the equation, or a single equation with no equals sign is a typed refusal naming the reason. Also: the equation went through sanitize_text_field, an HTML filter applied to a grammar; the equation argument was read without isset; variable was never checked to be an identifier though every engine interpolates it into expressions; explode without a limit accepted x = 2 = 3; format_number truncated every answer to four decimals; and show_steps is omitted rather than accepted and ignored, because no implementation ever produced a step. Roots are tidied so a caller never sees 2.0000000000000004 where the answer is 2, and complex roots return as re and im pairs. Delegated rather than ready because the contract is bound by the provider and this runtime cannot honour it without oos.media_worker.url.',
+			'evidence' => 'lib/core/tests/Unit/Tool/SolveEquationToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'store_agent_context' => array(
 			'class' => 'Nvoos\\Core\\Tool\\StoreAgentContextTool',
 			'readiness' => 'ready',

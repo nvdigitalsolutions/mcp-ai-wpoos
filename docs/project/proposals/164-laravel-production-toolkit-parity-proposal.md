@@ -15356,3 +15356,68 @@ the pixel output is verified by the deployment smoke test.
 recorded in section 164.168: mathjs has no symbolic integral and only polynomial
 roots, so the choice is nerdamer (simplify, `solveEquations`, integration) or
 Algebrite.
+
+### 164.170 — `math` slice 6: the solver, and the fallback that answered a different question
+
+Measured before the port. `math` moves to **9 wp / 8 ported / 0 declined / 0 deferred / 1 remaining**.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `solve_equation` | `SolveEquationTool` -> `MathEngineInterface::solve()` -> `POST /api/math/solve` |
+
+No new dependency. `rationalize()` supplies the coefficients of one variable and refuses a non-polynomial; `polynomialRoot()` covers degrees one to three; the companion matrix plus `eigs()` covers every higher degree. The mathjs surface therefore matches the tool's own declared scope — "linear, quadratic, and polynomial equations" — exactly.
+
+#### The fallback was worse than no fallback
+
+With no filter registered, WordPress fell back to `solve_simple_linear()`, which matched
+
+```
+/([+-]?\d*\.?\d*)\s*x\s*([+-]?\d+\.?\d*)?/
+```
+
+against the left-hand side and **ignored everything it did not match**. So
+
+```
+3x^2 + 2 = 5   ->   read as 3x + 2 = 5   ->   x = 1
+```
+
+under a success envelope, with the exponent silently discarded. The answer was not wrong by rounding; it answered a different equation. That is the same class of defect as `simplify_expression` returning its input (§164.168), and it is worse, because the wrong answer is plausible.
+
+The port has no fallback. A non-polynomial, a second symbol, a variable absent from the equation, or an equation with no single equals sign is a typed refusal naming the reason.
+
+#### `show_steps` is gone
+
+The parameter promised "step-by-step explanations when available", and nothing anywhere produced one. Like the `rules` argument dropped from `simplify_expression`, it was accepted and ignored, so it is omitted rather than accepted and ignored again. Real steps are a feature, not a parameter.
+
+#### Smaller corrections
+
+- `sanitize_text_field()` was applied to the equation — an HTML filter on a grammar, the fourth instance in this family;
+- `$arguments['equation']` was read without `isset()`;
+- `variable` was sanitised but never checked to be an identifier, though every downstream engine interpolates it into an expression;
+- `explode( '=', ... )` without a limit accepted `x = 2 = 3` (three parts; only "not two" was rejected);
+- an empty side (`x =`) passed the shape check;
+- `format_number()` ran every answer through `number_format( $num, 4 )`, truncating to four decimals and losing exactness;
+- roots are now tidied, so a caller never sees `2.0000000000000004` where the answer is 2, and complex roots return as `{re, im}` pairs rather than being dropped.
+
+#### Decisions
+
+- **`solve()` extends `MathEngineInterface` rather than getting its own contract.** The graph renderer needed a separate interface because it needs a different dependency; solving needs mathjs, which is the same dependency as derivative, simplify and matrix, so one availability flag is honest here.
+- **This slice adds no dependency**, which is why it lands before the integrator: `mathjs` already does everything the declared scope promises.
+- **`delegated`**, as with the other four: the contract is bound by the provider.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,503 / 24,403 |
+| adapter | 734 / 3,936, 2 skipped |
+| worker (`node --test`, solver suite) | 19 / 19 |
+| readiness | 641 rows, servable 622 (delegated 12), no violations |
+| parity | 420 ported / 9 declined / 103 deferred / 438 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+#### What remains
+
+`calculate_integral`, the last `math` tool, and the only one that needs a computer-algebra system: mathjs has no symbolic integration. The decision recorded in §164.168 stands — nerdamer 2.1.0 (Apache-2.0, `nerdamer/calculus`) for indefinite integrals, with definite integrals served by its `defint`, which integrates numerically where no elementary antiderivative exists. Antiderivatives will be verified by differentiating the result and comparing numerically before they are returned, because nerdamer demonstrably fails in two ways: `sin(x^2)` comes back unevaluated as `integrate(sin(x^2), x)`, and `e^(-x^2)` comes back malformed as `(1/2)*pi^(1/2)*erf*x`.
