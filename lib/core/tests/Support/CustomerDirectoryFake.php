@@ -43,6 +43,19 @@ final class CustomerDirectoryFake implements CustomerDirectoryInterface
         return $this->customers[ $id ] ?? null;
     }
 
+    public function findByEmail(string $email): ?Customer
+    {
+        $needle = strtolower($email);
+
+        foreach ($this->customers as $customer) {
+            if (strtolower($customer->email) === $needle) {
+                return $customer;
+            }
+        }
+
+        return null;
+    }
+
     public function query(CustomerQuery $query): CustomerCollection
     {
         $this->queries[] = $query;

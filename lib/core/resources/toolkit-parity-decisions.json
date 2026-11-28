@@ -65,10 +65,6 @@
             "decision": "deferred",
             "reason": "Reads an economic calendar through WP_MCP_AI_Market_Data_Providers. Prerequisite: the market-data client. Unlike the forecast and sentiment analyzers, which compute over a series the caller supplies, this tool has nothing to compute until a provider answers."
         },
-        "export_customer_data": {
-            "decision": "deferred",
-            "reason": "Exports customer rows under an optional PII scope. Prerequisite: CustomerStoreInterface, and the scope/redaction rule belongs in the contract rather than in a tool, because an export that leaks one field is the failure mode."
-        },
         "export_products_report": {
             "decision": "deferred",
             "reason": "Builds a product report with selectable columns and totals. Prerequisite: a catalog adapter; the report shape is core work, but there are no rows to shape without one."

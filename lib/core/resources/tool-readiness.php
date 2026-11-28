@@ -5593,6 +5593,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/WithdrawStudentEcaToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
+		'export_customer_data' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\ExportCustomerDataTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the single-subject export (Proposal 164 section 164.185) over CustomerDirectoryInterface and OrderStoreInterface. The account is resolved by id through find() or by email through findByEmail(), which is the reference get_user_by( email ) without the user-object round trip; an unknown id or email is a not-found rather than the empty record the reference produced, because its only guard read back the id the caller had just supplied. The account record is the runtime customer document and each order row is the runtime order document, so there is no payment_method and no second order number, for the same reason payments are not modelled. Addresses, notes, CSV and upload are refused by name with the missing model in the message: the host keeps no address or note on the account or order, the reference CSV omitted the address and note blocks it had just gathered, and the reference notes query filtered on the note author rather than the customer. The order history was an unbounded limit -1 read and is now paged to MAX_ORDERS with orders_total, orders_included and orders_truncated reported, so a clipped export says so. Read-only.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ExportCustomerDataToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'woo_customers' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\WoocommerceCustomersTool',
 			'readiness' => 'ready',
