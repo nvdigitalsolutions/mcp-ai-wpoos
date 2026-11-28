@@ -13803,3 +13803,85 @@ The expiry and monitoring group is closed: four tools, **59 \| 30 \| 0 \| 5 \| 2
 in the family. The next slice is the reports and generation group, which needs
 one recorded decision first — whether this runtime hosts a PDF writer or
 declares the binary path a gap, as §164.144 and §164.148 already did.
+
+### §164.156 — `regulatory-registration`, slice 11a: the reporting pair
+
+The reports and generation group is eight tools. Measured, they split cleanly:
+four build a data report with no side effects, one writes a pack manifest, and
+three write plain text into a `.pdf` filename. This slice ports the first two of
+the data reports; the PDF writers are deferred in 11c with the Excel group's
+reason.
+
+#### `format: pdf` was accepted and returned JSON
+
+`generate_compliance_report` declared `json`, `pdf` and `excel`. The handler read
+`format`, echoed it back as `format`, and returned the same JSON payload every
+time. A caller who asked for a PDF received JSON **inside a response that said
+`format: "pdf"`** — which is worse than a refusal, because the caller has no
+reason to look.
+
+This runtime has no PDF writer, so the port serves `json` and refuses the other
+two, naming `generate_pdf` and `generate_excel`, which are served and take a
+structured payload. That is the same shape as §164.148's refusal of `file_data`:
+name the alternative rather than return something that is not what it claims.
+
+#### `custom` without dates meant "everything"
+
+Both reports applied the date filter only when `date_range` was `custom` **and**
+both dates were present. A caller who asked for a custom range and supplied one
+date received the whole estate while the response reported
+`date_range: "custom"`. The ports require both dates, validate them with
+`isIsoDate`, and reject a reversed window. The filter is on the registration's
+creation date, which is what `WP_Query`'s date query actually filtered — not on
+submission or approval, which a caller might reasonably assume.
+
+#### Three arithmetic guards
+
+- **An unreadable expiry is counted, not guessed.** The same `strtotime` fault
+  as §164.153 and §164.154, here fixed by the shared `daysUntil()`; the count
+  lands in `unreadable_expiry`.
+- **A reversed approval pair no longer drags the average down.** WordPress
+  averaged every submission/approval pair, including pairs where approval
+  preceded submission, which quietly lowered `average_approval_days`. Those
+  pairs are excluded and counted in `approval_intervals_ignored`.
+- **A non-numeric fee is counted, not zeroed.** `(float) "TBD"` is `0.0`, so a
+  registration with an unreadable fee contributed nothing and the total looked
+  complete. The port parses the same way — the arithmetic cannot do otherwise —
+  but reports `unparsed_fees` and names each field and value.
+
+`approval_rate` is the share of registrations whose status is approved or
+active, not the rate among decided applications. The name is kept for shape
+compatibility and defined on the tool so a reader does not over-read it.
+
+#### Two definitions the response now states
+
+- **`currency` is `null`.** The fees come from `_registration_fee`,
+  `_renewal_fee` and `_additional_fees` and are summed as numbers. The toolkit
+  stores no currency anywhere, so the port reports `null` rather than inventing
+  one; an operator with a mixed estate has a data problem the response should
+  not hide.
+- **`average_cost_per_registration` divides by what was summed.** WordPress
+  divided by the query's `found_posts`, so a capped read (1000 rows) with 5000
+  matches reported an average a fifth of the truth. The port divides by the rows
+  it actually summed and reports `truncated`.
+
+The twelve-month renewal projection is month-aligned for the reason §164.154
+gave: `strtotime( '+12 months' )` overflows from the 29th to the 31st, and its
+month keys come from the parsed expiry date rather than a seven-character
+substring of it.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryReportsTest` | **19 tests, 47 assertions**, 0 failures |
+| `lib/core` unit suite | 4,219 → **4,238 tests / 23,356 assertions**, 0 failures |
+| Adapter suite | **698 tests / 3,798 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 603 → **605 rows**; servable 584 → **586**; ready 543 → **545**; no violations |
+| Toolkit parity | 382 → **384 ported**, 9 declined, 84 deferred, 463 → **461 remaining**; `regulatory-registration` `59 \| 30 \| 0 \| 5 \| 29` → **`59 \| 32 \| 0 \| 5 \| 27`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+The next slice is `generate_country_performance` and `generate_pipeline_report`
+(11b), then `generate_submission_pack` (11c) with the three PDF-writer
+deferrals, which closes the group.
