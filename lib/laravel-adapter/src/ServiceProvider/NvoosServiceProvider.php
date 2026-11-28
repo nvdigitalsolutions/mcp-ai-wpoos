@@ -84,6 +84,7 @@ use Nvoos\Core\Domain\Contract\PdfTextExtractorInterface;
 use Nvoos\Core\Domain\Contract\ModelLimitCatalogueInterface;
 use Nvoos\Core\Domain\Contract\TiktokenServiceInterface;
 use Nvoos\Core\Domain\Contract\OkfBundleLocatorInterface;
+use Nvoos\Core\Domain\Contract\CustomerDirectoryInterface;
 use Nvoos\Core\Domain\Contract\OrderStoreInterface;
 use Nvoos\Core\Domain\Contract\PaperStoreInterface;
 use Nvoos\Core\Domain\Contract\ProductCatalogInterface;
@@ -157,6 +158,7 @@ use Nvoos\Laravel\Adapter\FileStore;
 use Nvoos\Laravel\Adapter\FilesystemControlledDocuments;
 use Nvoos\Laravel\Adapter\FilesystemDocsCorpus;
 use Nvoos\Laravel\Adapter\FileUploadService;
+use Nvoos\Laravel\Adapter\CustomerDirectory;
 use Nvoos\Laravel\Adapter\DatabaseTraceStore;
 use Nvoos\Laravel\Adapter\HarnessProfileProvider;
 use Nvoos\Laravel\Adapter\HttpClient;
@@ -488,6 +490,7 @@ class NvoosServiceProvider extends ServiceProvider {
 		// tools declare the capability rather than probing for it, so a missing
 		// binding must fail at construction rather than midway through a run.
 		$this->app->bind( OrderStoreInterface::class, OrderStore::class );
+		$this->app->bind( CustomerDirectoryInterface::class, CustomerDirectory::class );
 
 		$this->app->bind( SchemaStoreInterface::class, SchemaStore::class );
 

@@ -5593,6 +5593,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/WithdrawStudentEcaToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
+		'woo_customers' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\WoocommerceCustomersTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the customer lookup (Proposal 164 section 164.184) over a new CustomerDirectoryInterface, bound to a CustomerDirectory adapter over the host users table, plus the order store for the order history of one account. Identity comes from the directory rather than from orders, which is the whole point: every aggregate in this family starts from orders and can only describe people who bought, so list and search could not be answered without it. The tool is read-only, as the reference says in its own capability flags. total_spent is not reported: a sum needs a currency, and a lookup that quietly added one currency or labelled euros with the store default is the defect this family has corrected repeatedly. customer_lifetime_value reports spend per currency; this reports an order count and the date of the last order, which need none. Six reference fields are not offered because the host does not have them: billing and shipping address blocks, avatar_url, username, first_name and last_name. This runtime stores a single name, no address on the account or the order, and an avatar would be an external URL a lookup does not need to fetch. The role filter is a host role name rather than a closed enum: the reference advertised customer, subscriber and all but passed any string to WP_User_Query, so role administrator listed administrators despite not being offered, and the real boundary is the declared list_users capability, which the reference itself checked. total_pages was ceil(), a float in an integer payload, and get_orders reported a paginated total; both are integers and total counts matches across pages. Read-only.',
+			'evidence' => 'lib/core/tests/Unit/Tool/WoocommerceCustomersToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'woo_orders' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\WoocommerceOrdersTool',
 			'readiness' => 'ready',
