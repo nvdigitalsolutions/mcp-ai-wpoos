@@ -1889,6 +1889,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ChartAndPlanningToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'evaluate_logic_gate' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Math\\EvaluateLogicGateTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the Boolean gate evaluator (Proposal 164 section 164.165), one of only two tools in the math family that does its own work rather than delegating to a Node math.js service. Fixes the n-ary NAND LaTeX: WordPress built it by re-parsing the plain-text NAND(A, B, C) with a converter that read two operands and skipped to the closing parenthesis, so C was discarded and the rendered form described two-input NAND instead of the negation of a three-way conjunction. The port builds the decomposition as a tree and renders text and LaTeX from it, so the two forms cannot disagree, and an n-ary NAND renders as the negated conjunction. n-ary NAND is not a fold of two-input NAND, so it stays one n-ary node. Also: decompose_to_nand goes through boolParam where WordPress used ! empty and the string false switched it on, and an unknown format is refused where WordPress silently used both. Gated on read, matching the declaration and the handler.',
+			'evidence' => 'lib/core/tests/Unit/Tool/MathLogicGateTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'excel_data_export' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ExcelDataExportTool',
 			'readiness' => 'ready',
@@ -2610,6 +2619,15 @@ return array(
 			'reason' => 'Extends GenerateSoraVideoTool, so it shares the same request path and evidence.',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoAndAudioToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
+		),
+		'generate_truth_table' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Math\\GenerateTruthTableTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the truth-table generator (Proposal 164 section 164.166), the second and last tool in the math family that computes in PHP rather than delegating to the Node math.js service. The tokeniser, the recursive-descent parser (OR and NOR, then XOR and XNOR, then AND and NAND, then prefix NOT and postfix complement), the syntax tree, the most-significant-bit-first enumeration and the markdown, plain-text and LaTeX renderers are all carried over. Corrections: the argument guard used empty(), so the one-character expression 0 was refused as a missing expression while 1 worked — the asymmetry is the proof that the guard was wrong, and the port tests for the empty string. A variable named result silently lost its column because the row builder overwrote that key with the evaluated answer, so the port reserves the name case-insensitively. An unknown format was silently replaced with both, so the port refuses it, matching the gate evaluator. A recursion guard that counted grammar layers rose four per parenthesis level and refused at about seven nested pairs, a seventeen-character expression, so the port counts the same way with the cap at 128, which still bounds recursion and is reachable only well beyond the 1,000-character input cap. A variables entry that was not a string was cast, warning on an array before failing the identifier test, so the port refuses it by position. The dead identifier-start branch that accepted a leading underscore is gone, and such a name is refused at the tokeniser instead. Gated on read, matching the WordPress declaration and its handler.',
+			'evidence' => 'lib/core/tests/Unit/Tool/MathTruthTableTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'generate_uuid' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateUuidTool',
