@@ -90,6 +90,10 @@
         "cloudways": [
             "cloudways_app_cron_list_get",
             "cloudways_app_fpm_settings_get",
+            "cloudways_app_monitor_summary",
+            "cloudways_app_mysql_analytics",
+            "cloudways_app_php_analytics",
+            "cloudways_app_traffic_analytics",
             "cloudways_app_varnish_settings_get",
             "cloudways_get_app",
             "cloudways_get_operation_status",
@@ -98,6 +102,7 @@
             "cloudways_list_projects",
             "cloudways_list_servers",
             "cloudways_restart_service",
+            "cloudways_server_monitor_summary",
             "cloudways_server_settings_get",
             "cloudways_service_status",
             "cloudways_ssh_key_list",
