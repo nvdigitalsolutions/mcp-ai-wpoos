@@ -69,6 +69,14 @@
             "decision": "deferred",
             "reason": "Builds a product report with selectable columns and totals. Prerequisite: a catalog adapter; the report shape is core work, but there are no rows to shape without one."
         },
+        "export_products_to_excel": {
+            "decision": "deferred",
+            "reason": "Writes a product export file. The WordPress handler writes comma-joined fields with no quoting and names the result .xlsx, so a brand containing a comma shifts every column after it and no spreadsheet library ever sees the bytes; it also writes straight into uploads, outside any file-registry contract. Prerequisite: a spreadsheet writer. Deferred rather than declined because the export is worth having once a writer exists, and porting the current writer would ship a file that claims to be a format it is not."
+        },
+        "export_registrations_to_excel": {
+            "decision": "deferred",
+            "reason": "Writes a registration export file, by the same unchecked comma join as export_products_to_excel under an .xlsx name. Prerequisite: a spreadsheet writer. The two exports are one decision, so they land together or not at all."
+        },
         "extract_video_metadata": {
             "decision": "declined",
             "reason": "Superseded by get_video_metadata, which is served: it returns the container, duration and bitrate plus the video and audio streams (codec, dimensions, frame rate, channels), and accepts file_id or a URL where this tool accepts only video_id. Its analyze_audio flag asks for the audio-stream detail the served tool already returns, so a port would be a second slug for one answer. Declined rather than deferred because there is nothing left to build."
@@ -148,6 +156,14 @@
         "import_products_csv": {
             "decision": "deferred",
             "reason": "Reads a CSV and creates or updates products. Prerequisite: a catalog adapter with variant write. The CSV parsing half is already served separately, so what is missing is the writer."
+        },
+        "import_products_from_excel": {
+            "decision": "deferred",
+            "reason": "The one real spreadsheet implementation in this toolkit: it loads the workbook through PhpOffice PhpSpreadsheet and creates products from the rows. Prerequisite: a spreadsheet reader contract. PhpSpreadsheet is not bundled in this runtime and the read is not separable from it, so the tool is blocked rather than declined; the product create path it would call is already ported."
+        },
+        "import_registrations_from_excel": {
+            "decision": "deferred",
+            "reason": "Never reads the file: it validates three hardcoded sample rows and returns a count of them, so there is no behaviour to port. Prerequisite: a spreadsheet reader, which is also what its sibling import_products_from_excel needs. Deferred with that sibling rather than declined, because a working import is the intent."
         },
         "inventory_forecast": {
             "decision": "deferred",
@@ -324,6 +340,10 @@
         "upsell_recommendations": {
             "decision": "deferred",
             "reason": "Suggests add-ons from basket contents and category co-occurrence. Prerequisite: order history behind a contract, then a recommendation rule. Without order data the pairing would be invented."
+        },
+        "validate_excel_import": {
+            "decision": "deferred",
+            "reason": "The tool checks that the path exists and is inside uploads, then never opens it: the rows it validates are a three-row constant (Product A, Brand X, and a deliberate duplicate), so every workbook returns the same two findings. A port would have to either reproduce a fiction or write a spreadsheet reader the runtime does not bundle. Prerequisite: a spreadsheet reader contract, shared with the import tools."
         },
         "vault_access": {
             "decision": "deferred",

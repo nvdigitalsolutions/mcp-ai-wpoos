@@ -13473,3 +13473,144 @@ The next slice is the compliance remainder — `check_product_compliance`,
 `validate_excel_import` — which needs one recorded decision first:
 `validate_document_checklist` reads a requirement store whose records the
 family does not yet own.
+
+### §164.152 — `regulatory-registration`, slice 9: the compliance remainder
+
+Three tools, and the group this slice was scheduled to close. The fourth
+candidate, `validate_excel_import`, turned out to be a stub, which changed the
+shape of the slice rather than its size.
+
+#### The same fault, a third time, and worse
+
+`check_product_compliance` declared `check_documents` and `check_ingredients` as
+`true` and read each with `! empty( $arguments[ ... ] )`. A bare
+`check_product_compliance({ product_id, country })` therefore ran **no checks**,
+computed `total_checks: 0` and `compliance_score: 0`, and then reported
+`is_compliant: true` — because compliance was defined as "no issues were found",
+and nothing had looked for one.
+
+The response contradicted itself in the same envelope: a zero score beside a
+`compliant` status. Sections 164.150 and 164.151 each fixed this in one tool;
+this is the same mistake in the tool that composes both, in the family's most
+damaging form, because compliance is the verdict the toolkit exists to give.
+
+The port applies the declared defaults and adds `checks_ran`, defined as *at
+least one requirement evaluated with at least one check enabled*. It cannot be
+`total_checks > 0`, because WordPress's ingredient check records a synthetic
+"No ingredient restrictions" pass when a country configures none, so
+`total_checks` is `1` on a country with nothing to check. A compliant verdict
+that rests on neither is named in the message instead of being left to a caller
+to infer from two contradicting fields.
+
+#### `is_mandatory` is a no-op across two tools
+
+`add_regulatory_requirement` documents `is_mandatory` as "default: true" and
+stores `! empty( $arguments['is_mandatory'] )`, which is `false` when the
+argument is omitted. `check_product_compliance` only enforces mandatory
+requirements. A requirement created exactly as its own schema documents is
+therefore skipped by the only tool that enforces requirements, and nothing
+warns.
+
+The reader stays faithful: `is_mandatory` follows the stored value. A reader
+that guessed would make a record created with an explicit `false`
+indistinguishable from one created with no argument — the writer stores `''` for
+both. The fix belongs to the requirements slice, in the writer, and it is
+recorded here so that slice starts with the reason.
+
+#### An unknown ingredient list is not a pass
+
+WordPress guarded the restriction check with
+`$req['is_mandatory'] && ! empty( $inci_ingredients )`. With no ingredient list
+the requirement was evaluated as neither passed nor failed, so it vanished from
+the counts and the product stayed compliant. A report that cannot see the
+ingredients is not evidence that no restricted substance is present, so the port
+reports an issue of severity `warning` naming the requirement it could not
+verify. `warning` rather than `critical` because the missing list is a data gap,
+not a finding against the product.
+
+#### A filtered registration disappeared; a missing one did not
+
+`check_authority_status` was the only tool in the family whose declared
+false-default was the actual one — `include_history` is `false` in the schema
+and `! empty()` reads the same. It is stated because three neighbours got it
+wrong in the same direction, and a reader of the family should not assume the
+fault is universal.
+
+Two batch behaviours were wrong in opposite directions. A registration excluded
+by the `countries` filter was dropped with `continue`, so the caller received a
+shorter `results` array with no trace of an id they supplied; the port lists it
+in `skipped` and counts `requested`. A registration that did not exist became an
+item carrying an `error` and no other keys, so iterating the results needed
+special-casing; its items now all carry `found`, and a missing id is
+`found: false`.
+
+The declared capability and the enforced one also disagreed in WordPress:
+`get_required_capability()` returned `edit_posts`, the handler checked `read`,
+and a user holding `read` was refused by the declaration and admitted by the
+code. The port gates on `read`, which is the rule that was enforced.
+
+`status_history` has **no writer anywhere in the toolkit**. `include_history`
+read a meta key that only the two sync tools come close to, and they write
+`_nmra_status` and `_mohap_status` instead. An unwritten key returned an empty
+string from `get_post_meta`, so the port returns an empty list, and a host that
+populates the key gets its value back unchanged.
+
+#### The checklist compared case-sensitively against a case-preserving store
+
+The required set is lowercase slugs — `loa`, `fsc`, `coa` — and a document's
+type is written with `sanitize_text_field`, which preserves the caller's
+spelling. `array_diff` is case-sensitive, so a document uploaded as `LoA` or
+`LOA` was reported missing while sitting in the store. Section 164.148 recorded
+that the port keeps the caller's spelling for the type, which makes this a live
+defect rather than a theoretical one: the port folds case before comparing and
+still reports the stored spelling in `present_documents`.
+
+An unparseable expiry date counted as expired, because `strtotime` returns
+`false` and `false < time()` is true. That is the safe direction — a document
+that cannot be shown valid is not shown valid — so the verdict is kept and the
+value is named in `unparsed_expiry_dates`, because a caller cannot fix a date it
+is not told about.
+
+`country` selects its table in upper case and is echoed as supplied; an omitted
+country on a registration is filled from the registration's own meta. A
+registration wins over a product when both ids are given, which was WordPress's
+precedence and is now stated in the schema rather than left to be discovered.
+
+#### The Excel group is one decision, and it is deferral
+
+Five tools were measured together and none is ported, for one reason each time:
+
+| Tool | What it actually does |
+|---|---|
+| `validate_excel_import` | Checks the path, never opens it, validates three hardcoded rows |
+| `import_registrations_from_excel` | Same: three sample rows, no file read |
+| `export_products_to_excel` | Writes comma-joined fields with no quoting under an `.xlsx` name |
+| `export_registrations_to_excel` | The same unchecked join under an `.xlsx` name |
+| `import_products_from_excel` | The one real implementation, through `PhpOffice\PhpSpreadsheet` |
+
+Three of the five never touch the file, so there is no behaviour to port; the
+two exporters write CSV bytes into a file that claims to be a workbook, so a
+brand containing a comma shifts every column after it. The one real
+implementation depends on a library this runtime does not bundle.
+
+All five are **deferred**, not declined: the exports and the import are worth
+having once a spreadsheet reader and writer exist, and the prerequisite is the
+same contract for all five. Porting the current exporters would ship a file that
+lies about its format, which is worse than not exporting.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryComplianceToolsTest` | **32 tests, 102 assertions**, 0 failures |
+| `lib/core` unit suite | **4,174 tests / 23,145 assertions** (+32 tests, +112 assertions), 0 failures |
+| Adapter suite | **698 tests / 3,792 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 596 → **599 rows**; servable 577 → **580**; ready 536 → **539**; no violations |
+| Toolkit parity | 375 → **378 ported**, 9 declined, 79 → **84 deferred**, 470 → **467 remaining**; `regulatory-registration` `59 \| 23 \| 0 \| 0 \| 36` → **`59 \| 26 \| 0 \| 5 \| 33`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors across the three tools, the base class, the test and the manifest |
+
+The next slice is the expiry and monitoring group — `check_document_expiry`,
+`list_expiring_registrations`, `send_expiry_alerts` and
+`generate_expiry_forecast` — which is the first group in this family where a
+*dated* verdict is computed rather than an enumerated one.
