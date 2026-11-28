@@ -2,6 +2,7 @@
   "name": "mailjet-mcp-http-bridge",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "description": "Streamable HTTP bridge in front of @mailjet/mailjet-mcp-server, which is stdio-only.",
   "type": "module",
   "engines": {
