@@ -14957,6 +14957,138 @@ evaluates an arbitrary caller-supplied expression with no per-expression length
 or time bound, so a `/api/math/*` group should carry both before it widens the
 surface.
 
+### 164.167 — `math` slice 3: the LaTeX renderer, and the options the worker never received
+
+`math` moves `9 | 2 | 0 | 0 | 7` → **`9 | 3 | 0 | 0 | 6`**.
+
+This is the one tool in the family that needed nothing from the worker. `POST
+/api/data/render-math` has been live since the sidecar's data group shipped —
+`katex.renderToString()`, answering `{ success, html, latex }` — so the slice is
+one contract, one adapter, one binding and one tool.
+
+#### Every sidecar request rendered in the wrong mode
+
+The WordPress tool built its payload from the raw arguments:
+
+```php
+$sidecar = $this->sidecar_request(
+	'/api/data/render-math',
+	array(
+		'latex'   => $latex,      // undefined in this scope
+		'options' => $arguments,  // display_mode, output_format
+	)
+);
+```
+
+The route reads `options.displayMode` and `options.output`. Neither name exists in
+the tool's vocabulary, so both fell through to the route's defaults: **always
+display mode, always HTML**. A caller asking for inline rendering got a centred
+block; a caller asking for MathML got HTML; nothing said so. A caller passing
+`html_and_mathml` — the schema's own enum value — would have failed the route
+outright, because KaTeX spells that shape `htmlAndMathml` and validates its
+settings, which is a settings error rather than a parse error, so `throwOnError`
+would not have softened it.
+
+`$latex` in that payload is the second defect: it is not a parameter of
+`render_with_katex()`, which takes only `$params`. PHP 8 raises an
+undefined-variable warning and passes `null`, so the request that did reach the
+worker carried no equation at all. The port never reads a variable the method
+does not own, sends the route's names, translates `html_and_mathml` to
+`htmlAndMathml`, and refuses any other output before making a request.
+
+#### `wp_kses_post` rewrote the expression
+
+The tool sanitised its input with `wp_kses_post()`, which is an HTML filter. It
+escapes angle brackets, so `a < b` and `\langle` were corrupted before any parser
+saw them. LaTeX is a grammar, not markup — the same finding as
+`generate_truth_table`'s `stringParam()` in §164.166, in a second library. The
+port passes the expression through untouched: KaTeX is the parser and the
+sanitiser, and its `trust` option defaults to false, which leaves `\href` and
+`\includegraphics` inert.
+
+The 20,000-character cap is new. The route has no per-expression bound and KaTeX
+is CPU-bound, so without it one call is a denial of service.
+
+#### The availability gate refused before the sidecar was asked
+
+```php
+private function check_katex_availability() {
+	$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/katex/dist/katex.min.js';
+	if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
+		return false;
+	}
+	return \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance()
+		->is_command_available( 'node' );
+}
+```
+
+Both a vendored KaTeX **and** a `node` binary on the host, checked before
+`render_with_katex()` ran. A site that routes rendering to the worker — the
+entire reason the sidecar exists — therefore refused with
+`wp_mcp_ai_engine_missing` unless it also shipped a local copy it would never
+call. This is the second instance of one shape in this family: a local-presence
+probe standing in front of a remote operation, after §164.166 found the same
+thing in `wp_mcp_ai_is_npm_package_available()`. The port asks
+`MathRendererInterface::isAvailable()`, which is config presence, and never
+touches the filesystem.
+
+#### Four smaller corrections
+
+The tool was gated on `enable_quiz_system` although its job is rendering; the
+quiz association is now opt-in through `quiz_id`. `throw_on_error` is gone from
+the schema, because the route hard-codes `throwOnError: false` and an option that
+can only be false is not an option. A non-empty `macros` map is refused by name
+rather than sent to a route that never reads it. And the rendered string is
+returned as `markup` rather than `html`, because it held MathML whenever MathML
+was requested — the key lied about its contents.
+
+Two response-shape notes. `render_time` was the string `"1.23ms"` on a render and
+the integer `0` on a cache hit; it is `render_time_ms`, a float, always. The
+object cache is not reproduced: WordPress keyed it on
+`md5( $latex . serialize( $arguments ) )`, so `quiz_id` and `save_rendered`
+fragmented it. `cached` stays in the response and is always false, because
+caching is a host concern.
+
+The quiz association wrote `_katex_equations` on whatever id it was given,
+without checking that the item existed, which is how orphaned meta rows are made.
+The port requires the item, checks it **before** spending a render, and reports
+how many equations the quiz now holds.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `MathRenderEquationTest` | **21 tests, 67 assertions**, 0 failures |
+| `MediaWorkerMathRendererTest` | **7 tests, 13 assertions**, 0 failures |
+| Readiness manifest | 635 → **636 rows**; servable 616 → **617**; delegated 6 → **7**; no violations |
+| Toolkit parity | 414 → **415 ported**, 9 declined, 103 deferred, 444 → **443 remaining**; `math` `9 \| 2 \| 0 \| 0 \| 7` → **`9 \| 3 \| 0 \| 0 \| 6`** |
+| `lib/core` unit suite | **4,450 tests / 24,269 assertions**, 0 failures |
+| Adapter suite | **719 tests / 3,897 assertions**, 2 skipped, 0 failures |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+The tool is `delegated`, not `ready`: it cannot work without
+`MathRendererInterface`, which `NvoosServiceProvider` binds to
+`MediaWorkerMathRenderer`. That is the readiness vocabulary doing its job — a
+`ready` row would advertise a renderer this runtime cannot honour when
+`oos.media_worker.url` is unset.
+
+#### Where the family stands
+
+Six remaining, and the measurement from §164.166 still holds. Four need routes
+over libraries the worker already carries — `calculate_derivative`,
+`simplify_expression` and `matrix_operations` over mathjs, and `graph_function`
+over `chartjs-node-canvas`. Two need a computer-algebra library it does not
+carry: `calculate_integral` (mathjs has no `integral`) and `solve_equation`
+(mathjs reaches polynomials and stops). Those two are deferred on the nerdamer
+decision, not on effort.
+
+The four routes are also where the package-gate finding from §164.166 bites: the
+mathjs tools still open with `wp_mcp_ai_is_npm_package_available( 'mathjs' )`,
+which has no worker branch, so the adapter work is not separable from that probe.
+The next slice should bind `MathEngineInterface` **and** replace the probe with
+the engine's own availability answer, or it will ship four routes nothing calls.
+
 Both groups also share a presentation defect. The six that return LaTeX finish by
 appending markup to the response `message`: `link` and `script defer` tags
 pointing at the bundled KaTeX, a `div` carrying `data-latex`, and an inline
