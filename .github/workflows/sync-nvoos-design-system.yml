@@ -66,13 +66,18 @@ jobs:
           git config --local user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
           MIRROR_URL="https://x-access-token:${TOKEN}@github.com/nvdigitalsolutions/nvoos-design-system.git"
-          MSG="$(git log -1 --format='%s%n%n%b' -- addons/nvoos-design-system)"
-          MSG="${MSG:-Sync nvoos-design-system from mcp-ai-wpoos@${GITHUB_SHA}}"
+
+          # A depth-1 checkout cannot path-filter `git log`, so the tip subject
+          # is whatever merged last in the monorepo (often unrelated). Build a
+          # self-describing message from the plugin version instead.
+          VERSION="$(sed -nE 's/^[[:space:]]*\*[[:space:]]*Version:[[:space:]]*//p' addons/nvoos-design-system/nvoos-design-system.php | head -n1)"
+          MSG="nvoos-design-system ${VERSION:-snapshot}"
+          BODY="Snapshot of addons/nvoos-design-system at mcp-ai-wpoos@$(git rev-parse --short HEAD)."
           TREE="$(git rev-parse HEAD:addons/nvoos-design-system)"
 
           # Root commit (no parent): the mirror stays flat, one commit per
           # sync, force-pushed. The fully-qualified destination also creates
           # the branch on the first backfill into an empty mirror.
-          SYNC_COMMIT="$(printf '%s\n' "$MSG" | git commit-tree "$TREE")"
+          SYNC_COMMIT="$(printf '%s\n\n%s\n' "$MSG" "$BODY" | git commit-tree "$TREE")"
           git push --quiet "$MIRROR_URL" "$SYNC_COMMIT:refs/heads/main" --force
           echo "Pushed ${SYNC_COMMIT} to nvoos-design-system:main"
