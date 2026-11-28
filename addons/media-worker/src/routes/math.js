@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Proprietary
 /**
- * Symbolic mathematics — the engine behind the `math` toolkit's compute tools.
+ * @fileoverview Symbolic mathematics — the engine behind the `math` toolkit's compute tools.
  *
  * Endpoints:
  *   POST /api/math/derivative — symbolic differentiation      (mathjs)
