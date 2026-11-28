@@ -252,6 +252,7 @@
             "withdraw_student_eca"
         ],
         "ecommerce": [
+            "bulk_order_status_update",
             "bulk_update_products",
             "generate_invoice_pdf",
             "printful",
@@ -268,7 +269,8 @@
             "update_woo_product_qty",
             "validate_image_for_product",
             "validate_image_for_vehicle",
-            "woo_orders"
+            "woo_orders",
+            "woo_products"
         ],
         "email-marketing": [],
         "erp-ezuite": [],

@@ -33,6 +33,9 @@ final class ProductCatalogFake implements ProductCatalogInterface
     /** @var array<int, ProductVariant> Every variant passed to saveVariant(). */
     public array $saved = array();
 
+    /** @var array<int, int> Every id passed to delete(). */
+    public array $deleted = array();
+
     public function __construct(public ?Product $product)
     {
     }
@@ -69,6 +72,11 @@ final class ProductCatalogFake implements ProductCatalogInterface
 
     public function delete(int $id): void
     {
+        $this->deleted[] = $id;
+
+        if (null !== $this->product && $this->product->id === $id) {
+            $this->product = null;
+        }
     }
 
     public function saveVariant(int $productId, ProductVariant $variant): ProductVariant

@@ -17,10 +17,6 @@
             "decision": "declined",
             "reason": "It would be a chain of convert, resize and compress, and ImageProcessingInterface::resize/crop/rotate/convert each take a source path and return a persisted path, so a chain is one worker round trip and one intermediate file per step. A real batch needs a multi-operation `/transform` call, which is a worker contract change rather than a tool. The three served tools (optimise_images_batch, generate_responsive_images, compress_image) already cover the jobs this slug names, so there is nothing left to build behind the name."
         },
-        "bulk_order_status_update": {
-            "decision": "deferred",
-            "reason": "Changes status across many orders. Prerequisite: OrderStoreInterface plus a per-order status transition rule, because a bulk update that skips the rule is how an order jumps from refunded to processing."
-        },
         "classroom_course_analytics": {
             "decision": "deferred",
             "reason": "It aggregates enrolment, coursework and submission-completion metrics that only exist on the Classroom side; there is no local copy to compute over. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
@@ -424,10 +420,6 @@
         "woo_customers": {
             "decision": "deferred",
             "reason": "Generic customer CRUD over WooCommerce. Prerequisite: CustomerStoreInterface, then an adapter."
-        },
-        "woo_products": {
-            "decision": "deferred",
-            "reason": "Generic product CRUD over WooCommerce. Prerequisite: a catalog adapter; once one exists this is a thin wrapper on ProductCatalogInterface and should be ported alongside the adapter that tests it, not before."
         }
     }
 }
