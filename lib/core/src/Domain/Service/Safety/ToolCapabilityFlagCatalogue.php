@@ -1025,6 +1025,7 @@ final class ToolCapabilityFlagCatalogue
         'list_icloud_drive_files' => array('external-api', 'network-dependent', 'pro', 'read-only', 'requires-capability'),
         'list_jetengine_rest_routes' => array('local-only', 'read-only', 'requires-capability'),
         'list_leads' => array('database-read', 'pro', 'requires-capability'),
+        'list_mailjet_connections' => array('pro', 'read', 'requires-capability'),
         'list_mcp_tools' => array('cacheable', 'local-only', 'read-only', 'requires-capability'),
         'list_media_templates' => array('cacheable', 'local-only', 'paginated', 'pro', 'read-only', 'requires-capability'),
         'list_medical_records' => array('database-read', 'pro'),
