@@ -252,6 +252,41 @@ abstract class RegulatoryTool extends AbstractTool
     }
 
     /**
+     * Whole calendar days from today to a stored date, or null when it cannot
+     * be read.
+     *
+     * WordPress computed `floor( ( strtotime( $date ) - time() ) / 86400 )`.
+     * Two faults followed. An unreadable date became `false - time()`, roughly
+     * minus twenty thousand days, so the record was reported as long expired.
+     * And the arithmetic mixed a midnight with an instant: a document that
+     * expired *yesterday* reported `-2` whenever the clock had passed midday,
+     * so the day count drifted through the day and never matched the calendar a
+     * compliance officer reads.
+     *
+     * The port compares two calendar dates in UTC. A record expiring today is
+     * `0`, yesterday is `-1`, and the value is stable from midnight to midnight.
+     * An unreadable date is null, and the caller decides what that means.
+     */
+    protected function daysUntil(string $date, ?int $now = null): ?int
+    {
+        $utc = new \DateTimeZone('UTC');
+
+        $expiry = date_create_immutable($date, $utc);
+
+        if (false === $expiry) {
+            return null;
+        }
+
+        $today = date_create_immutable(gmdate('Y-m-d', $now ?? time()), $utc);
+
+        if (false === $today) {
+            return null;
+        }
+
+        return (int) $today->diff($expiry)->format('%r%a');
+    }
+
+    /**
      * The current instant, in the form WordPress wrote `renewal_date`.
      */
     protected function nowStamp(): string

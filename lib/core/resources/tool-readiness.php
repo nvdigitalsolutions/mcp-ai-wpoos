@@ -366,6 +366,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ToolsReadinessTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'check_document_expiry' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\CheckDocumentExpiryTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress document expiry scan over ContentStoreInterface (Proposal 164 section 164.153). Two corrections in the date arithmetic. An unreadable expiry became false minus the clock, so a document dated n/a was reported expired some fifty-five years ago with a day count the value does not support; the port keeps the verdict, reports days_to_expiry null and names the value. And the old arithmetic mixed a midnight with an instant, so a document that expired yesterday reported minus two after midday; the port compares two UTC calendar dates, so today is 0, yesterday is -1, and the number is stable from midnight to midnight. WordPress also sorted the overdue list descending against its own most-urgent-first comment; the port orders both lists ascending, with an unreadable date first because it is the case that needs a human. A document with no expiry date is not counted valid, which was true before and never said. warning_days is bounded to 1-365 and refused outside it rather than clamped.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryExpiryToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'check_eca_conflicts' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Classroom\\CheckEcaConflictsTool',
 			'readiness' => 'ready',
@@ -3456,6 +3465,15 @@ return array(
 			'reason' => 'Ports the event listing (Proposal 164 section 164.84): filters by project, type, attendee and start-date range, oldest first. Corrections: dates are validated and a reversed range is refused, where WordPress returned an empty list with no explanation; an unknown event type is refused instead of matching nothing; the attendee filter uses the quoted JSON/PHP LIKE that list_projects relies on, because the store cannot compare an array; events are sorted by start date then start time in PHP because the store cannot order by meta, so the tool scans a bounded window and reports truncated when the collection holds more rows than the window. total counts every matched row and count is the page returned.',
 			'evidence' => 'lib/core/tests/Unit/Tool/CalendarEventToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'list_expiring_registrations' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\ListExpiringRegistrationsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress expiring-registration list over ContentStoreInterface (Proposal 164 section 164.153), the read-only half of the renewal pair. include_expired is declared true and read with isset, which is one of the few default-true booleans in this family that was actually true; the port states it once with boolParam. The overdue list was sorted descending against its own most-urgent-first comment, so the most recently expired registration led and the longest-invalid trailed; both lists now order ascending on days to expiry. An unreadable date is treated as expired with days_to_expiry null, and stays listed in unparsed_expiry_dates even when include_expired is false, because a date nobody can read is a data fault the filter is not entitled to hide. The product name and status term are attached where they resolve, and the warning window is bounded to 1-365.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryExpiryToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'list_google_chat_space_members' => array(
 			'class' => 'Nvoos\Core\Tool\ChatChannels\ListGoogleChatSpaceMembersTool',
