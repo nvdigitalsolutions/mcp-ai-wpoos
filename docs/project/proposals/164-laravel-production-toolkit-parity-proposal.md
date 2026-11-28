@@ -12216,3 +12216,56 @@ the four destructive ones (`server_delete`, `app_delete`, `ssh_key_delete`,
 `dns_delete_record`). The delete tools need the same treatment the other
 toolkits' destructive tools got: an explicit confirmation argument and an
 `idempotentHint` of false rather than a bare id.
+
+### §164.134 — `cloudways`, slice 2: the app-settings reads
+
+Three more reads, all addressed to one application on one server:
+
+| Tool | Request |
+|---|---|
+| `cloudways_app_fpm_settings_get` | `GET /app/{server}/{app}/fpm/settings` |
+| `cloudways_app_varnish_settings_get` | `GET /app/{server}/{app}/varnish/settings` |
+| `cloudways_app_cron_list_get` | `GET /app/{server}/{app}/cron` |
+
+The three writers that pair with the first two (`fpm_settings_update`,
+`varnish_settings_update`) are not ported yet, but the readers already return the
+fields those writers accept, so a read-modify-write round trip needs no second
+call and no field discovery.
+
+#### One shared guard, and the bug it had
+
+Twenty-odd Cloudways tools address an app on a server, so the pair validation
+moved into `CloudwaysTool::appPair()`: both ids are required, and the refusal
+names the missing argument rather than forwarding a request Cloudways will
+answer with a 404 that does not say which id was wrong.
+
+The first version returned a two-element tuple
+`array( $serverId, $appId )` and the tools guarded with `is_array( $pair )`.
+That is wrong for a reason worth recording: **an error envelope is also an
+array**, so the guard passed on the refusal and the destructuring read
+"undefined array key 1". Eight warnings and two failures in the first run. The
+pair is now keyed (`server_id`, `app_id`) and the guard checks for the key,
+which no envelope carries at the top level.
+
+#### Three things pinned
+
+| Behaviour | Why |
+|---|---|
+| **The writer's types** | `max_children`/`max_requests`/`ttl` are integers, `memory_limit`/`process_manager`/`cacheable_paths`/`exclusions` are strings. A reader that stringified a count would not round-trip into the writer |
+| **`enabled` is false for `"0"`** | WordPress cast `(bool)`, which is false for `"0"` but true for `"false"`; the port reads emptiness, so a disabled cache can never be reported as on |
+| **An empty cron list is valid** | An application with no scheduled jobs is ordinary. Only a missing `cron_jobs` block is refused, because an empty list and an API change look identical in a count |
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `CloudwaysAppSettingsToolsTest` | **10 tests, 23 assertions**, 0 failures |
+| Cloudways tool tests together | 39 tests, 0 failures |
+| `lib/core` unit suite | **3,885 tests / 22,205 assertions** (+10 tests, +23 assertions), 0 failures |
+| Adapter `ToolReadinessRegistrationTest` | 5 tests, 0 failures |
+| Readiness manifest | 524 → **527 rows**; servable 505 → **508**; ready 467; no violations |
+| Toolkit parity | 303 → **306 ported**, 9 declined, 79 deferred, 542 → **539 remaining**; `cloudways` `60 \| 11 \| 0 \| 0 \| 49` → `60 \| 14 \| 0 \| 0 \| 46` |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on the seventeen Cloudways paths |
+
+Next in this family: the five analytics reads, which are the last read-only
+group; then the two settings writers this slice's readers pair with.

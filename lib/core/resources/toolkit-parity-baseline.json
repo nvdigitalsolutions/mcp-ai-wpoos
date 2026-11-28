@@ -88,6 +88,9 @@
             "upload_onedrive_file"
         ],
         "cloudways": [
+            "cloudways_app_cron_list_get",
+            "cloudways_app_fpm_settings_get",
+            "cloudways_app_varnish_settings_get",
             "cloudways_get_app",
             "cloudways_get_operation_status",
             "cloudways_get_server",
