@@ -12488,3 +12488,58 @@ has no such undo, which is exactly why it is the one that asks.
 The family is half ported. Of the 30 that remain, three are destructive
 (`server_delete`, `ssh_key_delete`, `dns_delete_record`) and land last; the rest
 are server lifecycle, Git, SSH, Cloudflare, DNS, addons and Copilot.
+
+### §164.139 — `cloudways`, slice 7: the server lifecycle
+
+Seven tools; the eighth (`server_delete`) is deliberately held for the
+destructive pass:
+
+| Tool | Request |
+|---|---|
+| `cloudways_server_create` | `POST /server` |
+| `cloudways_server_clone` | `POST /server/{id}/clone` |
+| `cloudways_server_restart` | `POST /server/{id}/restart` |
+| `cloudways_server_start` | `POST /server/{id}/start` |
+| `cloudways_server_stop` | `POST /server/{id}/stop` |
+| `cloudways_server_scale` | `PUT /server/{id}/scale` |
+| `cloudways_server_scale_volume` | `PUT /server/{id}/volume/scale` |
+
+#### One base for the three bodyless actions
+
+Restart, start and stop differ in one path segment and one sentence.
+`ServerLifecycleTool` holds the capability, the id check, the request, the
+refusal and the envelope; each subclass is about fifty lines, most of it a
+docblock. None of the three waits for the server to reach Running — the API
+answers an operation, and the response carries it under `result`.
+
+#### Three corrections and one refusal to invent
+
+| Correction | The WordPress behaviour |
+|---|---|
+| **The scale message names the size** | `sprintf( __( 'Server scaling initiated.' ), esc_html( $size ) )` — no placeholder, so the size was escaped and discarded |
+| **The volume message names the GB** | The same dead `sprintf` with `$size_gb` |
+| **`size_gb` is validated, not `absint`-ed** | `absint( -10 )` is 10: a negative volume request silently became a grow |
+
+And one thing **not** invented: the `size` string is passed through unchanged.
+The plan vocabulary differs per provider and per tier (`2GB`, `c-8GB`,
+`hfn-4GB`, …), the API owns that list, and rejecting a valid plan because a
+hard-coded copy of it was stale would be worse than forwarding a bad one the API
+names. `server_create` keeps the WordPress enums for cloud and application type,
+which are closed and short, and validates all five arguments in one pass so the
+refusal names every unusable field rather than the first.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `CloudwaysServerLifecycleTest` | **17 tests, 54 assertions**, 0 failures |
+| `lib/core` unit suite | **3,945 tests / 22,378 assertions** (+17 tests, +54 assertions), 0 failures |
+| Adapter `ToolReadinessRegistrationTest` | 5 tests, 0 failures |
+| Readiness manifest | 543 → **550 rows**; servable 524 → **531**; ready 490; no violations |
+| Toolkit parity | 322 → **329 ported**, 9 declined, 79 deferred, 523 → **516 remaining**; `cloudways` `60 \| 30 \| 0 \| 0 \| 30` → `60 \| 37 \| 0 \| 0 \| 23` |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on all 42 Cloudways paths |
+
+Twenty-three remain: server backups and `server_delete`, SSH (create/delete),
+Git (six), Cloudflare (two), DNS Made Easy (four), addons (two), Copilot (one),
+`app_credentials` and `app_vulnerabilities_list`.

@@ -37,6 +37,12 @@ use Nvoos\Core\Tool\AbstractTool;
 
 abstract class CloudwaysTool extends AbstractTool
 {
+    /** The cloud slugs `POST /server` accepts. */
+    public const CLOUDS = array('digitalocean', 'aws', 'gce', 'vultr', 'linode');
+
+    /** The application types the toolkit creates. */
+    public const APP_TYPES = array('wordpress', 'woocommerce', 'laravel', 'magento', 'php');
+
     public function __construct(
         ErrorFactoryInterface $e,
         protected readonly CloudwaysClientInterface $client,
