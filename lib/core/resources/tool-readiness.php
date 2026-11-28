@@ -290,6 +290,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
+		'bulk_update_products' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\BulkUpdateProductsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the bulk price and stock updater (Proposal 164 section 164.173) over ProductCatalogInterface, ready for the same reason as the two single-product tools it generalises. The WordPress version applies price_adjustment to regular_price, which in this mapping is the comparison price, so a bulk price change would move no charged price and on a product with no comparison price would do nothing at all; the port adjusts the charged price and says so in the description. The adjustment is computed in minor units and rounded once, because Money::fromDecimal refuses a sub-cent amount rather than truncating it: ten percent of 19.99 is 21.989, which is not a USD amount. Two instructions about one field in one call are refused rather than resolved by ordering: sale_price with price_adjustment, and either stock field with manage_stock false. onbackorder is refused by name because the runtime variant has no backorder state. stock_status instock lifts a zero quantity to one, manage_stock false clears the quantity rather than zeroing it, and a variant whose values already match the plan is not written. status, featured, add_categories, remove_categories, add_tags and remove_tags are refused by name because they are product-level or unrepresentable and this tool writes variants. A filter status accepts the WooCommerce publish spelling; private, category and stock_status filters are refused by name. A filter selects at most 100 products per call, and product_ids wins over filter.',
+			'evidence' => 'lib/core/tests/Unit/Tool/BulkUpdateProductsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'calculate_derivative' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Math\\CalculateDerivativeTool',
 			'readiness' => 'delegated',
