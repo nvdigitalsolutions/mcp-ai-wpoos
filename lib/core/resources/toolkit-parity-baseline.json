@@ -344,9 +344,12 @@
         "jetengine": [],
         "jev": [],
         "math": [
+            "calculate_derivative",
             "evaluate_logic_gate",
             "generate_truth_table",
-            "render_math_equation"
+            "matrix_operations",
+            "render_math_equation",
+            "simplify_expression"
         ],
         "media": [],
         "multilingual": [],

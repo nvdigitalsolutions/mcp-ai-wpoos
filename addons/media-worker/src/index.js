@@ -30,6 +30,7 @@ import { ocrRouter } from './routes/ocr.js';
 import { emailRouter } from './routes/email.js';
 import { codeRouter } from './routes/code.js';
 import { dataRouter } from './routes/data.js';
+import { mathRouter } from './routes/math.js';
 import { browserRouter } from './routes/browser.js';
 import { crawlRouter } from './routes/crawl.js';
 import { crawl4aiRouter } from './routes/crawl4ai.js';
@@ -81,7 +82,7 @@ app.get( '/api/health', (_req, res) => {
 	res.json( {
 		status: 'ok',
 		service: 'design-media-worker',
-		version: '3.4.0',
+		version: '3.5.0',
 		uptime: process.uptime(),
 		memory: {
 			rss: mem.rss,
@@ -184,7 +185,7 @@ app.get( '/api/health/full', async (_req, res) => {
 		res.json( {
 			status: 'ok',
 			service: 'design-media-worker',
-			version: '3.4.0',
+			version: '3.5.0',
 			uptime: process.uptime(),
 			environment: process.env.NODE_ENV || 'development',
 			tenants,
@@ -294,6 +295,7 @@ app.get( '/api/health/full', async (_req, res) => {
 				ocr: [ '/api/ocr/recognize' ],
 				email: [ '/api/email/send', '/api/email/compile-mjml', '/api/email/parse' ],
 				code: [ '/api/code/format', '/api/code/check-syntax' ],
+				math: [ '/api/math/derivative', '/api/math/simplify', '/api/math/matrix' ],
 				data: [ '/api/data/translate', '/api/data/language-detect', '/api/data/phone-format', '/api/data/qrcode', '/api/data/csv-parse', '/api/data/csv-generate', '/api/data/markdown', '/api/data/math', '/api/data/render-math', '/api/data/regression', '/api/data/currency', '/api/data/validate', '/api/data/generate-ics', '/api/data/render-chart', '/api/data/analyze-geospatial' ],
 				browser: [ '/api/browser/screenshot', '/api/browser/pdf' ],
 				crawl: [ '/api/crawl/markdown', '/api/crawl/markdown-batch', '/api/crawl/links' ],
@@ -326,6 +328,7 @@ app.use( '/api/ocr', ocrRouter );
 app.use( '/api/email', emailRouter );
 app.use( '/api/code', codeRouter );
 app.use( '/api/data', dataRouter );
+app.use( '/api/math', mathRouter );
 app.use( '/api/browser', browserLimiter, browserRouter );
 app.use( '/api/crawl', crawlLimiter, crawlRouter );
 app.use( '/api/crawl4ai', crawlLimiter, crawl4aiRouter );

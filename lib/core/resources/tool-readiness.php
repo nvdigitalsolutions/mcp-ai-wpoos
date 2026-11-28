@@ -290,6 +290,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
+		'calculate_derivative' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Math\\CalculateDerivativeTool',
+			'readiness' => 'delegated',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the symbolic differentiator (Proposal 164 section 164.168) through MathEngineInterface, bound to MediaWorkerMathEngine over the media worker POST /api/math/derivative route (mathjs). Corrections: the function was sanitised with sanitize_text_field, an HTML filter that strips tags and therefore corrupts comparisons and angle brackets in an expression, so the port reads it unmodified; order was read with absint and no bound although the schema declares 1 to 5, so the port enforces the declared range; simplify was read with a bool cast where the string false is true, so it goes through boolParam; and an unknown format was not refused but silently omitted the latex, so the port refuses it. The answer carries text and tex computed from one tree, where WordPress asked the filter for a single string and pasted it into a latex field.',
+			'evidence' => 'lib/core/tests/Unit/Tool/MathComputeToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'calculate_erlang_c' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CalculateErlangCTool',
 			'readiness' => 'pure',
@@ -3987,6 +3996,15 @@ return array(
 			'probe' => 'call',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'matrix_operations' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Math\\MatrixOperationsTool',
+			'readiness' => 'delegated',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the linear-algebra tool (Proposal 164 section 164.168) through MathEngineInterface over POST /api/math/matrix (mathjs, plus a rank routine the route computes by Gaussian elimination because mathjs has no rank function). Fixes a fatal: WordPress formatted every result with a 2D matrix formatter, so the vector result of eigenvalues and the scalar results of determinant, rank and trace raised a TypeError inside array_map; the port asks the engine for the LaTeX of whatever shape came back, so a vector renders as a column and a scalar as itself. Also: matrix_a was read with no validation at all, so the port requires a rectangular 2D array of finite numbers and requires matrix_b for the three binary operations before spending a request, and an unknown format is refused where WordPress silently omitted the latex.',
+			'evidence' => 'lib/core/tests/Unit/Tool/MathComputeToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'mcp_server_info' => array(
 			'class' => 'Nvoos\\Core\\Tool\\McpServerInfoTool',
 			'readiness' => 'ready',
@@ -5001,6 +5019,15 @@ return array(
 			'reason' => 'Ports the WordPress rate shopper (Proposal 164 section 164.116) over the ShipStation API (formerly ShipEngine) and the legacy ShipStation API V1, both verified current on 2026-11-27. Composes BoxPacker instead of instantiating another tool. Five corrections: a run that cannot quote is a refusal rather than success with a zero total, totals are kept per currency instead of being summed across them, V1 reports shipmentCost plus otherCost (the figure it sorted by), the invented USPS/Priority Mail export rows are gone and each package reports the carrier and service the provider returned, and credentials plus the origin address are arguments rather than a plugin option, a store address or the first enabled connection. estimate_order_rates is deferred with the order model because it reads WooCommerce orders.',
 			'evidence' => 'lib/core/tests/Unit/Tool/EcommerceShippingRateEstimatorTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
+		'simplify_expression' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Math\\SimplifyExpressionTool',
+			'readiness' => 'delegated',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the algebraic simplifier (Proposal 164 section 164.168) through MathEngineInterface over POST /api/math/simplify (mathjs). Fixes the family most serious reporting defect: when the filter was unbound WordPress fell back to a whitespace-collapsing helper and returned success true with the input unchanged as the simplified value, so 2x + 3x came back as 2x + 3x under a success envelope and a message saying it had been simplified. The port never falls back; an unavailable engine is named and an unparseable expression is a validation failure. Also: latex was set to the plain-text result, which is not LaTeX for anything with a multiplication sign or a quotient, so the port asks the engine for both spellings of one node; the rules argument is gone because default, all, collect and distribute were passed to a filter nobody implemented and are not mathjs rule names, so the standard simplification is the only behaviour that ever worked; and an unknown format is refused.',
+			'evidence' => 'lib/core/tests/Unit/Tool/MathComputeToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'store_agent_context' => array(
 			'class' => 'Nvoos\\Core\\Tool\\StoreAgentContextTool',
