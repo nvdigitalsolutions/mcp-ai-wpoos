@@ -113,6 +113,7 @@ class Test_Mailjet_Credentials_Resolver extends WP_UnitTestCase {
 			array(
 				'name'            => 'Not Mailjet',
 				'connection_type' => 'generic',
+				'auth_type'       => 'none',
 			)
 		);
 

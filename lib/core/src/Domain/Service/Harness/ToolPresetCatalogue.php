@@ -935,6 +935,7 @@ final class ToolPresetCatalogue
                 'get_twitter_dms',
                 'manage_twitter_webhook',
                 'unified_channel_broadcast',
+                'list_mailjet_connections',
                 'manage_mailjet_contacts',
                 'get_mailjet_statistics',
                 'manage_brevo_contacts',
