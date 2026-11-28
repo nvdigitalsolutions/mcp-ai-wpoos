@@ -92,9 +92,12 @@
             "cloudways_get_operation_status",
             "cloudways_get_server",
             "cloudways_list_apps",
+            "cloudways_list_projects",
             "cloudways_list_servers",
             "cloudways_restart_service",
+            "cloudways_server_settings_get",
             "cloudways_service_status",
+            "cloudways_ssh_key_list",
             "cloudways_update_server_label"
         ],
         "comic-creation": [],

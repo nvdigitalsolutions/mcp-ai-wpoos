@@ -12140,3 +12140,79 @@ Eight tools, and no slug among them is blocked on tool code:
 Both are additive client work, not parity work. The calendar toolkit's port
 queue is empty again — this time because the remaining entries were checked
 against their sources rather than counted from their names.
+
+### §164.133 — `cloudways`, measured, and the three inspectors
+
+**Recorded.** With the calendar family closed, `cloudways` is the largest
+unblocked queue in the programme: **60 declared, 8 ported, 52 remaining, 0
+declined, 0 deferred**. It is also the cheapest family to port, for a structural
+reason.
+
+#### Why this family ports cleanly
+
+`CloudwaysClientInterface` is four verbs — `get`, `post`, `put`, `delete` — over
+one base URL, with the OAuth exchange already implemented and bound. Every
+toolkit tool is therefore a path, a payload and a projection; there is no new
+contract to design and no vendor SDK. The eight ported tools prove the shape:
+`GetServerTool` is 109 lines, most of them a schema and a projection.
+
+#### The shape of the 52
+
+| Family | Representative slugs |
+|---|---|
+| Server lifecycle | `server_create`, `server_clone`, `server_delete`, `server_restart`, `server_start`, `server_stop`, `server_scale`, `server_scale_volume` |
+| Server inspect | `server_monitor_summary`, `create_server_backup` |
+| App lifecycle | `app_create`, `app_clone`, `app_clone_to_server`, `app_delete`, `app_restore`, `app_restore_rollback` |
+| App settings | `app_fpm_settings_update`, `app_varnish_settings_update`, `app_cname_update`, `app_cors_headers_update`, `purge_app_cache` |
+| App analytics | `app_monitor_summary`, `app_mysql_analytics`, `app_php_analytics`, `app_traffic_analytics` |
+| App misc | `app_credentials`, `app_cron_list_get`, `app_vulnerabilities_list`, `create_app_backup` |
+| SSH | `ssh_key_create`, `ssh_key_delete` |
+| Git | `git_clone`, `git_pull`, `git_generate_key`, `git_branches_get`, `git_history_get`, `git_key_get` |
+| Addons | `addon_activate`, `addon_list` |
+| Cloudflare | `cloudflare_add_domain`, `cloudflare_details` |
+| DNS Made Easy | `dns_add_record`, `dns_delete_record`, `dns_list_domains`, `dns_list_records` |
+| Copilot | `copilot_insights_list` |
+
+Four families are not Cloudways-hosted at all — DNS Made Easy, Cloudflare,
+addons and Copilot — and the WordPress tools call the same client with different
+paths, so they stay in the same queue.
+
+#### Slice 1: the three inspectors
+
+The read-only tools come first because a wrong projection is cheap to fix and a
+wrong write is not. This slice ports three:
+
+| Tool | Request |
+|---|---|
+| `cloudways_list_projects` | `GET /project` |
+| `cloudways_ssh_key_list` | `GET /ssh-key?server_id=` |
+| `cloudways_server_settings_get` | `GET /server/{id}/settings` |
+
+#### Three corrections
+
+| Correction | The WordPress behaviour |
+|---|---|
+| **Rows are read tolerantly** | `absint( $project['id'] )` and `sanitize_text_field( $project['name'] )` without an `isset`, so a row missing a key raised a warning and produced an empty string. A non-array row is now dropped instead of becoming an empty project |
+| **The server id is a query argument** | The SSH reader hand-built `/ssh-key?server_id=N`; this port passes `array('server_id' => N)` to the client, which is the same request without string concatenation. Key material is not projected — the tool names which keys exist |
+| **Server settings return the block** | WordPress projected three version fields and dropped the rest, although the tool's own description promised "versions **and settings**", so `memory_limit` was unreachable from the tool that advertised it. `settings` keeps the three keys and `values` carries every scalar field, which is additive |
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `CloudwaysInspectToolsTest` | **9 tests, 25 assertions**, 0 failures |
+| `lib/core` unit suite | **3,875 tests / 22,182 assertions** (+9 tests, +25 assertions), 0 failures |
+| Adapter `ToolReadinessRegistrationTest` | 5 tests / 548 assertions, 0 failures |
+| Readiness manifest | 521 → **524 rows**; servable 502 → **505**; ready 464; no violations |
+| Toolkit parity | 300 → **303 ported**, 9 declined, 79 deferred, 545 → **542 remaining**; `cloudways` `60 \| 8 \| 0 \| 0 \| 52` → `60 \| 11 \| 0 \| 0 \| 49` |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on the five touched paths |
+
+#### What remains, and the order
+
+Forty-nine tools, in an order that keeps the destructive ones last: the
+inspection and analytics reads, then the settings writes (`fpm`, `varnish`,
+`cname`, `cors`), then the lifecycle writes (`create`, `clone`, `restore`), then
+the four destructive ones (`server_delete`, `app_delete`, `ssh_key_delete`,
+`dns_delete_record`). The delete tools need the same treatment the other
+toolkits' destructive tools got: an explicit confirmation argument and an
+`idempotentHint` of false rather than a bare id.

@@ -552,6 +552,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysReadToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
+		'cloudways_list_projects' => array(
+			'class' => 'Nvoos\Core\Tool\Cloudways\\ListProjectsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress project listing over CloudwaysClientInterface (Proposal 164 section 164.133). One GET /project and two fields per row. WordPress passed each key to absint and sanitize_text_field without checking it existed, so a row missing a name raised a warning and produced an empty string; the port reads tolerantly and drops entries that are not arrays rather than turning one into an empty project. A response without a projects array is refused, because an empty account and an API change look identical in a count.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysInspectToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
 		'cloudways_restart_service' => array(
 			'class' => 'Nvoos\Core\Tool\Cloudways\\RestartServiceTool',
 			'readiness' => 'ready',
@@ -561,6 +570,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysWriteToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
+		'cloudways_server_settings_get' => array(
+			'class' => 'Nvoos\Core\Tool\Cloudways\\ServerSettingsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress server-settings read over CloudwaysClientInterface (Proposal 164 section 164.133). One correction: WordPress projected php_version, mysql_version and nginx_version and dropped the rest of the block, although its own description promised versions and settings, so a caller tuning memory_limit could not read it from the tool that advertised it. The three documented keys keep their place and values carries every scalar field the block returned, which is additive rather than a reshape.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysInspectToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
 		'cloudways_service_status' => array(
 			'class' => 'Nvoos\Core\Tool\Cloudways\\ServiceStatusTool',
 			'readiness' => 'ready',
@@ -569,6 +587,15 @@ return array(
 			'reason' => 'Ports the WordPress service listing over CloudwaysClientInterface (Proposal 164 section 164.61). Each service keeps its status string rather than a boolean, because a restarting service is a state a caller polls through and true/false would hide it. A missing services array is refused rather than reported as an empty list.',
 			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysWriteToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
+		'cloudways_ssh_key_list' => array(
+			'class' => 'Nvoos\Core\Tool\Cloudways\\ListSshKeysTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress SSH-key listing over CloudwaysClientInterface (Proposal 164 section 164.133). The server id travels as the client query argument instead of hand-built URL text, which is the same request without string concatenation. Four fields are projected and the key material is not: the tool names which keys exist, and a caller that needs the material reads it in the console.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CloudwaysInspectToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => true ),
 		),
 		'cloudways_update_server_label' => array(
 			'class' => 'Nvoos\Core\Tool\Cloudways\\UpdateServerLabelTool',
