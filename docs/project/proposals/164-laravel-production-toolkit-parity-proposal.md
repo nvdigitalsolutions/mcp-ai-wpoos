@@ -15421,3 +15421,75 @@ The parameter promised "step-by-step explanations when available", and nothing a
 #### What remains
 
 `calculate_integral`, the last `math` tool, and the only one that needs a computer-algebra system: mathjs has no symbolic integration. The decision recorded in §164.168 stands — nerdamer 2.1.0 (Apache-2.0, `nerdamer/calculus`) for indefinite integrals, with definite integrals served by its `defint`, which integrates numerically where no elementary antiderivative exists. Antiderivatives will be verified by differentiating the result and comparing numerically before they are returned, because nerdamer demonstrably fails in two ways: `sin(x^2)` comes back unevaluated as `integrate(sin(x^2), x)`, and `e^(-x^2)` comes back malformed as `(1/2)*pi^(1/2)*erf*x`.
+
+### 164.171 — `math` slice 7: the integrator, and a CAS that has to be checked
+
+Measured before the port. `math` closes at **9 wp / 9 ported / 0 declined / 0 deferred / 0 remaining**.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `calculate_integral` | `CalculateIntegralTool` -> `MathEngineInterface::integral()` -> `POST /api/math/integral` |
+
+This is the only tool in the family that genuinely needs a computer-algebra system. The decision recorded in section 164.168 is now implemented: **nerdamer 2.1** under `nerdamer/calculus`, Apache-2.0, the only maintained JavaScript CAS that still ships an integrator. Algebrite was rejected on maintenance grounds — MIT, but last published in April 2021 and still CoffeeScript.
+
+The dependency brings an obligation, so `addons/media-worker/THIRD_PARTY_NOTICES.md` now records the Apache-2.0 notice. It is permissive: it requires the notice, not a licence change for the service.
+
+#### In WordPress it could only fail
+
+The tool called `apply_filters( 'wp_mcp_ai_mathjs_integral', ... )` and returned `wp_mcp_ai_engine_missing` whenever nothing was bound. Nothing ever was. Unlike `solve_equation`, which had a fallback that was wrong, this one had no behaviour at all beyond an error.
+
+#### The engine has to be checked, not trusted
+
+mathjs has no symbolic integrator, and nerdamer fails in two distinct ways, both observed before the route was written:
+
+```
+integrate('sin(x^2)', 'x')  ->  integrate(sin(x^2), x)        unevaluated
+integrate('e^(-x^2)', 'x')  ->  (1/2)*pi^(1/2)*erf*x          malformed
+```
+
+The second is the dangerous one: `erf` has lost its argument, so the result *looks* like an answer. Differentiating it gives `0.886...*erf`, which is not a number — and that is exactly the signal the port uses.
+
+Every antiderivative is therefore differentiated and compared against the integrand at seven non-round sample points. Both sides must evaluate to finite numbers that agree to a relative `1e-6`, and at least three points must be comparable. Anything else is a refusal that says why. A result that cannot be checked is not returned. This is the same rule `simplify_expression` was ported under: never report work you did not do.
+
+Definite integrals need no such gate. `defint` either yields a number or it does not, and it integrates **numerically where no elementary antiderivative exists**:
+
+| Request | Result |
+| --- | --- |
+| `sin(x)`, 0 to pi | `2` (exact) |
+| `x^2`, 0 to 1 | `0.33333333333333333333` |
+| `e^(-x^2)`, 0 to 1 | `0.746824132812427` |
+| `sin(x^2)`, 0 to 1 | `0.310268301723381` |
+
+A CAS cannot do the last two symbolically, and neither can any table-driven approach; this is the case where the numeric path is not a fallback but the better answer.
+
+#### Corrections
+
+- `sanitize_text_field()` on the integrand — an HTML filter on a grammar, the fifth instance in this family;
+- `$arguments['function']` read without `isset()`;
+- `lower_limit` and `upper_limit` went through `floatval()`, so `"abc"` became `0.0` and the integral was silently taken over the wrong interval;
+- `simplify` was accepted, passed to a filter nobody implemented, and ignored — dropped;
+- the answer was assembled into HTML markup and returned in the response body rather than as data.
+
+Reversed limits are deliberately **not** rejected: `int_a^b = -int_b^a` is legitimate, and the engine handles it.
+
+#### Decisions
+
+- **`integral()` extends `MathEngineInterface`.** It needs the same CAS-backed engine as derivative and simplify, so one availability flag remains honest.
+- **`delegated`, not `ready`**, for the same reason as the rest of the family: the contract is bound by the provider.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,519 / 24,433 |
+| adapter | 737 / 3,945, 2 skipped |
+| worker (`node --test`, integrator suite) | 12 / 12 |
+| readiness | 642 rows, servable 623 (delegated 13), no violations |
+| parity | 421 ported / 9 declined / 103 deferred / 437 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+#### Family closed
+
+`math` is complete at 9 of 9 with no deferrals and no declines. The family's through-line is that several tools were reporting work they had not done: `simplify_expression` returned its input under a success envelope, `graph_function` and `calculate_integral` had no implementation at all while still declaring a capability, and `solve_equation` answered a different equation through a regex. Alongside them sat input defects of the same shape — an HTML filter pointed at a grammar, a `(bool)` cast that read `'false'` as true, and `absint()` on a size the schema had already bounded. Every one of those is now either a real answer or a refusal that names the reason.

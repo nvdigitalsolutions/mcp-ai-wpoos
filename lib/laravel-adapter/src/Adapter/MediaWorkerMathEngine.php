@@ -136,6 +136,65 @@ final class MediaWorkerMathEngine implements MathEngineInterface
         );
     }
     /**
+     * {@inheritDoc}
+     */
+    public function integral(
+        string $expression,
+        string $variable,
+        string $type,
+        ?float $lower = null,
+        ?float $upper = null
+    ): array {
+        $payload = array(
+            'expression' => $expression,
+            'variable' => $variable,
+            'type' => $type,
+        );
+
+        if (null !== $lower && null !== $upper) {
+            $payload['lower'] = $lower;
+            $payload['upper'] = $upper;
+        }
+
+        $body = $this->post('/api/math/integral', $payload);
+
+        if ('definite' === $type) {
+            $value = $body['value'] ?? null;
+
+            if (! \is_int($value) && ! \is_float($value)) {
+                throw new \RuntimeException(
+                    'The media worker answered without a value for /api/math/integral.'
+                );
+            }
+
+            return array(
+                'type' => 'definite',
+                'antiderivative' => null,
+                'value' => (float) $value,
+                'tex' => (string) ( $body['tex'] ?? '' ),
+                'verified' => false,
+                'samples' => 0,
+            );
+        }
+
+        $antiderivative = $body['antiderivative'] ?? null;
+
+        if (! \is_string($antiderivative) || '' === $antiderivative) {
+            throw new \RuntimeException(
+                'The media worker answered without an antiderivative for /api/math/integral.'
+            );
+        }
+
+        return array(
+            'type' => 'indefinite',
+            'antiderivative' => $antiderivative,
+            'value' => null,
+            'tex' => (string) ( $body['tex'] ?? '' ),
+            'verified' => (bool) ( $body['verified'] ?? false ),
+            'samples' => (int) ( $body['samples'] ?? 0 ),
+        );
+    }
+    /**
      * POST a compute request, mapping a refusal to the caller's mistake.
      *
      * @param array<string, mixed> $payload

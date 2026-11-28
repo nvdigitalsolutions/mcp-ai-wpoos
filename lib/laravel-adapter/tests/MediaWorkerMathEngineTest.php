@@ -201,6 +201,86 @@ final class MediaWorkerMathEngineTest extends TestCase {
 		$this->engine()->solve( 'x', '1', 'x' );
 	}
 
+	public function test_it_sends_an_indefinite_integral_and_returns_the_antiderivative(): void {
+		Http::fake(
+			array(
+				'worker.test/api/math/integral' => Http::response(
+					array(
+						'success'        => true,
+						'type'           => 'indefinite',
+						'antiderivative' => '(1/3)*x^3',
+						'tex'            => '\frac{x^{3}}{3}',
+						'verified'       => true,
+						'samples'        => 7,
+					)
+				),
+			)
+		);
+
+		$result = $this->engine()->integral( 'x^2', 'x', 'indefinite' );
+
+		$this->assertSame( '(1/3)*x^3', $result['antiderivative'] );
+		$this->assertTrue( $result['verified'] );
+		$this->assertSame( 7, $result['samples'] );
+
+		Http::assertSent(
+			static function ( $request ): bool {
+				return \str_ends_with( $request->url(), '/api/math/integral' )
+					&& 'x^2' === ( $request['expression'] ?? null )
+					&& 'indefinite' === ( $request['type'] ?? null )
+					&& ! \array_key_exists( 'lower', $request->data() );
+			}
+		);
+	}
+
+	public function test_it_sends_a_definite_integral_with_limits(): void {
+		Http::fake(
+			array(
+				'worker.test/api/math/integral' => Http::response(
+					array(
+						'success' => true,
+						'type'    => 'definite',
+						'value'   => 2,
+						'exact'   => '2',
+						'tex'     => '2',
+					)
+				),
+			)
+		);
+
+		$result = $this->engine()->integral( 'sin(x)', 'x', 'definite', 0.0, 3.14159265358979 );
+
+		$this->assertSame( 2.0, $result['value'] );
+
+		Http::assertSent(
+			static function ( $request ): bool {
+				return 'definite' === ( $request['type'] ?? null )
+					&& \is_numeric( $request['lower'] ?? null )
+					&& \is_numeric( $request['upper'] ?? null );
+			}
+		);
+	}
+
+	public function test_an_untrusted_antiderivative_is_the_callers_mistake(): void {
+		Http::fake(
+			array(
+				'worker.test/api/math/integral' => Http::response(
+					array(
+						'success'  => false,
+						'error'    => 'An antiderivative was produced but not trusted.',
+						'verified' => false,
+					),
+					422
+				),
+			)
+		);
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'not trusted' );
+
+		$this->engine()->integral( 'e^(-x^2)', 'x', 'indefinite' );
+	}
+
 	private function engine(): MediaWorkerMathEngine {
 		return new MediaWorkerMathEngine( new MediaWorkerClient() );
 	}
