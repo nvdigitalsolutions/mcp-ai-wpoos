@@ -12375,3 +12375,54 @@ did.
 
 Next: the two remaining app-setting writes (`cname`, `cors`), then the app
 lifecycle group.
+
+### §164.137 — `cloudways`, slice 5: the domain and CORS writers
+
+| Tool | Request |
+|---|---|
+| `cloudways_app_cname_update` | `PUT /app/{server}/{app}/cname` |
+| `cloudways_app_cors_headers_update` | `PUT /app/{server}/{app}/cors` |
+
+These close the app-settings group: every reader and writer pair from §164.134
+and §164.136 now has both halves, and the CORS writer sends a partial body so an
+origins-only update leaves the methods and headers alone.
+
+#### Two corrections in the CNAME writer
+
+**A `sprintf` that printed nothing.** WordPress wrote:
+
+```php
+return $this->success(
+    sprintf( __( 'CNAME updated.', 'mcp-ai-wpoos-pro' ), esc_html( $cname ) ),
+    $result
+);
+```
+
+The format string has no placeholder, so the domain was escaped and then
+discarded — every success read "CNAME updated." regardless of what was set. The
+message now names the domain, which is also what makes the response auditable
+from a log.
+
+**A pasted URL is refused locally.** `sanitize_text_field()` accepts
+`https://example.com/`, so that reached the API and came back as a generic
+rejection that did not say which argument was wrong. A value containing
+whitespace, a scheme separator or a path separator is now a `validation_failed`
+naming `cname`. The check is deliberately minimal — no IDN table, no public
+suffix list — because this runtime has neither and inventing one would refuse
+valid input.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `CloudwaysAppDomainWritesTest` | **10 tests, 30 assertions**, 0 failures |
+| `lib/core` unit suite | **3,912 tests / 22,284 assertions** (+10 tests, +30 assertions), 0 failures |
+| Adapter `ToolReadinessRegistrationTest` | 5 tests, 0 failures |
+| Readiness manifest | 535 → **537 rows**; servable 516 → **518**; ready 477; no violations |
+| Toolkit parity | 314 → **316 ported**, 9 declined, 79 deferred, 531 → **529 remaining**; `cloudways` `60 \| 22 \| 0 \| 0 \| 38` → `60 \| 24 \| 0 \| 0 \| 36` |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on all 28 Cloudways paths |
+
+The app-settings group is complete. Next: the app lifecycle writes
+(`create`, `clone`, `clone_to_server`, `delete`, `restore`, `restore_rollback`),
+where the delete is one of the four destructive tools that must land last.
