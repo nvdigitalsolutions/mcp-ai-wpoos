@@ -2158,6 +2158,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/PdfDocumentAdapterTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
+		'generate_expiry_forecast' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\GenerateExpiryForecastTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress expiry forecast over ContentStoreInterface (Proposal 164 section 164.154). The monthly timeline was built with strtotime of plus N months from today, and PHP month arithmetic overflows on the 29th to 31st, so on 31 January the plus one month key was March and the February bucket never existed; because the counter only incremented when the bucket existed, every February expiry was dropped from the timeline on three days out of thirty one. The port builds buckets from the first of the month, where the arithmetic cannot overflow, and makes the horizon the last day of the final month so a bucket exists exactly when its month is inside the forecast. The timeline also counted only low-risk rows, where WordPress counted every non-expired row inside the horizon; that is restored. The four day-based bands are unchanged, and records inside no band and no bucket are counted in beyond_horizon instead of vanishing from the summary. An unreadable date is expired with a null day count and named, and both numeric bounds are validated rather than clamped.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryExpiryForecastTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'generate_password' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Orchestration\\GeneratePasswordTool',
 			'readiness' => 'ready',
@@ -4419,6 +4428,15 @@ return array(
 			'probe' => 'call',
 			'reason' => 'Ports the WordPress guardian report over EmailServiceInterface and ContentStoreInterface (Proposal 164 section 164.59). The address is the stored parent address when present and the student address otherwise, and the result names which role received it. The term filter is free text because terms are whatever manage_eca_term stores. This runtime has no achievements store, so include_achievements is honoured by stating that none are recorded and the result says achievements_included false. The send is appended to the student report log with the recipient role added.',
 			'evidence' => 'lib/core/tests/Unit/Tool/EcaWriterToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
+		'send_expiry_alerts' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\SendExpiryAlertsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress expiry alert over ContentStoreInterface and EmailServiceInterface (Proposal 164 section 164.155), the only writing tool in the family. WordPress resolved recipients from the argument, then a notification-settings option that configure_email_notifications writes, then admin_email; this runtime has neither an options store nor an administrator address, so the port takes the argument, falls back to recipients the host supplies at construction, and refuses the call when both are empty rather than sending to a guess. An invalid address was run through sanitize_email, which returns an empty string, and then handed to wp_mail, so the send failed silently and the response still listed the address; the port validates, drops and reports it in invalid_recipients. A host without a transport still receives the report with transport_available false, as the calendar notification tools already do. Already-expired registrations are excluded from the window and counted in expired_excluded. Two recorded gaps: the WordPress option log is not ported because there is no options store, and there is no idempotency guard, because this tool mails the operator team rather than a client and the caller controls cadence; test_mode is the preview. Gated on edit_posts, matching both the declaration and the handler, since the tool sends mail.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryExpiryAlertsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
 		'send_group_email' => array(
