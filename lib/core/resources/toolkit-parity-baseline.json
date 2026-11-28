@@ -391,7 +391,11 @@
             "update_task"
         ],
         "quiz-management": [],
-        "regulatory-registration": [],
+        "regulatory-registration": [
+            "create_reg_product",
+            "get_reg_product",
+            "list_reg_products"
+        ],
         "remote-connections": [],
         "research": [],
         "shopify-sync": [],

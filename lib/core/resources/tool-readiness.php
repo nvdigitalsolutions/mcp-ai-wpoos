@@ -1266,6 +1266,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndProjectToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
+		'create_reg_product' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\CreateRegProductTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress regulatory product creation over ContentStoreInterface as type mcp_ai_reg_product (Proposal 164 section 164.144). The unprefixed meta keys are the WordPress names so an export round-trips, and the category and brand are written to their taxonomies as well as to brand meta: the term is what the list filters on, the meta is what a row reports when a host has no term store. Description is the content body; KSES is a WordPress filter this runtime does not have, so a host applies sanitisation at the render boundary.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryProductToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'create_service' => array(
 			'class' => 'Nvoos\Core\Tool\Calendar\CreateServiceTool',
 			'readiness' => 'ready',
@@ -2750,6 +2759,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ContentAndCrawlerToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'get_reg_product' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\GetRegProductTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress single-product read over ContentStoreInterface (Proposal 164 section 164.144). The full row includes the INCI and allergen lists, which the listing projection omits. include_registrations appends up to 1000 registrations, read in pages of 200 because the store contract caps a page there, and each row carries its status term when one is attached. A wrong-type id reads as not found, which the store already refuses.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryProductToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'get_schedule_latest_result' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Orchestration\\GetScheduleLatestResultTool',
 			'readiness' => 'ready',
@@ -3437,6 +3455,15 @@ return array(
 			'readiness' => 'pure',
 			'probe' => 'call',
 			'evidence' => 'lib/laravel-adapter/tests/CoreToolCatalogueTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'list_reg_products' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\ListRegProductsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress product listing over ContentStoreInterface (Proposal 164 section 164.144). Filters keep their WordPress semantics — category by term slug, brand by term name, origin_country exact — and are ANDed, alphabetical by name, 20 per page and 100 at most. The lighter projection omits the ingredient lists so a page does not carry twenty of them. offset must be a multiple of limit: the store paginates by page, and rounding an arbitrary offset would silently return the wrong window.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryProductToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'list_settings' => array(
