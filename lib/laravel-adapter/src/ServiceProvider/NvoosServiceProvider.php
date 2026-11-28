@@ -28,6 +28,7 @@ use Nvoos\Core\Application\Tool\ToolReadiness;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Infrastructure\Cloudways\CloudwaysClient;
 use Nvoos\Core\Infrastructure\Gtmetrix\GtmetrixClient;
+use Nvoos\Core\Infrastructure\Google\GoogleCalendarClient;
 use Nvoos\Core\Infrastructure\Okf\FilesystemBundleLocator;
 use Nvoos\Core\Infrastructure\PaperStore\JsonPaperStore;
 use Nvoos\Core\Infrastructure\Schedule\JsonScheduleStore;
@@ -63,6 +64,7 @@ use Nvoos\Core\Domain\Contract\HealthReportInterface;
 use Nvoos\Laravel\Health\PackageHealthReport;
 use Nvoos\Core\Domain\Contract\CloudwaysClientInterface;
 use Nvoos\Core\Domain\Contract\GtmetrixClientInterface;
+use Nvoos\Core\Domain\Contract\GoogleCalendarClientInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\HtmlToPdfInterface;
 use Nvoos\Core\Domain\Contract\BrowserCaptureInterface;
@@ -505,6 +507,20 @@ class NvoosServiceProvider extends ServiceProvider {
 			GtmetrixClientInterface::class,
 			static function ( $app ) {
 				return new GtmetrixClient(
+					$app->make( SettingsStoreInterface::class ),
+					$app->make( HttpClientInterface::class ),
+				);
+			}
+		);
+		// Google Calendar resolves its own credentials from the `google_calendar`
+		// settings block, so the client holds no OAuth state of its own: the
+		// access token is refreshed once per instance and never persisted. One
+		// settings connection per site, as in WordPress's documented `settings`
+		// path; a named Remote Sites connection is refused by the tool.
+		$this->app->singleton(
+			GoogleCalendarClientInterface::class,
+			static function ( $app ) {
+				return new GoogleCalendarClient(
 					$app->make( SettingsStoreInterface::class ),
 					$app->make( HttpClientInterface::class ),
 				);

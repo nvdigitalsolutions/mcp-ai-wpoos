@@ -32,6 +32,7 @@
             "send_booking_confirmations",
             "send_reschedule_invitation",
             "set_availability_rules",
+            "sync_google_calendar",
             "update_appointment",
             "update_event"
         ],

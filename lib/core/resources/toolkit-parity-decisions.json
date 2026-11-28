@@ -281,13 +281,9 @@
             "decision": "deferred",
             "reason": "The same shape as the JetAppointment inbound sync, against JetBooking. Prerequisite: the JetBooking client, the sync-state store, and the unit and instance mapping that the two JetBooking readers also need; building the sync first would freeze a mapping nobody has agreed."
         },
-        "sync_google_calendar": {
-            "decision": "deferred",
-            "reason": "The Google Calendar API syncs incrementally with a per-calendar syncToken and returns nextSyncToken with the last page; an expired token answers 410 GONE and the client must clear its storage and run a full sync. None of those pieces exist here. Prerequisite: an OAuth credential store with refresh, a per-calendar sync-state store, and deletion tombstones; without them a resync cannot tell a deleted event from one that was never imported."
-        },
         "sync_outlook_calendar": {
             "decision": "deferred",
-            "reason": "The Microsoft Graph delta query returns an @odata.deltaLink to replay changes from, and answers 410 with syncStateNotFound or syncStateInvalid when that state expires, at which point the client restarts with a full sync. Prerequisite: the same OAuth credential store and sync-state store as the Google sync, plus a delta-link cursor per calendar and the tombstones a resync needs."
+            "reason": "The WordPress tool performs no sync. It fires wp_mcp_ai_outlook_calendar_sync, marks the appointment _outlook_calendar_synced=pending when nothing handles it, and returns success with a fabricated event id built from the clock (pending-<timestamp>); no Graph call exists in the plugin. Porting that faithfully would port a fabricated success, and porting it truthfully would be a tool that always refuses, so nothing is ported until there is a Microsoft Graph client with a refresh-token store and an outbound event writer to bind. The Google Calendar push (sync_google_calendar) needed no per-calendar sync cursor and no deletion tombstones, because it is an outbound write keyed on the local event id; an Outlook push has the same shape and the same, smaller, prerequisite."
         },
         "sync_product_inventory": {
             "decision": "deferred",
