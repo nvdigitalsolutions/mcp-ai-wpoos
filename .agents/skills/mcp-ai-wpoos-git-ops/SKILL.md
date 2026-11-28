@@ -840,8 +840,34 @@ can appear in the repo root. Two failure modes follow:
 
 `git count-objects -vH` reports **38.7 GiB** packed for 2,136 commits, so
 `actions/checkout` with `fetch-depth: 0` cannot finish: the new `Docs Contract`
-job sat in **Checkout repository for 20+ minutes** and had to be cancelled. Use
-depth 1 and fetch the base explicitly:
+job sat in **Checkout repository for 20+ minutes** and had to be cancelled. By
+2026-11-28 the pack was **68 GiB**, which is why every full clone in CI is a
+non-starter.
+
+**Mirror syncs must snapshot, never `git subtree split`.** A `subtree split`
+needs full history, so it forces `fetch-depth: 0` and stalls in Checkout (hit
+twice on `sync-nvoos-design-system.yml`: 10m21s and 8m6s, both cancelled). A
+mirror sync only needs HEAD's tree:
+
+```yaml
+- uses: actions/checkout@v4
+  with: { fetch-depth: 1 }
+# ...
+run: |
+  TREE="$(git rev-parse HEAD:addons/<slug>)"
+  SYNC_COMMIT="$(printf '%s\n' "$MSG" | git commit-tree "$TREE")"
+  git push --force "$MIRROR_URL" "$SYNC_COMMIT:refs/heads/main"
+```
+
+Copy `sync-nvoos-cognition.yml` rather than hand-rolling it: it also unsets the
+`http.https://github.com/.extraheader` that GITHUB_TOKEN leaves behind (it
+overrides the token URL and every push 403s), and the fully-qualified
+destination creates `main` on an empty mirror. Of the 25 `sync-*.yml` files
+in the repo, **19 still use the subtree-split pattern** and will stall the same
+way the next time one runs — convert them to the snapshot shape when you touch
+them.
+
+Use depth 1 and fetch the base explicitly for diff jobs:
 
 ```yaml
 with:
