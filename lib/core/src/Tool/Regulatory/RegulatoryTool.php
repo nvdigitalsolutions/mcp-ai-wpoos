@@ -227,6 +227,26 @@ abstract class RegulatoryTool extends AbstractTool
     }
 
     /**
+     * Today, in the form the toolkit stores dates.
+     *
+     * WordPress used `current_time( 'Y-m-d' )`, the site timezone. This runtime
+     * has no site timezone, so the value is UTC; a host that needs local dates
+     * passes them explicitly, which is why the tools accept the date argument.
+     */
+    protected function today(): string
+    {
+        return gmdate('Y-m-d');
+    }
+
+    /**
+     * The current instant, in the form WordPress wrote `renewal_date`.
+     */
+    protected function nowStamp(): string
+    {
+        return gmdate('Y-m-d H:i:s');
+    }
+
+    /**
      * The term name a status slug is stored under.
      *
      * WordPress created the term from the slug with `ucwords( $status, '_' )`
@@ -243,13 +263,19 @@ abstract class RegulatoryTool extends AbstractTool
     }
 
     /**
-     * The slug a status name or slug is addressed by.
+     * The canonical status key, from a slug, a display name or a hyphen form.
+     *
+     * `pending_documents`, `pending-documents` and `Pending Documents` all
+     * resolve to `pending_documents`, which is the key the status list is
+     * written in and the input `statusName()` expects. One vocabulary means a
+     * caller cannot create a second term by spelling it differently.
      */
-    protected function statusSlug(string $value): string
+    protected function statusKey(string $value): string
     {
-        $slug = strtolower(trim($value));
+        $key = strtolower(trim($value));
+        $key = (string) preg_replace('/[\s\-]+/', '_', $key);
 
-        return trim((string) preg_replace('/[\s_]+/', '-', $slug), '-');
+        return trim($key, '_');
     }
 
     /**

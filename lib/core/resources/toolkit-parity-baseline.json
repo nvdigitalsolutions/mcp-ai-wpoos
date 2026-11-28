@@ -392,6 +392,7 @@
         ],
         "quiz-management": [],
         "regulatory-registration": [
+            "approve_registration",
             "create_reg_product",
             "create_registration",
             "delete_reg_product",
@@ -400,8 +401,12 @@
             "get_registration",
             "list_reg_products",
             "list_registrations",
+            "list_registrations_by_country",
+            "renew_registration",
             "search_reg_products",
-            "update_reg_product"
+            "submit_registration",
+            "update_reg_product",
+            "update_registration_status"
         ],
         "remote-connections": [],
         "research": [],

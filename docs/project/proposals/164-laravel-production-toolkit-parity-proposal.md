@@ -13092,3 +13092,92 @@ it always was.
 The next slice is the registration lifecycle — status transitions, approval,
 submission and renewal — where the status vocabulary becomes a state machine
 rather than a label.
+
+### §164.147 — `regulatory-registration`, slice 4: the registration lifecycle
+
+| Tool | What it does |
+|---|---|
+| `update_registration_status` | any status, plus dates and COS |
+| `approve_registration` | Approved, approval date, optional expiry |
+| `submit_registration` | Submitted, submission date |
+| `renew_registration` | new draft linked to the original |
+| `list_registrations_by_country` | grouping, distribution, expiry counts |
+
+#### One status vocabulary, finally
+
+Across the family the same status was spelled three ways: `create_registration`
+and `list_registrations` take slugs (`pending_documents`), this slice's status
+tool listed display names (`Pending Documents`), and it passed the caller's
+string straight into `term_exists()`. A caller following the create convention
+therefore created a **second term** named `pending_documents` beside
+`Pending Documents`, splitting the distribution the reports count.
+
+The port resolves slugs, hyphens and display names to one canonical key and
+stores the term name. My first attempt got this wrong in a way worth recording:
+the helper normalised to the hyphen form (`pending-documents`), which is the
+*term slug*, not the status key, so validation rejected the underscore form the
+other tools document. The test caught it on the first run; the helper is now
+`statusKey()` and returns `pending_documents`.
+
+#### A bad date is refused, not dropped
+
+WordPress validated each date and, on failure, simply did not write it — then
+returned success. A caller that sent `05/01/2028` was told the status changed
+and had no signal that the expiry did not. All five routes now refuse and name
+the field. `approve_registration` and `submit_registration` only
+`sanitize_text_field`'d their dates outright, so they were worse: the malformed
+value landed in the store and broke every later comparison.
+
+#### Append versus replace is a real distinction
+
+`update_registration_status` replaces the note body, because recording a state
+change is what that route means. `approve_registration` and
+`submit_registration` **append** `[Approved on …]` / `[Submitted on …]` lines,
+because those routes add an event to a record whose history is the evidence.
+Both behaviours are preserved rather than unified; a registration's notes are
+its audit trail.
+
+#### A renewal is published content with a Draft registration status
+
+WordPress created the renewal post with `post_status => publish` and set the
+**status term** to `Draft`. Those are two different axes: the content is
+visible, the registration is not yet in flight. The port keeps both, and the
+test fixture initially asserted the wrong one — the code was right.
+
+The renewal links both ways: the new record carries
+`original_registration_id`, and the original is stamped `renewed_by` and
+`renewal_date` **after** the new record exists, so a failed create never marks
+anything. COS number and dates are not carried forward; the old ones are
+recorded in the note body as `Renewal of COS: … (Expired: …)`.
+
+#### Two more tools had no capability check
+
+`renew_registration` (a write) and `list_registrations_by_country` (a read) both
+ran with no capability check at all, following `duplicate_reg_product` in
+§164.145. The port requires `edit_posts` and `read` respectively. That is now
+three tools in the family that WordPress left ungated.
+
+#### The country summary computed zeroes when grouped
+
+`list_registrations_by_country` computed each country's statistics from
+`registrations`, which is **empty** when `group_by_status` filed the rows under
+`by_status`. Asking for both returned correct groups with an all-zero summary.
+The port summarises every row in the country however it was grouped, and a test
+pins the combination. `include_stats` also now defaults to `true` as declared,
+rather than to the `false` that `! empty()` produced.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryRegistrationLifecycleTest` | **16 tests, 72 assertions**, 0 failures |
+| `lib/core` unit suite | **4,082 tests / 22,828 assertions** (+16 tests, +72 assertions), 0 failures |
+| Adapter suite | **698 tests / 3,781 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 583 → **588 rows**; servable 564 → **569**; ready 528; no violations |
+| Toolkit parity | 362 → **367 ported**, 9 declined, 79 deferred, 483 → **478 remaining**; `regulatory-registration` `59 \| 10 \| 0 \| 0 \| 49` → **`59 \| 15 \| 0 \| 0 \| 44`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors across the sixteen Regulatory classes, the tests and the manifest |
+| `check-file-docs.php --strict` | exit 0 |
+
+The next slice is document management — upload, get, update and list — where the
+`registration_id` and `product_id` references meet their first writer.
