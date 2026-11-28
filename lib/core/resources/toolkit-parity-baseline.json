@@ -262,6 +262,8 @@
             "shopify_inventory",
             "shopify_orders",
             "shopify_products",
+            "update_woo_product_price",
+            "update_woo_product_qty",
             "validate_image_for_product",
             "validate_image_for_vehicle"
         ],

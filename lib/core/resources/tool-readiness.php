@@ -5317,7 +5317,24 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/OrchestrationPlanToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
-		'update_workflow_rule' => array(
+		'update_woo_product_price' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\UpdateProductPriceTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the price updater (Proposal 164 section 164.172) over ProductCatalogInterface, which this runtime binds to a local Eloquent catalog, so the tool is ready rather than delegated. The mapping is by meaning, not by name: sale_price becomes the charged price and regular_price becomes the comparison price, because the runtime variant has price and compareAtPrice and WooCommerce has regular_price and sale_price. Sending only regular_price therefore changes the comparison price, which is stated in the description. The currency is taken from the existing variant and never from the caller, so an update cannot redenominate a price. An unusable price is refused rather than becoming zero the way floatval would, a variant that did not change is not written, and the sale window parameters are omitted rather than accepted and ignored because the model has no scheduled-price concept. The scope mapping is explicit: product is the first variant by position, variations every later one, all every variant.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ProductVariantToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'update_woo_product_qty' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\UpdateProductStockTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the stock updater (Proposal 164 section 164.172) over ProductCatalogInterface, ready for the same reason as the price updater. set writes the quantity, increase and decrease move it, and a decrease that would cross zero clamps at zero and reports that it clamped, so a stock-out is distinguishable from a partial decrement; the WordPress version discarded the sign with absint before the arithmetic. A variant that does not track inventory has a null quantity, which is not zero: increase starts from nothing and turning stock management off clears the quantity rather than zeroing it. The notify parameter is omitted rather than accepted and ignored because this runtime binds no mail channel to the catalog.',
+			'evidence' => 'lib/core/tests/Unit/Tool/ProductVariantToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),		'update_workflow_rule' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\UpdateWorkflowRuleTool',
 			'readiness' => 'ready',
 			'parity' => 'port',
