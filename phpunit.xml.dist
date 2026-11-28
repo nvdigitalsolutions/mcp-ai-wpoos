@@ -44,6 +44,15 @@
             <exclude>tests/abilities/class-wp-mcp-ai-ability-bridge-mock-tool.php</exclude>
             <exclude>tests/abilities/trait-wp-mcp-ai-ability-test-bootstrap.php</exclude>
             <exclude>tests/graphify/bootstrap.php</exclude>
+            <!-- Standalone database suites (Proposal 167) run under their own
+                 configs in the database-postgres CI job. These helpers are
+                 require_once'd by the bootstraps and test files, so discovery
+                 must not load them as tests. -->
+            <exclude>tests/database/parity/bootstrap.php</exclude>
+            <exclude>tests/database/portable/bootstrap.php</exclude>
+            <exclude>tests/database/portable/wp-encryption-stub.php</exclude>
+            <exclude>tests/database/postgres/bootstrap.php</exclude>
+            <exclude>tests/database/postgres/PostgresFixture.php</exclude>
             <exclude>tests/paper-store/trait-paper-store-test-helpers.php</exclude>
             <exclude>addons/pro/tests/class-wp-mcp-ai-workflow-log-context-recorder-tool.php</exclude>
             <exclude>addons/pro/tests/class-wp-mcp-ai-media-toolkit-stub.php</exclude>

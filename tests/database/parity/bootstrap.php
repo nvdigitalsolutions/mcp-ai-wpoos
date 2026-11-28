@@ -20,7 +20,9 @@ declare(strict_types=1);
 
 $root = dirname(__DIR__, 3);
 
-define('ABSPATH', $root . '/');
+if (! defined('ABSPATH')) {
+    define('ABSPATH', $root . '/');
+}
 
 if (! function_exists('__')) {
     function __(string $text, ?string $domain = null): string

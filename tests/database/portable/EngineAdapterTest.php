@@ -16,6 +16,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/bootstrap.php';
+
 use Nvoos\Database\Domain\ValueObject\Database\CompiledStatement;
 use Nvoos\Database\Domain\ValueObject\Database\ConnectionDescriptor;
 use Nvoos\Database\Domain\ValueObject\Database\DatabaseLimits;

@@ -30,6 +30,8 @@ declare(strict_types=1);
 
 namespace Nvoos\Tests\Database\Parity;
 
+require_once __DIR__ . '/bootstrap.php';
+
 use Nvoos\Core\Tool\Database\AggregateTool;
 use Nvoos\Core\Tool\Database\DescribeTool;
 use Nvoos\Core\Tool\Database\ExportTool;

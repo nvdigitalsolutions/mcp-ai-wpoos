@@ -2,11 +2,19 @@
 /**
  * Schedule and workflow presets for the database toolkit.
  *
- * Proposal 167 phase P7, task 7.2. Two presets, both read-only:
+ * Proposal 167 phase P7, task 7.2. Every preset is read-only:
  *
  *  - a weekly **refusal review** that turns the audit trail into a scope-tuning
  *    report, so a misconfigured grant is fixed by an operator rather than by an
  *    assistant retrying until something works;
+ *  - a daily **connection health** sweep that probes each visible connection and
+ *    reports role capabilities, so a widened grant is noticed the day it lands;
+ *  - a weekly **scope census** that describes the relations in scope and flags
+ *    the ones without a primary key;
+ *  - a monthly **data-quality profile** that profiles up to five relations and
+ *    reports null-heavy and low-cardinality columns;
+ *  - a monthly **export digest** that writes the approved CSV and reports its
+ *    checksum;
  *  - a **profile-and-export** workflow that describes, profiles and exports one
  *    relation — the shape a scheduled report takes when the target is a database
  *    rather than a WordPress site.
@@ -41,7 +49,7 @@ final class WP_MCP_AI_Database_Presets {
 	 */
 	public static function schedule(): array {
 		return array(
-			'db_weekly_refusal_review' => array(
+			'db_weekly_refusal_review'        => array(
 				'name'          => __( 'Weekly Database Refusal Review', 'mcp-ai-wpoos-pro' ),
 				'description'   => __( 'Summarise the week\'s database refusals by code, scope and principal, and recommend scope edits. Never retries a refused operation.', 'mcp-ai-wpoos-pro' ),
 				'toolkit'       => 'database',
@@ -53,6 +61,66 @@ final class WP_MCP_AI_Database_Presets {
 				'schedule_data' => array(
 					'assistant_config' => array(
 						'message' => 'Call db_audit_tail with limit 200. Group the records by refusal_code, then by scope and principal. Report each refusal with the statement template and a recommended scope edit. Do not call any other db_* tool, and never retry a refused statement.',
+					),
+				),
+			),
+			'db_daily_connection_health'      => array(
+				'name'          => __( 'Daily Connection Health Sweep', 'mcp-ai-wpoos-pro' ),
+				'description'   => __( 'Probe every visible connection and report its role capabilities, flagging any connection that reports can_write or bypasses_rls. Never retries a failed probe.', 'mcp-ai-wpoos-pro' ),
+				'toolkit'       => 'database',
+				'category'      => 'monitoring',
+				'icon'          => 'dashicons-heart',
+				'schedule_type' => 'assistant_run',
+				'schedule'      => 'daily',
+				'tags'          => array( 'database', 'daily', 'health', 'governance' ),
+				'schedule_data' => array(
+					'assistant_config' => array(
+						'message' => 'Call db_list_connections, then call db_test_connection once per queryable connection. Report reachable, server_version, role, can_write and bypasses_rls for each connection, and flag any connection that reports can_write true or bypasses_rls true. Do not retry a failed probe and do not attempt any write.',
+					),
+				),
+			),
+			'db_weekly_scope_census'          => array(
+				'name'          => __( 'Weekly Scope Census', 'mcp-ai-wpoos-pro' ),
+				'description'   => __( 'Describe the relations in scope, report relation, view and column counts per schema, and flag tables and views without a primary key.', 'mcp-ai-wpoos-pro' ),
+				'toolkit'       => 'database',
+				'category'      => 'maintenance',
+				'icon'          => 'dashicons-list-view',
+				'schedule_type' => 'assistant_run',
+				'schedule'      => 'weekly',
+				'tags'          => array( 'database', 'weekly', 'census', 'schema' ),
+				'schedule_data' => array(
+					'assistant_config' => array(
+						'message' => 'Call db_describe with no relation argument. Report relation, view and column counts per schema, then list every table and view without a primary key. Flag any relation outside the expected reporting schema. When the result reports truncated true, say the census covers the first 60 relations only. Do not call any other db_* tool.',
+					),
+				),
+			),
+			'db_monthly_data_quality_profile' => array(
+				'name'          => __( 'Monthly Data-Quality Profile', 'mcp-ai-wpoos-pro' ),
+				'description'   => __( 'Profile up to five reporting relations and report null-heavy columns, distinct counts and the most frequent values, with skipped sensitive columns named.', 'mcp-ai-wpoos-pro' ),
+				'toolkit'       => 'database',
+				'category'      => 'reporting',
+				'icon'          => 'dashicons-chart-area',
+				'schedule_type' => 'assistant_run',
+				'schedule'      => 'monthly',
+				'tags'          => array( 'database', 'monthly', 'profile', 'quality' ),
+				'schedule_data' => array(
+					'assistant_config' => array(
+						'message' => 'For up to five relations in the reporting schema, call db_profile_table. Report row_count, every column with more than 20 percent nulls, its distinct count, and the five most frequent values. List the columns the tool skipped as sensitive. Do not call db_select against individual rows.',
+					),
+				),
+			),
+			'db_monthly_export_digest'        => array(
+				'name'          => __( 'Monthly Export Digest', 'mcp-ai-wpoos-pro' ),
+				'description'   => __( 'Export the approved reporting relation to CSV and report rows, bytes, masked columns and the sha256 checksum. Never emails or publishes the file.', 'mcp-ai-wpoos-pro' ),
+				'toolkit'       => 'database',
+				'category'      => 'business',
+				'icon'          => 'dashicons-media-spreadsheet',
+				'schedule_type' => 'assistant_run',
+				'schedule'      => 'monthly',
+				'tags'          => array( 'database', 'monthly', 'export', 'finance' ),
+				'schedule_data' => array(
+					'assistant_config' => array(
+						'message' => 'Call db_export with format csv for the approved reporting relation, using the scope row limit. Report rows, bytes, the masked column count and the sha256 checksum. Leave the file where the tool stored it; do not email or publish it. When the result reports truncated true, report the truncation instead of exporting again.',
 					),
 				),
 			),
