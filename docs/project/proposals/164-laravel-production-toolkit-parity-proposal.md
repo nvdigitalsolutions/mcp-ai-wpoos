@@ -12269,3 +12269,56 @@ which no envelope carries at the top level.
 
 Next in this family: the five analytics reads, which are the last read-only
 group; then the two settings writers this slice's readers pair with.
+
+### §164.135 — `cloudways`, slice 3: the analytics reads
+
+Five tools, and the last read-only group in the family:
+
+| Tool | Request |
+|---|---|
+| `cloudways_app_monitor_summary` | `GET /app/{server}/{app}/monitor/summary` |
+| `cloudways_app_mysql_analytics` | `GET /app/{server}/{app}/analytics/mysql` |
+| `cloudways_app_php_analytics` | `GET /app/{server}/{app}/analytics/php` |
+| `cloudways_app_traffic_analytics` | `GET /app/{server}/{app}/analytics/traffic` |
+| `cloudways_server_monitor_summary` | `GET /server/{id}/monitor/summary` |
+
+#### One base class for the four app-scoped readers
+
+Four of the five differ in exactly three things: the path segment, the response
+key and the projection. `AppAnalyticsTool` holds the rest — the capability, the
+`appPair` guard, the request, the malformed-block refusal and the envelope — and
+each subclass is about forty lines. The server summary is not a subclass: its
+path is server-scoped and there is no app id to validate, and forcing it into the
+base would have meant a nullable app id in five places.
+
+#### Two-field projections, and `values` additive
+
+WordPress projected two fields per tool and dropped the rest of the block. The two
+documented fields keep their place and type — counts stay integers, banded
+figures stay strings — and `values` carries every **scalar** field the block
+returned. Nested structures are not flattened: this runtime has not seen the
+analytics payload, and inventing a shape for it would be the same mistake the
+`get_import_duty` deferral records.
+
+One capability boundary is named rather than quietly crossed: the Cloudways MCP
+surface splits the traffic endpoint four ways (top IPs, top bots, top URLs,
+status codes) behind a `resource` argument. The WordPress tool has no such
+argument and reads only `visits` and `bandwidth`, so the port does the same.
+Adding the four breakdowns would be a new tool, not parity.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `CloudwaysAnalyticsToolsTest` | **7 tests, 19 assertions**, 0 failures |
+| `lib/core` unit suite | **3,892 tests / 22,224 assertions** (+7 tests, +19 assertions), 0 failures |
+| Adapter `ToolReadinessRegistrationTest` | 5 tests, 0 failures |
+| Readiness manifest | 527 → **532 rows**; servable 508 → **513**; ready 472; no violations |
+| Toolkit parity | 306 → **311 ported**, 9 declined, 79 deferred, 539 → **534 remaining**; `cloudways` `60 \| 14 \| 0 \| 0 \| 46` → `60 \| 19 \| 0 \| 0 \| 41` |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on all 23 Cloudways paths |
+
+The read-only queue in this family is now empty. What remains is 41 writes and
+their two readers' counterparts: the settings writers (`fpm`, `varnish`, `cname`,
+`cors`), the lifecycle writes (`create`, `clone`, `restore`), the Git and SSH
+writers, the Cloudflare and DNS writers, and the four deletes.
