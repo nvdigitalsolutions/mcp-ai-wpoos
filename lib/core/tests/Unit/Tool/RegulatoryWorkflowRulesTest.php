@@ -72,7 +72,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_create_stores_the_rule_and_logs_the_creation(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
 
         $result = $this->create($store)->execute(
             array(
@@ -114,7 +114,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_create_refuses_an_unknown_trigger_event(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
 
         $result = $this->create($store)->execute(
             array(
@@ -133,7 +133,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_create_warns_about_an_email_action_without_recipients(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
 
         $result = $this->create($store)->execute(
             array(
@@ -155,7 +155,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_update_refuses_a_call_that_changes_nothing(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
         $store->add($this->rule(1, 'rule_abc', 'Existing'));
 
         $result = $this->update($store)->execute(
@@ -170,7 +170,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_update_can_disable_a_rule(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
         $store->add($this->rule(1, 'rule_abc', 'Existing'));
 
         $result = $this->update($store)->execute(
@@ -184,7 +184,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_update_refuses_an_unknown_trigger_event_and_leaves_the_rule(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
         $store->add($this->rule(1, 'rule_abc', 'Existing'));
 
         $result = $this->update($store)->execute(
@@ -204,7 +204,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_delete_requires_confirmation(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
         $store->add($this->rule(1, 'rule_abc', 'Existing'));
 
         $result = $this->delete($store)->execute(
@@ -219,7 +219,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_the_deletion_entry_outlives_the_rule(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
         $store->add($this->rule(1, 'rule_abc', 'Doomed'));
 
         $result = $this->delete($store)->execute(
@@ -243,7 +243,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_list_statistics_add_up_under_a_filter(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
 
         $store->add($this->rule(1, 'rule_a', 'A'));
         $store->add($this->rule(2, 'rule_b', 'B'));
@@ -279,7 +279,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_list_treats_an_absent_filter_as_both_values(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
 
         $store->add($this->rule(1, 'rule_a', 'A'));
         $store->add($this->rule(2, 'rule_b', 'B', array('enabled' => false)));
@@ -305,7 +305,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_the_dry_run_reports_no_match(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
         $store->add(
             $this->rule(
                 1,
@@ -344,7 +344,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_a_missing_registration_is_a_warning(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
         $store->add($this->rule(1, 'rule_abc', 'Expiry'));
 
         $missing = $this->test_rule($store)->execute(
@@ -368,7 +368,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_disabling_action_validation_silences_only_action_errors(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
         $store->add(
             $this->rule(
                 1,
@@ -406,7 +406,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_filtering_by_rule_drops_entries_without_the_field(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
 
         $store->add($this->logEntry(1, 'rule_abc', 'create_rule', '2026-01-05 10:00:00'));
         $store->add($this->logEntry(2, 'rule_other', 'create_rule', '2026-01-05 11:00:00'));
@@ -425,7 +425,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_log_statistics_describe_the_matched_set(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
 
         $store->add($this->logEntry(1, 'rule_abc', 'create_rule', '2026-01-05 10:00:00'));
         $store->add($this->logEntry(2, 'rule_abc', 'update_rule', '2026-01-05 11:00:00'));
@@ -454,7 +454,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_an_unreadable_timestamp_is_counted_not_dated(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
 
         $store->add($this->logEntry(1, 'rule_abc', 'create_rule', '2026-01-05 10:00:00'));
         $store->add($this->logEntry(2, 'rule_abc', 'update_rule', 'not-a-date'));
@@ -482,7 +482,7 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     public function test_a_malformed_date_is_refused(): void
     {
-        $store = new WorkflowRuleStore();
+        $store = new InMemoryContentStore();
 
         $malformed = $this->log($store)->execute(
             array('start_date' => '2026-13-99'),
@@ -503,32 +503,32 @@ final class RegulatoryWorkflowRulesTest extends TestCase
 
     // ─── Tools ───────────────────────────────────────────────────────────
 
-    private function create(WorkflowRuleStore $store): CreateWorkflowRuleTool
+    private function create(InMemoryContentStore $store): CreateWorkflowRuleTool
     {
         return new CreateWorkflowRuleTool($this->errors, $store);
     }
 
-    private function update(WorkflowRuleStore $store): UpdateWorkflowRuleTool
+    private function update(InMemoryContentStore $store): UpdateWorkflowRuleTool
     {
         return new UpdateWorkflowRuleTool($this->errors, $store);
     }
 
-    private function delete(WorkflowRuleStore $store): DeleteWorkflowRuleTool
+    private function delete(InMemoryContentStore $store): DeleteWorkflowRuleTool
     {
         return new DeleteWorkflowRuleTool($this->errors, $store);
     }
 
-    private function list(WorkflowRuleStore $store): ListWorkflowRulesTool
+    private function list(InMemoryContentStore $store): ListWorkflowRulesTool
     {
         return new ListWorkflowRulesTool($this->errors, $store);
     }
 
-    private function test_rule(WorkflowRuleStore $store): TestWorkflowRuleTool
+    private function test_rule(InMemoryContentStore $store): TestWorkflowRuleTool
     {
         return new TestWorkflowRuleTool($this->errors, $store);
     }
 
-    private function log(WorkflowRuleStore $store): GetWorkflowExecutionLogTool
+    private function log(InMemoryContentStore $store): GetWorkflowExecutionLogTool
     {
         return new GetWorkflowExecutionLogTool($this->errors, $store);
     }
