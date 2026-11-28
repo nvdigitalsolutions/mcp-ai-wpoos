@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5459fec7ca2e543f6b449a1cefe8d70c",
+    "content-hash": "560a11ed1ddf5d84be55f4498a4cf83a",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -4442,10 +4442,10 @@
             "dist": {
                 "type": "path",
                 "url": "../../../lib/core",
-                "reference": "975ecbdb1d6d8ad63cb7e8944dbc4942a1f8c8d2"
+                "reference": "42fb023062348b5747ac14468cc8f919a37ea6a7"
             },
             "require": {
-                "php": "^8.1"
+                "php": "^8.2"
             },
             "require-dev": {
                 "mockery/mockery": "^1.6",
@@ -4509,14 +4509,45 @@
             }
         },
         {
+            "name": "nvoos/database-kernel",
+            "version": "1.0.0",
+            "dist": {
+                "type": "path",
+                "url": "../../../addons/pro/lib/database",
+                "reference": "9acf8663d4b1ce7e98396dd71ccf209108bb0c6d"
+            },
+            "require": {
+                "php": ">=8.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Nvoos\\Database\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Nvoos\\Database\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Scoped, auditable database access kernel for NV oOS (Proposal 167). Host-free: no WordPress, no framework, no I/O.",
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
             "name": "nvoos/laravel-adapter",
             "version": "1.0.0",
             "dist": {
                 "type": "path",
                 "url": "../../../lib/laravel-adapter",
-                "reference": "6a9cae93848bf3a86043c05821b7a293a10b094d"
+                "reference": "7068a9c52a0fe685769080acad26e8a912297776"
             },
             "require": {
+                "ext-fileinfo": "*",
                 "illuminate/auth": "^12.41.1 || ^13.0",
                 "illuminate/cache": "^12.41.1 || ^13.0",
                 "illuminate/config": "^12.41.1 || ^13.0",
@@ -4525,9 +4556,11 @@
                 "illuminate/events": "^12.41.1 || ^13.0",
                 "illuminate/filesystem": "^12.41.1 || ^13.0",
                 "illuminate/http": "^12.41.1 || ^13.0",
+                "illuminate/mail": "^12.41.1 || ^13.0",
                 "illuminate/queue": "^12.41.1 || ^13.0",
                 "illuminate/support": "^12.41.1 || ^13.0",
                 "nvoos/core": "*",
+                "nvoos/database-kernel": "*",
                 "php": "^8.2"
             },
             "require-dev": {
