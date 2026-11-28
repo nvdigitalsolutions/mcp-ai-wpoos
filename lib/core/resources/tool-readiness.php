@@ -520,6 +520,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/OrchestrationLoopToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'configure_email_notifications' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\ConfigureEmailNotificationsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Stores one mcp_ai_notification_rule item per notification type, with the type in meta so a second call updates in place. The WordPress option was read in exactly two places and only for recipients, so enabled and conditions are stored and nothing reads them; the port keeps that and the description says so. Corrections: the type was unvalidated and any string created a settings bucket nothing could read; enabled was cast with (bool) so the string false enabled a rule; recipients were sanitize_email output stored unchecked, so a junk address became the empty string, and the port validates, drops, reports and refuses when a supplied list yields nothing valid. The write-only wp_mcp_ai_notification_log option is not ported because nothing ever read it; the item carries updated_at and updated_by instead. Gated on manage_options, which is what the handler checked rather than the edit_posts it declared (Proposal 164 section 164.161).',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryNotificationToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'configure_schedule_widget_defaults' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Orchestration\\ConfigureScheduleWidgetDefaultsTool',
 			'readiness' => 'ready',
@@ -2913,6 +2922,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/CalendarTriageToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'get_notification_history' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\GetNotificationHistoryTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Reads mcp_ai_notification_log items newest first, filtered by type, registration and an inclusive date range. Three defects fixed, the same three as the workflow log: the isset filter guards kept entries lacking the field, so filtering by type returned that type plus every entry missing it; by_type counted the whole store while sitting beside filtered_results from the sliced result; and dates went through strtotime so an unreadable timestamp sorted as 1970. The port compares unconditionally, counts statistics over the matched set, compares the first ten characters of a Y-m-d H:i:s timestamp against a Y-m-d argument, counts unreadable timestamps, and reports total, matched and store_entries separately. The 100-entry option cap is not ported because it was an option-size decision; store_entries makes growth visible. Only send_status_change_notification writes this store, which the description states (Proposal 164 section 164.161).',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryNotificationToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'get_open_meteo_forecast' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GetOpenMeteoForecastTool',
 			'readiness' => 'ready',
@@ -4743,6 +4761,15 @@ return array(
 			'probe' => 'call',
 			'reason' => 'Ports the Slack message poster (Proposal 164 section 164.100). One chat.postMessage call returning the timestamp a threaded reply or a permalink needs, with optional Block Kit blocks and an optional thread parent. Corrections: an ok:true answer without a ts is reported as malformed instead of read as an empty success, where WordPress returned the provider document as-is. The token is an argument, marked writeOnly in the schema, and is never echoed in a reply or an error. The per-slug capability and timeout filters and the event log are dropped as WordPress extension points with no core equivalent. Gated on manage_options.',
 			'evidence' => 'lib/core/tests/Unit/Tool/ChatChannelSlackToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
+		),
+		'send_status_change_notification' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\SendStatusChangeNotificationTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Emails a status change over EmailServiceInterface and records the attempt in the notification log. Recipients resolve in three steps — argument, then the stored status_change rule, then the host default — and the response names which one supplied them, a question the WordPress reply could not answer. An unconfigured host has no admin_email, so the WordPress fallback becomes a constructor default, and with none of the three available the call is refused rather than logging a send of zero. Corrections: addresses were sanitize_email output handed to wp_mail unchecked, so the port validates, drops and reports them, and refuses a supplied list with nothing valid; emails_sent is written into the log entry, which WordPress did not record. A missing transport or a refusal is reported as emails_sent zero with failed_recipients and success true, the rule the expiry-alert tool follows. The trailing edit link is omitted because this runtime has no admin screen (Proposal 164 section 164.161).',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryNotificationToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
 		'send_teams_message' => array(

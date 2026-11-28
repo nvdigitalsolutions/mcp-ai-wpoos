@@ -86,10 +86,10 @@ class SendExpiryAlertsTool extends RegulatoryTool
     public function __construct(
         ErrorFactoryInterface $e,
         ContentStoreInterface $content,
-        private readonly ?EmailServiceInterface $email = null,
+        ?EmailServiceInterface $email = null,
         private readonly array $defaultRecipients = array(),
     ) {
-        parent::__construct($e, $content);
+        parent::__construct($e, $content, $email);
     }
 
     public function getSlug(): string
@@ -351,69 +351,6 @@ class SendExpiryAlertsTool extends RegulatoryTool
             $sent,
             $recipients
         );
-    }
-
-    /**
-     * Split addresses into the valid and the rejected.
-     *
-     * @param list<string> $addresses
-     *
-     * @return array{valid: list<string>, invalid: list<string>}
-     */
-    private function checkRecipients(array $addresses): array
-    {
-        $transport = null !== $this->email && $this->email->isAvailable() ? $this->email : null;
-
-        $valid   = array();
-        $invalid = array();
-
-        foreach ($addresses as $address) {
-            $ok = false !== filter_var($address, FILTER_VALIDATE_EMAIL);
-
-            if ($ok && null !== $transport) {
-                try {
-                    $ok = $transport->validateRecipient($address);
-                } catch (\Throwable $error) {
-                    $ok = false;
-                }
-            }
-
-            if (! $ok) {
-                $invalid[] = $address;
-
-                continue;
-            }
-
-            if (! in_array($address, $valid, true)) {
-                $valid[] = $address;
-            }
-        }
-
-        return array('valid' => $valid, 'invalid' => $invalid);
-    }
-
-    /**
-     * The addresses in a caller value or a host default list.
-     *
-     * @return list<string>
-     */
-    private function addressList(mixed $raw): array
-    {
-        if (! is_array($raw)) {
-            return array();
-        }
-
-        $addresses = array();
-
-        foreach ($raw as $address) {
-            $value = $this->text($address);
-
-            if ('' !== $value) {
-                $addresses[] = $value;
-            }
-        }
-
-        return $addresses;
     }
 
     /**

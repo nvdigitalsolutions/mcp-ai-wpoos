@@ -38,6 +38,7 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tool\Regulatory;
 
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
+use Nvoos\Core\Domain\Contract\EmailServiceInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Entity\ContentItem;
 use Nvoos\Core\Domain\Entity\ContentQuery;
@@ -75,6 +76,32 @@ abstract class RegulatoryTool extends AbstractTool
 
     /** The kinds of regulatory update the reader accepts as a filter. */
     public const UPDATE_TYPES = array('new_regulation', 'amendment', 'guideline', 'restriction', 'other');
+
+    /**
+     * The content type one notification rule is stored as.
+     *
+     * WordPress kept every rule in the `wp_mcp_ai_notification_settings`
+     * option, keyed by notification type. One item per type keeps the same
+     * shape and lets the reader find a rule by a meta query.
+     */
+    public const NOTIFICATION_RULE_TYPE = 'mcp_ai_notification_rule';
+
+    /**
+     * The content type one sent-notification entry is stored as.
+     *
+     * WordPress logged sends into `wp_mcp_ai_notification_history`, capped at
+     * 100 entries. Entries are separate items here for the reason the workflow
+     * log is: an entry is an audit record, not a property of the rule it names.
+     */
+    public const NOTIFICATION_LOG_TYPE = 'mcp_ai_notification_log';
+
+    /** The notification types `configure_email_notifications` accepts. */
+    public const NOTIFICATION_TYPES = array(
+        'expiry_alert',
+        'status_change',
+        'submission_confirmation',
+        'approval_notice',
+    );
 
     /** The product category taxonomy. */
     public const CATEGORY_TAX = 'mcp_ai_reg_category';
@@ -212,6 +239,7 @@ abstract class RegulatoryTool extends AbstractTool
     public function __construct(
         ErrorFactoryInterface $e,
         protected readonly ContentStoreInterface $content,
+        protected readonly ?EmailServiceInterface $email = null,
     ) {
         parent::__construct($e);
     }
@@ -712,6 +740,109 @@ abstract class RegulatoryTool extends AbstractTool
         }
 
         return false;
+    }
+
+    /**
+     * Split a recipient list into the addresses that can receive mail and the
+     * ones that cannot.
+     *
+     * WordPress sanitised with `sanitize_email()` and never checked the result,
+     * so a junk address became the empty string in the stored list and `wp_mail`
+     * was then called with it. The port validates twice: `FILTER_VALIDATE_EMAIL`
+     * always, and the host transport's own check when one is injected and
+     * reports itself available. Duplicates are dropped, because two copies of an
+     * address are one delivery and a recipient count that says otherwise is
+     * wrong.
+     *
+     * A transport that throws on a check is treated as rejecting the address
+     * rather than as failing the call: one bad address must not stop the others.
+     *
+     * @param list<string> $addresses
+     *
+     * @return array{valid: list<string>, invalid: list<string>}
+     */
+    protected function checkRecipients(array $addresses): array
+    {
+        $transport = null !== $this->email && $this->email->isAvailable() ? $this->email : null;
+
+        $valid   = array();
+        $invalid = array();
+
+        foreach ($addresses as $address) {
+            $ok = false !== filter_var($address, FILTER_VALIDATE_EMAIL);
+
+            if ($ok && null !== $transport) {
+                try {
+                    $ok = $transport->validateRecipient($address);
+                } catch (\Throwable $error) {
+                    $ok = false;
+                }
+            }
+
+            if (! $ok) {
+                $invalid[] = $address;
+
+                continue;
+            }
+
+            if (! in_array($address, $valid, true)) {
+                $valid[] = $address;
+            }
+        }
+
+        return array('valid' => $valid, 'invalid' => $invalid);
+    }
+
+    /**
+     * A recipient list from an argument, with blank entries removed.
+     *
+     * @return list<string>
+     */
+    protected function addressList(mixed $raw): array
+    {
+        if (! is_array($raw)) {
+            return array();
+        }
+
+        $addresses = array();
+
+        foreach ($raw as $address) {
+            $value = $this->text($address);
+
+            if ('' !== $value) {
+                $addresses[] = $value;
+            }
+        }
+
+        return $addresses;
+    }
+
+    /**
+     * A notification rule by its type, or null.
+     *
+     * The type is the key WordPress used in the settings option, so it is a
+     * query rather than the content id. If two items ever carry the same type,
+     * the lowest id wins, which is the oldest and therefore the one an upsert
+     * would have written first.
+     */
+    protected function notificationRule(string $type): ?ContentItem
+    {
+        if ('' === $type) {
+            return null;
+        }
+
+        $items = $this->collectContent(
+            array(self::NOTIFICATION_RULE_TYPE),
+            array(array('key' => 'notification_type', 'value' => $type, 'compare' => '='))
+        );
+
+        foreach ($items as $item) {
+            if ($type === $this->text($item->meta['notification_type'] ?? null)) {
+                return $item;
+            }
+        }
+
+        return null;
     }
 
     /**
