@@ -95,7 +95,7 @@ class NV_oOS_Design_System_Email_Template_CPT {
 	 * Runs once per site on `init`. The old type and its `_nds_template_*`
 	 * meta keys are renamed to the prefixed `nvoos_nds_*` names.
 	 *
-	 * @since 1.0.0
+	 * @since 1.0.1
 	 * @return void
 	 */
 	public static function migrate_legacy() {

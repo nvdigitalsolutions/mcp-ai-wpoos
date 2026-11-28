@@ -28,7 +28,7 @@ if ( ! defined( 'NVOOS_DESIGN_SYSTEM_URL' ) ) {
 }
 
 if ( ! defined( 'NVOOS_DESIGN_SYSTEM_VERSION' ) ) {
-	define( 'NVOOS_DESIGN_SYSTEM_VERSION', '1.0.0' );
+	define( 'NVOOS_DESIGN_SYSTEM_VERSION', '1.0.1' );
 }
 
 if ( ! defined( 'NVOOS_DESIGN_SYSTEM_FILE' ) ) {

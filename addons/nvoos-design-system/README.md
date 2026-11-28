@@ -6,12 +6,12 @@ bridges the same tokens into the block editor's Global Styles, checks WCAG 2.2
 contrast, and can brand outgoing email with an accessible template.
 
 - **Slug:** `nvoos-design-system`
-- **Version:** 1.0.0
+- **Version:** 1.0.1
 - **Requires:** WordPress 6.0+, PHP 8.1+
 - **License:** GPLv3 or later
 - **Standalone:** no API keys, no external service, no theme dependency
 
-Previously released as the **Crocoblock Design System**. Version 1.0.0 removes
+Previously released as the **Crocoblock Design System**. Version 1.0.1 removes
 the `--cds-*` CSS variables and the `NV_oOS_Crocoblock_DS_*` PHP class aliases.
 The `.cds-form` wrapper class remains as a markup compatibility alias.
 
@@ -246,7 +246,7 @@ rsync -rc --exclude-from=addons/nvoos-design-system/.distignore \
 
 ## Changelog highlights
 
-- **1.0.0** — first WordPress.org release. DTCG 2025.10 codec with aliases,
+- **1.0.1** — first WordPress.org release. DTCG 2025.10 codec with aliases,
   `$root`, `$extends`, `$deprecated`, and `$extensions`; Global Styles bridge;
   brand kit; WCAG 2.2 contrast audit; four email delivery modes with the wrapper
   off by default; auditor compatibility checks; strict CSS validators; multisite

@@ -11,7 +11,7 @@
  * - 7:1 / 4.5:1 for AAA where requested.
  *
  * @package NV_oOS_Design_System
- * @since   1.0.0
+ * @since   1.0.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WCAG contrast engine.
  *
- * @since 1.0.0
+ * @since 1.0.1
  */
 class NV_oOS_Design_System_Contrast_Auditor {
 

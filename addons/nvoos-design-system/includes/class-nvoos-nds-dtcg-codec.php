@@ -12,7 +12,7 @@
  * plain PHP so it can be exercised by the standalone test bootstrap.
  *
  * @package NV_oOS_Design_System
- * @since   1.0.0
+ * @since   1.0.1
  *
  * @see https://www.designtokens.org/tr/2025.10/format/
  */
@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * DTCG value codec.
  *
- * @since 1.0.0
+ * @since 1.0.1
  */
 class NV_oOS_Design_System_DTCG_Codec {
 
@@ -805,7 +805,7 @@ class NV_oOS_Design_System_DTCG_Codec {
 	 * `(float) $array` silently yields 1.0, so untrusted JSON must be checked
 	 * before any numeric cast.
 	 *
-	 * @since 1.0.0
+	 * @since 1.0.1
 	 *
 	 * @param mixed $value Candidate value.
 	 * @return float|null

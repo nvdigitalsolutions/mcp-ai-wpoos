@@ -48,7 +48,7 @@ class NV_oOS_Design_System_CSS_Generator {
 	/**
 	 * Whether to emit legacy `--cds-*` aliases.
 	 *
-	 * @deprecated 1.0.0 The transition aliases were removed; the property is
+	 * @deprecated 1.0.1 The transition aliases were removed; the property is
 	 *                   retained only so third-party constructors keep working.
 	 * @var bool
 	 */
@@ -72,7 +72,7 @@ class NV_oOS_Design_System_CSS_Generator {
 	 *
 	 * @param NV_oOS_Design_System_Token_Registry $registry                Token registry.
 	 * @param bool                                $use_typed_properties    Whether to output @property blocks.
-	 * @param bool                                $include_legacy_aliases  Deprecated; ignored since 1.0.0.
+	 * @param bool                                $include_legacy_aliases  Deprecated; ignored since 1.0.1.
 	 */
 	public function __construct( $registry, $use_typed_properties = false, $include_legacy_aliases = false ) {
 		$this->registry               = $registry;

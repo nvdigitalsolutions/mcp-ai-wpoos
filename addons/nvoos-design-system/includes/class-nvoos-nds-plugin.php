@@ -89,7 +89,7 @@ class NV_oOS_Design_System_Plugin {
 	 * The full key is suffixed with the current user ID so notices never
 	 * leak between admins.
 	 *
-	 * @since 1.0.0
+	 * @since 1.0.1
 	 * @var string
 	 */
 	const ADMIN_NOTICE_KEY = 'nvoos_nds_admin_notices';
@@ -301,7 +301,7 @@ class NV_oOS_Design_System_Plugin {
 	/**
 	 * Check whether the legacy `--cds-*` / `.cds-*` aliases are enabled.
 	 *
-	 * @deprecated 1.0.0 The transition aliases were removed. Retained for
+	 * @deprecated 1.0.1 The transition aliases were removed. Retained for
 	 *                   third-party callers; always returns false.
 	 *
 	 * @return bool
@@ -663,7 +663,7 @@ class NV_oOS_Design_System_Plugin {
 	 * `settings-updated`, so notices are stored under a plugin-scoped key and
 	 * rendered by the admin page on the next load.
 	 *
-	 * @since 1.0.0
+	 * @since 1.0.1
 	 *
 	 * @param string $redirect Destination URL.
 	 * @return void
@@ -683,7 +683,7 @@ class NV_oOS_Design_System_Plugin {
 	/**
 	 * Read (and clear) the pending admin notices for the current user.
 	 *
-	 * @since 1.0.0
+	 * @since 1.0.1
 	 *
 	 * @return array<int, array{setting?: string, code?: string, message?: string, type?: string}>
 	 */

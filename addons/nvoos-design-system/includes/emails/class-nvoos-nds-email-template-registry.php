@@ -121,7 +121,7 @@ class NV_oOS_Design_System_Email_Template_Registry {
 	 *   2. nvoos_nds_active_email_template option
 	 *
 	 * The wrapper is off until an administrator explicitly chooses a
-	 * template. There is deliberately no default template in 1.0.0: a
+	 * template. There is deliberately no default template in 1.0.1: a
 	 * design-tokens plugin must not silently rebrand every outgoing email.
 	 *
 	 * @return array{html: string, slug: string, settings: array}|null Template payload, or null when unresolvable.
