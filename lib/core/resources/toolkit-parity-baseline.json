@@ -393,6 +393,7 @@
         "quiz-management": [],
         "regulatory-registration": [
             "approve_registration",
+            "check_hs_code",
             "create_reg_product",
             "create_registration",
             "delete_reg_product",
@@ -412,6 +413,7 @@
             "update_reg_product",
             "update_registration_status",
             "upload_reg_document",
+            "validate_inci_ingredients",
             "validate_reg_product"
         ],
         "remote-connections": [],

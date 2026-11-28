@@ -375,6 +375,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/OrchestrationLoopToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'check_hs_code' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\CheckHsCodeTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress HS code checker over the tool base (Proposal 164 section 164.151). An invalid code was returned as WP_Error wp_mcp_ai_invalid_arguments while the sibling validator returned success with is_valid false, so one family gave two answers to the same question; the port returns the verdict in the envelope. A four digit code produced two errors because the length check and the chapter check ran independently, so the chapter rule is skipped for a code already rejected for length. The chapter 33 rule is a scope statement rather than a defect and the description says so. Dotted and spaced codes are accepted and echoed as supplied, an unknown heading inside chapter 33 falls back to the chapter description, hs_info always carries a subcodes map, and product_type_match is true when no product type is supplied.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryInciHsValidationTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'check_higgsfield_request' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CheckHiggsfieldRequestTool',
 			'readiness' => 'ready',
@@ -4964,6 +4973,15 @@ return array(
 			'probe' => 'call',
 			'reason' => 'Ports the WordPress product validation over ContentStoreInterface (Proposal 164 section 164.150). The declared defaults were not the actual ones: the schema promised all three checks on and the handler read them with empty(), so a bare call validated nothing and reported is_valid true — a vacuous pass in a compliance toolkit. The port applies the documented defaults and only an explicit false disables a check. A negative verdict stays a successful call, with the verdict in is_valid and status. Blank ingredient items are skipped so a trailing comma does not add an ingredient, and the chapter warning is suppressed for a code already rejected for length.',
 			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryProductValidationTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'validate_inci_ingredients' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\ValidateInciIngredientsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress INCI validator over the tool base (Proposal 164 section 164.151). The schema declared check_restrictions default true and the handler read it with empty, so the documented call skipped the restriction table entirely and a list containing Hydroquinone came back is_valid true — the same vacuous-pass fault section 164.150 fixed in validate_reg_product. The port applies the declared default and only an explicit false skips the table. An input of three commas parsed to zero ingredients and passed, so zero parsed ingredients is reported as invalid. Restrictions match by case-insensitive substring on purpose: a false positive asks for a human look, a false negative ships a banned substance. country is recorded on the result and does not select a table, as in WordPress. A restricted ingredient keeps a full naming score, so status can read mostly_valid while is_valid is false.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryInciHsValidationTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'validate_json' => array(

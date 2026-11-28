@@ -13378,3 +13378,98 @@ this family's readers ask for `read`.
 
 The next slice is `validate_inci_ingredients` and `check_hs_code`, the two
 standalone validators this tool composes in miniature.
+
+### §164.151 — `regulatory-registration`, slice 8: INCI and HS code validation
+
+The two standalone validators that `validate_reg_product` composes in miniature.
+They were measured together because they share a subject: what the family does
+when the answer is *no*.
+
+#### The restriction check was off unless asked for
+
+`validate_inci_ingredients` declared `check_restrictions` in its schema with
+`default: true`, and the handler read it with `! empty( $arguments[ ... ] )`.
+The call the schema documents — `validate_inci_ingredients({ ingredients })` —
+therefore ran **no restriction check at all**, and `is_valid` ignored the
+restricted table completely. A list containing `Hydroquinone` came back
+`is_valid: true`.
+
+That is the same fault §164.150 found in `validate_reg_product`, in a second
+tool written by the same hand. The port applies the declared default, and only
+an explicit `false` skips the table.
+
+#### An empty list was a valid list
+
+WordPress exploded the input on commas, skipped the blanks, and then computed a
+score over the survivors. An input of `",,,"` produced zero ingredients, a
+score of `0`, and `status: valid` with `is_valid: true`. A compliance check that
+passes on nothing is worse than one that fails, because the failure is silent,
+so zero parsed ingredients is reported as invalid.
+
+#### Two tools, two ways to say no
+
+`validate_reg_product` returned success with `is_valid: false` for a bad input.
+`check_hs_code` returned `WP_Error( 'wp_mcp_ai_invalid_arguments' )`, carrying
+the same facts in its error data. A caller cannot handle both without
+special-casing the slug.
+
+The port returns the verdict in the envelope for both — `is_valid`,
+`errors`, and an empty `hs_info` — for the reason §164.150 recorded: a validator
+reports, and a business outcome is not a transport failure. The only failures
+left in either tool are argument failures, which really are transport failures.
+
+#### One mistake, one complaint
+
+The length rule and the chapter rule ran independently, so a four-digit `3304`
+produced two errors: "must be 6-10 digits" and "cosmetics typically use 33".
+The second is a consequence of the first, not a second fact. The port evaluates
+the chapter only once the length passes, which is the same correction §164.150
+applied to its chapter warning.
+
+#### Chapter 33 is a scope statement
+
+A non-33 chapter is reported invalid. That is not a defect: this tool exists for
+cosmetics and perfumes, and a carton code failing here is the tool working as
+designed. It is stated in the description so a caller knows why, and reported
+as its own error rather than folded into the length message.
+
+#### Deliberately loose, deliberately recorded
+
+- **Restrictions match by case-insensitive substring.** `Lead` flags
+  `Lead Acetate`, which is the intent, and also flags an unrelated word that
+  merely contains it. The looseness is chosen: a false positive asks a human
+  for a look, a false negative ships a banned substance.
+- **`country` is recorded, not used.** WordPress accepted it, wrote it onto the
+  result, and never selected a different table. The port does the same and says
+  so in the schema, rather than implying a jurisdictional check that never
+  existed. `restriction_info.country` reads `Global` when the argument is empty.
+- **A restricted ingredient keeps a full naming score.** Score measures
+  nomenclature only, so a list of two valid names with one banned substance
+  scores `100` and reports `status: mostly_valid` while `is_valid` is `false`.
+  Both numbers are true and they answer different questions, so both are
+  reported rather than smoothed into one verdict.
+- **`hs_info` always carries a `subcodes` map.** WordPress omitted the key for
+  headings `3303`, `3306` and `3307`. A stable shape means a consumer can read
+  `hs_info.subcodes` without an `isset`.
+
+Both tools are gated on `read`. WordPress declares `edit_posts` for each; neither
+mutates anything, and §164.150 set the precedent for the family.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryInciHsValidationTest` | **24 tests, 71 assertions**, 0 failures |
+| `lib/core` unit suite | **4,142 tests / 23,033 assertions** (+24 tests, +71 assertions), 0 failures |
+| Adapter suite | **698 tests / 3,789 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 594 → **596 rows**; servable 575 → **577**; ready 534 → **536**; no violations |
+| Toolkit parity | 373 → **375 ported**, 9 declined, 79 deferred, 472 → **470 remaining**; `regulatory-registration` `59 \| 21 \| 0 \| 0 \| 38` → **`59 \| 23 \| 0 \| 0 \| 36`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors across the two tools, the test and the manifest |
+| `check-file-docs.php --strict` | exit 0 |
+
+The next slice is the compliance remainder — `check_product_compliance`,
+`check_authority_status`, `validate_document_checklist` and
+`validate_excel_import` — which needs one recorded decision first:
+`validate_document_checklist` reads a requirement store whose records the
+family does not yet own.
