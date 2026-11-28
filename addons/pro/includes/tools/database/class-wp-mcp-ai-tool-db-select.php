@@ -35,6 +35,17 @@ final class WP_MCP_AI_Tool_Db_Select extends WP_MCP_AI_Database_Tool_Base {
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * Declared as a literal rather than inherited: bin/generate-tool-capability-flags.php
+	 * reads flags statically with token_get_all(), and a tool absent from the
+	 * catalogue is denied by the read-only profile guard.
+	 */
+	public function get_capability_flags() {
+		return array( 'pro', 'requires-capability', 'read-only', 'external-api', 'network-dependent', 'paginated' );
+	}
+
+	/**
+	 * {@inheritDoc}
 	 */
 	public function get_name() {
 		return __( 'Select Database Rows', 'mcp-ai-wpoos-pro' );

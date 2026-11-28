@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: LicenseRef-Proprietary
 /**
- * @fileoverview Shared bits for the database console panels.
+ * @fileoverview
+ * Shared bits for the database console panels.
+ *
+ * Formats timestamps and byte counts and renders the status pill every panel
+ * uses, so the console has exactly one definition of each.
  *
  * @package NV_oOS_Pro_Spa
  * @since   3.2.0
