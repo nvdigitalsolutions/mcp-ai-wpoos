@@ -13249,3 +13249,71 @@ may be perfectly current. An unparsable date is treated as no date.
 
 The next slice completes the group: document update, listing and version
 tracking.
+
+### §164.149 — `regulatory-registration`, slice 6: documents completed
+
+| Tool | What it does |
+|---|---|
+| `update_reg_document` | partial update; reports what it wrote |
+| `list_reg_documents` | reference, type and expiry filters |
+| `track_document_version` | history read and append |
+
+The document group is complete at five tools.
+
+#### `rejected` trashes the record, and the description now says so
+
+WordPress mapped `approved` → `publish` and **`rejected` → `trash`**. A caller
+recording a rejection therefore removed the document from every listing that
+queries published content — the opposite of what the word suggests, and exactly
+the record an audit asks for. The mapping is kept, because a rejection that
+leaves the record published would be a different tool with a different meaning,
+but it is now stated in the description where the schema is read.
+
+#### Three readings of “status”
+
+The family had three: `get_reg_document` reported the content status, the
+listing projected a `status` post meta that **no tool ever wrote** (so it was
+always empty), and the update wrote the content status through its map. The port
+reports the content status in both readers, which is the only one of the three
+that ever held a value.
+
+#### The expiry filter was applied after pagination
+
+`list_reg_documents` queried with a page size and then skipped rows in PHP by
+their expiry classification. `total` and `total_pages` counted rows the caller
+never saw, and a page could return short while more matches existed. The port
+reads the matching set up to the family's 1000-row ceiling, filters it, then
+paginates, so the counts describe the result. The product/registration pair
+stays an **OR**, because a document usually carries one reference and an AND
+would return nothing.
+
+#### The version writer lost the version it was writing
+
+Two defects, both fatal to the point of the tool:
+
+- the handler appended the old version, **saved** the history, and only then
+  appended the new version to the in-memory array — so the current version never
+  appeared in its own history and `change_notes` was discarded;
+- it appended the outgoing version unconditionally, so a second call added a
+  duplicate and `total_versions` drifted upward without a new version existing.
+
+The port appends the outgoing entry only when it differs from the last one, adds
+the incoming entry with its notes, and saves once. Ordering is `version_compare`
+descending — `2.10` above `2.9`, which a string sort gets wrong — and a test
+pins both the duplicate fix and the ordering.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryDocumentWritesTest` | **14 tests, 40 assertions**, 0 failures |
+| `lib/core` unit suite | **4,107 tests / 22,922 assertions** (+14 tests, +40 assertions), 0 failures |
+| Adapter suite | **698 tests / 3,786 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 590 → **593 rows**; servable 571 → **574**; ready 533; no violations |
+| Toolkit parity | 369 → **372 ported**, 9 declined, 79 deferred, 476 → **473 remaining**; `regulatory-registration` `59 \| 17 \| 0 \| 0 \| 42` → **`59 \| 20 \| 0 \| 0 \| 39`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors across the twenty-one Regulatory classes, the tests and the manifest |
+| `check-file-docs.php --strict` | exit 0 |
+
+The next slice is compliance and validation — INCI ingredients, HS codes and the
+document checklist — where the toolkit stops recording and starts judging.
