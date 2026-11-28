@@ -267,7 +267,8 @@
             "update_woo_product_price",
             "update_woo_product_qty",
             "validate_image_for_product",
-            "validate_image_for_vehicle"
+            "validate_image_for_vehicle",
+            "woo_orders"
         ],
         "email-marketing": [],
         "erp-ezuite": [],

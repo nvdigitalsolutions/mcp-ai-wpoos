@@ -35,6 +35,8 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Entity;
 
+use Nvoos\Core\Domain\Error\ConflictException;
+use Nvoos\Core\Domain\Service\Order\OrderStatusTransition;
 use Nvoos\Core\Domain\ValueObject\Money;
 use Nvoos\Core\Domain\ValueObject\OrderStatus;
 
@@ -115,6 +117,44 @@ final readonly class Order implements \JsonSerializable
     public function isInvoiced(): bool
     {
         return null !== $this->invoicedAt;
+    }
+
+    /**
+     * A copy of this order in another status.
+     *
+     * The guard lives here rather than only in the tool that changes statuses,
+     * because a rule enforced at one call site is a rule the next caller skips.
+     * Setting the status the order already has returns `$this`, so a caller can
+     * tell a no-op from a change by identity.
+     *
+     * @throws ConflictException When the transition is not allowed.
+     */
+    public function withStatus(OrderStatus $status): self
+    {
+        if ($status === $this->status) {
+            return $this;
+        }
+
+        OrderStatusTransition::assert($this->status, $status);
+
+        return new self(
+            id: $this->id,
+            number: $this->number,
+            status: $status,
+            createdAt: $this->createdAt,
+            total: $this->total,
+            lines: $this->lines,
+            subtotal: $this->subtotal,
+            discountTotal: $this->discountTotal,
+            shippingTotal: $this->shippingTotal,
+            taxTotal: $this->taxTotal,
+            customerId: $this->customerId,
+            billingName: $this->billingName,
+            billingEmail: $this->billingEmail,
+            invoicedAt: $this->invoicedAt,
+            externalRef: $this->externalRef,
+            updatedAt: $this->updatedAt,
+        );
     }
 
     /**
