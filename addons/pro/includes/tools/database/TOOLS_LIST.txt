@@ -1,0 +1,26 @@
+Database Toolkit — tool inventory (Proposal 167)
+===============================================
+
+Read / operations (11)
+----------------------
+db_list_connections      List scope-derived connections (redacted)
+db_describe              Scope-filtered table and column catalogue
+db_profile_table         Bounded column profile (<=8 columns)
+db_explain               Query plan; analyze requires explain_analyze
+db_select                Structured read with filters, order, keyset cursor
+db_aggregate             Count/sum/avg/min/max/distinct/median/p90
+db_search                Term search over declared columns
+db_query                 Raw SELECT behind the raw_sql tier
+db_export                CSV/JSON export to the host file store, with checksum
+db_test_connection       Privilege probe (manage_options)
+db_audit_tail            Audit trail reader (manage_options)
+
+Write path (2, default off)
+---------------------------
+db_propose_write         Record an UPDATE/DELETE proposal; changes nothing
+db_apply_write           Apply an approved proposal after drift checks
+
+Presets
+-------
+db_weekly_refusal_review   Schedule: summarise the week's refusals
+db_profile_and_export      Workflow: describe -> profile -> export CSV

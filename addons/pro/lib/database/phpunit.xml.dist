@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Standalone suite for the NV oOS database kernel (Proposal 167).
+
+    No WordPress bootstrap and no Composer: the absence of a host is the point.
+    A suite that booted WordPress could not demonstrate that the kernel is
+    host-free, because a WP symbol would silently resolve.
+
+    Run from the repository root with any PHPUnit 11 binary, e.g.:
+
+        php lib/core/vendor/bin/phpunit -c addons/pro/lib/database/phpunit.xml.dist
+-->
+<phpunit bootstrap="tests/bootstrap.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache">
+
+    <testsuites>
+        <testsuite name="DatabaseKernel">
+            <directory>tests/Unit</directory>
+        </testsuite>
+    </testsuites>
+
+    <source>
+        <include>
+            <directory suffix=".php">src</directory>
+        </include>
+    </source>
+
+    <php>
+        <ini name="error_reporting" value="-1"/>
+    </php>
+</phpunit>

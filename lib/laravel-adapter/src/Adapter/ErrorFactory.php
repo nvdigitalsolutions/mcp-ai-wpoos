@@ -28,8 +28,13 @@ class ErrorFactory implements ErrorFactoryInterface {
 	/**
 	 * Create a framework-agnostic error object (a Throwable, not thrown).
 	 *
-	 * Returns a RuntimeException carrying the domain code, message, and
-	 * contextual data. Callers may throw it, log it, or convert it further.
+	 * Returns a {@see DomainErrorException} carrying the domain code, message, HTTP status
+	 * and contextual data. Callers may throw it, log it, or convert it further.
+	 *
+	 * The status is taken from `$data['status']` when the caller supplied a sane
+	 * one (the database tools do, to match the WordPress host's status exactly),
+	 * and from the code mapping otherwise. It used to be ignored, which made
+	 * every refusal on this host a 500.
 	 *
 	 * @param string               $code    Domain error code (e.g. 'not_found').
 	 * @param string               $message Human-readable error message.
@@ -38,9 +43,11 @@ class ErrorFactory implements ErrorFactoryInterface {
 	 * @return \RuntimeException
 	 */
 	public function create( string $code, string $message, array $data = array() ): mixed {
-		return new \RuntimeException(
-			message: $message,
-			code: $this->codeToInt( $code ),
+		return new DomainErrorException(
+			$code,
+			$message,
+			$this->statusFor( $code, $data['status'] ?? null ),
+			$data,
 		);
 	}
 
@@ -67,6 +74,14 @@ class ErrorFactory implements ErrorFactoryInterface {
 	 * @return array{code: string, message: string, data: array}
 	 */
 	public function normalize( mixed $error ): array {
+		if ( $error instanceof DomainErrorException ) {
+			return array(
+				'code'    => $error->domainCode(),
+				'message' => $error->getMessage(),
+				'data'    => $error->data(),
+			);
+		}
+
 		if ( ! $error instanceof \Throwable ) {
 			return array(
 				'code'    => 'unknown_error',
@@ -155,6 +170,28 @@ class ErrorFactory implements ErrorFactoryInterface {
 	}
 
 	// ─── Private helpers ──────────────────────────────────────────────
+
+	/**
+	 * The status an error should carry.
+	 *
+	 * An explicit caller-supplied status wins when it is a plausible HTTP error
+	 * code; anything else falls back to the domain-code mapping, so a typo or a
+	 * non-numeric value cannot smuggle a success status onto a failure.
+	 *
+	 * @param string $code Domain code.
+	 * @param mixed  $status Caller-supplied status, if any.
+	 */
+	private function statusFor( string $code, $status ): int {
+		if ( is_numeric( $status ) ) {
+			$candidate = (int) $status;
+
+			if ( $candidate >= 400 && $candidate <= 599 ) {
+				return $candidate;
+			}
+		}
+
+		return $this->codeToInt( $code );
+	}
 
 	/**
 	 * Convert a domain error code to an integer HTTP status for exception codes.

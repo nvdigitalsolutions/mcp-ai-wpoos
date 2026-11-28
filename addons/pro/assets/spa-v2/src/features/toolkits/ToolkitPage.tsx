@@ -22,10 +22,12 @@ import { EntitiesScreen } from './screens/EntitiesScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { ResearchScreen } from './screens/ResearchScreen';
 import { ConsolidateScreen } from './screens/ConsolidateScreen';
+import { ConsoleScreen } from './screens/ConsoleScreen';
 
 /** Screen id → label + glyph. Order here is the tab order. */
 const SCREEN_META: Record< string, { label: string; icon: string } > = {
 	settings: { label: __( 'Settings', 'nvoos-pro-spa' ), icon: '⚙️' },
+	console: { label: __( 'Console', 'nvoos-pro-spa' ), icon: '🗄️' },
 	entities: { label: __( 'Workbench', 'nvoos-pro-spa' ), icon: '🗂️' },
 	research: { label: __( 'Research & add', 'nvoos-pro-spa' ), icon: '🔎' },
 	consolidate: { label: __( 'Consolidate', 'nvoos-pro-spa' ), icon: '🧹' },
@@ -205,6 +207,9 @@ export function ToolkitPage(): JSX.Element {
 				) }
 				{ activeScreen === 'consolidate' && (
 					<ConsolidateScreen client={ client } manifest={ manifest } onNavigateScreen={ setActiveScreen } />
+				) }
+				{ activeScreen === 'console' && (
+					<ConsoleScreen client={ client } manifest={ manifest } onNavigateScreen={ setActiveScreen } />
 				) }
 			</section>
 		</div>

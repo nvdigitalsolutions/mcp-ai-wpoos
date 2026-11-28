@@ -378,4 +378,84 @@ return array(
         'audit_root' => env('NVOOS_QMS_AUDIT_ROOT', ''),
     ),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Scoped database access (Proposal 167)
+    |--------------------------------------------------------------------------
+    |
+    | `enabled` gates the connection set, not the toolkit's existence. The port,
+    | the probe and the audit reader are bound whenever the package is installed —
+    | the shared readiness manifest says these tools are ready, so they must be
+    | constructible. With `enabled = false` the port sees no connections and every
+    | call refuses with `db_not_configured` (404) instead of disappearing.
+    |
+    | A scope is a grant: which connection, which relations, which columns, which
+    | tiers, and which principals. An assistant never chooses any of that — at most
+    | it names a scope id, and the port refuses when the calling principal does not
+    | hold it.
+    |
+    | The read guarantee does not depend on this file: a read runs inside
+    | BEGIN READ ONLY, on prepared statements, against the role named in
+    | `username`. Point that at a SELECT-ONLY role. A read scope is refused on a
+    | connection whose probe says the role can write.
+    |
+    | `audit.table` names the append-only ledger created by the package migration.
+    | It is always the audit store, so db_audit_tail is servable whether or not a
+    | connection is declared. Run `artisan migrate` on install: without the table
+    | the reader reports an empty trail rather than an error (the sink contract
+    | forbids turning a read into a failure), so an unmigrated install looks like
+    | a quiet one. Nothing is pruned by the library; bound the table by `ts`
+    | yourself if you need to.
+    |
+    | The write path and raw SQL are separate grants (`propose_write`,
+    | `apply_write`, `raw_sql`) and stay off unless a scope names the tier. The
+    | two-phase write path remains WordPress-only: a headless API has no approver.
+    |
+    */
+    'database' => array(
+        'enabled' => (bool) env('NVOOS_DATABASE_ENABLED', false),
+
+        'connections' => array(
+            // 'reporting' => array(
+            //     'label'    => 'Reporting',
+            //     'engine'   => 'pgsql',
+            //     'host'     => env('NVOOS_DB_REPORTING_HOST', '127.0.0.1'),
+            //     'port'     => 5432,
+            //     'database' => 'reporting',
+            //     'username' => env('NVOOS_DB_REPORTING_USER'),
+            //     'password' => env('NVOOS_DB_REPORTING_PASSWORD'),
+            //     'sslmode'  => 'require',
+            // ),
+        ),
+
+        'scopes' => array(
+            // 'analyst' => array(
+            //     'label'      => 'Analyst',
+            //     'connection' => 'reporting',
+            //     'schemas'    => array('reporting'),
+            //     'tables'     => array('reporting.orders', 'reporting.customers'),
+            //     'columns'    => array(
+            //         'reporting.customers' => array('sensitive' => array('email')),
+            //     ),
+            //     'row_filter' => array(
+            //         array(
+            //             'column'     => 'tenant_id',
+            //             'op'         => 'eq',
+            //             'value_from' => 'scope_tenant',
+            //         ),
+            //     ),
+            //     'tiers'      => array('metadata', 'read'),
+            //     'limits'     => array('max_rows' => 500, 'timeout_ms' => 5000),
+            //     'principals' => array('assistant:12', 'user:*'),
+            // ),
+        ),
+
+        'audit' => array(
+            'table' => env('NVOOS_DATABASE_AUDIT_TABLE', 'oos_database_audit'),
+        ),
+
+        'write_path' => false,
+        'raw_sql'    => false,
+    ),
+
 );

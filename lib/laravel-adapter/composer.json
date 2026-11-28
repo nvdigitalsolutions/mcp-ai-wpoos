@@ -9,6 +9,7 @@
         "php": "^8.2",
         "ext-fileinfo": "*",
         "nvoos/core": "*",
+        "nvoos/database-kernel": "*",
         "illuminate/support": "^12.41.1 || ^13.0",
         "illuminate/cache": "^12.41.1 || ^13.0",
         "illuminate/config": "^12.41.1 || ^13.0",
@@ -51,5 +52,9 @@
         "name": "oos-core",
         "type": "path",
         "url": "../core"
+    }, {
+        "name": "nvoos-database-kernel",
+        "type": "path",
+        "url": "../../addons/pro/lib/database"
     }]
 }

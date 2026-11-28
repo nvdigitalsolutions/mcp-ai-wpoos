@@ -281,10 +281,16 @@ $layers = array(
 	'includes/services'                     => 'advisory',
 	'includes/repositories'                 => 'advisory',
 	// Proposal 150 — NV oOS WiFi. Portable layers, strict from day one.
-	'addons/nvoos-wifi/includes/Domain'     => 'strict',
-	'addons/nvoos-wifi/includes/Services'   => 'strict',
-	'addons/nvoos-wifi/includes/Interfaces' => 'strict',
-);
+		'addons/nvoos-wifi/includes/Domain'     => 'strict',
+		'addons/nvoos-wifi/includes/Services'   => 'strict',
+		'addons/nvoos-wifi/includes/Interfaces' => 'strict',
+		// Proposal 167 — database toolkit. The portable kernel must stay free of
+		// WordPress symbols and I/O. D15 moved it out of lib/core and into the Pro
+		// add-on (addons/pro/lib/database) so a base+pro install — which has no lib/
+		// directory at all — can run it. The layer stays strict: the kernel is the
+		// one place a scope decision is made, so it must not acquire a host.
+		'addons/pro/lib/database/src'           => 'strict',
+	);
 
 // Restrict to a subset of layers when asked (CI runs a focused addon job so a
 // pre-existing violation in an unrelated layer cannot fail it). A filter that

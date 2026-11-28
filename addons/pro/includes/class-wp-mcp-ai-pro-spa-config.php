@@ -359,6 +359,13 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'dashboardsSchema'    => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/dashboards/schema' ) )
 					: '',
+				// Scoped database toolkit console (Proposal 167 P3). Admin-gated like
+				// every other console write surface: the routes require
+				// manage_options, so a non-admin session gets the empty string and
+				// the screen is not mounted.
+				'database'            => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/database' ) )
+					: '',
 				'chatChannels'        => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/chat-channels' ) )
 					: '',

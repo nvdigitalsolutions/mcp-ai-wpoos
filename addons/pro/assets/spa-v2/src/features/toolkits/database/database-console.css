@@ -1,0 +1,695 @@
+/**
+ * Database console styles (Proposal 167 P3).
+ *
+ * Tokens only: every colour resolves through the spa-v2 theme block on
+ * `.nvoos-pro-spa-layout`, so light/dark follow the console toggle. There is no
+ * new token here — a feature-scoped file that invents one is the bug the
+ * Connections page shipped with (`--nvoos-surface`).
+ */
+
+.nvoos-db-console {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────────── */
+
+.nvoos-db-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	border-bottom: 1px solid var(--nvoos-border);
+}
+
+.nvoos-db-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 14px;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	background: transparent;
+	color: var(--nvoos-text-secondary);
+	font: inherit;
+	cursor: pointer;
+}
+
+.nvoos-db-tab:hover {
+	color: var(--nvoos-text);
+	background: var(--nvoos-hover-bg);
+}
+
+.nvoos-db-tab.is-active {
+	color: var(--nvoos-primary);
+	border-bottom-color: var(--nvoos-primary);
+	font-weight: 600;
+}
+
+.nvoos-db-tab:focus-visible,
+.nvoos-db-btn:focus-visible,
+.nvoos-db-link:focus-visible {
+	outline: 2px solid var(--nvoos-primary);
+	outline-offset: 2px;
+}
+
+.nvoos-db-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	min-height: 120px;
+}
+
+.nvoos-db-panel__loading {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--nvoos-text-secondary);
+}
+
+/* ── Text helpers ─────────────────────────────────────────────────── */
+
+.nvoos-db-lede {
+	margin: 0;
+	color: var(--nvoos-text-secondary);
+	max-width: 80ch;
+}
+
+.nvoos-db-help {
+	margin: 0;
+	color: var(--nvoos-text-secondary);
+	font-size: 12px;
+	max-width: 90ch;
+}
+
+.nvoos-db-meta {
+	margin: 0;
+	color: var(--nvoos-text-secondary);
+	font-size: 12px;
+}
+
+.nvoos-db-sub {
+	margin-left: 6px;
+	color: var(--nvoos-text-secondary);
+	font-size: 11px;
+}
+
+.nvoos-db-sep {
+	margin: 0 4px;
+	color: var(--nvoos-text-secondary);
+}
+
+.nvoos-db-nowrap {
+	white-space: nowrap;
+}
+
+.nvoos-db-link {
+	color: var(--nvoos-primary);
+}
+
+.nvoos-db-visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+/* ── Tables ───────────────────────────────────────────────────────── */
+
+.nvoos-db-scroll {
+	overflow-x: auto;
+	min-width: 0;
+	transition: opacity 120ms ease;
+}
+
+.nvoos-db-scroll.is-busy {
+	opacity: 0.55;
+}
+
+.nvoos-db-table {
+	width: 100%;
+	min-width: 720px;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.nvoos-db-table th,
+.nvoos-db-table td {
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--nvoos-border);
+	text-align: left;
+	vertical-align: top;
+}
+
+.nvoos-db-table th {
+	color: var(--nvoos-text-secondary);
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	font-weight: 600;
+}
+
+.nvoos-db-table tbody tr:hover {
+	background: var(--nvoos-hover-bg);
+}
+
+.nvoos-db-table__empty {
+	text-align: center;
+	color: var(--nvoos-text-secondary);
+	padding: 24px;
+}
+
+.nvoos-db-table--audit .nvoos-db-template {
+	max-width: 340px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 11px;
+	color: var(--nvoos-text-secondary);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────── */
+
+.nvoos-db-btn {
+	padding: 6px 12px;
+	border: 1px solid var(--nvoos-primary);
+	border-radius: 4px;
+	background: var(--nvoos-primary);
+	color: #fff;
+	font: inherit;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.nvoos-db-btn:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
+.nvoos-db-btn--ghost {
+	background: transparent;
+	color: var(--nvoos-text);
+	border-color: var(--nvoos-border);
+}
+
+.nvoos-db-btn--ghost:hover:not(:disabled) {
+	border-color: var(--nvoos-primary);
+	color: var(--nvoos-primary);
+}
+
+/* ── Pills and chips ──────────────────────────────────────────────── */
+
+.nvoos-db-pill {
+	display: inline-block;
+	padding: 1px 8px;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	font-size: 11px;
+	line-height: 1.7;
+	white-space: nowrap;
+}
+
+.nvoos-db-pill--ok {
+	color: var(--nvoos-success);
+	border-color: var(--nvoos-success);
+	background: var(--nvoos-chip-bg);
+}
+
+.nvoos-db-pill--bad {
+	color: var(--nvoos-danger);
+	border-color: var(--nvoos-danger);
+	background: var(--nvoos-chip-bg);
+}
+
+.nvoos-db-pill--warn {
+	color: var(--nvoos-warning-text);
+	border-color: var(--nvoos-warning-text);
+	background: var(--nvoos-chip-bg);
+}
+
+.nvoos-db-pill--muted {
+	color: var(--nvoos-muted);
+	border-color: var(--nvoos-border);
+	background: transparent;
+}
+
+.nvoos-db-chips {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin: 6px 0 0;
+}
+
+.nvoos-db-chips__label {
+	color: var(--nvoos-text-secondary);
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.nvoos-db-chip {
+	padding: 1px 8px;
+	border: 1px solid var(--nvoos-border);
+	border-radius: 999px;
+	background: var(--nvoos-chip-bg);
+	font-size: 11px;
+	line-height: 1.7;
+}
+
+.nvoos-db-chip--bad {
+	color: var(--nvoos-danger);
+	border-color: var(--nvoos-danger);
+}
+
+.nvoos-db-chip--warn {
+	color: var(--nvoos-warning-text);
+	border-color: var(--nvoos-warning-text);
+}
+
+.nvoos-db-chip--ok {
+	color: var(--nvoos-success);
+	border-color: var(--nvoos-success);
+}
+
+/* ── Cards and grids ──────────────────────────────────────────────── */
+
+.nvoos-db-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 14px;
+}
+
+.nvoos-db-card {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 14px;
+	border: 1px solid var(--nvoos-border);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary);
+	min-width: 0;
+}
+
+.nvoos-db-card__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}
+
+.nvoos-db-card__title {
+	margin: 0;
+	font-size: 14px;
+}
+
+.nvoos-db-kv {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 6px 14px;
+	margin: 0;
+	font-size: 13px;
+}
+
+.nvoos-db-kv dt {
+	color: var(--nvoos-text-secondary);
+}
+
+.nvoos-db-kv dd {
+	margin: 0;
+}
+
+.nvoos-db-list {
+	margin: 0;
+	padding-left: 18px;
+	font-size: 13px;
+}
+
+.nvoos-db-list li + li {
+	margin-top: 4px;
+}
+
+/* ── Scopes ───────────────────────────────────────────────────────── */
+
+.nvoos-db-scopes {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 14px;
+}
+
+.nvoos-db-scope {
+	border: 1px solid var(--nvoos-border);
+	border-radius: 8px;
+	padding: 14px;
+	background: var(--nvoos-bg-secondary);
+}
+
+.nvoos-db-scope__head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.nvoos-db-scope__title {
+	margin: 0 0 2px;
+	font-size: 14px;
+}
+
+.nvoos-db-scope__meta {
+	margin: 0;
+	color: var(--nvoos-text-secondary);
+	font-size: 12px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+}
+
+.nvoos-db-scope__body {
+	margin-top: 10px;
+}
+
+.nvoos-db-scope__limits {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 4px 0 0;
+}
+
+.nvoos-db-rules {
+	margin-top: 12px;
+}
+
+.nvoos-db-rules__title {
+	margin: 0 0 4px;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--nvoos-text-secondary);
+}
+
+/* ── Filters ──────────────────────────────────────────────────────── */
+
+.nvoos-db-filters {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 10px;
+}
+
+.nvoos-db-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary);
+}
+
+.nvoos-db-field select,
+.nvoos-db-field input,
+.nvoos-db-field textarea {
+	min-width: 160px;
+	padding: 5px 8px;
+	border: 1px solid var(--nvoos-border);
+	border-radius: 4px;
+	background: var(--nvoos-bg);
+	color: var(--nvoos-text);
+	font: inherit;
+	font-size: 13px;
+}
+
+.nvoos-db-field textarea {
+	resize: vertical;
+	min-height: 42px;
+}
+
+.nvoos-db-field input[readonly] {
+	background: var(--nvoos-bg-secondary);
+	color: var(--nvoos-text-secondary);
+}
+
+.nvoos-db-field input[aria-invalid='true'],
+.nvoos-db-field select[aria-invalid='true'],
+.nvoos-db-field textarea[aria-invalid='true'] {
+	border-color: var(--nvoos-danger);
+}
+
+.nvoos-db-field--narrow input {
+	min-width: 90px;
+	max-width: 120px;
+}
+
+.nvoos-db-filters__actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+/* ── Sparkline ────────────────────────────────────────────────────── */
+
+.nvoos-db-spark {
+	margin: 0;
+}
+
+.nvoos-db-spark__bars {
+	display: flex;
+	align-items: flex-end;
+	gap: 2px;
+	height: 64px;
+	padding: 4px 0;
+	border-bottom: 1px solid var(--nvoos-border);
+}
+
+.nvoos-db-spark__column {
+	flex: 1 1 0;
+	min-width: 2px;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+}
+
+.nvoos-db-spark__served {
+	background: var(--nvoos-primary);
+	border-radius: 1px 1px 0 0;
+	min-height: 0;
+}
+
+.nvoos-db-spark__refused {
+	background: var(--nvoos-danger);
+	min-height: 0;
+}
+
+.nvoos-db-spark__caption {
+	margin-top: 6px;
+	color: var(--nvoos-text-secondary);
+	font-size: 11px;
+}
+
+/* ── Editor ──────────────────────────────────────── */
+
+.nvoos-db-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+}
+
+.nvoos-db-editor {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px;
+	border: 1px solid var(--nvoos-border);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary);
+}
+
+.nvoos-db-editor__head {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.nvoos-db-editor__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.nvoos-db-editor__row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 10px;
+	padding: 10px 0;
+	border-bottom: 1px solid var(--nvoos-border);
+}
+
+.nvoos-db-editor__row:last-of-type {
+	border-bottom: 0;
+}
+
+.nvoos-db-editor__error {
+	color: var(--nvoos-danger);
+	font-size: 12px;
+}
+
+.nvoos-db-editor__actions {
+	display: flex;
+	gap: 8px;
+	padding-top: 4px;
+}
+
+.nvoos-db-fieldset {
+	margin: 0;
+	padding: 12px 0 0;
+	border: 0;
+	border-top: 1px solid var(--nvoos-border);
+}
+
+.nvoos-db-fieldset legend {
+	padding: 0 0 8px;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--nvoos-text-secondary);
+	font-weight: 600;
+}
+
+.nvoos-db-tiers {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 8px 14px;
+}
+
+.nvoos-db-check {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	font-size: 13px;
+}
+
+.nvoos-db-check input {
+	margin-top: 3px;
+}
+
+.nvoos-db-check__text {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.nvoos-db-check__title {
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.nvoos-db-scope__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid var(--nvoos-border);
+}
+
+/* ── Preview ─────────────────────────────────────── */
+
+.nvoos-db-preview {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.nvoos-db-preview__result {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 12px;
+	border: 1px solid var(--nvoos-border);
+	border-radius: 6px;
+	background: var(--nvoos-bg);
+}
+
+.nvoos-db-preview__head {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.nvoos-db-statement {
+	margin: 0;
+	padding: 10px 12px;
+	border: 1px solid var(--nvoos-border);
+	border-radius: 4px;
+	background: var(--nvoos-bg-secondary);
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 12px;
+	white-space: pre-wrap;
+	word-break: break-word;
+	overflow-x: auto;
+}
+
+/* ── Empty and notice ─────────────────────────────────────────────── */
+
+.nvoos-db-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 6px;
+	padding: 32px 16px;
+	border: 1px dashed var(--nvoos-border);
+	border-radius: 8px;
+	color: var(--nvoos-text-secondary);
+}
+
+.nvoos-db-empty h3 {
+	margin: 0;
+	color: var(--nvoos-text);
+	font-size: 15px;
+}
+
+.nvoos-db-empty__icon {
+	font-size: 26px;
+}
+
+.nvoos-db-notice {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 12px 14px;
+	border: 1px solid var(--nvoos-border);
+	border-left-width: 4px;
+	border-radius: 6px;
+	background: var(--nvoos-bg-secondary);
+	font-size: 13px;
+}
+
+.nvoos-db-notice--bad {
+	border-left-color: var(--nvoos-danger);
+}
+
+.nvoos-db-notice--warn {
+	border-left-color: var(--nvoos-warning-text);
+}
+
+.nvoos-db-notice--info {
+	border-left-color: var(--nvoos-primary);
+}
+
+.nvoos-db-notice__body p {
+	margin: 0 0 6px;
+}
+
+.nvoos-db-notice__body p:last-child {
+	margin-bottom: 0;
+}
