@@ -331,17 +331,7 @@ final class MediaWorkerClient implements MediaWorkerClientInterface
             throw new \RuntimeException('Media worker request failed: '.$e->getMessage(), 0, $e);
         }
 
-        $decoded = $response->json();
-
-        if (! $response->ok() || ! is_array($decoded)) {
-            $reason = is_array($decoded) && isset($decoded['error'])
-                ? (string) $decoded['error']
-                : 'HTTP '.$response->status();
-
-            throw new \RuntimeException('Media worker error: '.$reason);
-        }
-
-        return $decoded;
+        return $this->decodeJsonResponse($response);
     }
 
     /**
@@ -371,17 +361,7 @@ final class MediaWorkerClient implements MediaWorkerClientInterface
             throw new \RuntimeException('Media worker request failed: '.$e->getMessage(), 0, $e);
         }
 
-        $decoded = $response->json();
-
-        if (! $response->ok() || ! is_array($decoded)) {
-            $reason = is_array($decoded) && isset($decoded['error'])
-                ? (string) $decoded['error']
-                : 'HTTP '.$response->status();
-
-            throw new \RuntimeException('Media worker error: '.$reason);
-        }
-
-        return $decoded;
+        return $this->decodeJsonResponse($response);
     }
 
     /**
@@ -552,6 +532,26 @@ final class MediaWorkerClient implements MediaWorkerClientInterface
      * @throws \RuntimeException
      */
     private function decodeFileResponse($response): array
+    {
+        return $this->decodeJsonResponse($response);
+    }
+
+    /**
+     * Turn a worker JSON response into a decoded body, or a named failure.
+     *
+     * Shared by the JSON verb pair and the multipart pair, so a 400 from any
+     * route reads as a refusal rather than a runtime failure whichever verb and
+     * body shape carried it. `postJson()` and `getJson()` used to carry their own
+     * copy of this block and therefore reported a bad request as a runtime
+     * error, which made a malformed expression indistinguishable from an
+     * unreachable worker.
+     *
+     * @param \Illuminate\Http\Client\Response $response
+     * @return array<string, mixed>
+     *
+     * @throws \RuntimeException
+     */
+    private function decodeJsonResponse($response): array
     {
         $body = $response->json();
 

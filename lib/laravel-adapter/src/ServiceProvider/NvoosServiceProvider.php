@@ -56,6 +56,7 @@ use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\FileDerivativeStoreInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
+use Nvoos\Core\Domain\Contract\MathEngineInterface;
 use Nvoos\Core\Domain\Contract\MathRendererInterface;
 use Nvoos\Core\Domain\Contract\ControlledDocumentInterface;
 use Nvoos\Core\Domain\Contract\DocsCorpusInterface;
@@ -163,6 +164,7 @@ use Nvoos\Laravel\Adapter\MediaWorkerClient;
 use Nvoos\Laravel\Adapter\MediaWorkerHtmlToPdf;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProcessing;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProduction;
+use Nvoos\Laravel\Adapter\MediaWorkerMathEngine;
 use Nvoos\Laravel\Adapter\MediaWorkerMathRenderer;
 use Nvoos\Laravel\Adapter\MediaWorkerVideoGeneration;
 use Nvoos\Laravel\Adapter\MediaWorkerOfficeWriter;
@@ -298,6 +300,11 @@ class NvoosServiceProvider extends ServiceProvider {
 		// reads `displayMode` and `output` only, so a macro map would be a
 		// promise the engine cannot keep (§164.167).
 		$this->app->bind( MathRendererInterface::class, MediaWorkerMathRenderer::class );
+
+		// The compute half of the family, over `/api/math/{derivative,simplify,matrix}`.
+		// mathjs covers all three; `rank` is the one operation it has no function
+		// for, and the route computes it by elimination (§164.168).
+		$this->app->bind( MathEngineInterface::class, MediaWorkerMathEngine::class );
 
 		// Frames are many files out of one video, which is a return shape
 		// `process()` deliberately does not have. Its own contract keeps that

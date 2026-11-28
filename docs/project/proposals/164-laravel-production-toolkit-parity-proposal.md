@@ -15089,6 +15089,144 @@ which has no worker branch, so the adapter work is not separable from that probe
 The next slice should bind `MathEngineInterface` **and** replace the probe with
 the engine's own availability answer, or it will ship four routes nothing calls.
 
+### 164.168 — `math` slice 4: the three compute tools, and the worker's math group
+
+`math` moves `9 | 3 | 0 | 0 | 6` → **`9 | 6 | 0 | 0 | 3`**.
+
+This is the first slice in the family that adds worker routes. `design-media-worker`
+goes 3.4.0 → **3.5.0** across the five recorded spots (package manifest, both
+lock-file stamps, `/api/health`, `/api/health/full`, and `WORKER_VERSION`), and
+gains one route group:
+
+| Route | Operation | Library |
+|---|---|---|
+| `POST /api/math/derivative` | symbolic differentiation to the fifth order | mathjs |
+| `POST /api/math/simplify` | algebraic simplification | mathjs |
+| `POST /api/math/matrix` | nine linear-algebra operations | mathjs, plus rank |
+
+The group is deliberately three routes and not seven. mathjs has no symbolic
+`integral` — it is an open feature request upstream — and reaches only
+polynomials for equation solving, through `rationalize` and `polynomialRoot`. A
+`/integral` route that answered "not implemented" would be indistinguishable from
+a broken one at the call site, so those two remain deferred on a dependency
+decision rather than stubbed. `graph_function` is the last remaining tool and
+needs a composing route (sample, then render), which is the next slice.
+
+#### `rank` is not a mathjs function
+
+mathjs has `det`, `inv`, `trace`, `eigs`, `lup`, `qr` and `svd`, and no rank. The
+route computes it by Gaussian elimination with partial pivoting and a `1e-10`
+pivot tolerance: exact for the integer and small-decimal matrices these tools
+receive, and no new dependency for one operation.
+
+#### `text` and `tex` are computed from one tree
+
+The WordPress tools asked their filter for a single string and pasted it into
+both a `text` field and a `latex` field. For `simplify_expression` that was simply
+wrong — mathjs prints `5 * x - 3`, which is source, not LaTeX — and for the others
+it meant any future prettier rendering would have to be applied by hand in two
+places. Every route returns both spellings from the same node: `toString()` and
+`toTex()`. The two cannot describe different expressions because there is only
+one expression.
+
+#### `simplify_expression` reported success for work it never did
+
+```php
+if ( false === $math_result || isset( $math_result['error'] ) ) {
+	// Fallback: Basic simplification.
+	$simplified = $this->simple_simplify( $expression );
+}
+```
+
+`simple_simplify()` collapsed runs of whitespace and returned the input. The tool
+then returned `success => true` with that string as `simplified`, and a message
+saying the expression had been simplified. So `2x + 3x - 5 + 2` came back as
+`2x + 3x - 5 + 2`, unchanged, under a success envelope. This is exactly the class
+of defect the readiness manifest exists to catch — a tool reporting work it did
+not do — and it survived because the filter had no implementation anywhere, so
+the fallback was not a fallback but the only path. The port never falls back: an
+unavailable engine is named (`wp_mcp_ai_engine_missing`) and an unparseable
+expression is a validation failure. A test asserts the engine is never called
+when it is unavailable.
+
+#### `matrix_operations` fataled on four of its nine operations
+
+Every result went through `matrix_to_latex()`, which assumed a 2D array:
+
+```php
+foreach ( $matrix as $row ) {
+	$rows[] = implode( ' & ', array_map( array( $this, 'format_number' ), $row ) );
+}
+```
+
+`eigenvalues` returns a **vector** and `determinant`, `rank` and `trace` return a
+**scalar**. Iterating a scalar is an "argument must be of type array|object"
+warning and `array_map()` on one is a `TypeError`, so those four operations
+warned or fataled depending on the value returned. The port hands the LaTeX of
+whatever shape came back to the caller — a vector renders as a column, a scalar
+as itself — and two tests pin both shapes.
+
+`matrix_a` was read as `$arguments['matrix_a']` with no check at all; the port
+requires a rectangular 2D array of finite numbers, and requires `matrix_b` for
+the three binary operations before spending a request.
+
+#### `sanitize_text_field` on a grammar, for the third time
+
+The differentiator and the simplifier both opened with
+`sanitize_text_field( $arguments['function'] )`. That is an HTML filter: it strips
+tags, so `a < b` and `\langle` lose characters before the parser sees them. It is
+the same defect as `generate_truth_table`'s `stringParam()` (§164.166) and
+`render_math_equation`'s `wp_kses_post()` (§164.167), in a third library. Both
+ports read the expression unmodified.
+
+Also corrected in the differentiator: `order` was read with `absint()` and no
+bound although the schema declares 1–5, so order 0 asked for a zeroth derivative
+and order 99 asked for ninety-nine passes over the tree; `simplify` was read with
+`(bool)`, where the string `'false'` is true; and an unknown `format` silently
+omitted the LaTeX instead of being refused.
+
+#### A shared transport fix the tools depend on
+
+`MediaWorkerClient::postJson()` and `getJson()` carried their own copy of the
+response decoder, so **every** non-2xx was one `RuntimeException`. The multipart
+methods already distinguished a refusal (`400`, `413`, `422` →
+`MediaWorkerRefusedException`) from a failure, and the JSON pair now shares that
+decoder. Without it a malformed expression and an unreachable worker were
+indistinguishable, and the tools could not report a bad request as a bad request.
+The message text and the base class are unchanged, so no existing caller or test
+moved.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `MathComputeToolsTest` | **20 tests, 68 assertions**, 0 failures |
+| `MediaWorkerMathEngineTest` | **6 tests, 12 assertions**, 0 failures |
+| Readiness manifest | 636 → **639 rows**; servable 617 → **620**; delegated 7 → **10**; no violations |
+| Toolkit parity | 415 → **418 ported**, 9 declined, 103 deferred, 443 → **440 remaining**; `math` `9 \| 3 \| 0 \| 0 \| 6` → **`9 \| 6 \| 0 \| 0 \| 3`** |
+| `lib/core` unit suite | **4,470 tests / 24,337 assertions**, 0 failures |
+| Adapter suite | **725 tests / 3,912 assertions**, 2 skipped, 0 failures |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+All three tools are `delegated`, not `ready`: `MathEngineInterface` is bound by
+`NvoosServiceProvider`, and a `ready` row would advertise a symbolic engine this
+runtime cannot honour when `oos.media_worker.url` is unset.
+
+#### Where the family stands
+
+Three left. `calculate_integral` and `solve_equation` wait on a computer-algebra
+library the worker does not carry — nerdamer covers simplify, `solveEquations`
+and integration, Algebrite is the usual fallback — and that is a dependency and
+licence decision for a commercial sidecar, not an implementation task.
+
+`graph_function` is the one that needs no new decision: sample the function with
+the `/api/math` evaluator and render it through `/api/data/render-chart`, which
+already returns `data_base64` and degrades to a typed `503` when native `canvas`
+is missing. It needs a composing route rather than two calls from PHP, because
+sampling in PHP would mean two hundred round-trips for one plot — and the
+`FileStoreInterface` seam for the PNG, which no tool in this family has used yet.
+
 Both groups also share a presentation defect. The six that return LaTeX finish by
 appending markup to the response `message`: `link` and `script defer` tags
 pointing at the bundled KaTeX, a `div` carrying `data-latex`, and an inline
