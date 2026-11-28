@@ -18,6 +18,11 @@
  * wants a whole day passes the end of that day, because "before 2024-01-31"
  * meaning "before midnight at its start" would exclude the day the caller named.
  *
+ * `search` matches the order number and the billing email. Those are the two
+ * identifiers a support call starts from; a substring match on the billing name
+ * returns coincidences rather than answers, and would need a tokenised index to
+ * be worth having.
+ *
  * @package Nvoos\Core
  * @since   3.0.0
  * @license MIT
@@ -39,6 +44,7 @@ final readonly class OrderQuery
 
     /**
      * @param bool                    $uninvoicedOnly Only orders carrying no invoice marker.
+     * @param string                  $search         Free text matched against the order number and billing email.
      * @param Money|null              $minTotal       Minimum total, in the currency to compare in.
      * @param OrderStatus|null        $status         Filter by canonical status.
      * @param int|null                $customerId     Filter by customer.
@@ -53,6 +59,7 @@ final readonly class OrderQuery
      */
     public function __construct(
         public bool $uninvoicedOnly = false,
+        public string $search = '',
         public ?Money $minTotal = null,
         public ?OrderStatus $status = null,
         public ?int $customerId = null,
@@ -105,6 +112,7 @@ final readonly class OrderQuery
     {
         return new self(
             uninvoicedOnly: $this->uninvoicedOnly,
+            search: $this->search,
             minTotal: $this->minTotal,
             status: $this->status,
             customerId: $this->customerId,

@@ -49,6 +49,7 @@ use Nvoos\Core\Domain\Entity\Order;
 use Nvoos\Core\Domain\Entity\OrderCollection;
 use Nvoos\Core\Domain\Entity\OrderLine;
 use Nvoos\Core\Domain\Entity\OrderQuery;
+use Nvoos\Core\Domain\Service\Order\OrderStatusTransition;
 use Nvoos\Core\Domain\ValueObject\Money;
 use Nvoos\Core\Domain\ValueObject\OrderStatus;
 use Nvoos\Laravel\Models\NvoosOrder;
@@ -71,9 +72,22 @@ class OrderStore implements OrderStoreInterface {
 	public function query( OrderQuery $query ): OrderCollection {
 		$builder = NvoosOrder::query();
 
-		if ( $query->uninvoicedOnly ) {
-			$builder->whereNull( 'invoiced_at' );
-		}
+		        if ( $query->uninvoicedOnly ) {
+		            $builder->whereNull( 'invoiced_at' );
+		        }
+
+		        if ( '' !== $query->search ) {
+		            // The wildcards in a caller's term are escaped, so a search for a
+		            // literal percent sign does not become a match-everything query.
+		            $term = '%' . addcslashes( $query->search, '%_\\' ) . '%';
+
+		            $builder->where(
+		                static function ( $scoped ) use ( $term ): void {
+		                    $scoped->where( 'number', 'like', $term )
+		                        ->orWhere( 'billing_email', 'like', $term );
+		                }
+		            );
+		        }
 
 		if ( null !== $query->status ) {
 			$builder->where( 'status', $query->status->value );
@@ -124,9 +138,21 @@ class OrderStore implements OrderStoreInterface {
 	 * Persist an order and its lines, returning the stored order.
 	 */
 	public function save( Order $order ): Order {
-		$model = null === $order->id
-			? new NvoosOrder()
-			: NvoosOrder::query()->findOrFail( $order->id );
+		        $model = null === $order->id
+			            ? new NvoosOrder()
+			            : NvoosOrder::query()->findOrFail( $order->id );
+
+			        // The transition rule is enforced at the boundary as well as in
+			        // `Order::withStatus()`, so a caller that builds an order directly
+			        // cannot move it anywhere the rule forbids. A status this model does not
+			        // name (an imported custom status) is left alone rather than guessed at.
+			        if ( null !== $order->id ) {
+			            $stored = OrderStatus::tryFrom( (string) $model->status );
+
+			            if ( null !== $stored ) {
+			                OrderStatusTransition::assert( $stored, $order->status );
+			            }
+			        }
 
 		$model->fill(
 			array(

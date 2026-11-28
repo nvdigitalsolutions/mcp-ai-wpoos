@@ -33,6 +33,7 @@ use Nvoos\Core\Domain\Entity\Order;
 use Nvoos\Core\Domain\Entity\OrderCollection;
 use Nvoos\Core\Domain\Entity\OrderLine;
 use Nvoos\Core\Domain\Entity\OrderQuery;
+use Nvoos\Core\Domain\Error\ConflictException;
 use Nvoos\Core\Domain\ValueObject\Money;
 use Nvoos\Core\Domain\ValueObject\OrderStatus;
 use Nvoos\Laravel\Adapter\OrderStore;
@@ -231,6 +232,53 @@ final class OrderStoreTest extends TestCase {
 		$this->assertSame( array( 'Tee' ), $this->names( $saved ) );
 	}
 
+	public function test_search_matches_the_number_or_the_email(): void {
+		$store = $this->store();
+
+		$store->save( $this->order( number: '#1001', billingEmail: 'ada@example.test' ) );
+		$store->save( $this->order( number: '#1002', billingEmail: 'grace@example.test' ) );
+
+		$this->assertSame( array( '#1002' ), $this->numbers( $store->query( new OrderQuery( search: '1002' ) ) ) );
+		$this->assertSame( array( '#1002' ), $this->numbers( $store->query( new OrderQuery( search: 'grace@' ) ) ) );
+	}
+
+	public function test_search_escapes_wildcards(): void {
+		$store = $this->store();
+
+		$store->save( $this->order( number: '#1' ) );
+
+		// Unescaped, a percent sign would match every row.
+		$this->assertSame( 0, $store->query( new OrderQuery( search: '%' ) )->total );
+	}
+
+	public function test_the_search_is_combined_with_the_other_filters(): void {
+		$store = $this->store();
+
+		$store->save( $this->order( number: '#match-1', invoicedAt: new \DateTimeImmutable( '2024-01-02 00:00:00' ) ) );
+		$store->save( $this->order( number: '#match-2' ) );
+
+		// An orWhere added outside a group would leak past the marker filter.
+		$result = $store->query( new OrderQuery( uninvoicedOnly: true, search: 'match' ) );
+
+		$this->assertSame( array( '#match-2' ), $this->numbers( $result ) );
+	}
+
+	public function test_save_refuses_an_illegal_transition(): void {
+		$store = $this->store();
+
+		$created = $store->save( $this->order( number: '#9' ) );
+
+		$this->expectException( ConflictException::class );
+
+		$store->save(
+			$this->order(
+				number: '#9',
+				id: $created->id,
+				createdAt: $created->createdAt,
+				status: OrderStatus::Refunded,
+			)
+		);
+	}
 	/**
 	 * Order numbers from a result set.
 	 *
@@ -276,17 +324,19 @@ final class OrderStoreTest extends TestCase {
 		?\DateTimeImmutable $invoicedAt = null,
 		?int $id = null,
 		array $lines = array(),
+		OrderStatus $status = OrderStatus::Pending,
+		string $billingEmail = 'ada@example.test',
 	): Order {
 		return new Order(
 			id: $id,
 			number: $number,
-			status: OrderStatus::Pending,
+			status: $status,
 			createdAt: $createdAt ?? new \DateTimeImmutable( '2024-01-01 00:00:00' ),
 			total: Money::fromMinorUnits( $totalMinor, $currency ),
 			lines: $lines,
 			customerId: 5,
 			billingName: 'Ada Lovelace',
-			billingEmail: 'ada@example.test',
+			billingEmail: $billingEmail,
 			invoicedAt: $invoicedAt,
 		);
 	}

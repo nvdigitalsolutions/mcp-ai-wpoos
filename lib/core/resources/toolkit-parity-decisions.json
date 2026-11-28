@@ -425,10 +425,6 @@
             "decision": "deferred",
             "reason": "Generic customer CRUD over WooCommerce. Prerequisite: CustomerStoreInterface, then an adapter."
         },
-        "woo_orders": {
-            "decision": "deferred",
-            "reason": "Generic order CRUD over WooCommerce. Prerequisite: OrderStoreInterface, then an adapter; porting it earlier would mean inventing the contract from a single caller."
-        },
         "woo_products": {
             "decision": "deferred",
             "reason": "Generic product CRUD over WooCommerce. Prerequisite: a catalog adapter; once one exists this is a thin wrapper on ProductCatalogInterface and should be ported alongside the adapter that tests it, not before."

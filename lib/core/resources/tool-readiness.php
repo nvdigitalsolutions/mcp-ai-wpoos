@@ -5548,5 +5548,14 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/WithdrawStudentEcaToolTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'openWorldHint' => false ),
 		),
+		'woo_orders' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\WoocommerceOrdersTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the orders tool (Proposal 164 section 164.175) over OrderStoreInterface, bound to OrderStore, so it is ready rather than unavailable. Four actions are performed and all four are declared in the schema: get, list, search and update_status. The reference is inverted, which is worth stating: its schema enum names only get, list and search, its description promises statuses, notes and refunds, and its execute switch implements six, so a caller reading the schema cannot discover half the tool and a caller reading the description cannot tell what is callable. add_note and refund are refused by name with the reason: order notes have no model or storage in this runtime, and a refund moves money and needs a payment model that does not exist, in a reference implementation that splits the amount across lines proportionally and reads it with floatval. search is implemented for real, requiring a term and matching the order number or the billing email, where the reference action called list unchanged and had no search argument at all. update_status is guarded: the reference called update_status unguarded, so an order could jump from refunded to processing, and the port asks the status graph through Order::withStatus and again at the store boundary, reporting the allowed next statuses in the error context; setting the status the order already has is a successful no-op that writes nothing. get returns the lines, list omits them and keeps item_count. per_page is refused when out of range rather than clamped the way min(absint(...), 100) silently truncated, and a non-positive customer is refused rather than absint turned positive. A wc- prefix on new_status is stripped, as the reference did.',
+			'evidence' => 'lib/core/tests/Unit/Tool/WoocommerceOrdersTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 	),
 );

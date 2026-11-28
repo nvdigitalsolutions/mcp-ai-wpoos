@@ -27,6 +27,7 @@ use Nvoos\Core\Domain\Contract\OrderStoreInterface;
 use Nvoos\Core\Domain\Entity\Order;
 use Nvoos\Core\Domain\Entity\OrderCollection;
 use Nvoos\Core\Domain\Entity\OrderQuery;
+use Nvoos\Core\Domain\Service\Order\OrderStatusTransition;
 
 final class OrderStoreFake implements OrderStoreInterface
 {
@@ -62,6 +63,15 @@ final class OrderStoreFake implements OrderStoreInterface
             static function (Order $order) use ($query): bool {
                 if ($query->uninvoicedOnly && $order->isInvoiced()) {
                     return false;
+                }
+
+                if ('' !== $query->search) {
+                    $needle = strtolower($query->search);
+                    $haystack = strtolower($order->number . ' ' . (string) $order->billingEmail);
+
+                    if (false === strpos($haystack, $needle)) {
+                        return false;
+                    }
                 }
 
                 if (null !== $query->status && $order->status !== $query->status) {
@@ -110,6 +120,12 @@ final class OrderStoreFake implements OrderStoreInterface
 
     public function save(Order $order): Order
     {
+        // The same boundary guard the Eloquent adapter applies: a caller that
+        // builds an order directly cannot skip the transition rule here either.
+        if (null !== $order->id && isset($this->orders[$order->id])) {
+            OrderStatusTransition::assert($this->orders[$order->id]->status, $order->status);
+        }
+
         $stored = $order;
 
         if (null === $stored->id) {

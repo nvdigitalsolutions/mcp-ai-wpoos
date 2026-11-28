@@ -15688,3 +15688,67 @@ Measured on the tree that includes section 164.173.
 #### What this unblocks, and what it does not
 
 `get_uninvoiced_orders` lives in the **document-generation** toolkit, not `ecommerce`, so that family moves to 38 of 38 while the ecommerce count is unchanged. The order model is still the keystone for the ecommerce tools — `woo_orders`, `woo_coupons`, `woo_customers`, order analytics, abandoned carts — but each of those needs more than this aggregate: `woo_orders` needs guarded status transitions, and the coupon and customer tools need their own stores. Statuses are a vocabulary here and a policy engine later; the two change for different reasons, which is why `OrderStatus` names the seven states and refuses to say which may follow which.
+
+### 164.175 — `woo_orders`, and a status rule enforced at both ends
+
+Measured before the port. `ecommerce` moves to **44 wp / 17 ported / 1 declined / 26 deferred**.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `woo_orders` | `WoocommerceOrdersTool` -> `OrderStoreInterface::find()` / `query()` / `save()` |
+
+`ready`: the store is bound (section 164.174). This is also the first tool that tests whether that contract was designed for more than one caller — it uses all three methods.
+
+#### The reference cannot be read as a whole
+
+Its schema enum is `get`, `list`, `search`. Its description promises "update statuses, add notes, and process refunds". Its usage guidance repeats the three. Its `execute()` switch implements six. So the schema hides three actions that work, the description advertises three that are undocumented, and no two of the three descriptions agree with each other or with the code. The port declares the four it performs — `get`, `list`, `search`, `update_status` — and refuses the other two by name.
+
+#### Two actions are refused, not omitted
+
+`add_note` needs an order-note record; this model has none, and a note stored nowhere is worse than a refusal. `refund` moves money, and the reference's version is not one to reproduce: it calls `floatval()` on the amount, so `"abc"` becomes a zero refund, and it distributes the requested amount across *every* line in proportion — a "partial" refund that touches every line. Both are refused with that reason, so a caller learns why rather than receiving a success envelope for work that did not happen.
+
+#### `search` was a synonym
+
+`search_orders()` is `return $this->list_orders( $arguments );`. There is no search term anywhere in the schema, so the action could not search anything. The port requires a term and matches the order number or the billing email — the two identifiers a support call starts from. A substring match on the billing name would return coincidences without a tokenised index, so it is not offered.
+
+#### The status rule, enforced at both ends
+
+The register named the danger when it deferred `bulk_order_status_update`: *"a bulk update that skips the rule is how an order jumps from refunded to processing."* `woo_orders` had the same hole — it called `update_status()` directly, and WooCommerce accepts anything.
+
+`OrderStatusTransition` is the graph, and it sits beside the vocabulary rather than inside the tool, because the two change for different reasons:
+
+```
+pending    -> processing, on-hold, cancelled, failed
+on-hold    -> processing, cancelled, failed
+processing -> on-hold, completed, cancelled, refunded, failed
+completed  -> refunded
+cancelled  -> pending
+failed     -> pending, cancelled
+refunded   -> (nothing)
+```
+
+Two edges are deliberate. `processing` may return to `on-hold`, because a stock problem discovered after payment is a real thing that happens. `cancelled` and `failed` return to `pending` but not to `processing`: reopening is the only way back into the flow, and jumping straight to `processing` would skip the payment retry those states exist to represent. `refunded` is terminal, because money has gone back and there is no next state that is true.
+
+The rule is asked in two places. `Order::withStatus()` refuses an illegal move, which covers every caller that changes a status through the aggregate; `OrderStore::save()` compares the incoming status with the stored one, which covers a caller that builds an `Order` directly and hands it to the store. One guard is a convention; two is a rule. A stored status this model does not name — an imported custom status — is left alone rather than guessed at.
+
+Setting the status the order already has is a successful no-op that writes nothing. Re-applying the same intent is not a conflict, and a retried call must not fail; `withStatus()` returns the same instance, so the tool can report `changed: false` without a second read.
+
+#### Corrections
+
+- `per_page` was `min( absint( ... ), 100 )`, so asking for 1,000 silently returned 100 and the caller could not tell. Out of range is a field error.
+- `customer` went through `absint()`, turning `-5` into `5`, so a caller asking about one customer was answered about another.
+- `status` was `sanitize_key()`'d and passed through, so an unknown status produced an empty result rather than an error. It is validated against the seven.
+- `get` returns the lines; `list` omits them and keeps `item_count`. The reference drew the same line, and it is the difference between one row and a page of rows.
+- A `wc-` prefix on `new_status` is stripped, because the reference did and a caller may still carry one.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,643 / 24,809 |
+| adapter | 751 / 3,981, 2 skipped |
+| readiness | 647 rows, servable 628 (delegated 13), no violations |
+| parity | 426 ported / 9 declined / 98 deferred / 433 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
