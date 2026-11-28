@@ -61,6 +61,21 @@ abstract class RegulatoryTool extends AbstractTool
     /** The content type a regulatory requirement is stored as. */
     public const REQUIREMENT_TYPE = 'mcp_ai_requirement';
 
+    /**
+     * The content type a published regulatory update is stored as.
+     *
+     * WordPress queried the post type `mcp_ai_reg_update` but never registered
+     * it, and nothing anywhere in the plugin writes such a post, so the query
+     * could not return anything. The type is kept here so a host that ingests
+     * updates has a target, and the reader serves what is stored rather than the
+     * five hard-coded examples the WordPress tool returned when it found nothing
+     * (Proposal 164 section 164.160).
+     */
+    public const UPDATE_TYPE = 'mcp_ai_reg_update';
+
+    /** The kinds of regulatory update the reader accepts as a filter. */
+    public const UPDATE_TYPES = array('new_regulation', 'amendment', 'guideline', 'restriction', 'other');
+
     /** The product category taxonomy. */
     public const CATEGORY_TAX = 'mcp_ai_reg_category';
 

@@ -1,12 +1,12 @@
 <?php
 
 /**
- * An in-memory content store for the workflow-rule tests.
+ * An in-memory content store for tool tests that write.
  *
- * Proposal 164 section 164.159. Unlike the read-only stores in the sibling
- * regulatory tests, this one implements writes, because the workflow tools
- * create rules and audit entries and the assertions are about what survived —
- * a deletion in particular, whose audit entry has to outlive the rule it names.
+ * Most stores in these tests are read-only fixtures; this one implements the
+ * whole contract because the tools under test create items and update them, and
+ * the assertions are about what survived — a deletion, or a meta key appended
+ * across two calls.
  *
  * Meta is merged on update, matching `UpdateContentCommand`, and queries answer
  * type and equality clauses so `collectContent()` paging is exercised rather
@@ -30,7 +30,7 @@ use Nvoos\Core\Domain\Entity\ContentQuery;
 use Nvoos\Core\Domain\Entity\CreateContentCommand;
 use Nvoos\Core\Domain\Entity\UpdateContentCommand;
 
-final class WorkflowRuleStore implements ContentStoreInterface
+final class InMemoryContentStore implements ContentStoreInterface
 {
     /** @var array<int, ContentItem> */
     private array $items = array();
@@ -130,6 +130,14 @@ final class WorkflowRuleStore implements ContentStoreInterface
             throw new \RuntimeException('No such item: ' . $id);
         }
 
+        // A named taxonomy is replaced; one that is not named is untouched,
+        // which is the contract `UpdateContentCommand` documents.
+        $taxonomy = $current->taxonomy;
+
+        foreach ($command->taxonomyInput as $taxName => $terms) {
+            $taxonomy[ $taxName ] = $terms;
+        }
+
         $item = new ContentItem(
             id: $current->id,
             title: $command->title ?? $current->title,
@@ -140,7 +148,7 @@ final class WorkflowRuleStore implements ContentStoreInterface
             createdAt: $current->createdAt,
             updatedAt: new \DateTimeImmutable('2026-01-02T09:00:00+00:00'),
             meta: array_merge($current->meta, $command->meta),
-            taxonomy: $command->taxonomyInput,
+            taxonomy: $taxonomy,
             excerpt: $command->excerpt ?? $current->excerpt,
             slug: $current->slug,
         );

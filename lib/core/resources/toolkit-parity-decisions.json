@@ -325,6 +325,14 @@
             "decision": "deferred",
             "reason": "This is the one Jet tool that writes into the WordPress side, so it needs credentials with write scope and a conflict rule before it can be safe. Prerequisite: the JetAppointment client with write access, an outbound id map, and a conflict policy that says which side wins when both changed since the last cursor."
         },
+        "sync_with_mohap": {
+            "decision": "deferred",
+            "reason": "Synchronises a UAE registration with the MOHAP portal. Prerequisite: a MOHAP client. The WordPress tool has none: `$portal_url` is assigned and never used, and the response it returns — status Submitted, a MOHAP-{id}-{time} tracking id, stage Document Review, timeline 30-45 days — is a hard-coded literal that it then writes into the registration as `_mohap_status` and `_mohap_tracking_id`. check_authority_status already reads those keys in the ported runtime, so serving it would persist invented authority state and then report it back as data. Blocked until an integration exists to port."
+        },
+        "sync_with_nmra": {
+            "decision": "deferred",
+            "reason": "Synchronises a Sri Lanka registration with the NMRA API. Prerequisite: an NMRA client. The WordPress tool has none: `$api_endpoint` is assigned and never used, and the response — status Under Review, an NMRA-{id}-{time} reference, stage Technical Assessment, 45 estimated days — is a hard-coded literal written into `_nmra_status` and `_nmra_reference`, which check_authority_status then reports as authority data. Serving the placeholder would make the fabrication look like a sync. Blocked until an integration exists to port."
+        },
         "text_to_image_prompt_optimizer": {
             "decision": "declined",
             "reason": "Every image generation tool here already hands free-text to a model that interprets it, so a separate optimiser is a second paid call that rewrites the caller's words without showing what changed. It also has no consumer in the tool portfolio: nothing calls it. Declined rather than deferred because there is no prerequisite that would make a hidden rewrite worth a slot."

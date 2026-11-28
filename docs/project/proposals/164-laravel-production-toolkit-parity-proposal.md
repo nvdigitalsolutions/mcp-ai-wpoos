@@ -14179,6 +14179,121 @@ would not fire. That is a proposal of its own, not a slice of this one.
 #### Where the family stands
 
 Eighteen remain: authority sync (4), notifications (4), requirements (2), and the
-eight reports now dispositioned. The next slice is authority sync, which is the
-first in this family that needs an outbound HTTP seam rather than a content
-reader, so it is measured before it is ported.
+eight reports now dispositioned. The next slice was expected to be the first in
+this family needing an outbound HTTP seam; it turned out to have no HTTP client
+at all (§164.160).
+
+### §164.160 — `regulatory-registration`, slice 13: authority submission and updates
+
+Four tools, 940 lines. The group was measured expecting an HTTP seam to port.
+There is no HTTP client. Two tools fabricate authority state and are deferred;
+two are ported.
+
+#### The sync pair never called an authority
+
+Both tools assign an endpoint and never use it:
+
+```php
+$api_endpoint = 'https://api.nmra.gov.lk/v1/registrations';   // never read
+$portal_url   = 'https://mohap.gov.ae/portal';                // never read
+```
+
+What they return is a literal:
+
+```php
+$response_data = array(
+    'nmra_status'    => 'Under Review',
+    'nmra_reference' => 'NMRA-' . $registration_id . '-' . time(),
+    'review_stage'   => 'Technical Assessment',
+    'estimated_days' => 45,
+);
+```
+
+The MOHAP tool is the same shape with `Submitted`, `MOHAP-{id}-{time}`,
+`Document Review` and `30-45 days`. On `status_check` both **write those values
+into the registration** as `_nmra_status`, `_nmra_reference`, `_nmra_last_sync`
+and `_mohap_status`, `_mohap_tracking_id`, `_mohap_last_sync`.
+
+That matters here because `check_authority_status` — already ported in §164.152 —
+reads exactly those keys for LK and AE and returns them as `nmra_status` and
+`mohap_status`. The fabrication would not stay inside a sync tool; it would enter
+a reader this runtime serves.
+
+Both are **deferred**, not declined: there is no integration to port today, and
+a later one is conceivable. The reasons are recorded in the decisions register.
+§164.159 predicted an outbound seam; the measurement says the seam was missing
+from the source, not from the runtime.
+
+#### The update reader's store never existed
+
+`get_regulatory_updates` queries the post type `mcp_ai_reg_update`, which is
+registered nowhere in the plugin and written by no code path, so `WP_Query`
+could not return a row. When it returned nothing the tool returned **five
+hard-coded examples** — a 2024 NMRA GMP certificate change, a MOHAP form
+version, an SFDA microplastic restriction, a GCC harmonisation, a CDSCO portal
+launch — with `success: true`, `total: 5` and a message saying five updates were
+found.
+
+The port reads what is stored. An empty store returns no updates and says no
+samples were substituted; `store_total` separates "nothing is stored" from "the
+filters matched nothing", which the WordPress shape could not express.
+
+The tool also read **no capability at all** — `$context` was never touched —
+while declaring `edit_posts`. The port gates on `read`, the convention every
+listing in this family follows. `since_date` is validated rather than passed to a
+query that answered an unreadable date with an empty list, and `page` / `per_page`
+are clamped to the range the schema itself declared.
+
+#### What there was to port
+
+`submit_to_authority` records a submission: it requires at least one linked
+document, writes `SUB-{XX}-{id}-{YmdHis}`, moves the registration to the
+`submitted` status term, records type, priority, notes and date, and appends to
+a `_submission_log` array. Nothing is transmitted — its own comment said
+"Placeholder for actual electronic submission" — so the port says so:
+`transmitted` is `false` and the message states that no data reached an
+authority. `estimated_review` is **not** returned, because it was a fixed
+`+30 days` and nothing more; a planner scheduling against it would be scheduling
+against a constant.
+
+The reference prefix keeps the WordPress rule —
+`strtoupper( substr( $country, 0, 2 ) )` — so a registration whose country is
+stored as a name yields `SUB-SR-…` rather than `SUB-LK-…`. The reference is a
+local identifier rather than a country claim, so the shape is kept and the quirk
+documented instead of being papered over with a mapping table the source never
+had.
+
+The document count is the family's 1000-row collection ceiling, and
+`documents_count_capped` says when it was reached. `_submission_log` is a
+read-modify-write on one meta key, so two submissions recorded in the same
+instant can lose an entry; a separate content type would fix it and would change
+the exported shape, so the array is kept and the limitation stated.
+
+This overlaps `submit_registration` (§164.147), which already records a filing.
+Both are kept because WordPress has both and parity counts both; the difference —
+the document gate, the reference, the type and priority, the log — is recorded in
+the readiness reason rather than collapsed.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryAuthorityToolsTest` | **14 tests, 62 assertions**, 0 failures |
+| `lib/core` unit suite | **4,333 tests / 23,867 assertions**, 0 failures (+14 tests / +62 assertions for this slice on the merged base) |
+| Adapter suite | **712 tests / 3,875 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | **627 rows**; servable **608**; ready **567**; no violations |
+| Toolkit parity | **406 ported**, 9 declined, 89 deferred, 452 remaining; `regulatory-registration` `59 \| 41 \| 0 \| 8 \| 18` → **`59 \| 43 \| 0 \| 10 \| 16`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+The adapter suite needed `composer update nvoos/database-kernel` locally: the
+merged base added that path package and the existing `vendor/` tree predated it,
+so fourteen tests errored on an unbound service that CI resolves on install. No
+code change was involved.
+
+#### Where the family stands
+
+Sixteen remain: notifications (4), requirements (2), and the eight reports now
+dispositioned, plus the two authority integrations this slice deferred. The next
+slice is notifications, which writes settings rather than records and shares the
+mail seam question the sync pair raised.

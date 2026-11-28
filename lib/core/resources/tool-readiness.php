@@ -3029,6 +3029,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryProductToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'get_regulatory_updates' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\GetRegulatoryUpdatesTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Reads stored mcp_ai_reg_update items newest first, filtered by country, authority, update type and an inclusive since date, and paged within the schema range of 1 to 100. Two WordPress defects removed: the queried post type was never registered and nothing writes it, so the tool could only ever return its hard-coded fallback of five dated example updates with success true and total 5, and the port returns what is stored with store_total separating an empty store from a filtered-empty result; and execute() checked no capability at all despite declaring edit_posts, so the port gates on read as every listing in this family does. since_date is validated rather than handed to a query that answered an unreadable date with an empty list (Proposal 164 section 164.160).',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryAuthorityToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'get_schedule_latest_result' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Orchestration\\GetScheduleLatestResultTool',
 			'readiness' => 'ready',
@@ -4934,6 +4943,15 @@ return array(
 			'reason' => 'Ports the WordPress submission record over ContentStoreInterface (Proposal 164 section 164.147). Sets the status term to Submitted and records the submission date, defaulting to the runtime clock. Notes are appended as a dated line for the same audit-trail reason as approval. The supplied date is validated as ISO where WordPress passed it through sanitize_text_field alone. It records a filing made elsewhere; the description says so.',
 			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryRegistrationLifecycleTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'submit_to_authority' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\SubmitToAuthorityTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Records a submission against a registration: requires at least one linked document, writes SUB-{first two characters of the stored country}-{id}-{YmdHis}, sets the submitted status term, records type, priority, notes and date, and appends to the _submission_log array. WordPress transmitted nothing, as its own placeholder comment said, so the port says so: transmitted is false and the message states that no data reached an authority. estimated_review is not returned because it was a fixed +30 days rather than a response from anyone. The reference prefix keeps the WordPress rule, so a registration whose country is stored as a name yields SR rather than LK. The document count is the 1000-row collection ceiling, and documents_count_capped says when it was reached (Proposal 164 section 164.160).',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryAuthorityToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
 		'suggest_best_model' => array(
 			'class' => 'Nvoos\\Core\\Tool\\SuggestBestModelTool',
