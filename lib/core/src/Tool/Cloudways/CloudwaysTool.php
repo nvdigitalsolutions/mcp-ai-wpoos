@@ -176,6 +176,31 @@ abstract class CloudwaysTool extends AbstractTool
     }
 
     /**
+     * A hostname from a caller value, or null when it is not one.
+     *
+     * Rejects whitespace, a scheme separator and a path separator. That is not
+     * cosmetic: `sanitize_text_field()` leaves `/` and `..` intact, and the DNS
+     * tools embed the caller's domain in a URL path, so an unvalidated value can
+     * climb out of the segment it was meant to be. An internationalised domain
+     * is not rejected — this runtime has no IDN table, and refusing valid input
+     * would be worse than a value the API names.
+     */
+    protected function host(mixed $value): ?string
+    {
+        if (! is_scalar($value)) {
+            return null;
+        }
+
+        $host = trim((string) $value);
+
+        if ('' === $host) {
+            return null;
+        }
+
+        return 1 === preg_match('/[\s\/:]/', $host) ? null : $host;
+    }
+
+    /**
      * The `server_id` + `app_id` argument schema shared by app-scoped tools.
      *
      * @return array<string, mixed>

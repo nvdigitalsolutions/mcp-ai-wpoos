@@ -88,6 +88,8 @@
             "upload_onedrive_file"
         ],
         "cloudways": [
+            "cloudways_addon_activate",
+            "cloudways_addon_list",
             "cloudways_app_clone",
             "cloudways_app_clone_to_server",
             "cloudways_app_cname_update",
@@ -105,6 +107,12 @@
             "cloudways_app_traffic_analytics",
             "cloudways_app_varnish_settings_get",
             "cloudways_app_varnish_settings_update",
+            "cloudways_cloudflare_add_domain",
+            "cloudways_cloudflare_details",
+            "cloudways_copilot_insights_list",
+            "cloudways_dns_add_record",
+            "cloudways_dns_list_domains",
+            "cloudways_dns_list_records",
             "cloudways_get_app",
             "cloudways_get_operation_status",
             "cloudways_get_server",

@@ -12598,3 +12598,67 @@ the branch as given and a test pins that `feature/a&b` survives.
 Seventeen remain: the SSH writers, the three Cloudflare and DNS Made Easy
 readers, addons, Copilot, the two backup creators, `app_credentials`,
 `app_vulnerabilities_list` and the two deletes.
+
+### §164.141 — `cloudways`, slice 9: add-ons, Cloudflare, DNS Made Easy and Copilot
+
+Eight tools, and the family reaches 51 of 60:
+
+| Tool | Request |
+|---|---|
+| `cloudways_addon_list` | `GET /addon` |
+| `cloudways_addon_activate` | `POST /addon/activate` |
+| `cloudways_cloudflare_details` | `GET /app/{s}/{a}/cloudflare` |
+| `cloudways_cloudflare_add_domain` | `POST /app/{s}/{a}/cloudflare/domain` |
+| `cloudways_dns_list_domains` | `GET /dns/domain` |
+| `cloudways_dns_list_records` | `GET /dns/domain/{domain}/record` |
+| `cloudways_dns_add_record` | `POST /dns/domain/{domain}/record` |
+| `cloudways_copilot_insights_list` | `GET /copilot/insights` |
+
+#### A path traversal, found by reading the path builder
+
+Both DNS tools built their URL the same way:
+
+```php
+$path = '/dns/domain/' . $domain . '/record';
+```
+
+`$domain` came from `sanitize_text_field()`, which removes markup but **leaves
+`/` and `..` intact**. A caller passing `../../server/1` therefore asked this
+runtime to send `GET /dns/domain/../../server/1/record` **with the account's
+Cloudways token** — a path traversal in an authenticated request, reachable from
+a tool argument. The port validates the value as a hostname (no whitespace, no
+scheme separator, no path separator) and `rawurlencode()`s the segment, so the
+only thing that can occupy that position is a single domain label run. Four
+traversal shapes are pinned by a data provider.
+
+That is the first finding in this family that is a security defect rather than a
+correctness one, and it is worth naming why it survived: the WordPress tool
+looked careful — it sanitised, then validated emptiness, then checked the record
+type against an enum. The value that reached the URL was the one thing nobody
+re-read.
+
+#### Four more corrections
+
+| Correction | The WordPress behaviour |
+|---|---|
+| **Copilot filters are forwarded** | The schema advertised optional `server_id`/`app_id`; `execute()` read neither, so a filtered call returned the whole account silently. The port sends them as query parameters — the result narrows or the API names the parameter |
+| **No HTML escaping in envelopes** | `addon_activate`, `cloudflare_add_domain`, `dns_add_record` and `dns_list_records` all ran values through `esc_html()` before putting them in JSON. A value containing `&` came back as `&amp;` |
+| **`ttl` is validated** | `absint( -300 )` is 300: a negative TTL was silently sent as a positive one |
+| **A domain is a host** | `sanitize_text_field()` accepted `https://example.com/`, which then reached Cloudflare as a "domain" |
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `CloudwaysIntegrationToolsTest` | **23 tests, 54 assertions**, 0 failures |
+| `lib/core` unit suite | **3,980 tests / 22,461 assertions** (+23 tests, +54 assertions), 0 failures |
+| Adapter `ToolReadinessRegistrationTest` | 5 tests, 0 failures |
+| Readiness manifest | 556 → **564 rows**; servable 537 → **545**; ready 504; no violations |
+| Toolkit parity | 335 → **343 ported**, 9 declined, 79 deferred, 510 → **502 remaining**; `cloudways` `60 \| 43 \| 0 \| 0 \| 17` → `60 \| 51 \| 0 \| 0 \| 9` |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on all 56 Cloudways paths |
+
+The last nine: `ssh_key_create`, `ssh_key_delete`, `server_delete`,
+`dns_delete_record`, the two backup creators, `app_credentials`,
+`app_vulnerabilities_list` and the one remaining read. The three deletes close
+the family, each with the strict `confirm` rule `app_delete` established.
