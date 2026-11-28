@@ -45,7 +45,7 @@ class NV_oOS_Design_System_Tool_Set_Active_Email_Template implements WP_MCP_AI_T
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Activate an NV oOS Design System email template so all outgoing WordPress emails are wrapped in it. Draft templates and templates failing the required audit gates are refused unless force=true is passed (the override is returned in the audit log). Use after reviewing a template with nds_audit_email_template and nds_preview_email_template.', 'nvoos-design-system' );
+		return __( 'Activate an NV oOS Design System email template so all outgoing WordPress emails are wrapped in it. Draft templates and templates failing the required audit gates are refused unless force=true is passed (the override is returned in the audit log). When to use: after nds_audit_email_template and nds_preview_email_template pass. When NOT to use: testing deliverability (use nds_test_send_email) or editing a draft.', 'nvoos-design-system' );
 	}
 
 	/**
@@ -74,6 +74,9 @@ class NV_oOS_Design_System_Tool_Set_Active_Email_Template implements WP_MCP_AI_T
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$slug  = isset( $arguments['slug'] ) ? sanitize_title( $arguments['slug'] ) : '';

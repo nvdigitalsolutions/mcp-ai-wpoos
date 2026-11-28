@@ -28,7 +28,7 @@ if ( ! defined( 'NVOOS_DESIGN_SYSTEM_URL' ) ) {
 }
 
 if ( ! defined( 'NVOOS_DESIGN_SYSTEM_VERSION' ) ) {
-	define( 'NVOOS_DESIGN_SYSTEM_VERSION', '0.3.0' );
+	define( 'NVOOS_DESIGN_SYSTEM_VERSION', '1.0.0' );
 }
 
 if ( ! defined( 'NVOOS_DESIGN_SYSTEM_FILE' ) ) {
@@ -44,9 +44,14 @@ require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-plugin.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-token-registry.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-css-generator.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-assets.php';
+require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-dtcg-codec.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-dtcg-exporter.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-dtcg-importer.php';
+require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-contrast-auditor.php';
+require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-global-styles.php';
+require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/class-nvoos-nds-brand-kit.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/emails/class-nvoos-nds-email-template-cpt.php';
+require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/emails/class-nvoos-nds-email-sanitizer.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/emails/class-nvoos-nds-email-template-registry.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/emails/class-nvoos-nds-email-renderer.php';
 require_once NVOOS_DESIGN_SYSTEM_PATH . 'includes/emails/class-nvoos-nds-email-wrapper.php';

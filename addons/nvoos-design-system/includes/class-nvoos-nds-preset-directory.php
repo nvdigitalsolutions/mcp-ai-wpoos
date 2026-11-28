@@ -60,6 +60,8 @@ class NV_oOS_Design_System_Preset_Directory extends NV_oOS_Design_System_Preset_
 			'gap_grid'             => '24px',
 			'gap_filter'           => '40px',
 			'card_image_height'    => '180px',
+			'color_focus_ring'     => '#6366f1',
+			'color_border_strong'  => '#8a8a8a',
 
 			// Email palette — editorial, generous.
 			'email_page_bg'        => '#eef0f3',

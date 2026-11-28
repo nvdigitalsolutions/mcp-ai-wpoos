@@ -56,10 +56,8 @@ class NV_oOS_Design_System_Integration_JFB {
 			2
 		);
 
-		// Output inline styles that bridge NDS tokens to JFB field defaults.
-		add_action( 'wp_head', array( __CLASS__, 'output_form_dynamic_styles' ), 99 );
-
-		// Ensure NDS component CSS is enqueued when JFB is present.
+		// Enqueue NDS component CSS + the JFB token bridge as one inline style.
+		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_form_styles' ), 26 );
 		add_action( 'wp_enqueue_scripts', array( 'NV_oOS_Design_System_Assets', 'enqueue_components' ), 25 );
 	}
 
@@ -87,36 +85,36 @@ class NV_oOS_Design_System_Integration_JFB {
 	}
 
 	/**
-	 * Output inline styles that apply NDS token values as JFB form field defaults.
+	 * Enqueue inline styles that apply NDS token values as JFB field defaults.
 	 *
-	 * This runs late in wp_head to ensure NDS tokens are available and to
-	 * provide low-specificity defaults that the component CSS can override.
+	 * Uses the registered component handle so WordPress prints the CSS in the
+	 * normal stylesheet pipeline (`wp_add_inline_style`), never as a raw
+	 * `<style>` tag.
 	 *
 	 * @return void
 	 */
-	public static function output_form_dynamic_styles() {
+	public static function enqueue_form_styles() {
 		$registry = NV_oOS_Design_System_Plugin::token_registry();
 		$values   = $registry->get_values_map();
 
-		$css  = '<style id="nds-jfb-styles">';
-		$css .= '.nds-form .jet-form-builder input,';
+		$css  = '.nds-form .jet-form-builder input,';
 		$css .= '.nds-form .jet-form-builder select,';
 		$css .= '.nds-form .jet-form-builder textarea{';
-		$css .= 'font-family:' . esc_html( isset( $values['font_family'] ) ? $values['font_family'] : 'inherit' ) . ';';
-		$css .= 'font-size:' . esc_html( isset( $values['font_size_base'] ) ? $values['font_size_base'] : '16px' ) . ';';
+		$css .= 'font-family:' . ( isset( $values['font_family'] ) ? $values['font_family'] : 'inherit' ) . ';';
+		$css .= 'font-size:' . ( isset( $values['font_size_base'] ) ? $values['font_size_base'] : '16px' ) . ';';
 		$css .= '}';
 		$css .= '.nds-form .jet-form-builder__label,';
 		$css .= '.nds-form .jet-form-builder label{';
-		$css .= 'font-family:' . esc_html( isset( $values['font_family'] ) ? $values['font_family'] : 'inherit' ) . ';';
-		$css .= 'font-size:' . esc_html( isset( $values['font_size_xs'] ) ? $values['font_size_xs'] : '12px' ) . ';';
+		$css .= 'font-family:' . ( isset( $values['font_family'] ) ? $values['font_family'] : 'inherit' ) . ';';
+		$css .= 'font-size:' . ( isset( $values['font_size_xs'] ) ? $values['font_size_xs'] : '12px' ) . ';';
 		$css .= '}';
 		$css .= '.nds-form .jet-form-builder button,';
 		$css .= '.nds-form .jet-form-builder .jet-form-builder__action-button{';
-		$css .= 'font-family:' . esc_html( isset( $values['font_family'] ) ? $values['font_family'] : 'inherit' ) . ';';
+		$css .= 'font-family:' . ( isset( $values['font_family'] ) ? $values['font_family'] : 'inherit' ) . ';';
 		$css .= '}';
-		$css .= '</style>';
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped — CSS values are esc_html'd above.
-		echo $css;
+		NV_oOS_Design_System_Assets::register();
+		wp_enqueue_style( 'nvoos-nds-components' );
+		wp_add_inline_style( 'nvoos-nds-components', $css );
 	}
 }

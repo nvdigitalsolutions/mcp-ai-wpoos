@@ -56,7 +56,7 @@ class NV_oOS_Design_System_Email_Paper_Store {
 		if ( ! self::is_available() ) {
 			return new WP_Error(
 				'nds_paper_store_unavailable',
-				__( 'Paper Store is not available — activate the NV oOS base plugin to use template mirroring.', 'nvoos-design-system' )
+				__( 'Paper Store is not available on this site.', 'nvoos-design-system' )
 			);
 		}
 
@@ -131,7 +131,7 @@ class NV_oOS_Design_System_Email_Paper_Store {
 		if ( ! self::is_available() ) {
 			return new WP_Error(
 				'nds_paper_store_unavailable',
-				__( 'Paper Store is not available — activate the NV oOS base plugin to import templates.', 'nvoos-design-system' )
+				__( 'Paper Store is not available on this site.', 'nvoos-design-system' )
 			);
 		}
 

@@ -45,7 +45,7 @@ class NV_oOS_Design_System_Tool_Preview_Email_Template implements WP_MCP_AI_Tool
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Render an NV oOS Design System email template with sample content and the current design tokens, returning the full HTML. Use this to review a template (including AI-generated drafts) before activating it.', 'nvoos-design-system' );
+		return __( 'Render an NV oOS Design System email template with sample content and the current design tokens, returning the full HTML. When to use: reviewing a template (including AI-generated drafts) before activating it. When NOT to use: auditing compliance (use nds_audit_email_template) or sending mail.', 'nvoos-design-system' );
 	}
 
 	/**
@@ -67,6 +67,9 @@ class NV_oOS_Design_System_Tool_Preview_Email_Template implements WP_MCP_AI_Tool
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$slug = isset( $arguments['slug'] ) && '' !== trim( (string) $arguments['slug'] )
@@ -75,7 +78,7 @@ class NV_oOS_Design_System_Tool_Preview_Email_Template implements WP_MCP_AI_Tool
 
 		$template = NV_oOS_Design_System_Email_Template_Registry::get_active();
 
-		if ( $slug !== NV_oOS_Design_System_Email_Template_Registry::get_active_slug() ) {
+		if ( NV_oOS_Design_System_Email_Template_Registry::get_active_slug() !== $slug ) {
 			$post = NV_oOS_Design_System_Email_Template_CPT::get_by_slug( $slug );
 			if ( $post instanceof WP_Post ) {
 				$template = array(

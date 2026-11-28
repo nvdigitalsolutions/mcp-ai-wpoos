@@ -13,15 +13,33 @@
 class Test_Email_Wrapper extends WP_UnitTestCase {
 
 	/**
+	 * Enable the wrapper and pick a template.
+	 *
+	 * The wrapper is deliberately off on fresh installs, so tests that
+	 * exercise wrapping must opt in explicitly.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+
+		update_option( NV_oOS_Design_System_Plugin::WRAP_MODE_KEY, 'all', false );
+		update_option( NV_oOS_Design_System_Plugin::EMAIL_ACTIVE_TEMPLATE_KEY, 'letterhead', false );
+	}
+
+	/**
 	 * Clean up filters left behind by wrapper tests.
 	 *
 	 * @return void
 	 */
 	protected function tearDown(): void {
 		parent::tearDown();
-		remove_all_filters( 'nds_email_skip' );
-		remove_all_filters( 'nds_email_context' );
+		remove_all_filters( 'nvoos_nds_email_skip' );
+		remove_all_filters( 'nvoos_nds_email_context' );
 		remove_filter( 'wp_mail_content_type', array( 'NV_oOS_Design_System_Email_Wrapper', 'force_html_content_type_once' ), 99 );
+
+		update_option( NV_oOS_Design_System_Plugin::WRAP_MODE_KEY, 'off', false );
+		delete_option( NV_oOS_Design_System_Plugin::EMAIL_ACTIVE_TEMPLATE_KEY );
 	}
 
 	/**
@@ -81,12 +99,12 @@ class Test_Email_Wrapper extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The nds_email_skip filter short-circuits wrapping.
+	 * The nvoos_nds_email_skip filter short-circuits wrapping.
 	 *
 	 * @return void
 	 */
 	public function test_skip_filter_short_circuits() {
-		add_filter( 'nds_email_skip', '__return_true' );
+		add_filter( 'nvoos_nds_email_skip', '__return_true' );
 
 		$message = 'Hello plain body';
 		$atts    = array(
@@ -132,7 +150,7 @@ class Test_Email_Wrapper extends WP_UnitTestCase {
 			$captured = $context;
 			return $context;
 		};
-		add_filter( 'nds_email_context', $capture );
+		add_filter( 'nvoos_nds_email_context', $capture );
 
 		$atts = array(
 			'to'      => 'Test User <test@example.com>',
@@ -145,7 +163,7 @@ class Test_Email_Wrapper extends WP_UnitTestCase {
 		$this->assertStringContainsString( '<!-- nds-email-wrapper:', $result['message'] );
 		$this->assertStringContainsString( '<!DOCTYPE html>', $result['message'] );
 		$this->assertStringContainsString( 'Hello there, this is the body.', $result['message'] );
-		$this->assertIsArray( $captured, 'The merge context should be passed through the nds_email_context filter.' );
+		$this->assertIsArray( $captured, 'The merge context should be passed through the nvoos_nds_email_context filter.' );
 		$this->assertSame( 'Test User', $captured['to_name'], 'Recipient name should be extracted from the To header.' );
 		$this->assertStringContainsString( 'Hello subject', $result['message'] );
 

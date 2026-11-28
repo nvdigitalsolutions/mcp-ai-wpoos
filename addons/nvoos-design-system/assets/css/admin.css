@@ -277,12 +277,20 @@
 	margin-top: 12px;
 	border: 1px solid #c3c4c7;
 	border-radius: 4px;
-	padding: 16px;
-	background: #f0f0f1;
-	overflow-x: auto;
+	background: #fff;
+	overflow: hidden;
 }
 
-.nvoos-nds-preview-frame table {
-	margin-left: auto;
-	margin-right: auto;
+.nvoos-nds-preview-iframe {
+	display: block;
+	width: 100%;
+	height: 640px;
+	border: 0;
+	background: #fff;
+}
+
+@media screen and (max-width: 782px) {
+	.nvoos-nds-preview-iframe {
+		height: 480px;
+	}
 }

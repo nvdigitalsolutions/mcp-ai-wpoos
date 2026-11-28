@@ -45,7 +45,7 @@ class NV_oOS_Design_System_Tool_Import_Email_Template implements WP_MCP_AI_Tool_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Import an NV oOS Design System email template from a JSON payload produced by nds_export_email_template. The template is saved as a DRAFT — audit and activate it separately. Use when migrating templates between sites.', 'nvoos-design-system' );
+		return __( 'Import an NV oOS Design System email template from a JSON payload produced by nds_export_email_template. The template is saved as a DRAFT — audit and activate it separately. When to use: migrating templates between sites. When NOT to use: creating a brand-new template from a prompt (use nds_generate_email_template).', 'nvoos-design-system' );
 	}
 
 	/**
@@ -78,6 +78,9 @@ class NV_oOS_Design_System_Tool_Import_Email_Template implements WP_MCP_AI_Tool_
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Paper Store import takes precedence when both identifiers are present.

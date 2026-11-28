@@ -74,13 +74,6 @@ class NV_oOS_Design_System_Plugin {
 	const EMAIL_SEEDED_KEY = 'nvoos_nds_email_seeded';
 
 	/**
-	 * Option key for the AI generation provider override.
-	 *
-	 * @var string
-	 */
-	const AI_PROVIDER_KEY = 'nvoos_nds_ai_provider';
-
-	/**
 	 * Transient key prefix for the pending DTCG import report.
 	 *
 	 * The full key is suffixed with the current user ID so reports never
@@ -89,6 +82,17 @@ class NV_oOS_Design_System_Plugin {
 	 * @var string
 	 */
 	const IMPORT_REPORT_KEY = 'nvoos_nds_dtcg_import_report';
+
+	/**
+	 * Transient key prefix for admin notices carried across a redirect.
+	 *
+	 * The full key is suffixed with the current user ID so notices never
+	 * leak between admins.
+	 *
+	 * @since 1.0.0
+	 * @var string
+	 */
+	const ADMIN_NOTICE_KEY = 'nvoos_nds_admin_notices';
 
 	/**
 	 * Legacy option keys migrated on first load.
@@ -107,6 +111,20 @@ class NV_oOS_Design_System_Plugin {
 	 * @var string
 	 */
 	const WC_REBRAND_KEY = 'nvoos_nds_wc_rebrand';
+
+	/**
+	 * Option key for the email wrapper mode.
+	 *
+	 * @var string
+	 */
+	const WRAP_MODE_KEY = 'nvoos_nds_wrap_mode';
+
+	/**
+	 * Option key for the recent email send log.
+	 *
+	 * @var string
+	 */
+	const EMAIL_LOG_KEY = 'nvoos_nds_email_log';
 
 	/**
 	 * Whether the plugin has been initialised.
@@ -173,6 +191,10 @@ class NV_oOS_Design_System_Plugin {
 			add_action( 'admin_post_nvoos_nds_export_dtcg', array( __CLASS__, 'handle_dtcg_export' ) );
 			add_action( 'admin_post_nvoos_nds_import_dtcg', array( __CLASS__, 'handle_dtcg_import' ) );
 			add_action( 'admin_post_nvoos_nds_email', array( __CLASS__, 'handle_email_admin_post' ) );
+			add_action( 'admin_post_nvoos_nds_brand', array( __CLASS__, 'handle_brand_post' ) );
+			add_action( 'admin_post_nvoos_nds_export_brand', array( __CLASS__, 'handle_export_brand' ) );
+			add_action( 'admin_post_nvoos_nds_export_guide', array( __CLASS__, 'handle_export_guide' ) );
+			add_action( 'admin_post_nvoos_nds_export_theme_json', array( __CLASS__, 'handle_export_theme_json' ) );
 
 			// Legacy export action from the Crocoblock DS addon.
 			add_action( 'admin_post_nvoos_cds_export_dtcg', array( __CLASS__, 'handle_dtcg_export' ) );
@@ -184,8 +206,12 @@ class NV_oOS_Design_System_Plugin {
 		// Bust CSS cache when @property toggle changes.
 		add_action( 'update_option_' . self::TYPED_PROPERTY_KEY, array( __CLASS__, 'bust_css_cache' ), 10, 2 );
 
+		// Global Styles bridge (runtime `theme.json` merge; no file writes).
+		add_action( 'init', array( 'NV_oOS_Design_System_Global_Styles', 'init' ), 1 );
+
 		// Email template CPT + built-in seeding.
 		add_action( 'init', array( 'NV_oOS_Design_System_Email_Template_CPT', 'register' ), 5 );
+		add_action( 'init', array( 'NV_oOS_Design_System_Email_Template_CPT', 'migrate_legacy' ), 20 );
 		add_action( 'init', array( 'NV_oOS_Design_System_Email_Seeder', 'maybe_seed' ), 10 );
 
 		// Crocoblock integrations — safe to call even if plugins aren't active.
@@ -229,11 +255,11 @@ class NV_oOS_Design_System_Plugin {
 	 */
 	public static function css_generator() {
 		if ( null === self::$css_generator ) {
-			$use_typed = (bool) get_option( self::TYPED_PROPERTY_KEY, false );
+			$use_typed           = (bool) get_option( self::TYPED_PROPERTY_KEY, false );
 			self::$css_generator = new NV_oOS_Design_System_CSS_Generator(
 				self::token_registry(),
 				$use_typed,
-				self::is_legacy_aliases_enabled()
+				false
 			);
 		}
 		return self::$css_generator;
@@ -275,13 +301,13 @@ class NV_oOS_Design_System_Plugin {
 	/**
 	 * Check whether the legacy `--cds-*` / `.cds-*` aliases are enabled.
 	 *
-	 * Defaults to enabled through the v0.x transition releases.
+	 * @deprecated 1.0.0 The transition aliases were removed. Retained for
+	 *                   third-party callers; always returns false.
 	 *
 	 * @return bool
 	 */
 	public static function is_legacy_aliases_enabled() {
-		$value = get_option( self::LEGACY_ALIAS_KEY, '1' );
-		return '0' !== $value && 'no' !== $value && false !== $value;
+		return false;
 	}
 
 	/**
@@ -407,8 +433,8 @@ class NV_oOS_Design_System_Plugin {
 		$exporter = new NV_oOS_Design_System_DTCG_Exporter( self::token_registry() );
 		$json     = $exporter->export( true );
 
-		header( 'Content-Type: application/json; charset=utf-8' );
-		header( 'Content-Disposition: attachment; filename="nvoos-design-system-tokens.dtcg.json"' );
+		header( 'Content-Type: application/design-tokens+json; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . $exporter->get_filename() . '"' );
 		header( 'Content-Length: ' . strlen( $json ) );
 
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON is safe to output in a download context.
@@ -462,6 +488,97 @@ class NV_oOS_Design_System_Plugin {
 		delete_transient( $key );
 
 		return is_array( $report ) ? $report : null;
+	}
+
+	/**
+	 * Handle the brand-kit form submission.
+	 *
+	 * @return void
+	 */
+	public static function handle_brand_post() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have sufficient permissions.', 'nvoos-design-system' ) );
+		}
+
+		check_admin_referer( 'nvoos_nds_brand', 'nvoos_nds_brand_nonce' );
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitised field-by-field in Brand_Kit::save().
+		$data = isset( $_POST['nvoos_nds_brand'] ) ? wp_unslash( $_POST['nvoos_nds_brand'] ) : array();
+		NV_oOS_Design_System_Brand_Kit::save( is_array( $data ) ? $data : array() );
+
+		wp_safe_redirect( admin_url( 'options-general.php?page=nvoos-nds-settings&tab=brand&nds_brand_saved=1' ) );
+		exit;
+	}
+
+	/**
+	 * Download the portable brand kit (identity + tokens + theme.json).
+	 *
+	 * @return void
+	 */
+	public static function handle_export_brand() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have sufficient permissions.', 'nvoos-design-system' ) );
+		}
+
+		check_admin_referer( 'nvoos_nds_export_brand', 'nvoos_nds_brand_nonce' );
+
+		$json = wp_json_encode(
+			NV_oOS_Design_System_Brand_Kit::export(),
+			JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+		);
+
+		header( 'Content-Type: application/json; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="nvoos-brand-kit.json"' );
+		header( 'Content-Length: ' . strlen( $json ) );
+
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON download.
+		echo $json;
+		exit;
+	}
+
+	/**
+	 * Download a printable brand guide.
+	 *
+	 * @return void
+	 */
+	public static function handle_export_guide() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have sufficient permissions.', 'nvoos-design-system' ) );
+		}
+
+		check_admin_referer( 'nvoos_nds_export_guide', 'nvoos_nds_brand_nonce' );
+
+		$html = NV_oOS_Design_System_Brand_Kit::export_guide_html();
+
+		header( 'Content-Type: text/html; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="nvoos-brand-guide.html"' );
+
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Self-contained, escaped HTML download.
+		echo $html;
+		exit;
+	}
+
+	/**
+	 * Download the generated `theme.json` partial.
+	 *
+	 * @return void
+	 */
+	public static function handle_export_theme_json() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have sufficient permissions.', 'nvoos-design-system' ) );
+		}
+
+		check_admin_referer( 'nvoos_nds_export_theme_json', 'nvoos_nds_theme_json_nonce' );
+
+		$json = NV_oOS_Design_System_Global_Styles::export_json();
+
+		header( 'Content-Type: application/json; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="nvoos-theme.json"' );
+		header( 'Content-Length: ' . strlen( $json ) );
+
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON download.
+		echo $json;
+		exit;
 	}
 
 	/**
@@ -519,6 +636,14 @@ class NV_oOS_Design_System_Plugin {
 				$admin->handle_paper_import();
 				break;
 
+			case 'wrap_mode':
+				$admin->handle_wrap_mode();
+				break;
+
+			case 'clear_log':
+				$admin->handle_clear_log();
+				break;
+
 			default:
 				break;
 		}
@@ -527,8 +652,47 @@ class NV_oOS_Design_System_Plugin {
 			? sanitize_text_field( wp_unslash( $_REQUEST['_wp_http_referer'] ) )
 			: admin_url( 'options-general.php?page=nvoos-nds-settings&tab=emails' );
 
+		self::redirect_with_settings_errors( $redirect );
+	}
+
+	/**
+	 * Redirect after an admin-post action, carrying notices across the request.
+	 *
+	 * `add_settings_error()` only appends to the in-request global, and core
+	 * only replays the `settings_errors` transient when the URL carries
+	 * `settings-updated`, so notices are stored under a plugin-scoped key and
+	 * rendered by the admin page on the next load.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $redirect Destination URL.
+	 * @return void
+	 */
+	private static function redirect_with_settings_errors( $redirect ) {
+		if ( function_exists( 'get_settings_errors' ) ) {
+			$errors = get_settings_errors();
+			if ( ! empty( $errors ) && is_array( $errors ) ) {
+				set_transient( self::ADMIN_NOTICE_KEY . '_' . get_current_user_id(), $errors, 5 * MINUTE_IN_SECONDS );
+			}
+		}
+
 		wp_safe_redirect( $redirect );
 		exit;
+	}
+
+	/**
+	 * Read (and clear) the pending admin notices for the current user.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array<int, array{setting?: string, code?: string, message?: string, type?: string}>
+	 */
+	public static function consume_admin_notices() {
+		$key     = self::ADMIN_NOTICE_KEY . '_' . get_current_user_id();
+		$notices = get_transient( $key );
+		delete_transient( $key );
+
+		return is_array( $notices ) ? $notices : array();
 	}
 
 	/**

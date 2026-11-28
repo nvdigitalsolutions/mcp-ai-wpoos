@@ -45,7 +45,7 @@ class NV_oOS_Design_System_Tool_List_Email_Templates implements WP_MCP_AI_Tool_I
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'List the NV oOS Design System email templates: built-in templates, custom templates, and AI-generated drafts. Returns the slug, title, source, status, and audit score of each template. Use this before activating, previewing, or auditing a template.', 'nvoos-design-system' );
+		return __( 'List the NV oOS Design System email templates: built-in templates, custom templates, and AI-generated drafts. Returns the slug, title, source, status, and audit score of each template. When to use: discovering a template slug before previewing, auditing, or activating it. When NOT to use: fetching template HTML (use nds_preview_email_template).', 'nvoos-design-system' );
 	}
 
 	/**
@@ -68,6 +68,9 @@ class NV_oOS_Design_System_Tool_List_Email_Templates implements WP_MCP_AI_Tool_I
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$status = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : '';
@@ -92,12 +95,12 @@ class NV_oOS_Design_System_Tool_List_Email_Templates implements WP_MCP_AI_Tool_I
 			);
 
 			$items[] = array(
-				'slug'    => $template->post_name,
-				'title'   => $template->post_title,
-				'source'  => NV_oOS_Design_System_Email_Template_CPT::get_source( $template->ID ),
-				'status'  => $template->post_status,
-				'active'  => $template->post_name === $active,
-				'audit'   => array(
+				'slug'   => $template->post_name,
+				'title'  => $template->post_title,
+				'source' => NV_oOS_Design_System_Email_Template_CPT::get_source( $template->ID ),
+				'status' => $template->post_status,
+				'active' => $template->post_name === $active,
+				'audit'  => array(
 					'score'           => $audit['score'],
 					'passes_required' => $audit['passes_required'],
 				),
@@ -105,10 +108,10 @@ class NV_oOS_Design_System_Tool_List_Email_Templates implements WP_MCP_AI_Tool_I
 		}
 
 		return array(
-			'success'    => true,
-			'templates'  => $items,
-			'active'     => $active,
-			'total'      => count( $items ),
+			'success'   => true,
+			'templates' => $items,
+			'active'    => $active,
+			'total'     => count( $items ),
 		);
 	}
 

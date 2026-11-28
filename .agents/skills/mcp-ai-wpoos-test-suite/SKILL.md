@@ -135,6 +135,10 @@ Rules:
   PHPUnit's default suffix, not the suite's configured suffix, and prints
   `No tests executed!`. Pass the shell-expanded files
   (`tests/<area>/test-*.php`) or add `--test-suffix .php`.
+- **Vendor may be production-only.** `Class "PHPUnit\TextUI\Application" not
+  found` from `vendor/bin/phpunit` means the tree was installed with
+  `--no-dev`. Run `composer install --dev` before debugging discovery; the
+  binary can exist while the autoloader does not list PHPUnit.
 - **Fresh `oos-wp` with an empty core volume.** If the container is healthy but
   `/var/www/html/wp-load.php` is missing (the bind-mounted plugin creates
   `wp-content/` before core is copied), seed the shared volume:

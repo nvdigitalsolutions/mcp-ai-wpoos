@@ -1,0 +1,46 @@
+name: Sync nvoos-design-system
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'addons/nvoos-design-system/**'
+
+concurrency:
+  group: sync-nvoos-design-system
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # GitHub forbids `secrets.*` inside `if:` expressions, so the presence
+      # check is promoted to a step output.
+      - name: Check mirror token
+        id: token
+        env:
+          TOKEN: ${{ secrets.NVOOS_DESIGN_SYSTEM_REPO_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::warning::NVOOS_DESIGN_SYSTEM_REPO_TOKEN is not set; skipping the public mirror."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Split subtree
+        if: steps.token.outputs.ready == 'true'
+        run: |
+          git subtree split --prefix=addons/nvoos-design-system --branch=nvoos-design-system-split
+
+      - name: Push to nvoos-design-system
+        if: steps.token.outputs.ready == 'true'
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git push https://x-access-token:${{ secrets.NVOOS_DESIGN_SYSTEM_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-design-system.git nvoos-design-system-split:main --force

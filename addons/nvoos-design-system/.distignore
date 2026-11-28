@@ -1,0 +1,21 @@
+# Directories
+/.git
+/.github
+/.wordpress-org
+/bin
+/node_modules
+/tests
+/vendor
+
+# Files
+/.distignore
+/.gitattributes
+/.gitignore
+/composer.json
+/composer.lock
+/phpcs.xml
+/phpcs.xml.dist
+/phpunit.xml.dist
+*.log
+.DS_Store
+NUL

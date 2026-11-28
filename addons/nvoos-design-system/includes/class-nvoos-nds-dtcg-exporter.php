@@ -1,13 +1,15 @@
 <?php
 /**
- * NV oOS Design System — DTCG Exporter
+ * NV oOS Design System — DTCG Exporter.
  *
- * Exports design tokens in the W3C Design Tokens Community Group (DTCG)
- * format (2025.10 spec), enabling interoperability with Tokens Studio for
- * Figma, Style Dictionary, Terrazzo, and other DTCG-compliant tools.
+ * Exports the flat token registry as a W3C Design Tokens Community Group
+ * (2025.10) document. Value shaping is delegated to the DTCG codec so colour,
+ * dimension, shadow and font tokens are emitted in spec form rather than as
+ * raw CSS strings.
  *
  * @package NV_oOS_Design_System
  * @since   0.2.0
+ * @since   1.0.0 Codec-backed, spec-shaped output.
  *
  * @see https://www.designtokens.org/tr/2025.10/
  */
@@ -18,12 +20,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Exports tokens from the registry into DTCG-compliant JSON.
- *
- * Maps our flat token model to the DTCG hierarchical structure:
- *   group → token-id → { $type, $value, $description }
- *
- * The `emails` group flows through the same exporter with no format change,
- * so email palettes export alongside web tokens.
  *
  * @since 0.2.0
  */
@@ -37,20 +33,6 @@ class NV_oOS_Design_System_DTCG_Exporter {
 	private $registry;
 
 	/**
-	 * Map of NDS token types to DTCG $type values.
-	 *
-	 * @var array<string, string>
-	 */
-	private $type_map = array(
-		'color'      => 'color',
-		'size'       => 'dimension',
-		'font'       => 'fontFamily',
-		'shadow'     => 'shadow',
-		'transition' => 'duration',
-		'spacing'    => 'dimension',
-	);
-
-	/**
 	 * Constructor.
 	 *
 	 * @param NV_oOS_Design_System_Token_Registry $registry Token registry.
@@ -60,48 +42,70 @@ class NV_oOS_Design_System_DTCG_Exporter {
 	}
 
 	/**
-	 * Export all tokens as DTCG-compliant JSON.
+	 * Export all tokens as a DTCG document.
 	 *
-	 * @param bool $pretty_print Whether to pretty-print the JSON output.
+	 * @param bool                 $pretty_print Whether to pretty-print.
+	 * @param array<string, mixed> $args         Optional: `groups` (array of group ids), `include_descriptions` (bool).
 	 * @return string JSON string.
 	 */
-	public function export( $pretty_print = true ) {
-		$grouped = $this->registry->get_grouped();
-		$output  = array();
-
-		foreach ( $grouped as $group_key => $tokens ) {
-			$group_obj = array();
-
-			foreach ( $tokens as $token ) {
-				$dtcg_type             = $this->map_type( $token->type );
-				$group_obj[ $token->id ] = array(
-					'$type'  => $dtcg_type,
-					'$value' => $token->value,
-				);
-
-				if ( $token->description ) {
-					$group_obj[ $token->id ]['$description'] = $token->description;
-				}
-			}
-
-			$output[ $group_key ] = $group_obj;
-		}
-
+	public function export( $pretty_print = true, $args = array() ) {
 		$flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
 		if ( $pretty_print ) {
 			$flags |= JSON_PRETTY_PRINT;
 		}
 
-		return wp_json_encode( $output, $flags );
+		return wp_json_encode( $this->export_array( $args ), $flags );
 	}
 
 	/**
-	 * Map an NDS token type to its DTCG $type equivalent.
+	 * Export all tokens as a DTCG array.
 	 *
-	 * @param string $nds_type NDS token type (color, size, font, shadow, transition).
-	 * @return string DTCG $type value.
+	 * @param array<string, mixed> $args Optional: `groups`, `include_descriptions`.
+	 * @return array<string, array<string, array>>
 	 */
-	private function map_type( $nds_type ) {
-		return isset( $this->type_map[ $nds_type ] ) ? $this->type_map[ $nds_type ] : 'string';
+	public function export_array( $args = array() ) {
+		$args = wp_parse_args(
+			$args,
+			array(
+				'groups'               => array(),
+				'include_descriptions' => true,
+			)
+		);
+
+		$grouped = $this->registry->get_grouped();
+		$output  = array();
+
+		foreach ( $grouped as $group_key => $tokens ) {
+			if ( ! empty( $args['groups'] ) && ! in_array( $group_key, (array) $args['groups'], true ) ) {
+				continue;
+			}
+
+			$group_obj = array();
+
+			foreach ( $tokens as $token ) {
+				$entry = NV_oOS_Design_System_DTCG_Codec::to_dtcg( $token );
+
+				if ( empty( $args['include_descriptions'] ) ) {
+					unset( $entry['$description'] );
+				}
+
+				$group_obj[ $token->id ] = $entry;
+			}
+
+			if ( ! empty( $group_obj ) ) {
+				$output[ $group_key ] = $group_obj;
+			}
+		}
+
+		return $output;
+	}
+
+	/**
+	 * Suggested download filename.
+	 *
+	 * @return string
+	 */
+	public function get_filename() {
+		return 'nvoos-design-system.tokens.json';
 	}
 }

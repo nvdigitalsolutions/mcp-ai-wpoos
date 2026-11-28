@@ -48,15 +48,16 @@ class NV_oOS_Design_System_Email_Renderer {
 	/**
 	 * Render a template with the given context.
 	 *
-	 * @param string                          $template_html Template HTML.
-	 * @param array<string, string>           $context       Merge context (subject, body, to_name, site_name, site_url, site_domain, logo_url, admin_email, sub_brand, confidential, year).
-	 * @param string                          $slug          Template slug (for the sentinel).
+	 * @param string                $template_html Template HTML.
+	 * @param array<string, string> $context       Merge context (subject, body, to_name, site_name, site_url, site_domain, logo_url, admin_email, sub_brand, confidential, year).
+	 * @param string                $slug          Template slug (for the sentinel).
 	 * @return string Rendered HTML.
 	 */
 	public function render( $template_html, $context = array(), $slug = 'custom' ) {
 		$defaults = array(
 			'subject'      => '',
 			'body'         => '',
+			'preheader'    => '',
 			'to_name'      => '',
 			'site_name'    => '',
 			'site_url'     => '',
@@ -72,6 +73,8 @@ class NV_oOS_Design_System_Email_Renderer {
 
 		$html = $this->resolve_tokens( $template_html );
 
+		$had_preheader_tag = false !== strpos( $html, '{{preheader}}' );
+
 		// Defer body insertion.
 		$html = str_replace( '{{body}}', self::BODY_PLACEHOLDER, $html );
 
@@ -86,6 +89,7 @@ class NV_oOS_Design_System_Email_Renderer {
 		$html = str_replace(
 			array(
 				'{{subject}}',
+				'{{preheader}}',
 				'{{to_name}}',
 				'{{site_name}}',
 				'{{site_url}}',
@@ -98,6 +102,7 @@ class NV_oOS_Design_System_Email_Renderer {
 			),
 			array(
 				esc_html( $context['subject'] ),
+				esc_html( $context['preheader'] ),
 				esc_html( $context['to_name'] ),
 				esc_html( $context['site_name'] ),
 				esc_url( $context['site_url'] ),
@@ -120,6 +125,19 @@ class NV_oOS_Design_System_Email_Renderer {
 
 		// Insert the (pre-sanitised) body last.
 		$html = str_replace( self::BODY_PLACEHOLDER, $context['body'], $html );
+
+		// Inject a hidden preheader when the template does not place one.
+		if ( ! $had_preheader_tag && '' !== trim( (string) $context['preheader'] ) ) {
+			$preheader = '<div style="display:none!important;font-size:1px;color:#ffffff;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">' . esc_html( $context['preheader'] ) . '</div>';
+			$html      = preg_replace_callback(
+				'/<body[^>]*>/i',
+				static function ( $matches ) use ( $preheader ) {
+					return $matches[0] . $preheader;
+				},
+				$html,
+				1
+			);
+		}
 
 		return $this->ensure_sentinel( $html, $slug );
 	}

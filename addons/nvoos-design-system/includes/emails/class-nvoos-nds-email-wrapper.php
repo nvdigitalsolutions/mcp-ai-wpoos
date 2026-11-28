@@ -12,7 +12,7 @@
  *     and removes itself on first use, so it only affects this one email
  *     (the wp.org-documented reset-after-send pattern)
  *   - plain text — emails explicitly sent as text/plain are never wrapped
- *   - opt-out — nds_email_skip filter for plugin authors
+ *   - opt-out — nvoos_nds_email_skip filter for plugin authors
  *
  * @package NV_oOS_Design_System
  * @since   0.2.0
@@ -50,13 +50,18 @@ class NV_oOS_Design_System_Email_Wrapper {
 			return $atts;
 		}
 
+		$mode = self::get_wrap_mode();
+		if ( 'off' === $mode ) {
+			return $atts;
+		}
+
 		/**
 		 * Skip wrapping for a specific message.
 		 *
 		 * @param bool  $skip Whether to skip wrapping (default false).
 		 * @param array $atts wp_mail() arguments.
 		 */
-		if ( apply_filters( 'nds_email_skip', false, $atts ) ) {
+		if ( apply_filters( 'nvoos_nds_email_skip', false, $atts ) ) {
 			return $atts;
 		}
 
@@ -64,26 +69,49 @@ class NV_oOS_Design_System_Email_Wrapper {
 			return $atts;
 		}
 
+		// `text_only` is the safest non-off mode: it leaves HTML fragments
+		// (forms, WooCommerce, other template plugins) untouched.
+		if ( 'text_only' === $mode && self::is_html( $atts['message'] ) ) {
+			self::log_send( 'skipped', 'html_body', '', strlen( (string) $atts['message'] ), $atts );
+			return $atts;
+		}
+
+		/**
+		 * Filter whether this specific message should be wrapped.
+		 *
+		 * @param bool   $wrap Whether to wrap.
+		 * @param array  $atts wp_mail() arguments.
+		 * @param string $mode Wrap mode.
+		 */
+		if ( ! apply_filters( 'nvoos_nds_email_should_wrap', true, $atts, $mode ) ) {
+			self::log_send( 'skipped', 'filter', '', strlen( (string) $atts['message'] ), $atts );
+			return $atts;
+		}
+
 		$message = $atts['message'];
 
 		// 1. Sentinel guard — never double-wrap (ours or any other wrapper's).
 		if ( false !== strpos( $message, NV_oOS_Design_System_Email_Renderer::SENTINEL_PREFIX ) ) {
+			self::log_send( 'skipped', 'sentinel', '', strlen( (string) $message ), $atts );
 			return $atts;
 		}
 
 		// 2. Full-document guard — another plugin (WooCommerce, an SMTP
-		//    template plugin) already produced a complete HTML email.
+		// template plugin) already produced a complete HTML email.
 		if ( false !== stripos( $message, '<!doctype' ) || false !== stripos( $message, '<html' ) ) {
+			self::log_send( 'skipped', 'full_document', '', strlen( (string) $message ), $atts );
 			return $atts;
 		}
 
 		// 3. Explicit text/plain sends are never wrapped.
 		if ( self::is_text_plain( isset( $atts['headers'] ) ? $atts['headers'] : array() ) ) {
+			self::log_send( 'skipped', 'text_plain', '', strlen( (string) $message ), $atts );
 			return $atts;
 		}
 
 		$template = NV_oOS_Design_System_Email_Template_Registry::get_active();
 		if ( empty( $template['html'] ) ) {
+			self::log_send( 'skipped', 'no_template', '', strlen( (string) $message ), $atts );
 			return $atts;
 		}
 
@@ -96,8 +124,10 @@ class NV_oOS_Design_System_Email_Wrapper {
 
 		$context = self::build_context( $atts, $template['settings'], $body );
 
-		$renderer = new NV_oOS_Design_System_Email_Renderer();
+		$renderer        = new NV_oOS_Design_System_Email_Renderer();
 		$atts['message'] = $renderer->render( $template['html'], $context, $template['slug'] );
+
+		self::log_send( 'wrapped', '', $template['slug'], strlen( (string) $atts['message'] ), $atts );
 
 		// Force HTML for this send only; the filter removes itself on first use.
 		add_filter( 'wp_mail_content_type', array( __CLASS__, 'force_html_content_type_once' ), 99 );
@@ -126,7 +156,7 @@ class NV_oOS_Design_System_Email_Wrapper {
 		 * @param string $plain Plain-text body.
 		 * @param array  $atts  wp_mail() arguments.
 		 */
-		$plain = apply_filters( 'nds_email_plain_text', $plain, $atts );
+		$plain = apply_filters( 'nvoos_nds_email_plain_text', $plain, $atts );
 
 		if ( '' === trim( (string) $plain ) ) {
 			return;
@@ -154,21 +184,24 @@ class NV_oOS_Design_System_Email_Wrapper {
 			return;
 		}
 
-		$plain = self::$pending_alt_body;
+		$plain                  = self::$pending_alt_body;
 		self::$pending_alt_body = null;
 
 		if ( ! is_object( $phpmailer ) ) {
 			return;
 		}
 
+		// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHPMailer public property.
 		if ( 'text/html' !== $phpmailer->ContentType ) {
 			return;
 		}
 
+		// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHPMailer public property.
 		if ( ! empty( $phpmailer->AltBody ) ) {
 			return; // Another plugin already provided a plain-text part.
 		}
 
+		// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHPMailer public property.
 		$phpmailer->AltBody = $plain;
 	}
 
@@ -223,7 +256,7 @@ class NV_oOS_Design_System_Email_Wrapper {
 	 * Build the merge context for the active template.
 	 *
 	 * Logo priority chain (matches the Aerlinn reference):
-	 *   nds_email_logo_url filter → WooCommerce header image → theme custom
+	 *   nvoos_nds_email_logo_url filter → WooCommerce header image → theme custom
 	 *   logo → template setting → empty.
 	 *
 	 * @param array  $atts     wp_mail() arguments.
@@ -240,6 +273,7 @@ class NV_oOS_Design_System_Email_Wrapper {
 		$context = array(
 			'subject'      => isset( $atts['subject'] ) ? $atts['subject'] : '',
 			'body'         => $body,
+			'preheader'    => isset( $atts['subject'] ) ? (string) $atts['subject'] : '',
 			'to_name'      => self::get_recipient_name( $atts['to'] ),
 			'site_name'    => get_bloginfo( 'name' ),
 			'site_url'     => home_url(),
@@ -257,7 +291,7 @@ class NV_oOS_Design_System_Email_Wrapper {
 		 * @param array $context Merge context.
 		 * @param array $atts    wp_mail() arguments.
 		 */
-		return apply_filters( 'nds_email_context', $context, $atts );
+		return apply_filters( 'nvoos_nds_email_context', $context, $atts );
 	}
 
 	/**
@@ -273,7 +307,7 @@ class NV_oOS_Design_System_Email_Wrapper {
 		 *
 		 * @param string $logo_url Logo URL (default empty = use fallbacks).
 		 */
-		$url = apply_filters( 'nds_email_logo_url', '' );
+		$url = apply_filters( 'nvoos_nds_email_logo_url', '' );
 		if ( $url ) {
 			return esc_url_raw( $url );
 		}
@@ -364,6 +398,63 @@ class NV_oOS_Design_System_Email_Wrapper {
 	 * @return bool
 	 */
 	private static function is_html( $text ) {
-		return $text !== wp_strip_all_tags( $text );
+		return wp_strip_all_tags( $text ) !== $text;
+	}
+
+	/**
+	 * Current wrap mode.
+	 *
+	 * @return string `off`, `text_only`, `fragments`, or `all`.
+	 */
+	public static function get_wrap_mode() {
+		$mode = (string) get_option( NV_oOS_Design_System_Plugin::WRAP_MODE_KEY, 'off' );
+		return in_array( $mode, array( 'off', 'text_only', 'fragments', 'all' ), true ) ? $mode : 'off';
+	}
+
+	/**
+	 * Read the recent send log (newest first).
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function get_log() {
+		$log = get_option( NV_oOS_Design_System_Plugin::EMAIL_LOG_KEY, array() );
+		return is_array( $log ) ? $log : array();
+	}
+
+	/**
+	 * Clear the send log.
+	 *
+	 * @return void
+	 */
+	public static function clear_log() {
+		delete_option( NV_oOS_Design_System_Plugin::EMAIL_LOG_KEY );
+	}
+
+	/**
+	 * Record a send (subject only; never the body).
+	 *
+	 * @param string $status  `wrapped` or `skipped`.
+	 * @param string $reason  Skip reason.
+	 * @param string $slug    Template slug.
+	 * @param int    $bytes   Rendered size.
+	 * @param array  $atts    wp_mail() arguments.
+	 * @return void
+	 */
+	private static function log_send( $status, $reason, $slug, $bytes, $atts ) {
+		$log = self::get_log();
+
+		array_unshift(
+			$log,
+			array(
+				'time'     => time(),
+				'status'   => (string) $status,
+				'reason'   => (string) $reason,
+				'template' => (string) $slug,
+				'bytes'    => (int) $bytes,
+				'subject'  => isset( $atts['subject'] ) ? substr( sanitize_text_field( (string) $atts['subject'] ), 0, 120 ) : '',
+			)
+		);
+
+		update_option( NV_oOS_Design_System_Plugin::EMAIL_LOG_KEY, array_slice( $log, 0, 50 ), false );
 	}
 }

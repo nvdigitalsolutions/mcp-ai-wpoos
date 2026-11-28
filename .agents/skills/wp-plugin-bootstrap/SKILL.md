@@ -258,6 +258,8 @@ Call `load_plugin_textdomain()` only when:
 - Your `.mo` files live in a non-standard path (custom `Domain Path` pointing somewhere weird).
 - You support WP versions older than 6.5 (rare in 2026).
 
+**WordPress.org note:** Plugin Check reports `DiscouragedFunctions.load_plugin_textdomainFound` (warning) for any `load_plugin_textdomain()` call. For a directory-hosted plugin, omit it unless you genuinely use a non-standard `Domain Path`; the language-pack loader already covers the conventional path.
+
 If you do call it, hook on `init`:
 
 ```php

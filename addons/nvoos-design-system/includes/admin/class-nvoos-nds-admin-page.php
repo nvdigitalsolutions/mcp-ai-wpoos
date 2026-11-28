@@ -95,13 +95,16 @@ class NV_oOS_Design_System_Admin_Page {
 		$this->maybe_handle_post();
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- tab selection is a read-only UI state.
-		$tab = isset( $_GET['tab'] ) && 'emails' === sanitize_key( wp_unslash( $_GET['tab'] ) ) ? 'emails' : 'tokens';
+		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'tokens';
+		if ( ! in_array( $tab, array( 'tokens', 'emails', 'brand' ), true ) ) {
+			$tab = 'tokens';
+		}
 
 		?>
 		<div class="wrap nvoos-nds-wrap">
 			<h1><?php echo esc_html__( 'NV oOS Design System', 'nvoos-design-system' ); ?></h1>
 			<p class="description">
-				<?php esc_html_e( 'Design tokens for JetEngine listings, JetSmartFilters, JetFormBuilder, and Elementor — plus token-driven email templates for every outgoing WordPress email.', 'nvoos-design-system' ); ?>
+				<?php esc_html_e( 'One source of truth for your brand tokens — CSS, Global Styles and email templates. Optional styling integrations for JetEngine, JetSmartFilters, JetFormBuilder, and Elementor.', 'nvoos-design-system' ); ?>
 			</p>
 
 			<nav class="nav-tab-wrapper">
@@ -112,6 +115,10 @@ class NV_oOS_Design_System_Admin_Page {
 				<a href="<?php echo esc_url( admin_url( 'options-general.php?page=nvoos-nds-settings&tab=emails' ) ); ?>"
 					class="nav-tab <?php echo 'emails' === $tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Emails', 'nvoos-design-system' ); ?>
+				</a>
+				<a href="<?php echo esc_url( admin_url( 'options-general.php?page=nvoos-nds-settings&tab=brand' ) ); ?>"
+					class="nav-tab <?php echo 'brand' === $tab ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Brand', 'nvoos-design-system' ); ?>
 				</a>
 			</nav>
 
@@ -124,6 +131,8 @@ class NV_oOS_Design_System_Admin_Page {
 				$email_admin = new NV_oOS_Design_System_Email_Admin();
 				$email_admin->render();
 				?>
+			<?php elseif ( 'brand' === $tab ) : ?>
+				<?php $this->render_brand_tab(); ?>
 			<?php else : ?>
 				<?php $this->render_tokens_tab(); ?>
 			<?php endif; ?>
@@ -163,6 +172,7 @@ class NV_oOS_Design_System_Admin_Page {
 
 			<div class="nvoos-nds-sidebar">
 				<?php $this->render_preview_pane( $css_vars ); ?>
+				<?php $this->render_contrast_section(); ?>
 				<?php $this->render_export_section(); ?>
 				<?php $this->render_import_section(); ?>
 			</div>
@@ -207,11 +217,16 @@ class NV_oOS_Design_System_Admin_Page {
 	 */
 	private function render_settings_bar() {
 		$typed_enabled  = NV_oOS_Design_System_Plugin::is_typed_properties_enabled();
-		$legacy_enabled = NV_oOS_Design_System_Plugin::is_legacy_aliases_enabled();
+		$global_styles  = (bool) get_option( NV_oOS_Design_System_Global_Styles::OPTION_KEY, false );
 		$dtcg_url       = wp_nonce_url(
 			admin_url( 'admin-post.php?action=nvoos_nds_export_dtcg' ),
 			'nvoos_nds_dtcg_export',
 			'nvoos_nds_dtcg_nonce'
+		);
+		$theme_json_url = wp_nonce_url(
+			admin_url( 'admin-post.php?action=nvoos_nds_export_theme_json' ),
+			'nvoos_nds_export_theme_json',
+			'nvoos_nds_theme_json_nonce'
 		);
 		?>
 		<div class="nvoos-nds-settings-bar">
@@ -232,18 +247,18 @@ class NV_oOS_Design_System_Admin_Page {
 			</div>
 
 			<div class="nvoos-nds-settings-row">
-				<label for="nvoos-nds-legacy-aliases">
+				<label for="nvoos-nds-global-styles">
 					<input
 						type="checkbox"
-						name="nvoos_nds_legacy_aliases"
-						id="nvoos-nds-legacy-aliases"
+						name="nvoos_nds_global_styles"
+						id="nvoos-nds-global-styles"
 						value="1"
-						<?php checked( $legacy_enabled ); ?>
+						<?php checked( $global_styles ); ?>
 					>
-					<?php esc_html_e( 'Legacy Crocoblock DS aliases (--cds-* variables and .cds-* classes)', 'nvoos-design-system' ); ?>
+					<?php esc_html_e( 'Publish tokens to Global Styles (theme.json)', 'nvoos-design-system' ); ?>
 				</label>
 				<p class="description">
-					<?php esc_html_e( 'Keeps existing builds that reference the old Crocoblock DS naming working after the rename. Scheduled for removal in v1.0.0.', 'nvoos-design-system' ); ?>
+					<?php esc_html_e( 'Adds the palette, font sizes, font families, spacing and shadows to the block editor’s Global Styles. The bridge runs in memory and never writes theme files. Requires WordPress 6.1+; schema v3 on 6.6+.', 'nvoos-design-system' ); ?>
 				</p>
 			</div>
 
@@ -251,8 +266,11 @@ class NV_oOS_Design_System_Admin_Page {
 				<a href="<?php echo esc_url( $dtcg_url ); ?>" class="button">
 					<?php esc_html_e( 'Export as DTCG (Design Tokens JSON)', 'nvoos-design-system' ); ?>
 				</a>
+				<a href="<?php echo esc_url( $theme_json_url ); ?>" class="button">
+					<?php esc_html_e( 'Download theme.json partial', 'nvoos-design-system' ); ?>
+				</a>
 				<p class="description">
-					<?php esc_html_e( 'Download tokens in the W3C Design Tokens Community Group format. Compatible with Tokens Studio for Figma, Style Dictionary, and Terrazzo.', 'nvoos-design-system' ); ?>
+					<?php esc_html_e( 'DTCG 2025.10 is compatible with Tokens Studio for Figma, Style Dictionary, and Terrazzo.', 'nvoos-design-system' ); ?>
 				</p>
 			</div>
 		</div>
@@ -382,6 +400,149 @@ class NV_oOS_Design_System_Admin_Page {
 
 				<h3><?php esc_html_e( 'Generated CSS', 'nvoos-design-system' ); ?></h3>
 				<pre class="nvoos-nds-css-output"><code><?php echo esc_html( $css_vars ); ?></code></pre>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the WCAG contrast audit for the current token set.
+	 *
+	 * @return void
+	 */
+	private function render_contrast_section() {
+		$tokens = $this->registry->get_all();
+		$pairs  = NV_oOS_Design_System_Contrast_Auditor::audit_pairs(
+			NV_oOS_Design_System_Contrast_Auditor::derive_pairs( $tokens )
+		);
+		?>
+		<div class="nvoos-nds-contrast postbox">
+			<div class="postbox-header">
+				<h2><?php esc_html_e( 'Contrast Audit (WCAG 2.2)', 'nvoos-design-system' ); ?></h2>
+			</div>
+			<div class="inside">
+				<p class="description">
+					<?php esc_html_e( 'Text pairs need 4.5:1; large text, borders and focus rings need 3:1. Custom-property values are reported as unresolved rather than guessed.', 'nvoos-design-system' ); ?>
+				</p>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Pair', 'nvoos-design-system' ); ?></th>
+							<th><?php esc_html_e( 'Ratio', 'nvoos-design-system' ); ?></th>
+							<th><?php esc_html_e( 'Required', 'nvoos-design-system' ); ?></th>
+							<th><?php esc_html_e( 'Result', 'nvoos-design-system' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $pairs as $pair ) : ?>
+							<tr>
+								<td><?php echo esc_html( $pair['label'] ); ?></td>
+								<td><?php echo null === $pair['ratio'] ? '—' : esc_html( number_format_i18n( (float) $pair['ratio'], 2 ) . ':1' ); ?></td>
+								<td><?php echo esc_html( number_format_i18n( (float) $pair['required'], 1 ) . ':1' ); ?></td>
+								<td>
+									<?php if ( null === $pair['ratio'] ) : ?>
+										<span class="description"><?php esc_html_e( 'Unresolved', 'nvoos-design-system' ); ?></span>
+									<?php elseif ( $pair['pass'] ) : ?>
+										<strong style="color:#0a7f3f"><?php esc_html_e( 'Pass', 'nvoos-design-system' ); ?></strong>
+									<?php else : ?>
+										<strong style="color:#b32d2e"><?php esc_html_e( 'Fail', 'nvoos-design-system' ); ?></strong>
+									<?php endif; ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the Brand tab.
+	 *
+	 * @return void
+	 */
+	private function render_brand_tab() {
+		$brand     = NV_oOS_Design_System_Brand_Kit::get();
+		$brand_url = wp_nonce_url(
+			admin_url( 'admin-post.php?action=nvoos_nds_export_brand' ),
+			'nvoos_nds_export_brand',
+			'nvoos_nds_brand_nonce'
+		);
+		$guide_url = wp_nonce_url(
+			admin_url( 'admin-post.php?action=nvoos_nds_export_guide' ),
+			'nvoos_nds_export_guide',
+			'nvoos_nds_brand_nonce'
+		);
+		?>
+		<div class="nvoos-nds-brand-tab">
+			<?php if ( isset( $_GET['nds_brand_saved'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+				<div class="notice notice-success inline"><p><?php esc_html_e( 'Brand kit saved.', 'nvoos-design-system' ); ?></p></div>
+			<?php endif; ?>
+
+			<div class="nvoos-nds-layout">
+				<div class="nvoos-nds-main">
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+						<input type="hidden" name="action" value="nvoos_nds_brand">
+						<?php wp_nonce_field( 'nvoos_nds_brand', 'nvoos_nds_brand_nonce' ); ?>
+
+						<table class="form-table" role="presentation">
+							<tr>
+								<th scope="row"><label for="nds-brand-name"><?php esc_html_e( 'Brand name', 'nvoos-design-system' ); ?></label></th>
+								<td><input type="text" class="regular-text" id="nds-brand-name" name="nvoos_nds_brand[name]" value="<?php echo esc_attr( $brand['name'] ); ?>"></td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="nds-brand-tagline"><?php esc_html_e( 'Tagline', 'nvoos-design-system' ); ?></label></th>
+								<td><input type="text" class="regular-text" id="nds-brand-tagline" name="nvoos_nds_brand[tagline]" value="<?php echo esc_attr( $brand['tagline'] ); ?>"></td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="nds-brand-sub"><?php esc_html_e( 'Sub-brand', 'nvoos-design-system' ); ?></label></th>
+								<td><input type="text" class="regular-text" id="nds-brand-sub" name="nvoos_nds_brand[sub_brand]" value="<?php echo esc_attr( $brand['sub_brand'] ); ?>"></td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="nds-brand-email"><?php esc_html_e( 'Contact email', 'nvoos-design-system' ); ?></label></th>
+								<td><input type="email" class="regular-text" id="nds-brand-email" name="nvoos_nds_brand[contact_email]" value="<?php echo esc_attr( $brand['contact_email'] ); ?>"></td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="nds-brand-logo"><?php esc_html_e( 'Logo URL (light)', 'nvoos-design-system' ); ?></label></th>
+								<td><input type="url" class="regular-text" id="nds-brand-logo" name="nvoos_nds_brand[logo_url]" value="<?php echo esc_attr( $brand['logo_url'] ); ?>"></td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="nds-brand-logo-dark"><?php esc_html_e( 'Logo URL (dark)', 'nvoos-design-system' ); ?></label></th>
+								<td><input type="url" class="regular-text" id="nds-brand-logo-dark" name="nvoos_nds_brand[logo_dark_url]" value="<?php echo esc_attr( $brand['logo_dark_url'] ); ?>"></td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="nds-brand-icon"><?php esc_html_e( 'Icon URL', 'nvoos-design-system' ); ?></label></th>
+								<td><input type="url" class="regular-text" id="nds-brand-icon" name="nvoos_nds_brand[icon_url]" value="<?php echo esc_attr( $brand['icon_url'] ); ?>"></td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="nds-brand-favicon"><?php esc_html_e( 'Favicon URL', 'nvoos-design-system' ); ?></label></th>
+								<td><input type="url" class="regular-text" id="nds-brand-favicon" name="nvoos_nds_brand[favicon_url]" value="<?php echo esc_attr( $brand['favicon_url'] ); ?>"></td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="nds-brand-voice"><?php esc_html_e( 'Brand voice', 'nvoos-design-system' ); ?></label></th>
+								<td><textarea class="large-text" rows="4" id="nds-brand-voice" name="nvoos_nds_brand[voice]"><?php echo esc_textarea( $brand['voice'] ); ?></textarea></td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="nds-brand-social"><?php esc_html_e( 'Social links', 'nvoos-design-system' ); ?></label></th>
+								<td><textarea class="large-text" rows="4" id="nds-brand-social" name="nvoos_nds_brand[social]"><?php echo esc_textarea( implode( "\n", (array) $brand['social'] ) ); ?></textarea><p class="description"><?php esc_html_e( 'One URL per line.', 'nvoos-design-system' ); ?></p></td>
+							</tr>
+						</table>
+
+						<?php submit_button( __( 'Save Brand Kit', 'nvoos-design-system' ) ); ?>
+					</form>
+				</div>
+
+				<div class="nvoos-nds-sidebar">
+					<div class="postbox">
+						<div class="postbox-header"><h2><?php esc_html_e( 'Export', 'nvoos-design-system' ); ?></h2></div>
+						<div class="inside">
+							<p class="description"><?php esc_html_e( 'The brand kit bundles identity, tokens, the theme.json partial and the active email template.', 'nvoos-design-system' ); ?></p>
+							<p><a class="button" href="<?php echo esc_url( $brand_url ); ?>"><?php esc_html_e( 'Download brand kit (JSON)', 'nvoos-design-system' ); ?></a></p>
+							<p><a class="button" href="<?php echo esc_url( $guide_url ); ?>"><?php esc_html_e( 'Download brand guide (HTML)', 'nvoos-design-system' ); ?></a></p>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 		<?php
@@ -562,11 +723,11 @@ class NV_oOS_Design_System_Admin_Page {
 	private function handle_settings_save() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in maybe_handle_post.
 		$typed = isset( $_POST['nvoos_nds_use_typed_properties'] ) ? 1 : 0;
-		update_option( NV_oOS_Design_System_Plugin::TYPED_PROPERTY_KEY, $typed );
+		update_option( NV_oOS_Design_System_Plugin::TYPED_PROPERTY_KEY, $typed, false );
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in maybe_handle_post.
-		$legacy = isset( $_POST['nvoos_nds_legacy_aliases'] ) ? 1 : 0;
-		update_option( NV_oOS_Design_System_Plugin::LEGACY_ALIAS_KEY, $legacy );
+		$global_styles = isset( $_POST['nvoos_nds_global_styles'] ) ? 1 : 0;
+		update_option( NV_oOS_Design_System_Global_Styles::OPTION_KEY, $global_styles, false );
 
 		NV_oOS_Design_System_Plugin::reset_css_generator();
 		delete_transient( NV_oOS_Design_System_Plugin::CSS_CACHE_KEY );
@@ -654,8 +815,37 @@ class NV_oOS_Design_System_Admin_Page {
 	 * @return void
 	 */
 	private function render_notices() {
-		settings_errors( 'nvoos_nds' );
-		settings_errors( 'nvoos_nds_email' );
+		// Same-request notices (form posts handled on this page load).
+		settings_errors();
+
+		// Notices carried across an admin-post.php redirect.
+		foreach ( NV_oOS_Design_System_Plugin::consume_admin_notices() as $notice ) {
+			$type    = isset( $notice['type'] ) ? (string) $notice['type'] : 'info';
+			$type    = in_array( $type, array( 'error', 'success', 'warning', 'info', 'updated' ), true ) ? $type : 'info';
+			$type    = 'updated' === $type ? 'success' : $type;
+			$message = isset( $notice['message'] ) ? (string) $notice['message'] : '';
+
+			if ( '' === $message ) {
+				continue;
+			}
+
+			if ( function_exists( 'wp_admin_notice' ) ) {
+				wp_admin_notice(
+					$message,
+					array(
+						'type'        => $type,
+						'dismissible' => true,
+					)
+				);
+				continue;
+			}
+
+			printf(
+				'<div class="notice notice-%1$s is-dismissible"><p>%2$s</p></div>',
+				esc_attr( $type ),
+				esc_html( $message )
+			);
+		}
 	}
 
 	/**

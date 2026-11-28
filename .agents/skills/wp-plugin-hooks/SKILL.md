@@ -69,6 +69,8 @@ apply_filters( 'myplugin_api_response', $response, $request );
 
 Pick one style and stay consistent across the plugin. Mixing `myplugin/before_request` and `myplugin_after_request` in the same plugin is confusing for documentation tools and developers searching the source.
 
+**wp.org / Plugin Check:** the `PrefixAllGlobals` sniff compares hook names with the plugin's declared prefix/slug. A short abbreviation that is not slug-derived (`nds_` for `nvoos-design-system`) produces `NonPrefixedHooknameFound` warnings. Use the slug-derived prefix (`nvoos_nds_*`) from the first release — renaming after 1.0 breaks every listener. `WP_Error` codes are not hooks, but namespacing them the same way avoids cross-plugin collisions.
+
 ## Document every hook with a docblock
 
 The `@since` + `@param` block above each hook call is non-negotiable — IDE tooltips, source-search tools (`hooks.wp.org`, AI assistants suggesting hooks), and humans grepping for hooks all depend on it.

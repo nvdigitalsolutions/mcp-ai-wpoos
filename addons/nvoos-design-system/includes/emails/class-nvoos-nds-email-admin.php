@@ -39,6 +39,8 @@ class NV_oOS_Design_System_Email_Admin {
 
 			<?php $this->render_generate_section(); ?>
 
+			<?php $this->render_wrap_mode_section(); ?>
+
 			<?php $this->render_wc_rebrand_section(); ?>
 
 			<?php $this->render_active_settings_section( $active_slug, $templates ); ?>
@@ -108,7 +110,7 @@ class NV_oOS_Design_System_Email_Admin {
 									<?php endif; ?>
 								</form>
 								<?php if ( 'builtin' !== $source ) : ?>
-									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="nvoos-nds-inline-form" onsubmit="return confirm('<?php echo esc_js( __( 'Delete this template?', 'nvoos-design-system' ) ); ?>');">
+									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="nvoos-nds-inline-form" data-nvoos-nds-confirm="<?php echo esc_attr__( 'Delete this template? This cannot be undone.', 'nvoos-design-system' ); ?>">
 										<?php wp_nonce_field( 'nvoos_nds_email', 'nvoos_nds_email_nonce' ); ?>
 										<input type="hidden" name="action" value="nvoos_nds_email">
 										<input type="hidden" name="nds_action" value="delete">
@@ -135,7 +137,6 @@ class NV_oOS_Design_System_Email_Admin {
 	 * @return void
 	 */
 	private function render_generate_section() {
-		$provider = (string) get_option( NV_oOS_Design_System_Plugin::AI_PROVIDER_KEY, 'auto' );
 		?>
 		<div class="nvoos-nds-generate postbox">
 			<div class="postbox-header"><h2><?php esc_html_e( 'Generate a Template with AI', 'nvoos-design-system' ); ?></h2></div>
@@ -166,13 +167,13 @@ class NV_oOS_Design_System_Email_Admin {
 						<input type="text" name="subject_hint" id="nvoos-nds-generate-subject" class="regular-text">
 					</p>
 
-					<p>
-						<label for="nvoos-nds-ai-provider"><?php esc_html_e( 'Provider:', 'nvoos-design-system' ); ?></label>
-						<select name="ai_provider" id="nvoos-nds-ai-provider">
-							<option value="auto" <?php selected( $provider, 'auto' ); ?>><?php esc_html_e( 'Auto-detect (NV oOS keys)', 'nvoos-design-system' ); ?></option>
-							<option value="openai" <?php selected( $provider, 'openai' ); ?>>OpenAI</option>
-							<option value="gemini" <?php selected( $provider, 'gemini' ); ?>>Gemini</option>
-						</select>
+					<p class="description">
+						<?php
+						esc_html_e(
+							'Optional. Generation uses the WordPress AI Client, so the site\'s own AI provider and credentials are reused — this plugin never stores an API key. The draft is saved for review and no request is made until you click Generate Draft.',
+							'nvoos-design-system'
+						);
+						?>
 					</p>
 
 					<?php submit_button( __( 'Generate Draft', 'nvoos-design-system' ), 'primary', 'submit', false ); ?>
@@ -183,10 +184,75 @@ class NV_oOS_Design_System_Email_Admin {
 	}
 
 	/**
+	 * Render the delivery-mode control and recent send log.
+	 *
+	 * @return void
+	 */
+	private function render_wrap_mode_section() {
+		$mode = NV_oOS_Design_System_Email_Wrapper::get_wrap_mode();
+		$log  = NV_oOS_Design_System_Email_Wrapper::get_log();
+		?>
+		<div class="nvoos-nds-wrap-mode postbox">
+			<div class="postbox-header"><h2><?php esc_html_e( 'Delivery Mode', 'nvoos-design-system' ); ?></h2></div>
+			<div class="inside">
+				<p class="description">
+					<?php esc_html_e( 'The wrapper is off on fresh installs. Choose how much email to brand; HTML fragments from other plugins are never touched in “Plain text only” mode.', 'nvoos-design-system' ); ?>
+				</p>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( 'nvoos_nds_email', 'nvoos_nds_email_nonce' ); ?>
+					<input type="hidden" name="action" value="nvoos_nds_email">
+					<input type="hidden" name="nds_action" value="wrap_mode">
+					<p>
+						<label for="nvoos-nds-wrap-mode"><?php esc_html_e( 'Wrap mode:', 'nvoos-design-system' ); ?></label>
+						<select name="wrap_mode" id="nvoos-nds-wrap-mode">
+							<option value="off" <?php selected( $mode, 'off' ); ?>><?php esc_html_e( 'Off — never wrap', 'nvoos-design-system' ); ?></option>
+							<option value="text_only" <?php selected( $mode, 'text_only' ); ?>><?php esc_html_e( 'Plain text only — safest', 'nvoos-design-system' ); ?></option>
+							<option value="fragments" <?php selected( $mode, 'fragments' ); ?>><?php esc_html_e( 'HTML fragments — skip full documents', 'nvoos-design-system' ); ?></option>
+							<option value="all" <?php selected( $mode, 'all' ); ?>><?php esc_html_e( 'All eligible emails', 'nvoos-design-system' ); ?></option>
+						</select>
+					</p>
+					<?php submit_button( __( 'Save Delivery Mode', 'nvoos-design-system' ), 'secondary', 'submit', false ); ?>
+				</form>
+
+				<h3><?php esc_html_e( 'Recent Sends', 'nvoos-design-system' ); ?></h3>
+				<table class="widefat striped">
+					<thead><tr>
+						<th><?php esc_html_e( 'Time', 'nvoos-design-system' ); ?></th>
+						<th><?php esc_html_e( 'Result', 'nvoos-design-system' ); ?></th>
+						<th><?php esc_html_e( 'Template', 'nvoos-design-system' ); ?></th>
+						<th><?php esc_html_e( 'Size', 'nvoos-design-system' ); ?></th>
+					</tr></thead>
+					<tbody>
+						<?php if ( empty( $log ) ) : ?>
+							<tr><td colspan="4"><?php esc_html_e( 'No sends recorded yet.', 'nvoos-design-system' ); ?></td></tr>
+						<?php else : ?>
+							<?php foreach ( array_slice( $log, 0, 10 ) as $entry ) : ?>
+								<tr>
+									<td><?php echo esc_html( wp_date( 'Y-m-d H:i', (int) $entry['time'] ) ); ?></td>
+									<td><?php echo esc_html( $entry['status'] . ( $entry['reason'] ? ' (' . $entry['reason'] . ')' : '' ) ); ?></td>
+									<td><?php echo esc_html( $entry['template'] ); ?></td>
+									<td><?php echo esc_html( size_format( (int) $entry['bytes'] ) ); ?></td>
+								</tr>
+							<?php endforeach; ?>
+						<?php endif; ?>
+					</tbody>
+				</table>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( 'nvoos_nds_email', 'nvoos_nds_email_nonce' ); ?>
+					<input type="hidden" name="action" value="nvoos_nds_email">
+					<input type="hidden" name="nds_action" value="clear_log">
+					<?php submit_button( __( 'Clear Log', 'nvoos-design-system' ), 'link-delete', 'submit', false ); ?>
+				</form>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Render the active template's per-template settings.
 	 *
-	 * @param string     $active_slug Active template slug.
-	 * @param WP_Post[]  $templates   All template posts.
+	 * @param string    $active_slug Active template slug.
+	 * @param WP_Post[] $templates   All template posts.
 	 * @return void
 	 */
 	private function render_active_settings_section( $active_slug, $templates ) {
@@ -204,6 +270,18 @@ class NV_oOS_Design_System_Email_Admin {
 			'confidential' => '',
 			'admin_email'  => '',
 		);
+
+		if ( ! $active ) :
+			?>
+			<div class="nvoos-nds-active-settings postbox">
+				<div class="postbox-header"><h2><?php esc_html_e( 'Active Template Settings', 'nvoos-design-system' ); ?></h2></div>
+				<div class="inside">
+					<p class="description"><?php esc_html_e( 'No template is active yet. Choose a template from the library below; per-template settings appear here once one is active.', 'nvoos-design-system' ); ?></p>
+				</div>
+			</div>
+			<?php
+			return;
+		endif;
 		?>
 		<div class="nvoos-nds-active-settings postbox">
 			<div class="postbox-header">
@@ -302,12 +380,16 @@ class NV_oOS_Design_System_Email_Admin {
 				<p class="description"><?php esc_html_e( 'Rendered with the current Email tokens and sample content.', 'nvoos-design-system' ); ?></p>
 				<div class="nvoos-nds-preview-frame">
 					<?php
-					// The preview is rendered from admin-controlled templates and
-					// fully escaped/sanitised content; it is the feature's own
-					// output surface.
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					echo $preview;
+					// Render in a sandboxed iframe: `esc_attr()` escapes the srcdoc
+					// attribute, and the empty sandbox blocks scripts, forms and
+					// top-level navigation while preserving email CSS/VML fidelity.
 					?>
+					<iframe
+						class="nvoos-nds-preview-iframe"
+						sandbox=""
+						srcdoc="<?php echo esc_attr( $preview ); ?>"
+						title="<?php esc_attr_e( 'Email template preview', 'nvoos-design-system' ); ?>"
+					></iframe>
 				</div>
 			</div>
 		</div>
@@ -383,7 +465,7 @@ class NV_oOS_Design_System_Email_Admin {
 			<div class="inside">
 				<?php if ( ! $available ) : ?>
 					<p class="notice notice-warning inline">
-						<?php esc_html_e( 'Paper Store is unavailable — activate the NV oOS base plugin to mirror templates for cross-site reuse and search.', 'nvoos-design-system' ); ?>
+						<?php esc_html_e( 'Paper Store is not available on this site. The template library and JSON import/export work without it.', 'nvoos-design-system' ); ?>
 					</p>
 				<?php endif; ?>
 
@@ -453,6 +535,7 @@ class NV_oOS_Design_System_Email_Admin {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in the admin-post dispatcher.
 		$settings = array(
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in the admin-post dispatcher.
 			'logo_url'     => isset( $_POST['logo_url'] ) ? esc_url_raw( wp_unslash( $_POST['logo_url'] ) ) : '',
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in the admin-post dispatcher.
 			'sub_brand'    => isset( $_POST['sub_brand'] ) ? sanitize_text_field( wp_unslash( $_POST['sub_brand'] ) ) : '',
@@ -507,10 +590,6 @@ class NV_oOS_Design_System_Email_Admin {
 		$base_template = isset( $_POST['base_template'] ) ? sanitize_title( wp_unslash( $_POST['base_template'] ) ) : '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in the admin-post dispatcher.
 		$subject_hint = isset( $_POST['subject_hint'] ) ? sanitize_text_field( wp_unslash( $_POST['subject_hint'] ) ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in the admin-post dispatcher.
-		$ai_provider = isset( $_POST['ai_provider'] ) ? sanitize_key( wp_unslash( $_POST['ai_provider'] ) ) : 'auto';
-
-		update_option( NV_oOS_Design_System_Plugin::AI_PROVIDER_KEY, in_array( $ai_provider, array( 'auto', 'openai', 'gemini' ), true ) ? $ai_provider : 'auto', false );
 
 		$result = NV_oOS_Design_System_Plugin::email_generator()->generate( $prompt, $base_template, $subject_hint );
 
@@ -566,7 +645,7 @@ class NV_oOS_Design_System_Email_Admin {
 	 * @return void
 	 */
 	public function handle_import() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in the admin-post dispatcher.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce is verified in the admin-post dispatcher; JSON is decoded and validated below and sanitising would corrupt the payload.
 		$json = isset( $_POST['json'] ) ? wp_unslash( $_POST['json'] ) : '';
 
 		$payload = json_decode( $json, true );
@@ -576,10 +655,10 @@ class NV_oOS_Design_System_Email_Admin {
 			return;
 		}
 
-		$slug    = ! empty( $payload['slug'] ) ? sanitize_title( $payload['slug'] ) : 'imported-' . strtolower( sanitize_title( wp_generate_uuid4() ) );
-		$title   = sanitize_text_field( $payload['title'] );
-		$html    = $payload['html'];
-		$scope   = ! empty( $payload['scope'] ) && 'body' === $payload['scope'] ? 'body' : 'full';
+		$slug     = ! empty( $payload['slug'] ) ? sanitize_title( $payload['slug'] ) : 'imported-' . strtolower( sanitize_title( wp_generate_uuid4() ) );
+		$title    = sanitize_text_field( $payload['title'] );
+		$html     = $payload['html'];
+		$scope    = ! empty( $payload['scope'] ) && 'body' === $payload['scope'] ? 'body' : 'full';
 		$settings = ! empty( $payload['settings'] ) && is_array( $payload['settings'] ) ? $payload['settings'] : array();
 
 		$result = NV_oOS_Design_System_Email_Template_CPT::upsert( $slug, $title, $html, 'custom', $scope, $settings, 'draft' );
@@ -654,5 +733,32 @@ class NV_oOS_Design_System_Email_Admin {
 		}
 
 		add_settings_error( 'nvoos_nds_email', 'paper_import_ok', $result['message'], 'success' );
+	}
+
+	/**
+	 * Save the email wrap mode.
+	 *
+	 * @return void
+	 */
+	public function handle_wrap_mode() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in the admin-post dispatcher.
+		$mode = isset( $_POST['wrap_mode'] ) ? sanitize_key( wp_unslash( $_POST['wrap_mode'] ) ) : 'off';
+		if ( ! in_array( $mode, array( 'off', 'text_only', 'fragments', 'all' ), true ) ) {
+			$mode = 'off';
+		}
+
+		update_option( NV_oOS_Design_System_Plugin::WRAP_MODE_KEY, $mode, false );
+
+		add_settings_error( 'nvoos_nds_email', 'wrap_mode_ok', __( 'Delivery mode saved.', 'nvoos-design-system' ), 'success' );
+	}
+
+	/**
+	 * Clear the recent send log.
+	 *
+	 * @return void
+	 */
+	public function handle_clear_log() {
+		NV_oOS_Design_System_Email_Wrapper::clear_log();
+		add_settings_error( 'nvoos_nds_email', 'clear_log_ok', __( 'Send log cleared.', 'nvoos-design-system' ), 'success' );
 	}
 }

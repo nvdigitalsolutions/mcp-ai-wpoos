@@ -70,6 +70,21 @@ class NV_oOS_Design_System_Data_Token {
 	public $description;
 
 	/**
+	 * DTCG metadata preserved for round-trip export (alias path, vendor
+	 * extensions, original type).
+	 *
+	 * @var array<string, mixed>
+	 */
+	public $meta = array();
+
+	/**
+	 * DTCG `$deprecated` value (true, false, or a reason string).
+	 *
+	 * @var bool|string
+	 */
+	public $deprecated = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $id          Unique token identifier.

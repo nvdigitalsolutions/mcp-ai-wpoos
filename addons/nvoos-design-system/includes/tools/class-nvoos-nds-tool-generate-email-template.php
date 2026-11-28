@@ -48,7 +48,7 @@ class NV_oOS_Design_System_Tool_Generate_Email_Template implements WP_MCP_AI_Too
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generate a new production-ready email template from a natural-language description using the configured AI provider (OpenAI or Gemini; auto-detected from the NV oOS API keys). The template is built on accessibility-safe, table-based email HTML, uses the nds_email design tokens, and is saved as a DRAFT with an audit report — activate it separately with nds_set_active_email_template after review. Use when the user wants a new branded email layout, a welcome/newsletter/receipt template, or a variant of an existing template.', 'nvoos-design-system' );
+		return __( 'Generate a new production-ready email template from a natural-language description using the configured AI provider (OpenAI or Gemini; auto-detected from the NV oOS API keys). The template is built on accessibility-safe, table-based email HTML, uses the nds_email design tokens, and is saved as a DRAFT with an audit report — activate it separately with nds_set_active_email_template after review. When to use: the user wants a new branded email layout, a welcome/newsletter/receipt template, or a variant of an existing template. When NOT to use: the user only wants to edit or re-activate an existing template.', 'nvoos-design-system' );
 	}
 
 	/**
@@ -83,6 +83,9 @@ class NV_oOS_Design_System_Tool_Generate_Email_Template implements WP_MCP_AI_Too
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$prompt        = isset( $arguments['prompt'] ) ? sanitize_textarea_field( $arguments['prompt'] ) : '';
