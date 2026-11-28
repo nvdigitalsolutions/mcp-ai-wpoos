@@ -14767,3 +14767,119 @@ Eight undecided: `generate_truth_table`, which is pure PHP and has its own
 tokenizer and recursive-descent parser, and the seven that need the worker route
 group. Slice 2 is `generate_truth_table`; slice 3 adds `/api/math/*` to the worker
 and a `MathEngineInterface` adapter, then converts the seven into ports.
+
+### 164.166 — `math` slice 2: the truth-table generator, and four defects in a parser
+
+`math` moves `9 | 1 | 0 | 0 | 8` → **`9 | 2 | 0 | 0 | 7`**.
+
+`generate_truth_table` is the second and last tool in this family that computes
+in PHP. It is 749 lines and almost all of them are a real implementation: a
+character tokeniser, a recursive-descent parser with five layers, a syntax tree,
+an enumerator, and three renderers. That is unusual for this port — most Pro
+tools are thin wrappers around a WordPress API — and it is why the slice produced
+four defects rather than one.
+
+#### What was carried over unchanged
+
+The grammar. Precedence, tightest first: postfix complement and prefix `NOT`,
+then `AND` and `NAND`, then `XOR` and `XNOR`, then `OR` and `NOR` — `NAND` sits
+with `AND` and `NOR` with `OR`, which is how the operators are written and taught.
+Both operators in each pair are handled in one loop, so `A NAND B NAND C` is
+left-associative and `A OR B XOR C` parses as `A OR (B XOR C)`.
+
+The symbol table: `·` → `AND`, `+` → `OR`, `⊕` → `XOR`, `↑` → `NAND`, `↓` →
+`NOR`, `'` → postfix complement, `!` and `~` → prefix `NOT`, `&`/`|`/`^` for the
+three binary connectives, and `TRUE`/`FALSE` as constants. The two literal digits
+`0` and `1` are constants too.
+
+The row order — most-significant bit first, so the first variable toggles slowest
+— and the three renderers, including the LaTeX `array` environment with its
+`cc|c` column spec and `\text{Result}` header, are byte-for-byte what WordPress
+emitted.
+
+#### The expression `0` was refused as missing
+
+```php
+if ( empty( $arguments['expression'] ) || ! is_string( $arguments['expression'] ) ) {
+	return new WP_Error( 'wp_mcp_ai_missing_expression', ... );
+}
+```
+
+`empty( '0' )` is `true` in PHP. So the one-character expression `0` — a
+complete, valid table with a single row and no variables — came back as
+"Expression is required.", while `1`, which has exactly the same shape, worked.
+The asymmetry is the proof that the guard was wrong: this was never a judgement
+about length or content. The port tests for the empty string.
+
+#### A variable named `result` lost its column
+
+The row builder wrote each variable's bit into the row, then wrote the answer
+into the same array under the key `result`:
+
+```php
+foreach ( $vars as $name ) {
+	$row_values[ $name ] = $env[ $name ] ? 1 : 0;   // includes a variable called result
+}
+$row_values['result'] = $value ? 1 : 0;             // and overwrites it
+```
+
+The input column silently disappeared from every row and was replaced by the
+answer. Nothing errored: `A AND result` produced a table in which the `result`
+column was the conjunction of `A` and the result, which is not a truth table of
+anything. The port reserves the name, case-insensitively, because the renderers
+title the column `Result` and a variable of that name would also produce a
+duplicated header.
+
+#### The recursion guard refused seven nested parentheses
+
+The depth counter rose once per grammar layer, and each parenthesis level
+descends four of them — `parseOr`, `parseXor`, `parseAnd`, `parseUnary` — so a
+cap of 32 refused at roughly seven nested pairs. `((((((((A))))))))` is seventeen
+characters and fitted the 1,000-character input cap comfortably; it was rejected
+as nesting too deeply. The guard was counting the wrong thing.
+
+The port keeps the same counting scheme and sets the cap at **128**, which admits
+31 levels and still bounds recursion. The 1,000-character input cap already
+bounds the token count; the depth cap exists to bound the stack, and 128 does
+that without refusing a postcard-sized expression. A test pins both sides: twelve
+levels parse, forty are refused.
+
+#### Two smaller corrections
+
+An unknown `format` was replaced with `both`, exactly as `evaluate_logic_gate`
+replaced it; the schema declares four values and the port refuses a fifth. A
+`variables` entry that was not a string was cast with `(string)`, so an array
+raised "Array to string conversion" before the identifier test rejected `Array`;
+the port refuses it by position. The tokeniser also carried a dead branch that
+allowed an identifier to *start* with `_`, which the identifier pattern then
+rejected — a leading underscore is now refused at the tokeniser, with the
+offending character named.
+
+One argument is read raw rather than through `stringParam()`. That helper strips
+tags, and an expression is a grammar: stripping markup out of it would silently
+rewrite what the caller asked to be parsed. The tokeniser refuses characters it
+does not know, and the length cap is applied before parsing, so nothing
+unvalidated reaches a renderer.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `MathTruthTableTest` | **33 tests, 77 assertions**, 0 failures |
+| Readiness manifest | 634 → **635 rows**; servable 615 → **616**; ready 574 → **575**; no violations |
+| Toolkit parity | 413 → **414 ported**, 9 declined, 103 deferred, 445 → **444 remaining**; `math` `9 \| 1 \| 0 \| 0 \| 8` → **`9 \| 2 \| 0 \| 0 \| 7`** |
+| `lib/core` unit suite | **4,429 tests / 24,202 assertions**, 0 failures |
+| Adapter suite | **712 tests / 3,883 assertions**, 2 skipped, 0 failures |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+#### Where the family stands
+
+Seven undecided, and they are one job: `derivative`, `integral`, `simplify`,
+`solve`, `matrix_operations`, `graph_function` and `render_math_equation` all
+need the media worker's `/api/math/*` route group and a `MathEngineInterface`
+adapter. The worker already depends on mathjs, chartjs-node-canvas and katex, so
+no new engine is required — only the routes and the adapter, in the shape
+`MediaWorkerVideoComposition` and `MediaWorkerImageProcessing` already establish.
+That slice owns a worker version bump across the five recorded spots. When it
+lands `math` closes at 9 of 9 with no deferrals.
