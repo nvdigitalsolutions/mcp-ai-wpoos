@@ -347,9 +347,11 @@
             "calculate_derivative",
             "evaluate_logic_gate",
             "generate_truth_table",
+            "graph_function",
             "matrix_operations",
             "render_math_equation",
-            "simplify_expression"
+            "simplify_expression",
+            "solve_equation"
         ],
         "media": [],
         "multilingual": [],

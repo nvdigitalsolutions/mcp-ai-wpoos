@@ -113,4 +113,24 @@ interface MathEngineInterface
      * @throws \RuntimeException         When the engine is unavailable or fails.
      */
     public function matrix(string $operation, array $a, ?array $b = null): array;
+
+    /**
+     * Solve `left = right` for one variable.
+     *
+     * Polynomial only: a linear, quadratic or higher-degree equation in a
+     * single variable is solved exactly where the library can and numerically
+     * otherwise. An equation that is not a polynomial, or that carries a second
+     * symbol, is refused rather than approximated — the WordPress fallback
+     * matched `3x^2 + 2 = 5` as `3x` and answered `x = 1`.
+     *
+     * @param string $left     Left-hand expression.
+     * @param string $right    Right-hand expression.
+     * @param string $variable The variable to solve for.
+     *
+     * @return array{solutions: array<int, int|float|array{re: int|float, im: int|float}>, degree: int, infinite: bool, text: string, tex: string}
+     *
+     * @throws \InvalidArgumentException When the equation is not a polynomial in that variable.
+     * @throws \RuntimeException         When the engine is unavailable or fails.
+     */
+    public function solve(string $left, string $right, string $variable): array;
 }

@@ -3333,6 +3333,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryWorkflowRulesTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'graph_function' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Math\\GraphFunctionTool',
+			'readiness' => 'delegated',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the function plotter (Proposal 164 section 164.169) through GraphRendererInterface over POST /api/math/graph, which samples with mathjs and renders with chartjs-node-canvas in one call so a plot is one round trip rather than one per sample. In WordPress the tool was a filter with no implementation anywhere in the plugin, so every install could only reach the engine-missing branch while the tool still required upload_files: it advertised a capability it could never perform. Six input defects are fixed: the expression went through sanitize_text_field, an HTML filter applied to a grammar; the required function argument was read without isset and warned before the error branch; width and height were absint-ed with no bound though the schema declares 400-2000 and 300-1500; show_grid was read with a bool cast, for which the string false is true; sanitize_hex_color returns null for an invalid colour and the null was passed through to the renderer; and x_range was indexed without a shape check. A window that yields fewer than two finite values is a validation failure rather than an empty plot, a pole is a gap in the line instead of a failed request, and an undefined symbol is reported with the evaluator message. Delegated rather than ready because the contract is bound by the provider and this runtime cannot honour it without oos.media_worker.url and the native canvas binding.',
+			'evidence' => 'lib/core/tests/Unit/Tool/GraphFunctionToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'gtmetrix_account_status' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixAccountStatusTool',
 			'readiness' => 'ready',
@@ -5027,6 +5036,15 @@ return array(
 			'probe' => 'call',
 			'reason' => 'Ports the algebraic simplifier (Proposal 164 section 164.168) through MathEngineInterface over POST /api/math/simplify (mathjs). Fixes the family most serious reporting defect: when the filter was unbound WordPress fell back to a whitespace-collapsing helper and returned success true with the input unchanged as the simplified value, so 2x + 3x came back as 2x + 3x under a success envelope and a message saying it had been simplified. The port never falls back; an unavailable engine is named and an unparseable expression is a validation failure. Also: latex was set to the plain-text result, which is not LaTeX for anything with a multiplication sign or a quotient, so the port asks the engine for both spellings of one node; the rules argument is gone because default, all, collect and distribute were passed to a filter nobody implemented and are not mathjs rule names, so the standard simplification is the only behaviour that ever worked; and an unknown format is refused.',
 			'evidence' => 'lib/core/tests/Unit/Tool/MathComputeToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'solve_equation' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Math\\SolveEquationTool',
+			'readiness' => 'delegated',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the polynomial solver (Proposal 164 section 164.170) through MathEngineInterface over POST /api/math/solve. mathjs rationalize supplies coefficients in the solved variable and refuses a non-polynomial, polynomialRoot handles degrees one to three, and the companion matrix plus eigs covers every higher degree, so no new dependency is needed. Fixes the defect that made the WordPress tool unsafe to trust: with no filter registered it fell back to a regex that matched ax + b and ignored everything else, so 3x^2 + 2 = 5 was read as 3x + 2 = 5 and answered x = 1 under a success envelope with the exponent silently discarded. The port has no fallback: a non-polynomial, a second symbol, a variable that is absent from the equation, or a single equation with no equals sign is a typed refusal naming the reason. Also: the equation went through sanitize_text_field, an HTML filter applied to a grammar; the equation argument was read without isset; variable was never checked to be an identifier though every engine interpolates it into expressions; explode without a limit accepted x = 2 = 3; format_number truncated every answer to four decimals; and show_steps is omitted rather than accepted and ignored, because no implementation ever produced a step. Roots are tidied so a caller never sees 2.0000000000000004 where the answer is 2, and complex roots return as re and im pairs. Delegated rather than ready because the contract is bound by the provider and this runtime cannot honour it without oos.media_worker.url.',
+			'evidence' => 'lib/core/tests/Unit/Tool/SolveEquationToolTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'store_agent_context' => array(
