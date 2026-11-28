@@ -309,30 +309,6 @@ class CheckProductComplianceTool extends RegulatoryTool
     }
 
     /**
-     * Whether a stored flag reads as true.
-     *
-     * WordPress cast the stored value with `(bool)`, which turns the string
-     * `'false'` into true. The port accepts the spellings a JSON export can
-     * carry and treats every other non-empty scalar the way WordPress did.
-     */
-    private function flag(mixed $value): bool
-    {
-        if (is_bool($value)) {
-            return $value;
-        }
-
-        if (is_string($value)) {
-            return ! in_array(strtolower(trim($value)), array('', '0', 'false', 'no', 'off'), true);
-        }
-
-        if (is_int($value) || is_float($value)) {
-            return 0.0 !== (float) $value;
-        }
-
-        return false;
-    }
-
-    /**
      * Document requirements against the documents attached to the product.
      *
      * @param list<array{id: int, title: string, requirement_type: string, is_mandatory: bool}> $requirements

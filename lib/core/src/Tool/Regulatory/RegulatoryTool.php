@@ -41,6 +41,7 @@ use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Entity\ContentItem;
 use Nvoos\Core\Domain\Entity\ContentQuery;
+use Nvoos\Core\Domain\Entity\CreateContentCommand;
 use Nvoos\Core\Tool\AbstractTool;
 
 abstract class RegulatoryTool extends AbstractTool
@@ -71,6 +72,44 @@ abstract class RegulatoryTool extends AbstractTool
 
     /** The document type taxonomy. */
     public const DOC_TYPE_TAX = 'mcp_ai_doc_type';
+
+    /**
+     * The content type a workflow rule is stored as.
+     *
+     * WordPress kept rules in the `wp_mcp_ai_workflow_rules` option, which this
+     * runtime does not have. Rules become content items for the same reason
+     * every other entity in this family did: the store is the mechanism, and an
+     * export that carried rules as posts can be read here. The type name mirrors
+     * the option key so the mapping is obvious in both directions.
+     */
+    public const WORKFLOW_RULE_TYPE = 'mcp_ai_workflow_rule';
+
+    /**
+     * The content type one audit entry is stored as.
+     *
+     * WordPress logged into a second option capped at 200 entries. Entries are
+     * separate items here, because an entry attached to its rule would vanish
+     * when the rule is deleted — and the deletion is the entry an auditor wants.
+     *
+     * The 200-entry cap was an option-size decision: an option is loaded on
+     * every request, a filtered query is not. The port does not prune, and
+     * reports `store_entries` so growth is visible.
+     */
+    public const WORKFLOW_LOG_TYPE = 'mcp_ai_workflow_log';
+
+    /** The trigger events a rule may declare. */
+    public const TRIGGER_EVENTS = array(
+        'status_change',
+        'expiry_approaching',
+        'document_uploaded',
+        'submission_date',
+    );
+
+    /** The action types a rule may declare. */
+    public const ACTION_TYPES = array('send_email', 'update_status', 'create_task', 'webhook');
+
+    /** The audit actions WordPress wrote to the workflow log. */
+    public const WORKFLOW_AUDIT_ACTIONS = array('create_rule', 'update_rule', 'delete_rule', 'execute_rule');
 
     /**
      * The documents most countries require.
@@ -400,6 +439,264 @@ abstract class RegulatoryTool extends AbstractTool
         }
 
         return true;
+    }
+
+    /**
+     * A rule by its operator-facing key, or null.
+     *
+     * The key (`rule_xxxxxxxxxxxx`) is what every workflow tool takes, so it
+     * cannot be the content id: an export from WordPress carries keys, and
+     * rewriting them would break every stored reference. The lookup is a query
+     * on `rule_key` meta.
+     */
+    protected function workflowRule(string $ruleKey): ?ContentItem
+    {
+        if ('' === $ruleKey) {
+            return null;
+        }
+
+        $items = $this->collectContent(
+            array(self::WORKFLOW_RULE_TYPE),
+            array(array('key' => 'rule_key', 'value' => $ruleKey, 'compare' => '='))
+        );
+
+        foreach ($items as $item) {
+            if ($ruleKey === $this->text($item->meta['rule_key'] ?? null)) {
+                return $item;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Every workflow rule, oldest id first.
+     *
+     * @return list<ContentItem>
+     */
+    protected function workflowRules(): array
+    {
+        return $this->collectContent(array(self::WORKFLOW_RULE_TYPE));
+    }
+
+    /**
+     * Validate and normalise a rule's trigger and actions.
+     *
+     * WordPress validated neither on create or update — an update could store
+     * `event: "nonsense"` and nothing objected — so the port validates both at
+     * every write, and `test_workflow_rule` runs the same code rather than a
+     * second opinion.
+     *
+     * A `send_email` action with no recipients is a **warning**, because the
+     * WordPress dry run reported it as one: a rule may legitimately be saved
+     * before its recipients exist.
+     *
+     * @return array{
+     *     trigger: array{event: string, conditions: array<string, mixed>},
+     *     actions: list<array<string, mixed>>,
+     *     fields: array<string, array<int, string>>,
+     *     warnings: list<string>
+     * }
+     */
+    protected function ruleDefinition(mixed $trigger, mixed $actions): array
+    {
+        $fields   = array();
+        $warnings = array();
+
+        $event      = '';
+        $conditions = array();
+
+        if (! is_array($trigger)) {
+            $fields['trigger'] = array('A trigger object with an event is required.');
+        } else {
+            $event = $this->text($trigger['event'] ?? null);
+
+            if ('' === $event) {
+                $fields['trigger.event'] = array('A trigger event is required.');
+            } elseif (! in_array($event, self::TRIGGER_EVENTS, true)) {
+                $fields['trigger.event'] = array(
+                    'One of: ' . implode(', ', self::TRIGGER_EVENTS) . '.',
+                );
+            }
+
+            $rawConditions = $trigger['conditions'] ?? array();
+
+            if (! is_array($rawConditions)) {
+                $fields['trigger.conditions'] = array('Conditions must be an object.');
+            } else {
+                $conditions = $rawConditions;
+            }
+        }
+
+        $normalised = array();
+
+        if (! is_array($actions) || array() === $actions) {
+            $fields['actions'] = array('At least one action is required.');
+        } else {
+            foreach ($actions as $index => $action) {
+                $position = (int) $index + 1;
+
+                if (! is_array($action)) {
+                    $fields['actions'] = array('Every action must be an object.');
+
+                    continue;
+                }
+
+                $type = $this->text($action['type'] ?? null);
+
+                if ('' === $type) {
+                    $fields['actions'] = array(
+                        sprintf('Action %d: a type is required.', $position),
+                    );
+
+                    continue;
+                }
+
+                if (! in_array($type, self::ACTION_TYPES, true)) {
+                    $fields['actions'] = array(
+                        sprintf(
+                            'Action %1$d: type must be one of %2$s.',
+                            $position,
+                            implode(', ', self::ACTION_TYPES)
+                        ),
+                    );
+                }
+
+                $params = $action['params'] ?? array();
+
+                if (! is_array($params)) {
+                    $fields['actions'] = array(
+                        sprintf('Action %d: params must be an object.', $position),
+                    );
+
+                    $params = array();
+                }
+
+                if ('send_email' === $type) {
+                    $recipients = $params['recipients'] ?? array();
+
+                    if (array() === $recipients || '' === $recipients) {
+                        $warnings[] = sprintf(
+                            'Action %d: no email recipients configured.',
+                            $position
+                        );
+                    }
+                }
+
+                $normalised[] = array('type' => $type, 'params' => $params);
+            }
+        }
+
+        return array(
+            'trigger'  => array('event' => $event, 'conditions' => $conditions),
+            'actions'  => $normalised,
+            'fields'   => $fields,
+            'warnings' => $warnings,
+        );
+    }
+
+    /**
+     * Append one entry to the workflow audit log.
+     *
+     * A log write must never fail the operation it records: a rule that was
+     * created and not logged is a worse outcome than one that was neither. The
+     * caller therefore gets a boolean and decides whether to mention it.
+     *
+     * @param array<string, mixed> $extra
+     */
+    protected function logWorkflowAction(
+        string $action,
+        string $ruleKey,
+        string $ruleName,
+        int $userId,
+        array $extra = array()
+    ): bool {
+        $meta = array_merge(
+            array(
+                'timestamp' => $this->nowStamp(),
+                'user_id'   => $userId,
+                'action'    => $action,
+                'rule_id'   => $ruleKey,
+                'rule_name' => $ruleName,
+            ),
+            $extra
+        );
+
+        try {
+            $this->content->create(
+                new CreateContentCommand(
+                    title: sprintf('%s %s', $action, $ruleKey),
+                    type: self::WORKFLOW_LOG_TYPE,
+                    authorId: $userId > 0 ? $userId : 0,
+                    status: 'publish',
+                    meta: $meta,
+                )
+            );
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * The rule row the workflow tools return.
+     *
+     * @return array<string, mixed>
+     */
+    protected function workflowRuleRow(ContentItem $item, bool $withStats = true): array
+    {
+        $meta = $item->meta;
+
+        $trigger = is_array($meta['trigger'] ?? null) ? $meta['trigger'] : array();
+        $actions = is_array($meta['actions'] ?? null) ? $meta['actions'] : array();
+
+        $row = array(
+            'id'            => $this->text($meta['rule_key'] ?? null),
+            'name'          => $item->title,
+            'enabled'       => $this->flag($meta['enabled'] ?? false),
+            'trigger_event' => $this->text($trigger['event'] ?? null),
+            'trigger'       => $trigger,
+            'action_count'  => count($actions),
+            'actions'       => array_values($actions),
+            'created_at'    => $this->text($meta['created_at'] ?? null),
+            'created_by'    => $this->intValue($meta['created_by'] ?? null),
+        );
+
+        if ('' !== $item->content) {
+            $row['description'] = $item->content;
+        }
+
+        if ($withStats) {
+            $row['executions']    = $this->intValue($meta['executions'] ?? null);
+            $row['last_executed'] = $this->text($meta['last_executed'] ?? null);
+        }
+
+        return $row;
+    }
+
+    /**
+     * Whether a stored flag reads as true.
+     *
+     * WordPress cast with `(bool)`, which turns the string `'false'` into true.
+     * The ports accept the spellings a JSON export can carry and treat every
+     * other non-empty scalar the way WordPress did.
+     */
+    protected function flag(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            return ! in_array(strtolower(trim($value)), array('', '0', 'false', 'no', 'off'), true);
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return 0.0 !== (float) $value;
+        }
+
+        return false;
     }
 
     /**
