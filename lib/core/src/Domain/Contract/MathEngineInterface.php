@@ -133,4 +133,31 @@ interface MathEngineInterface
      * @throws \RuntimeException         When the engine is unavailable or fails.
      */
     public function solve(string $left, string $right, string $variable): array;
+
+    /**
+     * Integrate an expression, symbolically or over an interval.
+     *
+     * An indefinite result has been differentiated and checked against the
+     * integrand before it is returned; `verified` reports that. A definite
+     * result is a number, computed numerically where no elementary
+     * antiderivative exists.
+     *
+     * @param string     $expression The integrand, unmodified.
+     * @param string     $variable   The variable of integration.
+     * @param string     $type       `indefinite` or `definite`.
+     * @param float|null $lower      Lower limit, required when definite.
+     * @param float|null $upper      Upper limit, required when definite.
+     *
+     * @return array{type: string, antiderivative: string|null, value: float|null, tex: string, verified: bool, samples: int}
+     *
+     * @throws \InvalidArgumentException When the engine cannot integrate or refuses the limits.
+     * @throws \RuntimeException         When the engine is unavailable or fails.
+     */
+    public function integral(
+        string $expression,
+        string $variable,
+        string $type,
+        ?float $lower = null,
+        ?float $upper = null
+    ): array;
 }

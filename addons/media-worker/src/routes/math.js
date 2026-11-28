@@ -47,6 +47,7 @@ import {
 	sampleFunction,
 } from '../utils/graph-sample.js';
 import { rootText, solveEquation } from '../utils/polynomial.js';
+import { definiteIntegral, indefiniteIntegral } from '../utils/integrate.js';
 
 export const mathRouter = Router();
 
@@ -538,6 +539,94 @@ mathRouter.post( '/solve', async ( req, res ) => {
 		} );
 	} catch ( err ) {
 		// mathjs names the offending token better than a regex could.
+		res.status( 400 ).json( { success: false, error: err.message } );
+	}
+} );
+
+// ── POST /integral — symbolic and definite integration ─────
+
+/** The two modes the tool offers. */
+const INTEGRAL_TYPES = [ 'indefinite', 'definite' ];
+
+/** A limit must be a finite number. */
+function limitProblem( value, label ) {
+	if ( 'number' !== typeof value || ! Number.isFinite( value ) ) {
+		return `${ label } must be a finite number`;
+	}
+
+	return null;
+}
+
+mathRouter.post( '/integral', async ( req, res ) => {
+	const body = req.body || {};
+	const { expression, variable, type, lower, upper } = body;
+	const symbol = undefined === variable || null === variable ? 'x' : variable;
+	const kind = undefined === type || null === type ? 'indefinite' : type;
+
+	const problem = expressionProblem( expression )
+		|| ( 'string' !== typeof symbol || ! VARIABLE_PATTERN.test( symbol )
+			? 'variable must be a bare identifier such as x'
+			: null )
+		|| ( ! INTEGRAL_TYPES.includes( kind )
+			? `type must be one of: ${ INTEGRAL_TYPES.join( ', ' ) }`
+			: null )
+		|| ( 'definite' === kind
+			? ( limitProblem( lower, 'lower limit' ) || limitProblem( upper, 'upper limit' ) )
+			: null );
+
+	if ( problem ) {
+		return res.status( 400 ).json( { success: false, error: problem } );
+	}
+
+	try {
+		const nerdamer = ( await import( 'nerdamer' ) ).default;
+		const calculus = await import( 'nerdamer/calculus' );
+
+		if ( 'definite' === kind ) {
+			const result = definiteIntegral( nerdamer, calculus, expression, symbol, lower, upper );
+
+			// No elementary antiderivative is not a failure here: defint integrates
+			// numerically. Only a result that is not a number is refused.
+			if ( null !== result.problem ) {
+				return res.status( 422 ).json( { success: false, error: result.problem } );
+			}
+
+			return res.json( {
+				success: true,
+				type: kind,
+				expression,
+				variable: symbol,
+				value: result.value,
+				exact: result.exact,
+				tex: result.tex,
+				lower,
+				upper,
+			} );
+		}
+
+		const result = indefiniteIntegral( nerdamer, calculus, expression, symbol );
+
+		// An antiderivative is returned only after it has been differentiated and
+		// checked against the integrand; the engine's word is not enough.
+		if ( null !== result.problem ) {
+			return res.status( 422 ).json( {
+				success: false,
+				error: result.problem,
+				verified: result.verified,
+			} );
+		}
+
+		res.json( {
+			success: true,
+			type: kind,
+			expression,
+			variable: symbol,
+			antiderivative: result.antiderivative,
+			tex: result.tex,
+			verified: result.verified,
+			samples: result.samples,
+		} );
+	} catch ( err ) {
 		res.status( 400 ).json( { success: false, error: err.message } );
 	}
 } );

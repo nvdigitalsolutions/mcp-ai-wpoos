@@ -345,6 +345,7 @@
         "jev": [],
         "math": [
             "calculate_derivative",
+            "calculate_integral",
             "evaluate_logic_gate",
             "generate_truth_table",
             "graph_function",

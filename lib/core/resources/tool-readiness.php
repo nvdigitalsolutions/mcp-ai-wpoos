@@ -307,6 +307,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/ChartAndPlanningToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'calculate_integral' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Math\\CalculateIntegralTool',
+			'readiness' => 'delegated',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the integrator (Proposal 164 section 164.171) through MathEngineInterface over POST /api/math/integral, backed by nerdamer 2.1 under Apache-2.0, which is the only maintained JavaScript CAS that still ships an integrator. In WordPress the tool called a filter that nothing ever registered, so it could only return the engine-missing branch. The port returns an antiderivative only after proving it: the worker differentiates the result and compares it against the integrand at several points, and refuses anything that does not agree or cannot be checked. That gate is not theoretical, because the engine fails in two ways that were observed before the route was written: sin(x^2) comes back unevaluated as integrate(sin(x^2), x), and e^(-x^2) comes back malformed as (1/2)*pi^(1/2)*erf*x, which looks like an answer until differentiating it yields a non-numeric symbol. Definite integrals need no such proof, since defint either yields a number or it does not, and it integrates numerically where no elementary antiderivative exists, so e^(-x^2) over zero to one returns 0.746824132812427 rather than a refusal. Also fixed: the integrand went through sanitize_text_field, an HTML filter applied to a grammar; the function argument was read without isset; lower_limit and upper_limit went through floatval, so a non-numeric limit silently became zero and the integral was taken over the wrong interval; simplify was accepted and ignored; and the answer was returned as HTML markup rather than data. Reversed limits are allowed because the sign flip is legitimate mathematics. Delegated rather than ready because the contract is bound by the provider and this runtime cannot honour it without oos.media_worker.url.',
+			'evidence' => 'lib/core/tests/Unit/Tool/CalculateIntegralToolTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'calculate_orchestration_capacity' => array(
 			'class' => 'Nvoos\\Core\\Tool\\Orchestration\\CalculateOrchestrationCapacityTool',
 			'readiness' => 'ready',
