@@ -12842,3 +12842,99 @@ translating signatures.
 
 The next toolkit is chosen by measurement rather than by mood: the largest
 remaining family with no deferrals, taken in one slice per surface group.
+
+### §164.144 — `regulatory-registration`, slice 1: the product master
+
+Measured first: **59 tools**, the largest untouched family with no declines and
+no deferrals. Its storage is broader than the CRM's:
+
+| Store | Kind |
+|---|---|
+| `mcp_ai_reg_product` | product master |
+| `mcp_ai_registration` | one product × one country |
+| `mcp_ai_reg_document` | document records |
+| `mcp_ai_reg_country` | country and authority profiles |
+| `mcp_ai_requirement` | regulatory requirements |
+| `mcp_ai_reg_category`, `mcp_ai_reg_brand`, `mcp_ai_reg_status`, `mcp_ai_doc_type` | taxonomies |
+
+Two surfaces need a decision before they are ported rather than after: the
+Excel tools depend on PhpSpreadsheet from `addons/pro/vendor/`, and the report
+tools write PDFs and dossiers. Neither library is bundled in this runtime, so
+each will be either ported against a host-provided writer or deferred with the
+reason recorded — not silently translated into a stub that returns a filename
+nobody wrote.
+
+This slice is the product master, the exact analogue of the CRM's `company`
+slice:
+
+| Tool | Store |
+|---|---|
+| `create_reg_product` | creates `mcp_ai_reg_product` |
+| `list_reg_products` | filters, alphabetical, `limit`/`offset` |
+| `get_reg_product` | one row, optionally with its registrations |
+
+#### The meta keys are unprefixed, and that is load-bearing
+
+A regulatory product's brand is the meta key `brand`, not
+`_reg_product_brand`. The port keeps the names because an export from WordPress
+has to read here and vice versa, and because the toolkit's report tools address
+them by name. Eleven fields travel this way: `brand`, `supplier_reference`,
+`item_group`, `origin_country`, `manufacturer`, `inci_ingredients`, `allergens`,
+`hs_code`, `barcode`, `pack_size`, `variant`.
+
+#### Taxonomies are modelled, not flattened
+
+WordPress wrote the category to `mcp_ai_reg_category` and the brand to
+`mcp_ai_reg_brand` **as well as** to the `brand` meta key. The store contract
+carries taxonomy input and term reads, so the port writes both: the term is
+what `list_reg_products` filters on, and the meta is what a row reports. A host
+with no term store still yields a usable row because the row projection falls
+back to the meta value when the term list is empty. The category is lower-cased
+before it becomes a term, because the WordPress lookup was by slug.
+
+#### Two projections, kept different
+
+`get_reg_product` returns every field, including the INCI ingredient list and
+the allergen list. `list_reg_products` does not. Those two fields are kilobytes
+each, and a page of twenty rows should not carry forty ingredient lists.
+WordPress drew the same line; the port keeps it rather than "improving" the
+list into a slower, heavier response, and a test asserts the light row omits
+them.
+
+#### `offset` must land on a page boundary
+
+WordPress paginated with `limit` + `offset` over `WP_Query`. The store contract
+paginates with `page` + `perPage`, and a query cannot start mid-page. Rather
+than round an arbitrary offset down and silently return the wrong window, the
+tool accepts the offsets WordPress itself produced — a multiple of `limit` —
+and refuses the rest with a message naming the rule. A caller that wants row 5
+of a 20-row page is asking for a window this contract cannot address, and an
+error is a better answer than a shifted page.
+
+#### The registration expansion is bounded, and paged to reach the bound
+
+`include_registrations` asked `WP_Query` for up to 1000 registrations in one
+request. The store caps a page at 200, so the port reads pages of 200 until the
+set is exhausted or 1000 rows have been collected — the same ceiling, reached
+in up to five requests. Each row keeps its status term when one is attached and
+omits the key otherwise, as WordPress did, so the row shape does not depend on
+whether a status was ever set.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryProductToolsTest` | **14 tests, 60 assertions**, 0 failures |
+| `lib/core` unit suite | **4,033 tests / 22,633 assertions** (+14 tests, +60 assertions), 0 failures |
+| Adapter suite | **698 tests / 3,769 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 573 → **576 rows**; servable 554 → **557**; ready 516; no violations |
+| Toolkit parity | 352 → **355 ported**, 9 declined, 79 deferred, 493 → **490 remaining**; `regulatory-registration` **`59 \| 3 \| 0 \| 0 \| 56`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors on the four new classes, the test and the manifest |
+| `check-file-docs.php --strict` | exit 0 |
+
+The family's remaining slices, in order: product update/delete/duplicate and
+search (4); registration CRUD (8); documents (4); compliance and validation
+(8); expiry and monitoring (4); reports and generation (8, less whatever the
+PDF decision removes); Excel import/export (4, subject to the same decision);
+workflow rules (6); authority sync, notifications and requirements (10).
