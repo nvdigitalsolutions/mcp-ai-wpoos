@@ -38,6 +38,7 @@ use Nvoos\Core\Domain\Entity\Order;
 use Nvoos\Core\Domain\Entity\OrderAnalytics;
 use Nvoos\Core\Domain\Entity\OrderCollection;
 use Nvoos\Core\Domain\Entity\OrderQuery;
+use Nvoos\Core\Domain\Entity\ProductSales;
 use Nvoos\Core\Domain\ValueObject\OrderGrouping;
 
 interface OrderStoreInterface
@@ -77,4 +78,34 @@ interface OrderStoreInterface
      * number of orders.
      */
     public function analytics(OrderQuery $query, string $currency, OrderGrouping $grouping): OrderAnalytics;
+
+    /**
+     * The products a query's orders sold most of, in one currency.
+     *
+     * Proposal 164 section 164.180. This is the aggregate the products section
+     * of `get_order_analytics` and the `products` metric of
+     * `sales_performance_dashboard` both read, so that one definition of "top
+     * product" serves both tools.
+     *
+     * - It aggregates **order lines**, not orders: quantity and revenue are
+     *   summed from the lines, which is where the product reference lives.
+     * - It counts only **revenue-bearing** statuses, the same set `analytics()`
+     *   uses for revenue, so a cancelled order cannot contribute a best-seller.
+     *   An explicit `status` filter on the query intersects with that set
+     *   rather than replacing it, so asking for pending orders answers nothing.
+     * - The currency filters the selection. An `Order` refuses a line in a
+     *   currency other than its own, so the order bound is the live rule; the
+     *   line bound is checked too because the table itself permits a mismatch
+     *   and adding those amounts would be the mixed-currency sum this family
+     *   exists to remove.
+     * - A line with no product id is a custom line and is not a product, so it
+     *   is not aggregated.
+     *
+     * @param OrderQuery $query    The window and filters, as for a listing.
+     * @param string     $currency The ISO 4217 currency to aggregate.
+     * @param int        $limit    How many products to return, 1 to 100.
+     *
+     * @return list<ProductSales> By revenue descending, then quantity, then name.
+     */
+    public function topProducts(OrderQuery $query, string $currency, int $limit): array;
 }

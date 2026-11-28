@@ -31,6 +31,7 @@ namespace Nvoos\Core\Tests\Unit\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Entity\Order;
+use Nvoos\Core\Domain\Entity\OrderLine;
 use Nvoos\Core\Domain\Error\AccessDeniedException;
 use Nvoos\Core\Domain\ValueObject\Money;
 use Nvoos\Core\Domain\ValueObject\OrderStatus;
@@ -113,16 +114,52 @@ final class GetOrderAnalyticsToolTest extends TestCase
         $this->assertArrayHasKey('limit', $result['error']['data']);
     }
 
-    public function test_the_sections_this_slice_does_not_compute_are_refused_by_name(): void
+    public function test_the_customers_section_is_refused_by_name(): void
     {
-        foreach (array('include_products', 'include_customers', 'top_count') as $argument) {
+        $result = $this->execute(
+            array('currency' => 'USD', 'include_customers' => true),
+            $this->store()
+        );
+
+        $this->assertFalse($result['success']);
+        $this->assertArrayHasKey('include_customers', $result['error']['data']);
+    }
+
+    public function test_include_products_returns_the_best_sellers(): void
+    {
+        $store = $this->store(
+            $this->order(1, 'completed', '30.00', 'USD', '2024-01-05 09:00:00', array(
+                $this->line('Mug', 2, '20.00', 101),
+            )),
+            $this->order(2, 'processing', '20.00', 'USD', '2024-01-06 09:00:00', array(
+                $this->line('Mug', 2, '10.00', 101),
+                $this->line('Hat', 1, '10.00', 102),
+            )),
+            $this->order(3, 'cancelled', '99.00', 'USD', '2024-01-07 09:00:00', array(
+                $this->line('Cape', 1, '99.00', 103),
+            ))
+        );
+
+        $result = $this->execute(
+            $this->window() + array('include_products' => true, 'top_count' => 2),
+            $store
+        );
+
+        $this->assertSame(array(101, 102), array_column($result['data']['products'], 'product_id'));
+        $this->assertSame(30.0, $result['data']['products'][0]['revenue']);
+        $this->assertSame(4, $result['data']['products'][0]['quantity']);
+    }
+
+    public function test_top_count_is_bounded(): void
+    {
+        foreach (array(0, 101) as $value) {
             $result = $this->execute(
-                array('currency' => 'USD', $argument => true),
+                $this->window() + array('include_products' => true, 'top_count' => $value),
                 $this->store()
             );
 
-            $this->assertFalse($result['success'], $argument . ' should be refused');
-            $this->assertArrayHasKey($argument, $result['error']['data'], $argument . ' should be named');
+            $this->assertFalse($result['success'], (string) $value . ' should be refused');
+            $this->assertArrayHasKey('top_count', $result['error']['data']);
         }
     }
 
@@ -163,7 +200,7 @@ final class GetOrderAnalyticsToolTest extends TestCase
 
     // ── the aggregate ────────────────────────────────────────
 
-    public function test_revenue_excludes_cancelled_failed_and_refunded_while_gross_includes_them(): void
+    public function test_revenue_counts_only_paid_statuses_while_gross_counts_every_order(): void
     {
         $store = $this->store(
             $this->order(1, 'completed', '100.00'),
@@ -179,10 +216,12 @@ final class GetOrderAnalyticsToolTest extends TestCase
 
         $this->assertTrue($result['success']);
         $this->assertSame(7, $result['data']['order_count']);
-        $this->assertSame(4, $result['data']['revenue_order_count']);
+        // Paid statuses only: completed 100 plus processing 20. Pending and
+        // on-hold are orders awaiting payment, not money taken.
+        $this->assertSame(2, $result['data']['revenue_order_count']);
         $this->assertSame(275.0, $result['data']['gross_total']);
-        $this->assertSame(160.0, $result['data']['revenue']);
-        $this->assertSame(40.0, $result['data']['average_order_value']);
+        $this->assertSame(120.0, $result['data']['revenue']);
+        $this->assertSame(60.0, $result['data']['average_order_value']);
         $this->assertSame(1, $result['data']['status_counts']['cancelled']);
         $this->assertSame(1, $result['data']['status_counts']['on-hold']);
     }
@@ -363,12 +402,16 @@ final class GetOrderAnalyticsToolTest extends TestCase
         return new GetOrderAnalyticsTool($this->errors, $store);
     }
 
+    /**
+     * @param list<OrderLine> $lines Lines the order carried, for line aggregates.
+     */
     private function order(
         int $id,
         string $status,
         string $total,
         string $currency = 'USD',
         string $created = '2024-01-15 10:00:00',
+        array $lines = array(),
     ): Order {
         return new Order(
             id: $id,
@@ -376,10 +419,21 @@ final class GetOrderAnalyticsToolTest extends TestCase
             status: OrderStatus::from($status),
             createdAt: new \DateTimeImmutable($created),
             total: Money::fromDecimal($total, $currency),
-            lines: array(),
+            lines: $lines,
             customerId: 7,
             billingName: 'Ada Lovelace',
             billingEmail: 'ada@example.test',
+        );
+    }
+
+    private function line(string $name, int $quantity, string $lineTotal, int $productId): OrderLine
+    {
+        return new OrderLine(
+            name: $name,
+            quantity: $quantity,
+            unitPrice: Money::fromDecimal($lineTotal, 'USD'),
+            lineTotal: Money::fromDecimal($lineTotal, 'USD'),
+            productId: $productId,
         );
     }
 }
