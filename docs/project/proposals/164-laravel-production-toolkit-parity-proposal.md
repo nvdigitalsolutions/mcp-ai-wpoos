@@ -14049,5 +14049,136 @@ it cannot render.
 The reports and generation group is closed at 3 ported and 3 deferred. The
 remaining 24 are workflow rules (6), authority sync (4), notifications (4),
 requirements (2), and the eight reports now dispositioned. The next slice is the
-workflow rules group, which is the first in this family whose tools **execute** a
-rule rather than describe one.
+workflow rules group — which turned out to execute nothing at all (§164.159).
+
+### §164.159 — `regulatory-registration`, slice 12: workflow rules
+
+Six tools, 1,291 lines, and the first group in this family whose name promises
+action rather than description. It does not deliver one. Three findings shaped
+the port, and two lesser defects were fixed on the way.
+
+#### Nothing executes a rule
+
+`wp_mcp_ai_workflow_rules` is touched by the five CRUD tools and by nothing else.
+There is no hook, no cron event and no dispatcher anywhere in the plugin that
+reads it, so a rule that is created, enabled and listed never fires. The
+`executions` counter is initialised to `0` and never incremented; `last_executed`
+is read by two tools and written by none. `execute_rule` sits in the log filter
+enum and in the audit-action vocabulary, and no code path produces it.
+
+The consequence is that the tool called `get_workflow_execution_log` reads an
+**edit** log: rule creations, updates and deletions. The port keeps that shape
+and says so in the description, rather than implying a runner exists. The gap is
+the section's declared non-port.
+
+#### The dry run reported a match it never computed
+
+`test_workflow_rule` set `$trigger_matched = true;` unconditionally whenever
+`test_data` was non-empty. The only way it became `false` was a
+`test_data.registration_id` naming a missing post. `trigger.conditions` is a
+free-form object that no tool reads, so a rule declaring arbitrary conditions
+could be "tested" against arbitrary data and the report would say it matched.
+A caller who trusted that report would enable a rule on a false premise.
+
+The port returns `trigger_matched: null` and `conditions_evaluated: false`, and
+echoes the stored conditions so the caller can see what is not being evaluated.
+What it does check is real: the stored trigger and actions pass the same
+`ruleDefinition()` the write tools use, a supplied `registration_id` is looked up
+in the registration store instead of `get_post()`, and a supplied `event_type` is
+compared to the trigger event **as a string**, labelled `event_matches` so a
+string comparison cannot be read as an evaluation.
+
+#### Two filter guards that kept the rows they should have dropped
+
+```php
+if ( $rule_id && isset( $entry['rule_id'] ) && $entry['rule_id'] !== $rule_id ) {
+    continue;
+}
+```
+
+An entry with no `rule_id` fails the `isset()` test, so the condition is never
+true and the row is **kept**. Filtering the log by one rule therefore returned
+that rule's entries plus every entry missing the field. The same shape appeared
+for `action`. The port compares unconditionally, so an entry without the field
+cannot satisfy a filter that names it.
+
+#### Three sets wearing one name
+
+`list_workflow_rules` incremented `total` before applying either filter and
+`enabled`/`disabled` after, so a filtered response could report `total: 7,
+enabled: 2, disabled: 0` — three numbers describing two different sets. The log
+tool had the same fault in another form: `by_action_type` counted the whole store
+while sitting beside `filtered_entries`, which counted the sliced result.
+
+The port counts every statistic over the set it sits next to, and reports the
+sizes separately: `total` (returned), `matched` (passed the filters, before the
+limit), `store_entries` (the whole log), and `store_total` for rules. `enabled +
+disabled` always equals `total`. `filter_enabled` stays three-valued through
+`array_key_exists()`, because "no filter" and "filter false" are different
+requests and `boolParam()` collapses the difference.
+
+#### Where rules live now
+
+A rule is a `mcp_ai_workflow_rule` content item: title is the name, content is
+the description, and trigger, actions, flags and audit fields are meta. The
+operator key (`rule_xxxxxxxxxxxx`) lives in `rule_key` meta rather than becoming
+the content id, because an export carries keys and rewriting them would break
+every stored reference.
+
+An audit entry is a separate `mcp_ai_workflow_log` item, not rule meta, so a
+deletion's entry survives the rule — which is the entry an auditor wants.
+WordPress got the same survival by keeping both in two options; here the
+separation is structural.
+
+The 200-entry cap (`array_slice( $log, -200 )`) is **not** ported. It was an
+option-size decision — an option is loaded on every request, a filtered query is
+not — so the port stores without pruning and reports `store_entries` so growth is
+visible instead of silent.
+
+Validation was added at every write. Neither create nor update checked the
+trigger event or the action types, so a rule could be stored with
+`event: "nonsense"` and nothing objected until — in practice, never. An email
+action with no recipients stays a **warning**, because a rule may legitimately be
+saved before its recipients exist; WordPress's dry run reported it that way.
+
+#### Two smaller corrections
+
+`update_workflow_rule` refuses a call that changes nothing. WordPress wrote
+`updated_fields: []` into the audit entry and returned success. The port names
+the argument fields that changed (`name`, `description`, `trigger`, `actions`,
+`enabled`) plus `updated_at`, and honours an explicit `enabled: false` rather
+than letting a default swallow it.
+
+`CheckProductComplianceTool` carried a private `flag()` byte-identical to the
+helper this slice needed on `RegulatoryTool`. A parent declaring `protected
+flag()` beside a child's `private flag()` is a PHP fatal, since visibility cannot
+be narrowed; the duplicate was removed and both readers now share one
+definition. The change was made in the child, not by renaming the new helper,
+because the duplicated logic was the thing that should not exist.
+
+#### The declared gap
+
+No condition evaluator and no trigger runner were ported, because there was
+nothing to port: conditions are stored data that no code reads, and inventing
+evaluation semantics — `{field, operator, value}` with and/or/not, the JSON Logic
+shape — would be building a subsystem WordPress never had, for rules that still
+would not fire. That is a proposal of its own, not a slice of this one.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryWorkflowRulesTest` | **17 tests, 85 assertions**, 0 failures |
+| `lib/core` unit suite | 4,270 → **4,287 tests / 23,548 assertions**, 0 failures |
+| Adapter suite | **698 tests / 3,807 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 608 → **614 rows**; servable 589 → **595**; ready 548 → **554**; no violations |
+| Toolkit parity | 387 → **393 ported**, 9 declined, 87 deferred, 458 → **452 remaining**; `regulatory-registration` `59 \| 35 \| 0 \| 8 \| 24` → **`59 \| 41 \| 0 \| 8 \| 18`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+#### Where the family stands
+
+Eighteen remain: authority sync (4), notifications (4), requirements (2), and the
+eight reports now dispositioned. The next slice is authority sync, which is the
+first in this family that needs an outbound HTTP seam rather than a content
+reader, so it is measured before it is ported.
