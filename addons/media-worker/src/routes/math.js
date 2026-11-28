@@ -34,6 +34,19 @@
 
 import { Router } from 'express';
 
+import { isCanvasUnavailable, renderChartPng } from '../utils/chart-render.js';
+import {
+	boolValue,
+	clampInt,
+	DEFAULT_SAMPLES,
+	graphConfig,
+	MAX_SAMPLES,
+	MIN_SAMPLES,
+	normaliseHex,
+	rangeProblem,
+	sampleFunction,
+} from '../utils/graph-sample.js';
+
 export const mathRouter = Router();
 
 /** Compute is cheaper than rendering, but an unbounded parse is still a denial of service. */
@@ -321,6 +334,108 @@ mathRouter.post( '/matrix', async ( req, res ) => {
 	} catch ( err ) {
 		// A singular matrix, mismatched dimensions, a non-square transpose — all
 		// the caller's input, and all named by the message.
+		res.status( 400 ).json( { success: false, error: err.message } );
+	}
+} );
+
+// ── POST /graph — sample a function and render it ──────────
+
+/** Width, height and title bounds, matching the WordPress tool schema. */
+const GRAPH_BOUNDS = {
+	width: [ 400, 2000 ],
+	height: [ 300, 1500 ],
+};
+
+/** The title is drawn inside the image, so it is capped rather than wrapped. */
+const MAX_TITLE_LENGTH = 200;
+
+/** The colour the WordPress tool used when none was supplied. */
+const DEFAULT_LINE_COLOR = '#0066cc';
+
+mathRouter.post( '/graph', async ( req, res ) => {
+	const body = req.body || {};
+	const { expression, x_range: xRange, y_range: yRange, title, samples } = body;
+
+	const problem = expressionProblem( expression )
+		|| rangeProblem( xRange, 'x_range' )
+		|| ( null === yRange || undefined === yRange ? null : rangeProblem( yRange, 'y_range' ) );
+
+	if ( problem ) {
+		return res.status( 400 ).json( { success: false, error: problem } );
+	}
+
+	const width = clampInt( body.width, GRAPH_BOUNDS.width[ 0 ], GRAPH_BOUNDS.width[ 1 ], 800 );
+	const height = clampInt( body.height, GRAPH_BOUNDS.height[ 0 ], GRAPH_BOUNDS.height[ 1 ], 600 );
+	const sampleCount = clampInt( samples, MIN_SAMPLES, MAX_SAMPLES, DEFAULT_SAMPLES );
+	const showGrid = boolValue( body.show_grid, true );
+	const lineColor = normaliseHex( body.line_color ) || DEFAULT_LINE_COLOR;
+	const heading = 'string' === typeof title ? title.trim().slice( 0, MAX_TITLE_LENGTH ) : '';
+
+	try {
+		const mathjs = await import( 'mathjs' );
+		const compiled = mathjs.compile( expression );
+
+		const { points, finite, yRange: window, firstError } = sampleFunction( compiled, {
+			xMin: xRange[ 0 ],
+			xMax: xRange[ 1 ],
+			samples: sampleCount,
+			yMin: yRange ? yRange[ 0 ] : null,
+			yMax: yRange ? yRange[ 1 ] : null,
+		} );
+
+		if ( null === window ) {
+			// Nothing to draw. An empty chart would look like a rendering bug, so the
+			// request is refused with the reason instead. When NOTHING evaluated the
+			// evaluator's own message is the useful one (an unknown symbol is a caller
+			// error, not a window full of gaps).
+			if ( 0 === finite && firstError ) {
+				return res.status( 400 ).json( { success: false, error: firstError } );
+			}
+
+			return res.status( 422 ).json( {
+				success: false,
+				error: `The expression has fewer than two finite values over [${ xRange[ 0 ] }, ${ xRange[ 1 ] }]`,
+				finite_samples: finite,
+			} );
+		}
+
+		const config = graphConfig( {
+			expression,
+			points,
+			xRange,
+			yRange: window,
+			title: heading,
+			showGrid,
+			lineColor,
+		} );
+
+		const { image } = await renderChartPng( config, { width, height } );
+
+		res.json( {
+			success: true,
+			expression,
+			mime_type: 'image/png',
+			data_base64: image.toString( 'base64' ),
+			size: image.length,
+			width,
+			height,
+			samples: sampleCount,
+			finite_samples: finite,
+			x_range: [ xRange[ 0 ], xRange[ 1 ] ],
+			y_range: window,
+			grid: showGrid,
+			line_color: lineColor,
+		} );
+	} catch ( err ) {
+		if ( isCanvasUnavailable( err ) ) {
+			return res.status( 503 ).json( {
+				error: 'capability_unavailable',
+				capability: 'chart-rendering',
+				message: 'Graph rendering is unavailable: chartjs-node-canvas or its native canvas dependency is not installed on this server.',
+			} );
+		}
+
+		// A parse failure names the offending token better than a regex could.
 		res.status( 400 ).json( { success: false, error: err.message } );
 	}
 } );

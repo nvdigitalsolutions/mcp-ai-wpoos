@@ -56,6 +56,7 @@ use Nvoos\Core\Domain\Contract\ApprovalTicketInterface;
 use Nvoos\Core\Domain\Contract\FileDerivativeStoreInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
+use Nvoos\Core\Domain\Contract\GraphRendererInterface;
 use Nvoos\Core\Domain\Contract\MathEngineInterface;
 use Nvoos\Core\Domain\Contract\MathRendererInterface;
 use Nvoos\Core\Domain\Contract\ControlledDocumentInterface;
@@ -161,6 +162,7 @@ use Nvoos\Laravel\Adapter\HttpClient;
 use Nvoos\Laravel\Adapter\JobStatusStore;
 use Nvoos\Laravel\Adapter\MediaWorkerCapabilityProbe;
 use Nvoos\Laravel\Adapter\MediaWorkerClient;
+use Nvoos\Laravel\Adapter\MediaWorkerGraphRenderer;
 use Nvoos\Laravel\Adapter\MediaWorkerHtmlToPdf;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProcessing;
 use Nvoos\Laravel\Adapter\MediaWorkerImageProduction;
@@ -305,6 +307,12 @@ class NvoosServiceProvider extends ServiceProvider {
 		// mathjs covers all three; `rank` is the one operation it has no function
 		// for, and the route computes it by elimination (§164.168).
 		$this->app->bind( MathEngineInterface::class, MediaWorkerMathEngine::class );
+
+		// The plotting half: `/api/math/graph` samples with mathjs and renders with
+		// chartjs-node-canvas in one call. It is a separate binding from the engine
+		// above because a deployment can have the evaluator without the native
+		// canvas binding, and `isAvailable()` has to answer for each honestly (§164.169).
+		$this->app->bind( GraphRendererInterface::class, MediaWorkerGraphRenderer::class );
 
 		// Frames are many files out of one video, which is a return shape
 		// `process()` deliberately does not have. Its own contract keeps that

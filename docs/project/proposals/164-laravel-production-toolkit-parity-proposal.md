@@ -15239,3 +15239,120 @@ and leaves rendering to the surface, which owns the KaTeX boundary.
 
 That slice owns a worker version bump across the five recorded spots. When it
 lands, `math` closes at 9 of 9 with no deferrals.
+
+### 164.169 — `math` slice 5: the function plotter, and a tool that never drew anything
+
+Measured before the port. `math` moves to **9 wp / 7 ported / 0 declined / 0 deferred / 2 remaining**.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `graph_function` | `GraphFunctionTool` -> `GraphRendererInterface` -> `POST /api/math/graph` |
+
+#### The WordPress tool could only ever fail
+
+`WP_MCP_AI_Tool_Graph_Function` is a filter and nothing else:
+
+```php
+$graph_result = apply_filters( 'wp_mcp_ai_graph_function', false, array( ... ) );
+
+if ( false === $graph_result || isset( $graph_result['error'] ) ) {
+    return new WP_Error( 'wp_mcp_ai_engine_missing', ... );
+}
+```
+
+No filter is registered anywhere in the plugin: a search finds the `apply_filters`
+call and the use-guidance text, and no `add_filter`. So on every install the tool
+reached the error branch, while still declaring `upload_files` and appearing in
+the toolkit. It is the same shape as the `simplify_expression` defect from
+section 164.168, but without even a fallback: the tool advertised a capability,
+gated it behind a capability check, and could not produce an image. The port
+carries the operation rather than the hook.
+
+#### Six input defects, all fixed
+
+| Defect | Fix |
+| --- | --- |
+| `sanitize_text_field( $arguments['function'] )` — an HTML filter on a grammar (third instance in this family) | read raw |
+| `$arguments['function']` read without `isset()`, warning before the required-argument branch | field error |
+| `width` / `height` `absint()`ed with no bound though the schema declares 400-2000 and 300-1500 | refused, not clamped |
+| `show_grid` read with `(bool)` — `'false'` is true | `boolParam()`, and the worker coerces the string separately |
+| `sanitize_hex_color()` returns `null` for an invalid colour and the null was passed to the renderer | refused; 3-digit shorthand expanded |
+| `x_range[0]` / `x_range[1]` indexed with no shape check | `[min, max]`, ascending, finite |
+
+#### One composing route instead of two calls
+
+The route samples with mathjs and renders with chartjs-node-canvas in the same
+process. Sampling in PHP would be one round trip per sample; posting the
+expression to `/api/data/render-chart` would ask a renderer to evaluate
+mathematics it cannot parse. `chartjs-node-canvas` moved into
+`src/utils/chart-render.js`, shared by both route groups.
+
+Two rules live in the sampler rather than the renderer, and are tested without
+the native binding:
+
+- **a pole is a gap.** `1/x` over `[-10, 10]` contains `x = 0`; a request that
+  refused to plot because one of four hundred samples is undefined would be
+  useless. A `null` y with `spanGaps: false` breaks the line instead of drawing a
+  branch the function never takes.
+- **nothing to draw is a refusal.** Fewer than two finite values is `422` and the
+  message carries `finite_samples`. When *nothing* evaluates, the evaluator's own
+  message is returned instead (`400`), because `Undefined symbol a` is a caller
+  error and not a window full of gaps.
+
+`y_range` is derived from the sampled values with 10% padding when omitted, and
+reported back as drawn, so a caller reading `y_range` is never told about an axis
+that was not rendered. A constant function gets plus or minus one rather than a
+zero-height axis. `samples` is not exposed as a tool parameter: WordPress had no
+such knob, and 400 points is enough for the declared sizes.
+
+#### A typed 503 that was unreachable
+
+`/api/data/render-chart` documented `503 capability_unavailable` for a server
+without the canvas binding, but its catch tested only `ERR_MODULE_NOT_FOUND` and
+`ERR_DLOPEN_FAILED`. The **common** failure is `MODULE_NOT_FOUND` from a
+CommonJS `require` when `canvas` is installed but its native binary was never
+built, which is the normal outcome of `npm install` on a machine without build
+tools: the install exits zero and leaves `canvas/build/Release/canvas.node`
+absent. That case produced a `500` with a stack-trace-shaped message instead.
+`isCanvasUnavailable()` now covers all three shapes, so both routes degrade to
+the typed `503` they advertise.
+
+#### Decisions
+
+- **`delegated`, not `ready`.** The contract is bound by the provider, so `ready`
+  would advertise a renderer this runtime cannot honour without
+  `oos.media_worker.url` *and* the native binding. All five `math` ports are now
+  `delegated`.
+- **The PNG is stored, not inlined.** `attachment_id`, `url` and `prompt` keep
+  their WordPress names; the file goes through `FileStoreInterface` because a
+  graph is a file the caller keeps, and a base64 blob in a chat transcript is
+  not. A runtime without a file store gets `wp_mcp_ai_graph_storage_unavailable`
+  rather than a silent inline payload.
+- **Rendering is a separate contract.** `GraphRendererInterface` is not a method
+  on `MathEngineInterface`: mathjs cannot draw and chartjs cannot evaluate, and
+  a single availability flag would advertise a plot on a server with no canvas.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,486 / 24,374 |
+| adapter | 731 / 3,926, 2 skipped |
+| worker (`node --test`, graph suite) | 16 / 16 |
+| readiness | 640 rows / 640 classes, servable 621 (delegated 11), no violations |
+| parity | 419 ported / 9 declined / 103 deferred / 439 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+The happy-path render could not be exercised on the development machine: the
+`canvas` binary is not built there, so the route returns the typed `503`. The
+sampler, the refusal paths and the Chart.js config shape are covered by tests;
+the pixel output is verified by the deployment smoke test.
+
+#### What remains
+
+`calculate_integral` and `solve_equation`, both blocked on the CAS decision
+recorded in section 164.168: mathjs has no symbolic integral and only polynomial
+roots, so the choice is nerdamer (simplify, `solveEquations`, integration) or
+Algebrite.

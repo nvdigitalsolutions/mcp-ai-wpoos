@@ -3333,6 +3333,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryWorkflowRulesTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'graph_function' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Math\\GraphFunctionTool',
+			'readiness' => 'delegated',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the function plotter (Proposal 164 section 164.169) through GraphRendererInterface over POST /api/math/graph, which samples with mathjs and renders with chartjs-node-canvas in one call so a plot is one round trip rather than one per sample. In WordPress the tool was a filter with no implementation anywhere in the plugin, so every install could only reach the engine-missing branch while the tool still required upload_files: it advertised a capability it could never perform. Six input defects are fixed: the expression went through sanitize_text_field, an HTML filter applied to a grammar; the required function argument was read without isset and warned before the error branch; width and height were absint-ed with no bound though the schema declares 400-2000 and 300-1500; show_grid was read with a bool cast, for which the string false is true; sanitize_hex_color returns null for an invalid colour and the null was passed through to the renderer; and x_range was indexed without a shape check. A window that yields fewer than two finite values is a validation failure rather than an empty plot, a pole is a gap in the line instead of a failed request, and an undefined symbol is reported with the evaluator message. Delegated rather than ready because the contract is bound by the provider and this runtime cannot honour it without oos.media_worker.url and the native canvas binding.',
+			'evidence' => 'lib/core/tests/Unit/Tool/GraphFunctionToolTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'gtmetrix_account_status' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GTmetrix\\GtmetrixAccountStatusTool',
 			'readiness' => 'ready',

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-Proprietary
 /**
- * Data utilities — translation, language detection, QR codes, phone formatting,
+ * @fileoverview Data utilities — translation, language detection, QR codes, phone formatting,
  * CSV processing, markdown, math evaluation, regression, currency, validation.
  *
  * Endpoints:
@@ -21,6 +21,7 @@ import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
 import { siteDirFor, pathGuard } from '../utils/site-paths.js';
+import { isCanvasUnavailable, renderChartPng } from '../utils/chart-render.js';
 
 export const dataRouter = Router();
 
@@ -227,19 +228,19 @@ dataRouter.post('/render-chart', async (req, res) => {
     if (!type || !data) {
       return res.status(400).json({ success: false, error: 'Missing type or data' });
     }
-    const { ChartJSNodeCanvas } = await import('chartjs-node-canvas');
-    const width = options?.width || 800;
-    const height = options?.height || 400;
-    const renderer = new ChartJSNodeCanvas({ width, height, backgroundColour: options?.background || 'white' });
     const config = { type, data, options: options?.chartOptions || {} };
-    		const image = await renderer.renderToBuffer(config);
-    		const outPath = tempFile( req, 'png' );
-    		fs.writeFileSync(outPath, image);
-    		// data_base64 is the plugin contract: `output_path` points at the
-    		// WORKER's filesystem and is useless to the calling WordPress site.
-    		res.json({ success: true, output_path: outPath, data_base64: image.toString('base64'), size: image.length, width, height });
+    const { image, width, height } = await renderChartPng(config, {
+      width: options?.width,
+      height: options?.height,
+      background: options?.background,
+    });
+    const outPath = tempFile( req, 'png' );
+    fs.writeFileSync(outPath, image);
+    // data_base64 is the plugin contract: `output_path` points at the
+    // WORKER's filesystem and is useless to the calling WordPress site.
+    res.json({ success: true, output_path: outPath, data_base64: image.toString('base64'), size: image.length, width, height });
   } catch (err) {
-    if ('ERR_MODULE_NOT_FOUND' === err.code || 'ERR_DLOPEN_FAILED' === err.code) {
+    if (isCanvasUnavailable(err)) {
       return res.status(503).json({
         error: 'capability_unavailable',
         capability: 'chart-rendering',
