@@ -15,6 +15,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/bootstrap.php';
+
 use Nvoos\Database\Domain\Service\Database\DatabaseRefusal;
 use Nvoos\Database\Domain\Service\Database\FilterOperator;
 use Nvoos\Database\Domain\ValueObject\Database\CatalogueDescriptor;

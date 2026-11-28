@@ -50,6 +50,7 @@ wp-mcp-ai-crm-web-form-listener
 wp-mcp-ai-crm-whatsapp-webhook-listener
 wp-mcp-ai-database-presets
 wp-mcp-ai-database-tool-base
+wp-mcp-ai-db-export-job
 wp-mcp-ai-dicomweb-client
 wp-mcp-ai-docs-hub-helper
 wp-mcp-ai-document-gen-optimization

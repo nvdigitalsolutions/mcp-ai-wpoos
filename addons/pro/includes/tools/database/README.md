@@ -11,7 +11,7 @@ A **connection** names an endpoint. A **scope** is the grant: schemas, tables, c
 | `init.php` | Load gate: toggle → `WP_MCP_AI_Db_Runtime::load()` → tool classes → Remote Sites credential filter → admin page |
 | `class-wp-mcp-ai-database-tool-base.php` | The six shared steps: availability, principal from context, connection resolution, sanitisation, executor, canonical envelope |
 | `class-wp-mcp-ai-tool-db-*.php` | Eleven read/ops tools + two write tools |
-| `class-wp-mcp-ai-database-presets.php` | One schedule preset (weekly refusal review) and one workflow preset (profile + export, with `edges`) |
+| `class-wp-mcp-ai-database-presets.php` | Five schedule presets (weekly refusal review, daily connection health, weekly scope census, monthly data-quality profile, monthly export digest) and one workflow preset (profile + export, with `edges`) |
 
 ## The thirteen tools
 

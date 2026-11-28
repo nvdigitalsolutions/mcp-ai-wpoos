@@ -20,6 +20,8 @@ declare(strict_types=1);
 
 namespace Nvoos\Tests\Database\Parity;
 
+require_once __DIR__ . '/bootstrap.php';
+
 use Nvoos\Database\Domain\Service\Database\GrantTier;
 use Nvoos\Database\Domain\ValueObject\Database\CompiledStatement;
 use Nvoos\Database\Domain\ValueObject\Database\ConnectionDescriptor;

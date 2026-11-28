@@ -49,7 +49,7 @@ use Nvoos\Laravel\Database\TableAuditLog;
 use Nvoos\Database\Domain\Service\Database\PdoProbe;
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/PostgresFixture.php';
+require_once __DIR__ . '/bootstrap.php';
 
 spl_autoload_register(
 	static function ( string $class_name ): void {

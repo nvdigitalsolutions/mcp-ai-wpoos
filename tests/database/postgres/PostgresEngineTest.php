@@ -22,6 +22,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/bootstrap.php';
+
 use Nvoos\Database\Domain\Service\Database\AdmissionClassifier;
 use Nvoos\Database\Domain\Service\Database\RefusalCode;
 use PHPUnit\Framework\Attributes\CoversClass;
