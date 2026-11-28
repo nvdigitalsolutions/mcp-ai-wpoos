@@ -341,6 +341,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/CaptureWebpageScreenshotToolTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => false, 'openWorldHint' => true ),
 		),
+		'check_authority_status' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\CheckAuthorityStatusTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress authority-status batch over ContentStoreInterface (Proposal 164 section 164.152). This is the family member whose declared default was the actual one: include_history is false in the schema and empty() reads the same, stated in the source because three neighbours got it wrong in the same direction. WordPress declared edit_posts but the handler checked read, so read is the handler rule the port keeps. A country filter dropped registrations with continue, leaving a shorter results array and no trace of an id the caller supplied; the port lists them in skipped and counts requested. A missing id is an item with found false rather than a failed batch, and every item carries found so one shape iterates. Status history has no writer anywhere in the toolkit, so an unwritten key is an empty list instead of an empty string, and a host that populates _status_history gets its value back. More than 100 ids is refused rather than truncated.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryComplianceToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'check_availability' => array(
 			'class' => 'Nvoos\Core\Tool\Calendar\CheckAvailabilityTool',
 			'readiness' => 'ready',
@@ -391,6 +400,15 @@ return array(
 			'probe' => 'call',
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/SearchAndProviderToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => true ),
+		),
+		'check_product_compliance' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\CheckProductComplianceTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress product compliance check over ContentStoreInterface (Proposal 164 section 164.152): a country requirement query, the product documents, and the product ingredient list, scored. Third instance of the same fault class and the worst composition: check_documents and check_ingredients are declared true and read with empty, so the documented call ran nothing, reported compliance_score 0 beside status compliant, and called a product with nothing checked compliant. The port applies the declared defaults and adds checks_ran, defined as at least one requirement evaluated with a check enabled, because the synthetic no-restriction pass makes total_checks 1 on a country that configures nothing. WordPress skipped a mandatory ingredient restriction entirely when the product had no INCI list, so it appeared in neither passed nor issues; the port reports it as a warning naming what could not be verified. Requirement is_mandatory follows the stored value, and the writer that stores false for an omitted argument is recorded here because it makes a documented requirement unenforced; the reader cannot distinguish the two cases. Document matching stays the bidirectional case-insensitive substring WordPress used, since no key joins a requirement to a document.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryComplianceToolsTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'check_video_status' => array(
 			'class' => 'Nvoos\\Core\\Tool\\CheckVideoStatusTool',
@@ -4973,6 +4991,15 @@ return array(
 			'probe' => 'call',
 			'reason' => 'Ports the WordPress product validation over ContentStoreInterface (Proposal 164 section 164.150). The declared defaults were not the actual ones: the schema promised all three checks on and the handler read them with empty(), so a bare call validated nothing and reported is_valid true — a vacuous pass in a compliance toolkit. The port applies the documented defaults and only an explicit false disables a check. A negative verdict stays a successful call, with the verdict in is_valid and status. Blank ingredient items are skipped so a trailing comma does not add an ingredient, and the chapter warning is suppressed for a code already rejected for length.',
 			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryProductValidationTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
+		'validate_document_checklist' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\ValidateDocumentChecklistTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress document checklist over ContentStoreInterface (Proposal 164 section 164.152). The required set is lowercase slugs and a document type is stored with the caller spelling preserved, while WordPress compared them with array_diff, which is case-sensitive, so a document uploaded as LoA was reported missing while sitting in the store; the port folds case before comparing and still reports the stored spelling. The country table is unchanged: eight shared types and the LK ISO, SA CPSR and IN stability additions, selected by an upper-cased country while the response echoes what the caller wrote. An unparseable expiry date counted as expired because strtotime returns false and false is less than now; the port keeps that verdict, which is the safe direction, and names the value in unparsed_expiry_dates. A registration wins over a product when both ids are supplied, now stated in the schema. An omitted country is filled from the registration country.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryComplianceToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
 		'validate_inci_ingredients' => array(

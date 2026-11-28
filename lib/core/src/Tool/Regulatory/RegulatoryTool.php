@@ -40,6 +40,7 @@ namespace Nvoos\Core\Tool\Regulatory;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Entity\ContentItem;
+use Nvoos\Core\Domain\Entity\ContentQuery;
 use Nvoos\Core\Tool\AbstractTool;
 
 abstract class RegulatoryTool extends AbstractTool
@@ -70,6 +71,18 @@ abstract class RegulatoryTool extends AbstractTool
 
     /** The document type taxonomy. */
     public const DOC_TYPE_TAX = 'mcp_ai_doc_type';
+
+    /**
+     * The most rows one compliance read collects.
+     *
+     * WordPress asked for up to 1000 requirements or documents in a single
+     * query; this ceiling is the same number, so a country that would have been
+     * answered there is answered here.
+     */
+    protected const MAX_COLLECTED = 1000;
+
+    /** The page size one collected query asks the store for. */
+    protected const COLLECT_PAGE = 200;
 
     /**
      * Product arguments and the meta keys they are stored under.
@@ -374,5 +387,73 @@ abstract class RegulatoryTool extends AbstractTool
         }
 
         return 0;
+    }
+
+    /**
+     * Every item a query selects, page by page, up to a ceiling.
+     *
+     * WordPress asked for up to 1000 rows in one call. This runtime caps a
+     * single page at 200, so the port pages rather than truncating: a country
+     * with more than 200 requirements is answered completely up to the same
+     * ceiling WordPress had, and the ceiling is the only limit either runtime
+     * imposes.
+     *
+     * A store that cannot answer is treated as answering nothing rather than
+     * failing the call, which is how the sibling readers already behave.
+     *
+     * @param list<string>             $types
+     * @param array<int|string, mixed> $metaQuery
+     *
+     * @return list<ContentItem>
+     */
+    protected function collectContent(array $types, array $metaQuery = array()): array
+    {
+        $items = array();
+        $page  = 1;
+
+        while (count($items) < self::MAX_COLLECTED) {
+            try {
+                $result = $this->content->query(
+                    new ContentQuery(
+                        types: $types,
+                        statuses: array('publish'),
+                        metaQuery: $metaQuery,
+                        orderBy: 'id',
+                        order: 'ASC',
+                        page: $page,
+                        perPage: self::COLLECT_PAGE,
+                    )
+                );
+            } catch (\Throwable $e) {
+                break;
+            }
+
+            $fetched = 0;
+
+            foreach ($result->items as $item) {
+                if (! $item instanceof ContentItem) {
+                    continue;
+                }
+
+                if (array() !== $types && ! in_array($item->type, $types, true)) {
+                    continue;
+                }
+
+                $items[] = $item;
+                ++$fetched;
+
+                if (count($items) >= self::MAX_COLLECTED) {
+                    break;
+                }
+            }
+
+            if ($fetched < self::COLLECT_PAGE) {
+                break;
+            }
+
+            ++$page;
+        }
+
+        return $items;
     }
 }

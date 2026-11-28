@@ -393,7 +393,9 @@
         "quiz-management": [],
         "regulatory-registration": [
             "approve_registration",
+            "check_authority_status",
             "check_hs_code",
+            "check_product_compliance",
             "create_reg_product",
             "create_registration",
             "delete_reg_product",
@@ -413,6 +415,7 @@
             "update_reg_product",
             "update_registration_status",
             "upload_reg_document",
+            "validate_document_checklist",
             "validate_inci_ingredients",
             "validate_reg_product"
         ],
