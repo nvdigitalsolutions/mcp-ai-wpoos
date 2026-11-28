@@ -176,6 +176,32 @@ abstract class CloudwaysTool extends AbstractTool
     }
 
     /**
+     * The `server_id` + `app_id` argument schema shared by app-scoped tools.
+     *
+     * @return array<string, mixed>
+     */
+    protected function targetSchema(): array
+    {
+        return array(
+            'type'                 => 'object',
+            'properties'           => array(
+                'server_id' => array(
+                    'type'        => 'integer',
+                    'description' => 'The Cloudways server id.',
+                    'minimum'     => 1,
+                ),
+                'app_id'    => array(
+                    'type'        => 'integer',
+                    'description' => 'The application id.',
+                    'minimum'     => 1,
+                ),
+            ),
+            'required'             => array('server_id', 'app_id'),
+            'additionalProperties' => false,
+        );
+    }
+
+    /**
      * The `label` argument, trimmed, or '' when absent.
      *
      * @param array<string, mixed> $arguments Tool arguments.
