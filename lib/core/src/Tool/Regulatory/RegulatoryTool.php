@@ -73,6 +73,52 @@ abstract class RegulatoryTool extends AbstractTool
     public const DOC_TYPE_TAX = 'mcp_ai_doc_type';
 
     /**
+     * The documents most countries require.
+     *
+     * WordPress kept two copies of this table — one in
+     * `validate_document_checklist`, one in `generate_submission_pack` — so the
+     * checklist and the pack could disagree about what a country requires. The
+     * ports read one table.
+     */
+    public const REQUIRED_DOCUMENTS = array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'artwork', 'formula');
+
+    /** Country-specific requirement tables, keyed by upper-cased country code. */
+    public const COUNTRY_DOCUMENTS = array(
+        'LK' => array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'artwork', 'formula', 'iso'),
+        'AE' => array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'artwork', 'formula'),
+        'SA' => array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'cpsr', 'artwork', 'formula'),
+        'QA' => array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'artwork', 'formula'),
+        'KW' => array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'artwork', 'formula'),
+        'OM' => array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'artwork', 'formula'),
+        'IN' => array('loa', 'fsc', 'coa', 'gmp', 'msds', 'pif', 'artwork', 'formula', 'stability'),
+    );
+
+    /**
+     * The document types one country requires.
+     *
+     * @return list<string>
+     */
+    protected function requiredDocuments(string $country): array
+    {
+        $key = strtoupper(trim($country));
+
+        return self::COUNTRY_DOCUMENTS[ $key ] ?? self::REQUIRED_DOCUMENTS;
+    }
+
+    /**
+     * The comparison form of a document type.
+     *
+     * WordPress compared stored types against these lowercase slugs with
+     * `array_diff`, which is case-sensitive, while the type is stored with the
+     * caller's spelling. Section 164.152 records the consequence: a document
+     * uploaded as LoA was reported missing while sitting in the store.
+     */
+    protected function foldDocType(string $value): string
+    {
+        return strtolower(trim($value));
+    }
+
+    /**
      * The most rows one compliance read collects.
      *
      * WordPress asked for up to 1000 requirements or documents in a single

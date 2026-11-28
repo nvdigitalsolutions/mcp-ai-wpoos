@@ -406,6 +406,7 @@
             "generate_country_performance",
             "generate_expiry_forecast",
             "generate_pipeline_report",
+            "generate_submission_pack",
             "get_reg_document",
             "get_reg_product",
             "get_registration",

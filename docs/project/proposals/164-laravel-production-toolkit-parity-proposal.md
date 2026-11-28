@@ -13972,3 +13972,82 @@ rather than renaming a field a caller may already read.
 The next slice is `generate_submission_pack` (11c), which stores a pack manifest
 on the registration, together with the three PDF-writer deferrals that close the
 group.
+
+### §164.158 — `regulatory-registration`, slice 11c: the submission pack
+
+`generate_submission_pack` is the one tool in the reports group that assembles
+something real without a file: a manifest stored on the registration, plus a
+cover letter and an index as text. It also carries the family's most repeated
+fault in the form that removes the artefact.
+
+#### The two flags that build the pack were off
+
+`include_cover_letter` and `include_index` are declared `true`. The handler read
+each with `! empty( $arguments[ ... ] )`, so a bare
+`generate_submission_pack({ registration_id })` returned
+`cover_letter: null` and `document_index: null` — **the two things the tool
+exists to assemble, absent from the pack it stored**.
+
+This is the fourth instance of the same fault: §164.150 fixed it in
+`validate_reg_product`, §164.151 in `validate_inci_ingredients`, §164.152 in
+`check_product_compliance`. Four tools, four authors, one line of PHP. The
+family's rule is stated once because of it: a default belongs in `boolParam()`,
+never in `! empty()`.
+
+#### One table, two copies, compared the wrong way
+
+WordPress kept the required-document table twice — in
+`validate_document_checklist` and again here — so the two tools could disagree
+about what a country requires. Both compared lowercase slugs against a type
+stored with the caller's spelling using `array_diff`, so a document uploaded as
+`LoA` read as missing and the pack was refused even though the document was
+present.
+
+The table now lives once in `RegulatoryTool` and both ports read it; both fold
+case before comparing, as §164.152 decided. The checklist's eleven tests were
+re-run unchanged against the shared table to prove the move changed no
+behaviour.
+
+#### A missing document is a refusal, not a verdict
+
+Unlike the validators, this tool cannot produce its artefact without the
+documents: a pack that omits a required certificate is worse than no pack. That
+remains a refusal, as in WordPress, but it goes through the canonical envelope
+carrying the same `missing_documents` list, so a caller sees one error shape
+from the family instead of one per tool.
+
+#### The three PDF writers are deferred
+
+With this tool the reports group closes, and the three remaining members are
+deferred together because they share one prerequisite:
+
+| Tool | What it actually does |
+|---|---|
+| `generate_compliance_certificate` | Concatenates plain text, saves it as `.pdf` |
+| `generate_cover_letter` | The same, and the letter itself is already served here as `cover_letter` text |
+| `generate_pdf_dossier` | Its own comment calls it a placeholder; six lines of text as `.pdf` |
+
+No PDF library appears in any of the three calls. All are deferred rather than
+declined: the exports are worth having once a writer exists, and `file_data` was
+refused in §164.148 for the same reason — this runtime does not fabricate a file
+it cannot render.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatorySubmissionPackTest` | **10 tests, 35 assertions**, 0 failures |
+| `lib/core` unit suite | 4,260 → **4,270 tests / 23,463 assertions**, 0 failures |
+| Adapter suite | **698 tests / 3,801 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 607 → **608 rows**; servable 588 → **589**; ready 547 → **548**; no violations |
+| Toolkit parity | 386 → **387 ported**, 9 declined, 84 → **87 deferred**, 459 → **458 remaining**; `regulatory-registration` `59 \| 34 \| 0 \| 5 \| 25` → **`59 \| 35 \| 0 \| 8 \| 24`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors |
+
+#### Where the family stands
+
+The reports and generation group is closed at 3 ported and 3 deferred. The
+remaining 24 are workflow rules (6), authority sync (4), notifications (4),
+requirements (2), and the eight reports now dispositioned. The next slice is the
+workflow rules group, which is the first in this family whose tools **execute** a
+rule rather than describe one.

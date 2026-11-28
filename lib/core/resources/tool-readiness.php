@@ -2221,6 +2221,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryAnalyticsReportsTest.php',
 			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'generate_submission_pack' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Regulatory\\GenerateSubmissionPackTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress submission pack over ContentStoreInterface (Proposal 164 section 164.158). Fourth instance of the family default fault and the one that removes the artefact: include_cover_letter and include_index are declared true and read with empty, so a bare call stored a pack with cover_letter and document_index null — the two things the tool assembles. The port applies the declared defaults. WordPress also kept a second copy of the required-document table here, which could disagree with validate_document_checklist, so the table now lives once in RegulatoryTool and both tools read it; the comparison folds case for the reason section 164.152 recorded, since a document uploaded as LoA otherwise read as missing and refused the pack. A missing type refuses through the canonical envelope with the missing list rather than a bespoke error code, because a pack that omits a required certificate is worse than no pack. The manifest is written with update() and its meta merged; the letter and the index are strings, and no file is claimed.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatorySubmissionPackTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
+		),
 		'generate_gemini_image' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateGeminiImageTool',
 			'readiness' => 'ready',
