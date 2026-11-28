@@ -420,10 +420,6 @@
         "woo_customers": {
             "decision": "deferred",
             "reason": "Generic customer CRUD over WooCommerce. Prerequisite: CustomerStoreInterface, then an adapter."
-        },
-        "woo_products": {
-            "decision": "deferred",
-            "reason": "Generic product CRUD over WooCommerce. Prerequisite: a catalog adapter; once one exists this is a thin wrapper on ProductCatalogInterface and should be ported alongside the adapter that tests it, not before."
         }
     }
 }

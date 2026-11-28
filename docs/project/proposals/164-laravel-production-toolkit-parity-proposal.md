@@ -15807,3 +15807,53 @@ The reference declares `edit_posts` in `get_required_capability()` and its schem
 | PHPStan level 8 | clean |
 | phpcs (`phpcs-laravel.xml.dist`) | clean |
 | docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+### 164.177 — `woo_products`, and a port scoped by what has a field
+
+Measured before the port. `ecommerce` moves to **44 wp / 19 ported / 1 declined / 24 deferred**.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `woo_products` | `WoocommerceProductsTool` -> `ProductCatalogInterface::find()` / `query()` / `save()` / `saveVariant()` / `delete()` |
+
+`ready`. This is the last ecommerce tool whose prerequisite was already built.
+
+#### The register predicted this shape
+
+Its entry said *"a catalog adapter; once one exists this is a thin wrapper on `ProductCatalogInterface` and should be ported alongside the adapter that tests it, not before."* The adapter exists (164.114), so the entry is deleted.
+
+The reference is 1,564 lines with nine actions. Six map onto the contract. Three — `manage_categories`, `manage_tags`, `manage_attributes` — manage the WordPress *taxonomies*: they create, rename and delete terms and attribute definitions. That is a store this runtime does not have, and each is refused by name.
+
+#### Eleven arguments with nowhere to go
+
+The reference accepts `short_description`, `categories`, `images`, `featured_image`, `attributes`, `weight`, `dimensions`, `virtual`, `downloadable` and `backorders`. None has a field here, and each is refused by name. A quiet drop is how a migration loses half a catalogue and reports success; `category` as a *filter* is refused for the same reason, and `type` is a create/update value but not a filter, because `ProductQuery` cannot select on product type and filtering after the page is the page-size-change defect this family keeps correcting.
+
+#### Update is product-level, and that is a decision
+
+A price, a SKU and a stock level live on a variant, and the catalog's `save()` deliberately leaves the stored variant list alone — variant lifecycle is `saveVariant()` (164.114). So `update` writes `name`, `description`, `status`, `type` and `tags`, and refuses a variant field by name, pointing at `update_woo_product_price`, `update_woo_product_qty` and `bulk_update_products`. Guessing which variant a caller meant would silently reprice one variation of a multi-variant product, which is worse than an unfamiliar refusal.
+
+#### Create decides the charge, because there is nothing to preserve
+
+`sale_price` is what is charged and `price` becomes the comparison when both are given; with only `price` it is the charge and there is no comparison, which is what WooCommerce does with a regular price and no sale. That differs from *update*, where the 164.172 mapping applies unchanged — and the difference is the point: an update must not silently change what is charged, and a create must set it to something.
+
+A price needs a currency, because this model stores one with every amount and a new variant has none to inherit.
+
+#### The status map
+
+`publish` → `published`; `pending` and `private` → `draft`; `archived` accepted. `ProductStatus` already records why pending and private are one state — both mean "exists, not visible to shoppers" — and accepting the canonical values back means a product read here can be written back unchanged.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,692 / 24,922 |
+| adapter | 751 / 3,983, 2 skipped |
+| readiness | 649 rows, servable 630 (delegated 13), no violations |
+| parity | 428 ported / 9 declined / 96 deferred / 431 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
+
+#### After this
+
+The remaining ecommerce tools each need a *store* rather than a wrapper: coupons and customers need their own aggregate and tables, inventory history needs a movement model, and the analytics tools need aggregation over `OrderQuery`. `woo_products` was the last one whose prerequisite was already built.
