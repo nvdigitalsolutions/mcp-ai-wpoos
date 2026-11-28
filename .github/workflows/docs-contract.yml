@@ -48,12 +48,32 @@ jobs:
       - name: Full contract (ratchet)
         run: php bin/check-file-docs.php --strict
 
+      # A PR stacked on a branch that was squash-merged and then deleted keeps
+      # reporting that dead branch in `github.base_ref`. Fetching it fails with
+      # "couldn't find remote ref", which leaves every re-run of the already
+      # merged PR permanently red. The delta check is an early warning, not the
+      # authority - the full ratchet check above still covers this tree - so a
+      # genuinely absent base skips only the delta. Any other fetch failure
+      # (network, permissions) still fails the job.
       - name: Fetch base branch
         if: github.event_name == 'pull_request'
-        run: git fetch --no-tags --depth=1 origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+        id: base
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          refspec='refs/heads/'"${BASE_REF}"':refs/remotes/origin/'"${BASE_REF}"
+          if out=$(git fetch --no-tags --depth=1 origin "$refspec" 2>&1); then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          elif printf '%s' "$out" | grep -q "couldn't find remote ref"; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Base ref unavailable::origin/${BASE_REF} no longer exists, usually because the stacked base was squash-merged and deleted. Skipping the new-files delta check."
+          else
+            printf '%s\n' "$out"
+            exit 1
+          fi
 
       - name: New files must be clean
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.base.outputs.present == 'true'
         run: php bin/check-file-docs.php --new-files-only --strict --base=origin/${{ github.base_ref }}
 
       - name: Licence boundary
