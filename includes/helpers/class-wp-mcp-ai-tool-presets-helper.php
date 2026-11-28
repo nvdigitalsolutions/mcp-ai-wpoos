@@ -1224,6 +1224,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Unified broadcast (Pro).
 					'unified_channel_broadcast',
 					// Mailjet contacts & stats (Pro).
+					'list_mailjet_connections',
 					'manage_mailjet_contacts',
 					'get_mailjet_statistics',
 					// Brevo contacts & stats (Pro).
