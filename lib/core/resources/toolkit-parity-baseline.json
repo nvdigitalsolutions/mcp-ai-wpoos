@@ -88,6 +88,8 @@
             "upload_onedrive_file"
         ],
         "cloudways": [
+            "cloudways_app_cname_update",
+            "cloudways_app_cors_headers_update",
             "cloudways_app_cron_list_get",
             "cloudways_app_fpm_settings_get",
             "cloudways_app_fpm_settings_update",
