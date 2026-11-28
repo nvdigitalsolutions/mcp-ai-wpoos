@@ -56,11 +56,11 @@
  * refused: the product model has no category field, and the reference's filter
  * could not have worked anyway.
  *
- * The `new_customers` figure the reference reported is not offered: it counts
- * customers whose first order fell in the window, which needs a
- * first-order-per-customer aggregate this store does not expose. `customers`
- * here is the number of distinct customers who placed a revenue-bearing order in
- * the window, which is a fact about the window rather than about history.
+ * `new_customers` counts registered customers whose first paid order **ever** fell
+ * in the window, which is the question the reference asked its subquery and the
+ * one worth answering; the aggregate arrived in section 164.181. `customers` is a
+ * different number: the distinct customers who placed a paid order in the window,
+ * which is a fact about the window rather than about history.
  *
  * ## Dates
  *
@@ -102,7 +102,7 @@ final class SalesPerformanceDashboardTool extends AbstractTool
     public const DEFAULT_DAYS = 30;
 
     /** The metrics this tool computes. */
-    public const METRICS = array('revenue', 'orders', 'customers', 'average_order', 'products');
+    public const METRICS = array('revenue', 'orders', 'customers', 'new_customers', 'average_order', 'products');
 
     /** The metrics the reference offers that this tool does not compute. */
     public const REFUSED_METRICS = array(
@@ -133,7 +133,7 @@ final class SalesPerformanceDashboardTool extends AbstractTool
 
     public function getDescription(): string
     {
-        return 'Summarises one currency over a date window for a dashboard: revenue excluding cancelled, failed and refunded orders, the count of revenue-bearing orders, average order value, the number of distinct customers who bought, a daily revenue trend, and optionally the best-selling products by revenue. Conversion is not computed by this tool.';
+        return 'Summarises one currency over a date window for a dashboard: revenue excluding cancelled, failed and refunded orders, the count of revenue-bearing orders, average order value, the number of distinct customers who bought, how many of them were new, a daily revenue trend, and optionally the best-selling products by revenue. Conversion is not computed by this tool.';
     }
 
     public function getRequiredCapability(): string
@@ -268,12 +268,29 @@ final class SalesPerformanceDashboardTool extends AbstractTool
             );
         }
 
+        $newCustomers = null;
+
+        if (in_array('new_customers', $requested, true)) {
+            $newCustomers = $this->orders->newCustomerCount(
+                new OrderQuery(createdAfter: $from, createdBefore: $to),
+                $currency
+            );
+        }
+
         $metrics = array();
 
         foreach ($requested as $metric) {
-            $metrics[ $metric ] = 'products' === $metric
-                ? $products
-                : $this->metric($metric, $analytics, $currency);
+            if ('products' === $metric) {
+                $metrics[ $metric ] = $products;
+                continue;
+            }
+
+            if ('new_customers' === $metric) {
+                $metrics[ $metric ] = $newCustomers;
+                continue;
+            }
+
+            $metrics[ $metric ] = $this->metric($metric, $analytics, $currency);
         }
 
         return $this->success(

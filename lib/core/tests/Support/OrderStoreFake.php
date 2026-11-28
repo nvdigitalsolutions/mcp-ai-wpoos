@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tests\Support;
 
 use Nvoos\Core\Domain\Contract\OrderStoreInterface;
+use Nvoos\Core\Domain\Entity\CustomerSpend;
 use Nvoos\Core\Domain\Entity\Order;
 use Nvoos\Core\Domain\Entity\OrderAnalytics;
 use Nvoos\Core\Domain\Entity\OrderCollection;
@@ -298,6 +299,155 @@ final class OrderStoreFake implements OrderStoreInterface
         );
 
         return array_slice($products, 0, $limit);
+    }
+    /**
+     * The customers a selection belongs to, biggest spenders first.
+     *
+     * Mirrors the adapter: registered customers only, paid orders only, one
+     * currency, and the name and email taken as the minimum non-null value the
+     * way SQL's MIN ignores nulls.
+     *
+     * @return list<CustomerSpend>
+     */
+    public function topCustomers(OrderQuery $query, string $currency, int $limit): array
+    {
+        if (1 !== preg_match('/^[A-Z]{3}$/', $currency)) {
+            throw new ValidationException('A customer aggregate needs an ISO 4217 currency.');
+        }
+
+        if ($limit < 1 || $limit > 100) {
+            throw new ValidationException('A customer aggregate returns between 1 and 100 customers.');
+        }
+
+        $this->queries[] = $query;
+
+        $groups = array();
+
+        foreach ($this->orders as $order) {
+            if (! $this->matches($order, $query)) {
+                continue;
+            }
+
+            if ($order->currency() !== $currency) {
+                continue;
+            }
+
+            if (! OrderAnalytics::isRevenueBearing($order->status)) {
+                continue;
+            }
+
+            if (null === $order->customerId || $order->customerId <= 0) {
+                continue;
+            }
+
+            $key = $order->customerId;
+
+            if (! isset($groups[ $key ])) {
+                $groups[ $key ] = array(
+                    'customer_id' => $key,
+                    'email'       => null,
+                    'name'        => null,
+                    'orders'      => 0,
+                    'minor'       => 0,
+                    'first'       => $order->createdAt,
+                    'last'        => $order->createdAt,
+                );
+            }
+
+            ++$groups[ $key ]['orders'];
+            $groups[ $key ]['minor'] += $order->total->minorUnits;
+
+            if (null !== $order->billingEmail && (null === $groups[ $key ]['email'] || strcmp($order->billingEmail, $groups[ $key ]['email']) < 0)) {
+                $groups[ $key ]['email'] = $order->billingEmail;
+            }
+
+            if (null !== $order->billingName && (null === $groups[ $key ]['name'] || strcmp($order->billingName, $groups[ $key ]['name']) < 0)) {
+                $groups[ $key ]['name'] = $order->billingName;
+            }
+
+            if ($order->createdAt < $groups[ $key ]['first']) {
+                $groups[ $key ]['first'] = $order->createdAt;
+            }
+
+            if ($order->createdAt > $groups[ $key ]['last']) {
+                $groups[ $key ]['last'] = $order->createdAt;
+            }
+        }
+
+        $customers = array();
+
+        foreach ($groups as $group) {
+            $customers[] = new CustomerSpend(
+                $group['customer_id'],
+                $group['email'],
+                $group['name'],
+                $group['orders'],
+                Money::fromMinorUnits($group['minor'], $currency),
+                $group['first'],
+                $group['last'],
+            );
+        }
+
+        usort(
+            $customers,
+            static function (CustomerSpend $a, CustomerSpend $b): int {
+                return ($b->spend->minorUnits <=> $a->spend->minorUnits)
+                    ?: ($a->customerId <=> $b->customerId);
+            }
+        );
+
+        return array_slice($customers, 0, $limit);
+    }
+
+    /**
+     * Registered customers whose first paid order fell in the window.
+     *
+     * The first order is the first ever, so the window bounds the date rather
+     * than the selection; the other filters are deliberately not applied.
+     */
+    public function newCustomerCount(OrderQuery $query, string $currency): int
+    {
+        if (1 !== preg_match('/^[A-Z]{3}$/', $currency)) {
+            throw new ValidationException('A customer aggregate needs an ISO 4217 currency.');
+        }
+
+        $this->queries[] = $query;
+
+        $firsts = array();
+
+        foreach ($this->orders as $order) {
+            if ($order->currency() !== $currency) {
+                continue;
+            }
+
+            if (! OrderAnalytics::isRevenueBearing($order->status)) {
+                continue;
+            }
+
+            if (null === $order->customerId || $order->customerId <= 0) {
+                continue;
+            }
+
+            if (! isset($firsts[ $order->customerId ]) || $order->createdAt < $firsts[ $order->customerId ]) {
+                $firsts[ $order->customerId ] = $order->createdAt;
+            }
+        }
+
+        $count = 0;
+
+        foreach ($firsts as $at) {
+            if (null !== $query->createdAfter && $at < $query->createdAfter) {
+                continue;
+            }
+
+            if (null !== $query->createdBefore && $at > $query->createdBefore) {
+                continue;
+            }
+
+            ++$count;
+        }
+
+        return $count;
     }
     public function save(Order $order): Order
     {

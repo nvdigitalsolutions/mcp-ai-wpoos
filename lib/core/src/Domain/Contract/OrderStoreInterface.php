@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Contract;
 
+use Nvoos\Core\Domain\Entity\CustomerSpend;
 use Nvoos\Core\Domain\Entity\Order;
 use Nvoos\Core\Domain\Entity\OrderAnalytics;
 use Nvoos\Core\Domain\Entity\OrderCollection;
@@ -108,4 +109,42 @@ interface OrderStoreInterface
      * @return list<ProductSales> By revenue descending, then quantity, then name.
      */
     public function topProducts(OrderQuery $query, string $currency, int $limit): array;
+
+    /**
+     * The customers a query's orders belong to, biggest spenders first.
+     *
+     * Proposal 164 section 164.181. Counts **registered customers only**, keyed by
+     * the account id: a guest is a buyer but not a customer, and an email string
+     * is not an identity — a guest who uses two addresses is one person and a
+     * registered customer who changes address is one account.
+     *
+     * Like `analytics()`, it aggregates one currency and counts paid statuses
+     * only. `CustomerSpend::$firstOrderAt` and `$lastOrderAt` are the earliest and
+     * latest paid orders **in the window**, not the customer's history.
+     *
+     * @param OrderQuery $query    The window and filters, as for a listing.
+     * @param string     $currency The ISO 4217 currency to aggregate.
+     * @param int        $limit    How many customers to return, 1 to 100.
+     *
+     * @return list<CustomerSpend> By spend descending, then customer id.
+     */
+    public function topCustomers(OrderQuery $query, string $currency, int $limit): array;
+
+    /**
+     * How many registered customers placed their first paid order in the window.
+     *
+     * The first paid order is the customer's first **ever**, in the reported
+     * currency, so it necessarily predates or falls inside the window rather than
+     * being bounded by it. Only the window bounds are read from `$query`: a
+     * customer's first order is not a property of the filtered selection, and a
+     * `customerId` filter would make every answer zero or one.
+     *
+     * The currency is part of the identity of that first order because "first"
+     * across two currencies is not a date but a comparison of amounts. A customer
+     * whose first purchase was in EUR is not a new USD customer.
+     *
+     * @param OrderQuery $query    Carries the window bounds.
+     * @param string     $currency The ISO 4217 currency to aggregate.
+     */
+    public function newCustomerCount(OrderQuery $query, string $currency): int;
 }

@@ -594,4 +594,76 @@ final class OrderStoreTest extends TestCase {
 
 		$this->store()->topProducts( $this->february(), 'USD', 0 );
 	}
+
+	public function test_top_customers_groups_by_account_and_orders_by_spend(): void {
+		$store   = $this->store();
+		$created = new \DateTimeImmutable( '2024-02-05 10:00:00' );
+
+		$store->save( $this->order( 'TC-1', $created, 10000, 'USD', null, null, array(), OrderStatus::Completed, 'ada@example.test', 5 ) );
+		$store->save( $this->order( 'TC-2', $created, 5000, 'USD', null, null, array(), OrderStatus::Processing, 'ada@example.test', 5 ) );
+		$store->save( $this->order( 'TC-3', $created, 20000, 'USD', null, null, array(), OrderStatus::Completed, 'grace@example.test', 6 ) );
+		$store->save( $this->order( 'TC-4', $created, 90000, 'USD', null, null, array(), OrderStatus::Pending, 'pending@example.test', 7 ) );
+		$store->save( $this->order( 'TC-5', $created, 70000, 'USD', null, null, array(), OrderStatus::Completed, 'guest@example.test', null ) );
+
+		$customers = $store->topCustomers( $this->february(), 'USD', 10 );
+
+		$this->assertSame( array( 6, 5 ), array_map( static fn ( $customer ): int => $customer->customerId, $customers ) );
+		$this->assertSame( 2, $customers[1]->orderCount );
+		$this->assertSame( 15000, $customers[1]->spend->minorUnits );
+		$this->assertSame( 'ada@example.test', $customers[1]->email );
+	}
+
+	public function test_top_customers_honours_the_limit(): void {
+		$store   = $this->store();
+		$created = new \DateTimeImmutable( '2024-02-05 10:00:00' );
+
+		$store->save( $this->order( 'TL-1', $created, 1000, 'USD', null, null, array(), OrderStatus::Completed, 'a@example.test', 5 ) );
+		$store->save( $this->order( 'TL-2', $created, 3000, 'USD', null, null, array(), OrderStatus::Completed, 'b@example.test', 6 ) );
+		$store->save( $this->order( 'TL-3', $created, 2000, 'USD', null, null, array(), OrderStatus::Completed, 'c@example.test', 7 ) );
+
+		$customers = $store->topCustomers( $this->february(), 'USD', 1 );
+
+		$this->assertCount( 1, $customers );
+		$this->assertSame( 6, $customers[0]->customerId );
+	}
+
+	public function test_new_customer_count_uses_the_first_paid_order_ever(): void {
+		$store = $this->store();
+
+		$january  = new \DateTimeImmutable( '2024-01-05 10:00:00' );
+		$february = new \DateTimeImmutable( '2024-02-05 10:00:00' );
+
+		// Customer 5 bought before the window as well, so they are not new.
+		$store->save( $this->order( 'NC-1', $january, 1000, 'USD', null, null, array(), OrderStatus::Completed, 'ada@example.test', 5 ) );
+		$store->save( $this->order( 'NC-2', $february, 2000, 'USD', null, null, array(), OrderStatus::Completed, 'ada@example.test', 5 ) );
+
+		// Customer 6 first bought inside it.
+		$store->save( $this->order( 'NC-3', $february, 3000, 'USD', null, null, array(), OrderStatus::Completed, 'grace@example.test', 6 ) );
+
+		// Customer 7 has only an unpaid order, which is not a first paid order.
+		$store->save( $this->order( 'NC-4', $february, 4000, 'USD', null, null, array(), OrderStatus::Pending, 'pending@example.test', 7 ) );
+
+		$this->assertSame( 1, $store->newCustomerCount( $this->february(), 'USD' ) );
+	}
+
+	public function test_new_customer_count_ignores_another_currency(): void {
+		$store   = $this->store();
+		$created = new \DateTimeImmutable( '2024-02-05 10:00:00' );
+
+		$store->save( $this->order( 'NX-1', $created, 1000, 'EUR', null, null, array(), OrderStatus::Completed, 'ada@example.test', 5 ) );
+
+		$this->assertSame( 0, $store->newCustomerCount( $this->february(), 'USD' ) );
+	}
+
+	public function test_top_customers_refuses_a_currency_that_is_not_iso_4217(): void {
+		$this->expectException( ValidationException::class );
+
+		$this->store()->topCustomers( $this->february(), 'dollars', 10 );
+	}
+
+	public function test_top_customers_refuses_a_limit_outside_one_to_one_hundred(): void {
+		$this->expectException( ValidationException::class );
+
+		$this->store()->topCustomers( $this->february(), 'USD', 101 );
+	}
 }

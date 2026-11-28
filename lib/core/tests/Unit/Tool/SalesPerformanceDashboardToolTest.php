@@ -66,7 +66,7 @@ final class SalesPerformanceDashboardToolTest extends TestCase
 
         $this->assertSame(array('currency'), $schema['required']);
         $this->assertSame(
-            array('revenue', 'orders', 'customers', 'average_order', 'products'),
+            array('revenue', 'orders', 'customers', 'new_customers', 'average_order', 'products'),
             $schema['properties']['metrics']['items']['enum']
         );
     }
@@ -416,5 +416,24 @@ final class SalesPerformanceDashboardToolTest extends TestCase
             lineTotal: Money::fromDecimal($lineTotal, 'USD'),
             productId: $productId,
         );
+    }
+
+    public function test_new_customers_counts_first_paid_orders_in_the_window(): void
+    {
+        $store = $this->store(
+            $this->order(1, 'completed', '10.00', 'USD', '2023-12-01 09:00:00', 7),
+            $this->order(2, 'completed', '20.00', 'USD', '2024-01-05 09:00:00', 7),
+            $this->order(3, 'completed', '30.00', 'USD', '2024-01-07 09:00:00', 8),
+            $this->order(4, 'pending', '40.00', 'USD', '2024-01-08 09:00:00', 9)
+        );
+
+        $result = $this->execute(
+            $this->window() + array('metrics' => array('new_customers')),
+            $store
+        );
+
+        // Customer 7 bought before the window, 8 first bought inside it, and 9
+        // has only an unpaid order, which is not a first paid order.
+        $this->assertSame(1, $result['data']['metrics']['new_customers']);
     }
 }
