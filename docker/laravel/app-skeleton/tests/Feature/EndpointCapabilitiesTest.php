@@ -130,6 +130,19 @@ class EndpointCapabilitiesTest extends TestCase
         $this->assertNotContains('mediaCc', EndpointCapabilities::gaps());
     }
 
+    public function test_the_database_console_is_a_runtime_adaptation_not_a_gap(): void
+    {
+        // The scoped database console (Proposal 167 P3) is an admin surface
+        // with no route here. The key is classified `runtime-adaptable`, so
+        // the console hides the page instead of firing a request that 404s,
+        // and the manifest still reports no gaps. Pinned so that adding the
+        // route, or reclassifying the key, stays a deliberate act.
+        $endpoints = $this->endpoints();
+
+        $this->assertFalse($endpoints['database'] ?? true);
+        $this->assertNotContains('database', EndpointCapabilities::gaps());
+    }
+
     public function test_the_matcher_is_boundary_aware(): void
     {
         // The defect this pins: a plain prefix check said `api/v1/chat` was
