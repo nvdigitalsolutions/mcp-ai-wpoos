@@ -30,6 +30,13 @@
 <exclude-pattern>*/phpcs/*</exclude-pattern>
 <exclude-pattern>*/tests/helpers/*</exclude-pattern>
 <exclude-pattern>*/tests/fixtures/*</exclude-pattern>
+<!-- The scoped-database suites (Proposal 167) are the database kernel's own PHPUnit
+     suite, run twice: once from addons/pro/lib/database/tests with the package's
+     phpunit.xml.dist, and once from here for the plugin runners. They are written to
+     the kernel's PSR-12 standard, and the kernel itself is excluded from this ruleset
+     by */lib/*. Excluding its mirrored tests keeps one style for one suite instead of
+     two divergent copies; WPCS still covers every test that touches the plugin. -->
+<exclude-pattern>*/tests/database/*</exclude-pattern>
 <exclude-pattern>test-capability-flags-integration.php</exclude-pattern>
 <exclude-pattern>*-backup.php</exclude-pattern>
 <!-- Cloud-worker wp-config-local.php is a local Docker/development config, not addon code. -->
