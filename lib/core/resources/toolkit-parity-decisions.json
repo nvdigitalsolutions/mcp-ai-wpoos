@@ -397,14 +397,6 @@
             "decision": "deferred",
             "reason": "It renames or re-states an existing Classroom course, so it needs the same client plus a stored course id to address. Prerequisite: a Google Classroom client (OAuth plus the Classroom API) and the course-to-ECA link store that link_classroom_course_to_eca would introduce."
         },
-        "update_woo_product_price": {
-            "decision": "deferred",
-            "reason": "Updates a product or variation price and its sale window. Prerequisite: a catalog adapter; price and compare-at price are already fields on ProductVariant."
-        },
-        "update_woo_product_qty": {
-            "decision": "deferred",
-            "reason": "Sets stock for a product or variation and writes WooCommerce's stock-status string. Prerequisite: a catalog adapter; the quantity is on ProductVariant, and the status vocabulary is the adapter's mapping rather than the contract's."
-        },
         "upload_video_batch": {
             "decision": "deferred",
             "reason": "Uploads a batch to YouTube or Vimeo, and platform must be one of those two. No video-platform uploader is bound here: the media worker composes and publishes to the social channels, not to video platforms. Its dry_run mode only previews the queue that get_queued_videos reads, so the pair lands together or not at all. Prerequisite: a YouTube/Vimeo uploader plus the job model above."

@@ -15493,3 +15493,68 @@ Reversed limits are deliberately **not** rejected: `int_a^b = -int_b^a` is legit
 #### Family closed
 
 `math` is complete at 9 of 9 with no deferrals and no declines. The family's through-line is that several tools were reporting work they had not done: `simplify_expression` returned its input under a success envelope, `graph_function` and `calculate_integral` had no implementation at all while still declaring a capability, and `solve_equation` answered a different equation through a regex. Alongside them sat input defects of the same shape — an HTML filter pointed at a grammar, a `(bool)` cast that read `'false'` as true, and `absint()` on a size the schema had already bounded. Every one of those is now either a real answer or a refusal that names the reason.
+
+### 164.172 — `ecommerce` slice 1: the product tools, and a mapping that has to be stated
+
+Measured before the port. `ecommerce` moves to **44 wp / 15 ported / 1 declined / 28 deferred / 28 remaining**.
+
+| WP tool | Runtime surface |
+| --- | --- |
+| `update_woo_product_price` | `UpdateProductPriceTool` -> `ProductCatalogInterface::find()` + `saveVariant()` |
+| `update_woo_product_qty` | `UpdateProductStockTool` -> the same |
+
+Both are `ready`, not `delegated`: `ProductCatalogInterface` is bound to the local Eloquent catalog, so the tools work whenever the runtime does.
+
+#### The deferral register was right, and now it is satisfied
+
+The register entry for `woo_products` said the prerequisite was "a catalog adapter; once one exists this is a thin wrapper on `ProductCatalogInterface` and should be ported alongside the adapter that tests it, not before." The price and stock entries said the same. That adapter exists and is bound, so these two are ported now — with the tests the criterion asked for.
+
+The other 28 remain deferred for the reason the register already gives: there is no order, coupon, customer or inventory model, and nothing to bind an order tool to. `woo_products` itself is 1,564 lines of full CRUD whose `manage_categories`, `manage_tags` and `manage_attributes` actions have no representation in the catalog contract; it needs a scoped port, not a translation.
+
+#### The price mapping is a decision, so it is written down
+
+WooCommerce has `regular_price` and `sale_price`. This runtime's variant has `price` (charged) and `compareAtPrice` (the "was" price). The port maps them by **meaning, not by name**:
+
+```
+sale_price    -> price            what the customer pays
+regular_price -> compareAtPrice   the reference price it is compared against
+clear_sale    -> compareAtPrice = null
+```
+
+The consequence a WooCommerce caller must know is stated in the tool description: sending only `regular_price` changes the *comparison* price, not the charged one. Mapping by name instead would have inverted what a sale means, which is a worse failure than an unfamiliar parameter.
+
+The currency is never accepted from the caller. Each variant already carries one, and an update changes the amount only, so a tool cannot redenominate a price by supplying a second currency.
+
+#### Scopes, stated once for both tools
+
+The runtime has no product-level price, so the WooCommerce scopes needed a definition:
+
+- `product` — the first variant by position, the only variant of a single-variant product;
+- `variations` — every variant after the first;
+- `all` — every variant.
+
+A WooCommerce variable product has a parent price range this model has no field for, so `product` cannot mean "the parent" and does not pretend to.
+
+#### Corrections
+
+- `floatval()` on a price is the integral-limit defect again: `"abc"` became `0.0`, which would have made a variant **free**. A non-numeric amount is now refused.
+- `absint()` on the quantity discarded the sign before `increase`/`decrease` arithmetic. The port clamps a decrease at zero and reports `clamped`, so a stock-out is distinguishable from a partial decrement.
+- "Does not manage stock" is **null**, not `0`. Turning tracking off clears the quantity rather than zeroing it, and `increase` from untracked starts from nothing.
+- `sale_date_from` / `sale_date_to` and `notify` are **omitted**, not accepted and ignored: this model has no scheduled-price concept and this runtime binds no mail channel to the catalog.
+- A variant that did not change is not written, so an idempotent call performs no writes.
+
+#### A detail that changed the code shape
+
+`ProductVariant` is a `readonly` entity, so an update is a new value rather than a mutation. The tools build the replacement through one copying helper that carries every field forward, which also means a field added to the entity later cannot be silently dropped by these tools. The test double records what was handed to `saveVariant`, because asserting against the original object would assert that nothing happened.
+
+#### Gates
+
+| Gate | Result |
+| --- | --- |
+| `lib/core` Unit | 4,538 / 24,465 |
+| adapter | 737 / 3,947, 2 skipped |
+| readiness | 644 rows, servable 625 (delegated 13), no violations |
+| parity | 423 ported / 9 declined / 101 deferred / 435 remaining |
+| PHPStan level 8 | clean |
+| phpcs (`phpcs-laravel.xml.dist`) | clean |
+| docs contract | `ts:addons.missing_overview` 855 / 856 |
