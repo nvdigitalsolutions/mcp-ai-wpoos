@@ -30,6 +30,13 @@
 <exclude-pattern>*/phpcs/*</exclude-pattern>
 <exclude-pattern>*/tests/helpers/*</exclude-pattern>
 <exclude-pattern>*/tests/fixtures/*</exclude-pattern>
+<!-- The scoped-database suites (Proposal 167) are the database kernel's own PHPUnit
+     suite, run twice: once from addons/pro/lib/database/tests with the package's
+     phpunit.xml.dist, and once from here for the plugin runners. They are written to
+     the kernel's PSR-12 standard, and the kernel itself is excluded from this ruleset
+     by */lib/*. Excluding its mirrored tests keeps one style for one suite instead of
+     two divergent copies; WPCS still covers every test that touches the plugin. -->
+<exclude-pattern>*/tests/database/*</exclude-pattern>
 <exclude-pattern>test-capability-flags-integration.php</exclude-pattern>
 <exclude-pattern>*-backup.php</exclude-pattern>
 <!-- Cloud-worker wp-config-local.php is a local Docker/development config, not addon code. -->
@@ -161,6 +168,49 @@
 -->
 <rule ref="WordPress.WP.GlobalVariablesOverride">
 <exclude-pattern>*/includes/domain/*</exclude-pattern>
+</rule>
+
+<!--
+	Database toolkit (Proposal 167) — three sniffs that misread this subsystem.
+	The exemptions are file-scoped and each has a stated reason; the sniffs that
+	actually catch misuse (PreparedSQL, PreparedSQLPlaceholders,
+	DirectDatabaseQuery, NonceVerification, ValidatedSanitizedInput) stay ON for
+	these files.
+
+	1. EscapeOutput.ExceptionNotEscaped treats argument #1 of a throw as message
+	   text. Every refusal in this subsystem is built by
+	   DatabaseRefusal::of( RefusalCode::X, '…' ), so a deliberately uniform
+	   pattern reads as 45 sites of "unescaped output". Refusal messages are
+	   never echoed: they are returned in a WP_Error or a JSON envelope, and the
+	   one surface that renders them escapes at output. The identifiers that are
+	   interpolated ($connection, $id, $error->getMessage()) are sanitised at
+	   entry.
+
+	2. RestrictedClasses assumes the only database a plugin may reach is the
+	   site database. This toolkit exists to reach an *external*
+	   PostgreSQL/MySQL/SQLite by PDO; $wpdb cannot do that. The exemption
+	   covers includes/database/ only — the PDO adapter layer — and no
+	   mysql_*/mysqli call exists in the tree.
+
+	3. UsedPropertyNotSnakeCase fires on the read side of the kernel's value
+	   objects (TableDescriptor::$primaryKey, ResultSet::$rowCount,
+	   ProbeResult::$canWrite), whose names are PSR camelCase and whose tree is
+	   already excluded above as */lib/*. An adapter cannot rename a property it
+	   does not own.
+-->
+<rule ref="WordPress.Security.EscapeOutput.ExceptionNotEscaped">
+	<exclude-pattern>*/includes/database/*</exclude-pattern>
+	<exclude-pattern>*/includes/connections/*</exclude-pattern>
+	<exclude-pattern>*/addons/pro/includes/tools/database/*</exclude-pattern>
+</rule>
+
+<rule ref="WordPress.DB.RestrictedClasses">
+	<exclude-pattern>*/includes/database/*</exclude-pattern>
+</rule>
+
+<rule ref="WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase">
+	<exclude-pattern>*/includes/database/*</exclude-pattern>
+	<exclude-pattern>*/addons/pro/includes/tools/database/*</exclude-pattern>
 </rule>
 
 <!--

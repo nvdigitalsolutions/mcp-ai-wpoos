@@ -1191,4 +1191,89 @@ return array(
 	*/
 	'mesh_api_key' => env( 'NVOOS_MESH_API_KEY', '' ),
 
+	/*
+	|--------------------------------------------------------------------------
+	| Scoped database access (Proposal 167)
+	|--------------------------------------------------------------------------
+	|
+	| Off by default. A scope is a grant: which connection, which relations,
+	| which columns, which tiers, and which principals. An assistant never
+	| chooses any of that — at most it names a scope id, and the executor
+	| refuses when the calling principal does not hold it.
+	|
+	| The read guarantee does not depend on this file: a read runs inside
+	| BEGIN READ ONLY, on prepared statements, against the role named in
+	| `username`. Point that at a SELECT-only role; a read scope is refused
+	| on a connection whose probe says the role can write.
+	|
+	| The write path and raw SQL are separate grants (`propose_write`,
+	| `apply_write`, `raw_sql`) and stay off unless a scope names the tier.
+	| The Laravel runtime has no approval surface, so the two-phase write
+	| path remains WordPress-only.
+	|
+	*/
+	'database' => array(
+		'enabled'       => (bool) env( 'NVOOS_DATABASE_ENABLED', false ),
+
+		// HMAC key for keyset cursors. Rotating it invalidates outstanding cursors.
+		'cursor_secret' => env( 'NVOOS_DATABASE_CURSOR_SECRET', env( 'APP_KEY', 'nvoos-database-cursor' ) ),
+
+		'connections'   => array(
+			// 'reporting' => array(
+			// 'label'    => 'Reporting',
+			// 'engine'   => 'pgsql',
+			// 'host'     => env( 'NVOOS_DB_REPORTING_HOST', '127.0.0.1' ),
+			// 'port'     => 5432,
+			// 'database' => 'reporting',
+			// 'username' => env( 'NVOOS_DB_REPORTING_USER' ),
+			// 'password' => env( 'NVOOS_DB_REPORTING_PASSWORD' ),
+			// 'sslmode'  => 'require',
+			// 'role'     => 'nvoos_reader',
+			// ),
+		),
+
+		'scopes'        => array(
+			// 'analyst' => array(
+			// 'label'      => 'Analyst',
+			// 'connection' => 'reporting',
+			// 'schemas'    => array( 'reporting' ),
+			// 'tables'     => array( 'reporting.orders', 'reporting.customers' ),
+			// 'columns'    => array(
+			// 'reporting.customers' => array(
+			// 'sensitive'  => array( 'email' ),
+			// 'searchable' => array( 'name' ),
+			// ),
+			// ),
+			// 'row_filter' => array(
+			// array(
+			// 'relation'   => 'reporting.orders',
+			// 'column'     => 'tenant_id',
+			// 'op'         => 'eq',
+			// 'value_from' => 'scope_tenant',
+			// ),
+			// ),
+			// 'tiers'      => array( 'metadata', 'read' ),
+			// 'limits'     => array( 'max_rows' => 500, 'timeout_ms' => 5000 ),
+			// 'principals' => array( 'assistant:12', 'user:*' ),
+			// ),
+		),
+
+		'write_path'    => false,
+		'raw_sql'       => false,
+
+		/*
+		 * Where the audit trail lives.
+		 *
+		 * The append-only `oos_database_audit` ledger (package migration
+		 * 2026_01_01_000011). Always bound: a readiness row is either true in
+		 * the default container or it is not, so `db_audit_tail` must be
+		 * constructible whether or not the toolkit has a connection. Nothing is
+		 * pruned by the library: bounding the table by `ts` is the operator's
+		 * decision, which is what an audit trail requires.
+		 */
+		'audit'         => array(
+			'table' => env( 'NVOOS_DATABASE_AUDIT_TABLE', 'oos_database_audit' ),
+		),
+	),
+
 );

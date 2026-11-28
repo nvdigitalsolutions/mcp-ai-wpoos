@@ -1771,6 +1771,38 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools               = array_merge( $pro_tools, $analytics_toolkit_tools );
 		}
 
+		// Add Database Toolkit tools if enabled (Proposal 167). Read tools are
+		// default-on with the toolkit; the two write tools require their own
+		// setting, so a site that never opted in has no write tool at all.
+		if (
+			! empty( $settings['enable_database_toolkit'] )
+			&& class_exists( 'WP_MCP_AI_Db_Runtime' )
+			&& WP_MCP_AI_Db_Runtime::load()
+		) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-database-tool-base.php';
+
+			$database_toolkit_tools = array(
+				'WP_MCP_AI_Tool_Db_List_Connections' => WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-tool-db-list-connections.php',
+				'WP_MCP_AI_Tool_Db_Describe'         => WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-tool-db-describe.php',
+				'WP_MCP_AI_Tool_Db_Profile_Table'    => WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-tool-db-profile-table.php',
+				'WP_MCP_AI_Tool_Db_Explain'          => WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-tool-db-explain.php',
+				'WP_MCP_AI_Tool_Db_Select'           => WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-tool-db-select.php',
+				'WP_MCP_AI_Tool_Db_Aggregate'        => WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-tool-db-aggregate.php',
+				'WP_MCP_AI_Tool_Db_Search'           => WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-tool-db-search.php',
+				'WP_MCP_AI_Tool_Db_Query'            => WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-tool-db-query.php',
+				'WP_MCP_AI_Tool_Db_Export'           => WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-tool-db-export.php',
+				'WP_MCP_AI_Tool_Db_Test_Connection'  => WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-tool-db-test-connection.php',
+				'WP_MCP_AI_Tool_Db_Audit_Tail'       => WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-tool-db-audit-tail.php',
+			);
+
+			if ( ! empty( $settings['enable_database_writes'] ) ) {
+				$database_toolkit_tools['WP_MCP_AI_Tool_Db_Propose_Write'] = WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-tool-db-propose-write.php';
+				$database_toolkit_tools['WP_MCP_AI_Tool_Db_Apply_Write']   = WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-tool-db-apply-write.php';
+			}
+
+			$pro_tools = array_merge( $pro_tools, $database_toolkit_tools );
+		}
+
 		// Add Multi-language Content Toolkit tools if enabled (Phase 5 - New Pro Toolkits).
 		if ( ! empty( $settings['enable_multilingual_toolkit'] ) ) {
 			$multilingual_toolkit_tools = array(

@@ -70,10 +70,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 				self::get_outreach_presets(),
 				self::get_fashion_presets(),
 				self::get_fnb_presets(),
-				self::get_gtmetrix_presets()
+				self::get_gtmetrix_presets(),
+				self::get_database_presets()
 			);
 
 			return $presets;
+		}
+
+		/**
+		 * Database toolkit workflows (Proposal 167).
+		 *
+		 * @since 3.1.0
+		 *
+		 * @return array<string,array> Database workflow presets.
+		 */
+		private static function get_database_presets() {
+			if ( ! class_exists( 'WP_MCP_AI_Database_Presets' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/database/class-wp-mcp-ai-database-presets.php';
+			}
+
+			return class_exists( 'WP_MCP_AI_Database_Presets' ) ? WP_MCP_AI_Database_Presets::workflows() : array();
 		}
 
 		/**

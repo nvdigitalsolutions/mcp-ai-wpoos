@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="../../lib/core/vendor/phpunit/phpunit/phpunit.xsd"
+	bootstrap="bootstrap.php"
+	colors="true"
+	cacheDirectory="../../.phpunit.cache/parity"
+	beStrictAboutOutputDuringTests="true"
+	failOnWarning="true"
+	failOnRisky="true">
+	<testsuites>
+		<testsuite name="database-parity">
+			<directory suffix="Test.php">.</directory>
+		</testsuite>
+	</testsuites>
+</phpunit>

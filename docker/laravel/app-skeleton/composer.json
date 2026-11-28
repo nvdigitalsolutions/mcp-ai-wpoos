@@ -124,6 +124,16 @@
                     "nvoos/wifi": "0.1.0"
                 }
             }
+        },
+        {
+            "name": "nvoos-database-kernel",
+            "type": "path",
+            "url": "../../../addons/pro/lib/database",
+            "options": {
+                "versions": {
+                    "nvoos/database-kernel": "1.0.0"
+                }
+            }
         }
     ]
 }

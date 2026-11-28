@@ -47,6 +47,17 @@ abstract class TestCase extends BaseTestCase {
 		$app['config']->set( 'queue.default', 'sync' );
 		$app['config']->set( 'oos.queue_connection', 'sync' );
 		$app['config']->set( 'oos.storage_disk', 'local' );
+
+		// The scoped-database toolkit is opt-in, and this is the environment that
+		// opts in. Eleven readiness rows say `ready`, which means "this container can
+		// build it" — so the port, the probe and the audit reader are bound by the
+		// provider unconditionally, and this flag decides only whether the port sees
+		// a connection set. Setting it here is sufficient because the port reads it
+		// when the tools are constructed during `boot()`, which Testbench runs after
+		// `defineEnvironment()`. No connection is declared: an unconfigured port is
+		// still constructible and refuses every call, which is the state the wiring
+		// test asserts.
+		$app['config']->set( 'oos.database.enabled', true );
 	}
 
 	/**

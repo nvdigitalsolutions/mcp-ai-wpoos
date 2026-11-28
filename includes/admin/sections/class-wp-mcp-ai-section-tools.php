@@ -711,6 +711,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'default'        => false,
 				),
 
+				// Database Toolkit (Proposal 167).
+				'enable_database_toolkit'               => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Database Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable scoped, read-only database access for assistants (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 11 AI-powered tools that read from a PostgreSQL, MySQL, MariaDB or SQLite database an administrator has scoped: table and column allowlists, per-scope mandatory row filters, column masking, row and byte caps, a full audit trail, and CSV/JSON export. Requires the Pro add-on. The database role, not the prompt, is what cannot write.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Database Toolkit write path (Proposal 167, phase P6).
+				'enable_database_writes'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Database Write Proposals', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Register the two-phase write tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Adds db_propose_write and db_apply_write. A scope must also grant the propose_write and apply_write capabilities and set a non-zero max_affected_rows, and a human must approve each proposal before it can be applied. Off by default.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
 				// DietPi Pro Toolkit.
 				'enable_dietpi_toolkit'                  => array(
 					'type'           => 'checkbox',
@@ -1021,7 +1039,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Pro Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_eca_classroom_integration', 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_dietpi_toolkit', 'enable_ecommerce_toolkit', 'enable_flowhub_toolkit', 'enable_ezuite_toolkit', 'enable_fnb_toolkit', 'enable_gtmetrix_toolkit', 'enable_shopify_sync_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_outbound_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_comic_creation_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_law_firm_toolkit', 'enable_cre_debt_toolkit', 'enable_webchat_integration', 'enable_tenant_isolation' ),
+					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_eca_classroom_integration', 'enable_health_wellness_management', 'enable_healthcare_imaging', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_database_toolkit', 'enable_database_writes', 'enable_dietpi_toolkit', 'enable_ecommerce_toolkit', 'enable_flowhub_toolkit', 'enable_ezuite_toolkit', 'enable_fnb_toolkit', 'enable_gtmetrix_toolkit', 'enable_shopify_sync_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_outbound_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_comic_creation_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_law_firm_toolkit', 'enable_cre_debt_toolkit', 'enable_webchat_integration', 'enable_tenant_isolation' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -1205,6 +1223,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_health_wellness_management'      => 128,  // 30+ tools, secure health data storage.
 				'enable_healthcare_imaging'              => 96,   // 1 tool, DICOM/Cornerstone3D medical imaging viewer.
 				'enable_cloudways_toolkit'               => 192,  // 58+ tools, extensive server management.
+				'enable_database_toolkit'                => 48,   // 11 tools, PDO adapters, scoped reads + audit.
+				'enable_database_writes'                 => 8,    // 2 tools, proposal store + approval flow.
 				'enable_crm_toolkit'                     => 56,   // 10+ tools, company/contact/lead/campaign management with web search.
 				'enable_dietpi_toolkit'                  => 96,   // 18+ tools, SSH, app clients, service management.
 				'enable_ecommerce_toolkit'               => 80,   // 20 tools, WooCommerce integration.

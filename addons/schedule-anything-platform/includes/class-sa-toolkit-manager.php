@@ -73,6 +73,7 @@ class SA_Toolkit_Manager {
 		'skills-manager'          => 'enable_skills_manager',
 		'vector-storage'          => 'enable_vector_storage_pro',
 		'fnb'                     => 'enable_fnb_toolkit',
+		'database'                => 'enable_database_toolkit',
 	);
 
 	/**
@@ -89,6 +90,7 @@ class SA_Toolkit_Manager {
 		'crm',
 		'analytics',
 		'social-media',
+		'database',
 		'document-generation',
 		'multilingual',
 		'media',

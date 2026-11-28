@@ -88,8 +88,14 @@ const WP_MCP_AI_ALIAS_DEFAULT_ROOTS = array(
  *
  * `addons/` is deliberately absent: it holds ~1,700 Pro tools and a vendor
  * tree, which pushed the walk past two minutes.
+ *
+ * `addons/pro/lib/database/src` is the one exception. The scoped-database
+ * kernel (Proposal 167) ships in the Pro add-on, and `lib/core/src/Tool/Database`
+ * plus `lib/laravel-adapter` type against its `Nvoos\Database\*` contracts, so
+ * without it every database tool reports ~96 unresolved class names. One
+ * 46-file subtree costs nothing measurable.
  */
-const WP_MCP_AI_ALIAS_DEFAULT_INDEX = array( 'includes' );
+const WP_MCP_AI_ALIAS_DEFAULT_INDEX = array( 'includes', 'addons/pro/lib/database/src' );
 
 /**
  * Prefixes treated as external, so they are not expected in the index.

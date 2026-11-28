@@ -10,6 +10,7 @@
     "commandCenter",
     "contentGraph",
     "cost",
+    "database",
     "dashboardsSchema",
     "diagnostics",
     "docsHub",
@@ -57,6 +58,7 @@
     "commandCenter": "route",
     "contentGraph": "external-product",
     "cost": "route",
+    "database": "runtime-adaptable",
     "dashboardsSchema": "route",
     "diagnostics": "route",
     "docsHub": "external-product",
@@ -95,6 +97,7 @@
     "wpBase": "route"
   },
   "wordpress_reasons": {
+    "database": "route",
     "mediaCc": "route"
   },
   "reason_codes": [
@@ -135,6 +138,7 @@
       "wpBase": "api/v1/wp",
       "recordsSchema": "api/v1/pro/records/schema",
       "toolkits": "api/v1/pro/toolkits",
+      "database": "api/v1/pro/database",
       "dashboardsSchema": "api/v1/pro/dashboards",
       "chatChannels": "api/v1/pro/chat-channels",
       "remoteSites": "api/v1/pro/remote-sites",
@@ -182,6 +186,7 @@
       "wpBase": "wp/v2",
       "recordsSchema": "mcp-ai-pro/v1/records/schema",
       "toolkits": "mcp-ai-pro/v1/toolkit-manifests",
+      "database": "mcp-ai-pro/v1/database",
       "dashboardsSchema": "mcp-ai-pro/v1/dashboards",
       "chatChannels": "mcp-ai-pro/v1/chat-channels",
       "remoteSites": "mcp-ai-pro/v1/remote-sites",

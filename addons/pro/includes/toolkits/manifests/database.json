@@ -1,0 +1,55 @@
+{
+  "slug": "database",
+  "name": "Database",
+  "version": "1.0.0",
+  "description": "Scoped, audited database access. Connections name an endpoint; scopes grant schemas, tables, columns, row filters and capability tiers to named principals. The database role, not the prompt, is what cannot write; reads run in a read-only transaction with row, byte and time caps, and every call is audited without bound values.",
+  "icon": "\ud83d\uddc4\ufe0f",
+  "feature": "database",
+  "screens": ["console", "settings"],
+  "tab_labels": {
+    "defaults": "Default limits",
+    "governance": "Governance"
+  },
+  "settings": [
+    {
+      "key": "database_default_max_rows",
+      "label": "Default row cap",
+      "type": "number",
+      "tab": "defaults",
+      "default": 500,
+      "description": "Rows returned before a result is truncated. A scope may lower this, never raise it."
+    },
+    {
+      "key": "database_default_max_bytes",
+      "label": "Default payload cap (bytes)",
+      "type": "number",
+      "tab": "defaults",
+      "default": 2097152,
+      "description": "Shaped JSON bytes before the result is truncated."
+    },
+    {
+      "key": "database_default_timeout_ms",
+      "label": "Default statement timeout (ms)",
+      "type": "number",
+      "tab": "defaults",
+      "default": 5000,
+      "description": "Server-side timeout where the engine supports one, plus a PHP-side deadline on every engine."
+    },
+    {
+      "key": "database_default_cell_bytes",
+      "label": "Default per-cell cap (bytes)",
+      "type": "number",
+      "tab": "defaults",
+      "default": 16384,
+      "description": "A single value longer than this is truncated with a marker instead of failing the call."
+    },
+    {
+      "key": "enable_database_writes",
+      "label": "Enable the two-phase write path",
+      "type": "boolean",
+      "tab": "governance",
+      "default": false,
+      "description": "Registers db_propose_write and db_apply_write. A scope must also grant propose_write/apply_write and a non-zero max_affected_rows, and a human must approve each proposal."
+    }
+  ]
+}

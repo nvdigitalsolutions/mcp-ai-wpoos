@@ -284,6 +284,7 @@ docker/craft/app/*
 lib/core/.phpstan-cache/
 lib/core/.phpunit.cache/
 addons/nvoos-wifi/.phpunit.cache/
+tests/.phpunit.cache/
 
 # Playwright MCP browser-tool capture artifacts (console/page logs — never commit)
 .playwright-mcp/

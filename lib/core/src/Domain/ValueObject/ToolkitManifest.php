@@ -25,8 +25,16 @@ namespace Nvoos\Core\Domain\ValueObject;
 
 final class ToolkitManifest
 {
-    /** Screens the console can render from a manifest. */
-    public const SCREENS = array( 'settings', 'entities', 'research', 'consolidate', 'dashboard' );
+    /**
+     * Screens the console can render from a manifest.
+     *
+     * `console` is the toolkit's own operational surface: the shared engine
+     * renders the frame and the tab, and a toolkit-specific component supplies
+     * the panel (the database toolkit's connections, scopes, audit and health).
+     * It is in the vocabulary rather than in a per-toolkit manifest key because
+     * the engine has to know the id is legal before it can render the tab.
+     */
+    public const SCREENS = array( 'settings', 'entities', 'research', 'consolidate', 'dashboard', 'console' );
 
     /** Setting widget types. */
     public const SETTING_TYPES = array( 'text', 'textarea', 'number', 'boolean', 'select', 'secret' );

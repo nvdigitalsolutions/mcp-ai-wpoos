@@ -160,6 +160,10 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		// `/toolkit-manifests`; `/toolkits` is the schedule-anything base.
 		toolkits: `${pro}/toolkit-manifests`,
 		dashboardsSchema: `${pro}/dashboards/schema`,
+		// Scoped database toolkit console (Proposal 167 P3). WordPress-only;
+		// the Laravel runtime reports the key `runtime-adaptable`, and the
+		// toolkit page then shows only its settings screen.
+		database: `${pro}/database`,
 		chatChannels: `${pro}/chat-channels`,
 		remoteSites: `${pro}/remote-sites`,
 		skills: `${core}/skills`,

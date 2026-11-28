@@ -133,6 +133,11 @@ function buildEndpoints(origin: string, capabilities: string[], backend: Console
     // `api/v1/pro/toolkits`. The spa-v2 client is base-agnostic.
     toolkits: isAdmin ? (isWordPress ? `${pro}/toolkit-manifests` : `${pro}/toolkits`) : '',
     dashboardsSchema: isAdmin ? `${pro}/dashboards/schema` : '',
+    // Scoped database toolkit console (Proposal 167 P3). WordPress-only: the
+    // Laravel runtime keeps connections and scopes in config files, so its
+    // capability manifest reports this key `runtime-adaptable` and the
+    // toolkit page shows the settings screen alone.
+    database: isAdmin && isWordPress ? `${pro}/database` : '',
     chatChannels: isAdmin ? `${pro}/chat-channels` : '',
     remoteSites: isAdmin ? `${pro}/remote-sites` : '',
     // Installed Agent Skills catalogue (base route).

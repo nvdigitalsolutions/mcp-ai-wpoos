@@ -132,6 +132,14 @@ export interface ProSpaEndpoints {
 	toolkits: string;
 	/** Dashboards schema REST base (mcp-ai-pro/v1/dashboards/schema, 2.4.0). */
 	dashboardsSchema: string;
+	/**
+	 * Scoped database toolkit console base (mcp-ai-pro/v1/database, 3.2.0).
+	 *
+	 * Empty for non-admin sessions and on runtimes without the WordPress
+	 * toolkit console; the manifest's `console` screen then renders its
+	 * unavailable state instead of firing requests.
+	 */
+	database: string;
 	/** Chat channels REST base (mcp-ai-pro/v1/chat-channels, 2.4.0). */
 	chatChannels: string;
 	/**
@@ -359,6 +367,7 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			recordsSchema: typeof e.recordsSchema === 'string' ? e.recordsSchema : '',
 			toolkits: typeof e.toolkits === 'string' ? e.toolkits : '',
 			dashboardsSchema: typeof e.dashboardsSchema === 'string' ? e.dashboardsSchema : '',
+			database: typeof e.database === 'string' ? e.database : '',
 			chatChannels: typeof e.chatChannels === 'string' ? e.chatChannels : '',
 			remoteSites: typeof e.remoteSites === 'string' ? e.remoteSites : '',
 			skills: typeof e.skills === 'string' ? e.skills : '',

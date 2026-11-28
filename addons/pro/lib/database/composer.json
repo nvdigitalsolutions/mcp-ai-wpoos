@@ -1,0 +1,22 @@
+{
+    "name": "nvoos/database-kernel",
+    "description": "Scoped, auditable database access kernel for NV oOS (Proposal 167). Host-free: no WordPress, no framework, no I/O.",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Nvoos\\Database\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Nvoos\\Database\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

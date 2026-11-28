@@ -192,6 +192,15 @@ use Nvoos\Laravel\Adapter\SessionLogStore;
 use Nvoos\Laravel\Adapter\SettingsStore;
 use Nvoos\Laravel\Adapter\TokenUsage;
 use Nvoos\Laravel\Adapter\TranscriptStore;
+use Nvoos\Database\Domain\Contract\Database\AuditReaderInterface;
+use Nvoos\Database\Domain\Contract\Database\ConnectionProbeInterface;
+use Nvoos\Database\Domain\Contract\DatabaseQueryInterface;
+use Nvoos\Database\Domain\Service\Database\PdoProbe;
+use Nvoos\Database\Domain\ValueObject\Database\PrincipalRef;
+use Nvoos\Laravel\Database\PdoConnectionFactory;
+use Nvoos\Laravel\Database\PdoDatabaseConnection;
+use Nvoos\Laravel\Database\ScopeRedactor;
+use Nvoos\Laravel\Database\TableAuditLog;
 use Nvoos\Laravel\Provider\ProviderRegistrar;
 
 class NvoosServiceProvider extends ServiceProvider {
@@ -450,6 +459,91 @@ class NvoosServiceProvider extends ServiceProvider {
 		$this->app->bind( ProductCatalogInterface::class, ProductCatalog::class );
 
 		$this->app->bind( SchemaStoreInterface::class, SchemaStore::class );
+
+		// Scoped database access (Proposal 167).
+		//
+		// Bound whenever the kernel is installed — `nvoos/database-kernel` is a path
+		// dependency of this package, but a host may swap it out. The guard probes
+		// the kernel first: `class_exists()` on the port itself would fatal while
+		// loading a class whose parent is missing, which is a crash rather than a
+		// skip.
+		//
+		// **Construction is not gated on `oos.database.enabled`.** The readiness
+		// manifest is shared across hosts and its eleven `db_*` rows say `ready`,
+		// which means every host reading it must be able to build the tools. A
+		// toggle read at container-binding time cannot deliver that, for two
+		// reasons: a provider's `register()` runs before a Laravel app's runtime
+		// settings are known (and before Testbench's `defineEnvironment()`), and a
+		// host that flips the toggle at runtime would silently disagree with the
+		// manifest. So the toggle gates *what the port can see*, not whether the
+		// port exists: disabled means an empty connection set, and every call
+		// refuses with `db_not_configured`. That is fail-closed, honest, and
+		// observable — instead of a `ready` row that the container cannot build.
+		//
+		// `scoped()` because the port must be bound to a principal before it will
+		// read, and the principal is per request. `for_principal()` clones, so the
+		// shared instance is never mutated. A request with no authenticated user
+		// resolves to an unbound port, which refuses every read with
+		// `db_scope_not_allowed` — the fail-closed behaviour we want, rather than
+		// an exception at boot.
+		if ( class_exists( \Nvoos\Database\Domain\Service\Database\PdoExecutor::class ) ) {
+			// The audit trail is the append-only ledger, always. It used to be a
+			// choice between this and a PSR-3 line, but a write-only sink made
+			// `db_audit_tail` conditionally buildable — and a readiness row is
+			// either true in the default container or it is not. The migration
+			// (`2026_01_01_000011_…`) ships with the package, so enabling the
+			// toolkit means running `artisan migrate`, which is the normal step.
+			$app       = $this->app;
+			$auditSink = new TableAuditLog(
+				static fn (): \PDO => $app['db']->connection()->getPdo(),
+				(string) $this->app['config']->get( 'oos.database.audit.table', TableAuditLog::TABLE ),
+				static function ( \Throwable $error ) use ( $app ): void {
+					// Scrubbed before it reaches the log: a driver message can quote
+					// the statement, and the statement is an audit artefact.
+					$app['log']->warning(
+						'oos.database.audit_write_failed',
+						array( 'detail' => ( new ScopeRedactor() )->scrub_detail( $error->getMessage() ) ),
+					);
+				},
+			);
+
+			$this->app->instance( AuditReaderInterface::class, $auditSink );
+
+			$this->app->scoped( DatabaseQueryInterface::class, function ( $app ) use ( $auditSink ) {
+				// Read at resolution time, not at binding time: config files are
+				// loaded before providers register, but a host's runtime settings
+				// and a test harness's environment are not. Disabled means no
+				// connections, which the port refuses with `db_not_configured`.
+				$config = (bool) $app['config']->get( 'oos.database.enabled', false )
+					? (array) $app['config']->get( 'oos.database', array() )
+					: array();
+
+				$port = PdoDatabaseConnection::build(
+					$config,
+					null,
+					static function ( array $record ) use ( $app ): void {
+						$app['log']->info( 'nvoos.database', $record );
+					},
+					null,
+					$auditSink,
+				);
+
+				if ( ! $app['auth']->check() ) {
+					return $port;
+				}
+
+				return $port->for_principal(
+					new PrincipalRef( PrincipalRef::USER, (string) $app['auth']->id() ),
+				);
+			} );
+
+			// The privilege probe, for `db_test_connection`. Same kernel-probing
+			// guard as the port: binding it when `nvoos/database-kernel` is absent
+			// would make the class unresolvable and take the boot with it.
+			$this->app->bind( ConnectionProbeInterface::class, static function () {
+				return new PdoProbe( new PdoConnectionFactory() );
+			} );
+		}
 		// The profession catalogue's tenant tier (Proposal 149 §170). The base is
 		// code-owned reference data; this is the half `save_profession` writes.
 		//

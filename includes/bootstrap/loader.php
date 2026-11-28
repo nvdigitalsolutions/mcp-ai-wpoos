@@ -407,6 +407,12 @@ if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php' 
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-encryption.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-encryption.php';
 }
+
+// Database toolkit availability guard (Proposal 167). Always loaded: in a base-only
+// install this one class answers "unavailable" and nothing else is required.
+if ( ! class_exists( 'WP_MCP_AI_Db_Runtime' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/database/class-wp-mcp-ai-db-runtime.php';
+}
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-privacy.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-privacy.php';
 }

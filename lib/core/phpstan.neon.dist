@@ -9,6 +9,15 @@ parameters:
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
 
+    # The scoped-database kernel (Proposal 167) ships in the Pro add-on, at
+    # addons/pro/lib/database, because a base-only install has no addons/pro
+    # and a base+pro install has no lib/ directory. `nvoos/core` must not take
+    # a dependency on it, but src/Tool/Database type against its contracts, so
+    # those symbols are indexed here without being autoloaded, analysed, or
+    # required at runtime. Paths resolve relative to this file.
+    scanDirectories:
+        - ../../addons/pro/lib/database/src
+
     # Level 8 is the long-term target (ADR recommends it for the core package).
     # The historical blocker was ~251 "no value type specified in iterable type
     # array" errors from ToolInterface and provider contracts that used bare

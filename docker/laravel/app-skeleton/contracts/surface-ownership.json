@@ -9,6 +9,19 @@
   },
   "surfaces": [
     {
+      "id": "database",
+      "title": "Scoped database toolkit",
+      "audience": "tenant-admin",
+      "ops": null,
+      "admin": { "state": "subset" },
+      "console": { "state": "absent", "keys": ["database"] },
+      "writer": "none",
+      "plan_gate": "toolkit:database",
+      "projection": "The panel renders the manifest's `settings` screen through the parameterised ToolkitPage, which the `toolkits` row already owns, so this row claims no file of its own. Connections and scopes are config-owned here, so the settings screen is the whole of what the panel can show.",
+      "files": [],
+      "notes": "The console key has no route on this host: console-endpoints.json records it as runtime-adaptable and runtime-config.ts supplies no endpoint, so the toolkit page stops at settings. The WordPress host serves /mcp-ai-pro/v1/database, where the React console owns Observe/Edit/Preview and writes scopes through WP_MCP_AI_Db_Scope_Registry. Laravel scopes live in config/oos.php, so there is nothing here for that surface to edit."
+    },
+    {
       "id": "chat",
       "title": "Chat",
       "audience": "tenant-user",

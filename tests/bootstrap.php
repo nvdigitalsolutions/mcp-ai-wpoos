@@ -175,6 +175,95 @@ if ( ! defined( 'WP_MCP_AI_TESTS_RUNNING' ) ) {
 	define( 'WP_MCP_AI_TESTS_RUNNING', true );
 }
 
+/**
+ * Fail loudly when test discovery is truncated by the host filesystem.
+ *
+ * PHPUnit collects test files by walking every <directory> in
+ * phpunit.xml.dist with SebastianBergmann\FileIterator, which is built on
+ * RecursiveDirectoryIterator. On some virtual filesystems that SPL iterator
+ * returns a truncated listing for large directories even though the files are
+ * present and readable — measured on Docker Desktop for Windows, where a
+ * bind-mounted tests/ directory exposed 653 of 1,252 entries and a freshly
+ * created directory of 1,300 files exposed 278. glob(), scandir() and a plain
+ * readdir() loop read the same directories correctly.
+ *
+ * The failure is silent and expensive: PHPUnit collects the subset it can
+ * see, runs it, and exits 0. Before this guard existed roughly 1,200
+ * root-level test files — about two thirds of the suite — were skipped on an
+ * affected machine with no warning at all.
+ *
+ * Comparing the enumerable count against the SPL count is cheap and detects
+ * the condition reliably. A mismatch prints an actionable warning; set
+ * WP_MCP_AI_TESTS_STRICT_DISCOVERY=1 to make it fatal instead, which is
+ * useful on any runner where discovery is expected to be exact.
+ *
+ * @param string $tests_dir Absolute path to the plugin's tests directory.
+ */
+function wp_mcp_ai_tests_assert_discovery_is_complete( $tests_dir ) {
+	if ( ! is_dir( $tests_dir ) ) {
+		return;
+	}
+
+	$php_files = glob( $tests_dir . '/*.php' );
+	if ( ! is_array( $php_files ) || array() === $php_files ) {
+		return;
+	}
+
+	$expected = count( $php_files );
+	$seen     = 0;
+
+	try {
+		foreach ( new DirectoryIterator( $tests_dir ) as $entry ) {
+			if ( ! $entry->isDot() ) {
+				++$seen;
+			}
+		}
+	} catch ( Throwable $e ) {
+		// A filesystem that cannot enumerate at all is a different problem;
+		// PHPUnit will report it. Only a silent shortfall is our concern.
+		unset( $e );
+		return;
+	}
+
+	if ( $seen >= $expected ) {
+		return;
+	}
+
+	$rule = str_repeat( '=', 72 );
+
+	fwrite(
+		STDERR,
+		sprintf(
+			"\n%s\n  TEST DISCOVERY IS TRUNCATED IN THIS ENVIRONMENT\n\n" .
+			"  glob() sees %d PHP files in tests/\n" .
+			"  the SPL directory iterator PHPUnit uses sees %d\n" .
+			"  => %d test files will be skipped while PHPUnit still exits 0\n\n" .
+			"  PHPUnit walks <directory> entries with RecursiveDirectoryIterator. Some\n" .
+			"  virtual filesystems -- notably Docker Desktop bind mounts of a Windows\n" .
+			"  or macOS host -- return a truncated listing for large directories even\n" .
+			"  though the files are present and readable.\n\n" .
+			"  Workarounds:\n" .
+			"    * run PHPUnit on the host, or\n" .
+			"    * copy the plugin to a Linux-native path inside the container\n" .
+			"      (e.g. /tmp/mcp-ai-wpoos) and run the suite there, or\n" .
+			"    * run individual files by path:\n" .
+			"      vendor/bin/phpunit --no-coverage tests/test-foo.php\n\n" .
+			"  Set WP_MCP_AI_TESTS_STRICT_DISCOVERY=1 to make this fatal.\n%s\n\n",
+			$rule,
+			$expected,
+			$seen,
+			$expected - $seen,
+			$rule
+		)
+	);
+
+	if ( in_array( getenv( 'WP_MCP_AI_TESTS_STRICT_DISCOVERY' ), array( '1', 'true' ), true ) ) {
+		exit( 1 );
+	}
+}
+
+wp_mcp_ai_tests_assert_discovery_is_complete( $plugin_root . '/tests' );
+
 // Pro Dashboard is enabled by default in production (constants.php defaults
 // WP_MCP_AI_PRO_DASHBOARD_ENABLED to true). Defining it false here mirrors a
 // site that opted out, which keeps the filter-based opt-in path

@@ -232,6 +232,39 @@ services:
       retries: 20
       start_period: 30s
 
+  # ── PostgreSQL (database toolkit gates 6 and 7; opt-in) ─
+  #
+  # Not part of the default stack: start it explicitly with
+  #    docker compose up -d postgres
+  # and run the Postgres-dependent suite with
+  #    NVOOS_TEST_PGSQL_DSN='pgsql:host=127.0.0.1;port=55432;dbname=nvoos_test' \
+  #      php lib/core/vendor/bin/phpunit -c tests/database/postgres/phpunit.xml.dist
+  #
+  # Port 55432 avoids a clash with a host Postgres on 5432. The fixture SQL
+  # (tests/database/fixtures/postgres.sql) creates its own roles and schema, so
+  # the default `postgres` database is left alone.
+  postgres:
+    image: postgres:18-alpine
+    container_name: oos-wp-postgres
+    profiles:
+      - database-tests
+    restart: unless-stopped
+    ports:
+      - "55432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nvoos_test
+    volumes:
+      - pg_db:/var/lib/postgresql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U postgres -d nvoos_test
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
   # ── Media Worker Sidecar (offloads NPM packages) ────────
   media-worker:
     build:
@@ -296,3 +329,4 @@ services:
 volumes:
   wp_core:
   wp_db:
+  pg_db:

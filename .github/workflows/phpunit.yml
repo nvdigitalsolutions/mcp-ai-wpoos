@@ -14,6 +14,13 @@ on:
       - 'phpunit.xml.dist'
       - 'phpunit-basepro.xml.dist'
       - 'tests/basepro/**'
+      - 'tests/database/**'
+      - 'lib/core/**'
+      - 'lib/laravel-adapter/**'
+      - 'includes/database/**'
+      - 'addons/pro/lib/database/**'
+      - 'addons/pro/includes/tools/database/**'
+      - 'docker-compose.yml'
       - 'bin/install-wp-tests.sh'
       - 'bin/install-test-plugins.sh'
       - 'bin/find-untested-classes.sh'
@@ -21,6 +28,14 @@ on:
 
 permissions:
   contents: read
+
+# A truncated test-file listing must never pass silently. tests/bootstrap.php
+# compares the enumerable tests/*.php count against the SPL directory iterator
+# PHPUnit discovers with and exits when they disagree. CI runners use a
+# native ext4 checkout, so a shortfall here is a real regression and not the
+# virtual-filesystem quirk that affects Docker Desktop bind mounts.
+env:
+  WP_MCP_AI_TESTS_STRICT_DISCOVERY: '1'
 
 jobs:
   test:
@@ -259,3 +274,99 @@ jobs:
 
       - name: Run base+pro regression suite
         run: vendor/bin/phpunit -c phpunit-basepro.xml.dist --no-coverage
+
+  # ────────────────────────────────────────────────────────────────
+  # ────────────────────────────────────────────────
+  # Database toolkit gates (Proposal 167).
+  #
+  # Gates 6 (L2 removal) and 7 (hostile corpus against a live engine)
+  # need a real PostgreSQL with a genuinely unprivileged role. The
+  # fixture SQL creates `nvoos_reader` (SELECT only, NOBYPASSRLS) and
+  # `nvoos_writer` (DML), so the suite proves the guarantee the design
+  # rests on: with admission bypassed, a write still fails at the role.
+  #
+  # Blocking. The job body was reproduced on Linux (php:8.3-cli +
+  # pdo_pgsql, postgres:18-alpine) before this flag came off:
+  # portable 56/120, parity 77/112, postgres 34/132.
+  # ────────────────────────────────────────────────
+  database-postgres:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nvoos_test
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d nvoos_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      NVOOS_TEST_PGSQL_DSN: 'pgsql:host=127.0.0.1;port=55432;dbname=nvoos_test'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: mbstring, pdo_pgsql, pdo_sqlite
+          tools: composer
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run cross-host parity suite
+        run: vendor/bin/phpunit -c tests/database/parity/phpunit.xml.dist --no-coverage
+
+      - name: Run portable database suite
+        run: vendor/bin/phpunit -c tests/database/portable/phpunit.xml.dist --no-coverage
+
+      - name: Run PostgreSQL database suite
+        run: vendor/bin/phpunit -c tests/database/postgres/phpunit.xml.dist --no-coverage
+
+  # ────────────────────────────────────────────────────────────────
+  # Laravel adapter suite (Proposal 167 phase P4).
+  #
+  # The kernel, the portable tools and the engine profiles are covered
+  # by the three suites above. This job covers the adapter's own surface:
+  # the provider wiring (including the readiness gate that proves every
+  # `db_*` row is buildable), the audit migration against the package's
+  # own schema, the ledger round trip, and the file store's visibility
+  # contract.
+  #
+  # In-memory SQLite and no services: the suite is deterministic and
+  # self-contained, which is why it starts blocking. `composer update`
+  # rather than `install` because `lib/*/composer.lock` is deliberately
+  # untracked in this repository.
+  # ────────────────────────────────────────────────
+  laravel-adapter:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          extensions: mbstring, fileinfo, pdo_sqlite
+          tools: composer
+
+      - name: Install adapter dependencies
+        working-directory: lib/laravel-adapter
+        run: composer update --no-interaction --prefer-dist
+
+      - name: Run the adapter suite
+        working-directory: lib/laravel-adapter
+        run: php vendor/bin/phpunit --no-coverage

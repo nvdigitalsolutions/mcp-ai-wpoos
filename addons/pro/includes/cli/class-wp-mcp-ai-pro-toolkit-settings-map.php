@@ -76,6 +76,7 @@ class WP_MCP_AI_Pro_Toolkit_Settings_Map {
 		'enable_extended_cognition_toolkit'      => 'Extended Cognition Toolkit',
 		'enable_vision_analysis_toolkit'         => 'Vision Analysis Toolkit',
 		'enable_advanced_analytics_toolkit'      => 'Advanced Analytics Toolkit',
+		'enable_database_toolkit'                => 'Database Toolkit',
 	);
 
 	/**

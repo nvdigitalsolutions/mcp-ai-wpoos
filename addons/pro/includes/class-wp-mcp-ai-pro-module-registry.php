@@ -723,6 +723,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'rest_database_console',
+				'Database Console REST',
+				array(),
+				array(),
+				function () use ( $p ) {
+					// Proposal 167 phase P3. Same rationale as `rest_remote_sites`:
+					// the console calls this from a front-end origin where is_admin()
+					// is false, so an admin-context gate would 404 every route. The
+					// controller only hooks rest_api_init, gates every route on
+					// manage_options, and opens no socket on a GET.
+					$f = $p . 'rest/class-wp-mcp-ai-pro-database-console-rest-controller.php';
+
+					if ( file_exists( $f ) ) {
+						require_once $f;
+						WP_MCP_AI_Pro_Database_Console_REST_Controller::init();
+					}
+				}
+			);
+
+			$this->add_module(
 				'rest_console_bridges',
 				'Console REST Bridges',
 				array(),
@@ -1163,6 +1183,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 				'vision_analysis'         => 'Vision Analysis',
 				'outbound_booking'        => 'Outbound Booking',
 				'fnb'                     => 'Food & Beverage',
+				'database'                => 'Database',
 			);
 
 			foreach ( $conditional_toolkits as $slug => $label ) {
@@ -1198,6 +1219,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 					'vision_analysis'         => 'vision-analysis',
 					'outbound_booking'        => 'outbound-booking',
 					'fnb'                     => 'food-beverage',
+					'database'                => 'database',
 				);
 
 				$toolkit_dir = isset( $dir_map[ $slug ] ) ? $dir_map[ $slug ] : $slug;
