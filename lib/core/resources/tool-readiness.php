@@ -5566,5 +5566,14 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/WoocommerceOrdersTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
 		),
+		'woo_products' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Ecommerce\\WoocommerceProductsTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the products tool (Proposal 164 section 164.177) over ProductCatalogInterface, which is bound to the local Eloquent catalog. Six actions are performed and all six are declared: get, list, search, create, update and delete. The three taxonomy actions manage_categories, manage_tags and manage_attributes are refused by name because they create, rename and delete terms and attribute definitions, and this runtime has no taxonomy store; tags exist only as product strings. Eleven arguments the reference accepts have no field here (short_description, categories, images, featured_image, attributes, weight, dimensions, virtual, downloadable and backorders) and each is refused by name rather than dropped, because a quiet drop is how a migration loses half a catalogue and reports success. update is deliberately product-level: name, description, status, type and tags. A price, SKU or stock level lives on a variant and the catalog save path leaves the stored variant list alone, so a variant field on update is refused together with the name of the tool that takes a scope, rather than guessing which variation was meant. The status map is stated: publish maps to published, pending and private both map to draft because ProductStatus records that both mean exists but not visible to shoppers, and archived is accepted so a value read here can be written back unchanged. create decides the charge from both price fields, with sale_price as what is charged and price as the comparison when both are present, and requires a currency because this model stores one with every amount. delete is the only destructive action in this family, so the row carries destructiveHint.',
+			'evidence' => 'lib/core/tests/Unit/Tool/WoocommerceProductsTest.php',
+			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 	),
 );
