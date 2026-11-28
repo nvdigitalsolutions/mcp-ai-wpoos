@@ -13317,3 +13317,64 @@ pins both the duplicate fix and the ordering.
 
 The next slice is compliance and validation — INCI ingredients, HS codes and the
 document checklist — where the toolkit stops recording and starts judging.
+
+### §164.150 — `regulatory-registration`, slice 7: product validation
+
+`validate_reg_product` is the first *judging* tool in the family: it reads one
+product and returns a verdict rather than a record. One tool, because the
+measurement was worth taking on its own.
+
+#### The declared defaults were the opposite of the actual ones
+
+The schema promised `check_completeness`, `check_inci` and `check_hs_code` as
+`true`. The handler read each with `! empty( $arguments[ ... ] )`. The call the
+schema invites — `validate_reg_product({ product_id })` — therefore ran **no
+checks at all** and returned `is_valid: true`.
+
+In a compliance toolkit that is the worst failure available: a product reported
+valid because nothing looked at it. It is also invisible, because the response
+looks like a pass. The port applies the documented defaults, and only an
+explicit `false` turns a check off.
+
+`ready_for_registration` inherited the same fault — WordPress required the
+completeness result to be *present*, so with completeness off it was always
+`false`. It is now true only when the checks ran, passed, and completeness
+reported complete.
+
+#### A negative verdict is a successful call
+
+`success` stays `true` when `is_valid` is `false`. A validator reports; a
+`WP_Error` for "non-compliant" would make every caller treat a business outcome
+as a failure, which is the distinction the expiry flags drew in §164.146.
+
+#### Three smaller corrections
+
+- **Blank ingredient items are skipped.** WordPress exploded the list on commas
+  and counted the result, so `"Aqua, Glycerin, ,"` reported four ingredients.
+  That also made `ingredient_count` — the number an operator quotes — wrong.
+- **`target_country` is documented as unused.** WordPress accepted it and never
+  read it; the INCI checks are format rules and do not vary by country. It is
+  kept for shape compatibility and described honestly rather than implying a
+  restriction check that never existed.
+- **The chapter warning is suppressed for a short code.** WordPress warned
+  "cosmetics typically use 33" about a code it had already rejected for being
+  fewer than six digits — two complaints for one mistake.
+
+Gated on `read`. WordPress declared `edit_posts`, but every branch reads, and
+this family's readers ask for `read`.
+
+#### Measurements
+
+| Gate | Result |
+|---|---|
+| `RegulatoryProductValidationTest` | **11 tests, 40 assertions**, 0 failures |
+| `lib/core` unit suite | **4,118 tests / 22,962 assertions** (+11 tests, +40 assertions), 0 failures |
+| Adapter suite | **698 tests / 3,787 assertions**, 2 skipped, 0 failures |
+| Readiness manifest | 593 → **594 rows**; servable 574 → **575**; ready 534; no violations |
+| Toolkit parity | 372 → **373 ported**, 9 declined, 79 deferred, 473 → **472 remaining**; `regulatory-registration` `59 \| 20 \| 0 \| 0 \| 39` → **`59 \| 21 \| 0 \| 0 \| 38`** |
+| PHPStan level 8, `lib/core` | no errors |
+| phpcs (`phpcs-laravel.xml.dist`) | 0 errors across the twenty-two Regulatory classes, the tests and the manifest |
+| `check-file-docs.php --strict` | exit 0 |
+
+The next slice is `validate_inci_ingredients` and `check_hs_code`, the two
+standalone validators this tool composes in miniature.

@@ -4957,6 +4957,15 @@ return array(
 			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryDocumentToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'idempotentHint' => false, 'openWorldHint' => false ),
 		),
+		'validate_reg_product' => array(
+			'class' => 'Nvoos\Core\Tool\Regulatory\\ValidateRegProductTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the WordPress product validation over ContentStoreInterface (Proposal 164 section 164.150). The declared defaults were not the actual ones: the schema promised all three checks on and the handler read them with empty(), so a bare call validated nothing and reported is_valid true — a vacuous pass in a compliance toolkit. The port applies the documented defaults and only an explicit false disables a check. A negative verdict stays a successful call, with the verdict in is_valid and status. Blank ingredient items are skipped so a trailing comma does not add an ingredient, and the chapter warning is suppressed for a code already rejected for length.',
+			'evidence' => 'lib/core/tests/Unit/Tool/RegulatoryProductValidationTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'validate_json' => array(
 			'class' => 'Nvoos\\Core\\Tool\\ValidateJsonTool',
 			'readiness' => 'pure',

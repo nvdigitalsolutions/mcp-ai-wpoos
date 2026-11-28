@@ -411,7 +411,8 @@
             "update_reg_document",
             "update_reg_product",
             "update_registration_status",
-            "upload_reg_document"
+            "upload_reg_document",
+            "validate_reg_product"
         ],
         "remote-connections": [],
         "research": [],
