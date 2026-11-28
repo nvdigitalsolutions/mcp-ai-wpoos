@@ -344,7 +344,8 @@
         "jetengine": [],
         "jev": [],
         "math": [
-            "evaluate_logic_gate"
+            "evaluate_logic_gate",
+            "generate_truth_table"
         ],
         "media": [],
         "multilingual": [],

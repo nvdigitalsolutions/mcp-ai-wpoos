@@ -2620,6 +2620,15 @@ return array(
 			'evidence' => 'docker/laravel/app-skeleton/tests/Feature/VideoAndAudioToolsTest.php',
 			'annotations' => array( 'readOnlyHint' => false, 'destructiveHint' => false, 'openWorldHint' => true ),
 		),
+		'generate_truth_table' => array(
+			'class' => 'Nvoos\\Core\\Tool\\Math\\GenerateTruthTableTool',
+			'readiness' => 'ready',
+			'parity' => 'port',
+			'probe' => 'call',
+			'reason' => 'Ports the truth-table generator (Proposal 164 section 164.166), the second and last tool in the math family that computes in PHP rather than delegating to the Node math.js service. The tokeniser, the recursive-descent parser (OR and NOR, then XOR and XNOR, then AND and NAND, then prefix NOT and postfix complement), the syntax tree, the most-significant-bit-first enumeration and the markdown, plain-text and LaTeX renderers are all carried over. Corrections: the argument guard used empty(), so the one-character expression 0 was refused as a missing expression while 1 worked — the asymmetry is the proof that the guard was wrong, and the port tests for the empty string. A variable named result silently lost its column because the row builder overwrote that key with the evaluated answer, so the port reserves the name case-insensitively. An unknown format was silently replaced with both, so the port refuses it, matching the gate evaluator. A recursion guard that counted grammar layers rose four per parenthesis level and refused at about seven nested pairs, a seventeen-character expression, so the port counts the same way with the cap at 128, which still bounds recursion and is reachable only well beyond the 1,000-character input cap. A variables entry that was not a string was cast, warning on an array before failing the identifier test, so the port refuses it by position. The dead identifier-start branch that accepted a leading underscore is gone, and such a name is refused at the tokeniser instead. Gated on read, matching the WordPress declaration and its handler.',
+			'evidence' => 'lib/core/tests/Unit/Tool/MathTruthTableTest.php',
+			'annotations' => array( 'readOnlyHint' => true, 'destructiveHint' => false, 'idempotentHint' => true, 'openWorldHint' => false ),
+		),
 		'generate_uuid' => array(
 			'class' => 'Nvoos\\Core\\Tool\\GenerateUuidTool',
 			'readiness' => 'pure',
