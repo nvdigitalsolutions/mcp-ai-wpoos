@@ -661,9 +661,9 @@ final class OrderStoreTest extends TestCase {
 		$this->store()->topCustomers( $this->february(), 'dollars', 10 );
 	}
 
-	public function test_top_customers_refuses_a_limit_outside_one_to_one_hundred(): void {
+	public function test_top_customers_refuses_a_limit_outside_one_to_ten_thousand(): void {
 		$this->expectException( ValidationException::class );
 
-		$this->store()->topCustomers( $this->february(), 'USD', 101 );
+		$this->store()->topCustomers( $this->february(), 'USD', 10001 );
 	}
 }

@@ -124,7 +124,12 @@ interface OrderStoreInterface
      *
      * @param OrderQuery $query    The window and filters, as for a listing.
      * @param string     $currency The ISO 4217 currency to aggregate.
-     * @param int        $limit    How many customers to return, 1 to 100.
+     * @param int        $limit    How many customers to return, 1 to 10000.
+     *
+     *   The ceiling is higher than `topProducts()`'s because the two are used
+     *   at different scales: a product list is for display, while a segmentation
+     *   pass reads the customer base. The bound is a guard against an unbounded
+     *   query, not a page size, and the calling tool decides what it will spend.
      *
      * @return list<CustomerSpend> By spend descending, then customer id.
      */

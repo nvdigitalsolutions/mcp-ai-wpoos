@@ -260,6 +260,7 @@
             "product_actualization",
             "quickbooks_report",
             "sales_performance_dashboard",
+            "segment_customers",
             "shipping_box_packer",
             "shipping_rate_estimator",
             "shopify_catalog",

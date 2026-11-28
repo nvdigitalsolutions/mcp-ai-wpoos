@@ -297,10 +297,6 @@
             "decision": "deferred",
             "reason": "It schedules a Notify.lk SMS through two WordPress-only mechanisms at once: the `notifylk/notify-php` package (its own `is_available()` says the tool is disabled without it) and a WP-cron single event whose callback performs the send. The core has a schedule store but it stores a hook name and args and leaves dispatch to the host, so a port that only scheduled the hook would report success while nothing sent the message; porting the send inline would put the provider API key at rest in a schedule row. Prerequisite: an SMS provider client (or the package) plus an app-level scheduled-send listener, or a secret-reference field on the schedule payload so a credential is never stored with the message."
         },
-        "segment_customers": {
-            "decision": "deferred",
-            "reason": "Builds a customer audience from spend, order count, dates and tags. Prerequisite: CustomerStoreInterface, which does not exist yet, plus the order aggregates the filters need."
-        },
         "send_cart_recovery_email": {
             "decision": "deferred",
             "reason": "Sends a recovery message for one cart. Prerequisite: a cart/session store plus the mail seam. The mail half is already served; the cart half is not."
